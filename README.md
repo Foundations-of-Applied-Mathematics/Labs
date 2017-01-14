@@ -4,7 +4,7 @@ This project contains the labs for the Foundations of Applied Mathematics curric
 The labs go in tandem with the four textbooks that are currently being written and will start rolling out in 2017.
 
 This work is licenced under the Creative Commons Attribution 3.0 United States License.
-To view a copy of this license please visit http://creativecommons.org/licenses/by/3.0/us/ and see [cc-by-license.txt](https://github.com/Foundations-of-Applied-Mathematics/Lab-Development/blob/develop/cc-by-license.txt).
+To view a copy of this license please visit http://creativecommons.org/licenses/by/3.0/us/ and see [cc-by-license.txt](https://github.com/Foundations-of-Applied-Mathematics/Labs/blob/develop/cc-by-license.txt).
 
 The owners of this work are  
 Jeffrey Humpherys and Tyler J. Jarvis  
@@ -16,7 +16,7 @@ This project is funded in part by the National Science Foundation, grant no. TUE
 
 ### Build Instructions
 
-Visit the [releases page](https://github.com/Foundations-of-Applied-Mathematics/Lab-Development/releases) to download the latest version of the lab curriculum.
+Visit the [releases page](https://github.com/Foundations-of-Applied-Mathematics/Labs/releases) to download the latest version of the lab curriculum.
 
 To gain access to the entire repository, fork this repository and clone it.
 Each volume can then be built separately using the LaTex files listed below.
