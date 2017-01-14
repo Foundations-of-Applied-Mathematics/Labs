@@ -1,0 +1,275 @@
+\lab{Unit Testing In Python}{Unit Testing In Python}
+
+\objective{Convey the importance of unit testing in code, especially in the corporate world. Unit testing in python is easy, valuable and powerful. Any software development position will appreciate a developer who is able to accurately test their code.}
+
+Though many projects done in school are usually done in isolation, when one writes code they should always be thinking about how other developers would react to their code.
+When working on projects over 100 thousand lines of code long it is simply impossible to understand how every single function is working together to make your product work the way it does.
+
+However, a simple and elegant solution to this problem prevents developers from being required to be omniscient about the code they are writing: Unit Testing.
+Unit testing allows a developer to only know what the inputs and outputs of a function are, then they can rely on the unit tests that have been written to know rather or not the software is working as expected.
+It helps Developers understand requirements, keeps developers aware of dependency changes, and give a developer confidence about where code is broken.
+
+Imagine you where a developer for a company. On your first day you are assigned the task of tracking down why the banner upload tool isn't allowing this particular user upload a banner.
+Very quickly you discover that the user simply doesn't have the correct credentials for the tool, so you can either change the requirements for the upload for the credentials of the user.
+You decide to go with the later and change the requirements for the upload. You mark the task as complete and your code is shipped for the user to see.
+Very soon however the bug fix comes back to haunt you! Now the person uploading the Banner is having the same exact issue.
+In confusion you go back to find that your coworker had change the permissions back to fix an issue where anyone could up load a banner, including those who where not supposed to be able to.
+It isn't strictly your coworkers fault that you are tasked with the same bug again, there was nothing to indicate to him that he should not have simply put that code back in place.
+Unit testing is the perfect thing to implement in order to prevent this sort of hold up on code production.
+A well written unit test would have perhaps prevented any developer from editing code to allow any user to add a banner, you would have then been aware that your fix was inappropriate.
+
+Test coverage is even sometimes used in the sales arena to describe the quality of a product!
+
+\section*{PyTest}
+
+Okay, so we've discussed enough of the why. Now we will discuss and explore the "how" to test code in python.
+It is easiest and most efficient to think about testing individual functions rather than entire files or modules.
+(As we will discuss later, testing classes should even happen at a method based level)
+As an example we might test the following:
+\begin{lstlisting}
+>>> def addition(a,b):
+...     return a+b
+\end{lstlisting}
+with this test function:
+\begin{lstlisting}
+>>> from solutions import addition
+>>> def test_addition():
+...     assert addition(1,3) == 4
+...     assert addition(5,7) == 12
+...     assert addition(6,14) == 20
+\end{lstlisting}
+
+Now this is all good and pretty, we are able to write tests for a function, by asserting that they give us a particular output based on some fixed input.
+But what makes unit testing in python so useful isn't this, it is running the following in your current directory (from the terminal):
+\begin{lstlisting}[language=bash]
+$ py.test
+\end{lstlisting}
+
+\begin{info}
+In order for py.test to find the tests that you have written it is required for the file name to have the word "test" and end with ".py".
+Also all the functions that you want the py.test to call should begin with the word "test".
+(If this behavior doesn't work for whatever reason or a new behavior is required look into setting up pytest.ini from the directory where you will be testing)\\
+\end{info}
+
+For example if one runs 'py.test' in the following directory:
+\begin{lstlisting}[language=bash]
+$ tree `to show children directories recursivly`
+|-- api_tests
+|   |-- test_accounts.py
+|   |-- test_auth.py
+|   |-- test_base.py
+|   |-- test_common.py
+|-- platform_tests
+      |-- test_bulk.py
+      |-- test_calendar.py
+      |-- test_google.py
+\end{lstlisting}
+
+The following output is produced:
+
+\begin{lstlisting}
+========================= test session starts ==========================
+platform darwin -- Python 2.7.10 -- py-1.4.27 -- pytest-2.7.1
+collected 29 items
+
+api_tests/test_accounts.py ....
+api_tests/test_auth.py .....
+api_tests/test_base.py ....
+api_tests/test_common.py ....
+platform_tests/test_bulk.py ....
+platform_tests/test_calendar.py ..
+platform_tests/test_google.py ......
+======================= 29 passed in 0.07 seconds =======================
+\end{lstlisting}
+\begin{info}
+Those dots represent a test passing. They show up in order so if the third dot is an "F" (meaning the test failed) then you know it would be the third test in that file which failed.
+\end{info}
+
+Understanding which part of your code is being tested and which isn't is a very useful way to get an idea of how well a project is being tested.
+An easy way to do this is to install something called: "pytest-cov". This can be done very simply from the terminal by running:
+\begin{lstlisting}
+  $ pip install pytest-cov
+\end{lstlisting}
+Now adding the flag "--cov" to py.test will give you a breakdown of test coverage on you code.
+\begin{lstlisting}
+  $ py.test --cov
+======================= test session starts ========================
+platform darwin -- Python 2.7.10 -- py-1.4.27 -- pytest-2.7.1
+plugins: cov
+collected 29 items
+
+api_tests/test_accounts.py ....
+api_tests/test_auth.py .....
+api_tests/test_base.py ....
+api_tests/test_common.py ....
+platform_tests/test_bulk.py ....
+platform_tests/test_calendar.py ..
+platform_tests/test_google.py ......
+--------- coverage: platform darwin, python 2.7.10-final-0 ---------
+Name                              Stmts   Miss  Cover
+-----------------------------------------------------
+api_tests/test_accounts.py            8      0   100%
+api_tests/test_auth.py               10      0   100%
+api_tests/test_base.py                8      0   100%
+api_tests/test_common.py              8      0   100%
+platform_tests/test_bulk.py           8      0   100%
+platform_tests/test_calendar.py       4      0   100%
+platform_tests/test_google.py        12      0   100%
+-----------------------------------------------------
+TOTAL                                58      0   100%
+
+==================== 29 passed in 0.07 seconds =====================
+\end{lstlisting}
+
+The above of course give 100\% coverage because the only files gathered where test files and pytest runs those files in there entirety.
+
+\begin{problem}
+Install pytest coverage with pip.
+Run it in the directory which has the two files "solutions.py" and "test\_solutions.py".
+Test the addition function and the Fibonacci function, be sure to give each function it's own test. (This is more of a convention then it is a mandate,
+as it will allow you to very quickly see which function causes grief in the future) Be sure to get code hitting every statement.
+(The number of statements missed should go from 93 to 92)
+\end{problem}
+
+\section*{pytest as a Module}
+
+Often times when developing software we want to throw exceptions when certain input is given to our code.
+For example if a user feeds a bad value to a calculator (like dividing by 0) we want it to be very explicit as to why the process isn't being complete.
+Standard assert functions simply will not do as they did for the addition and Fibonacci functions.
+Instead we must develop methods from the actual pytest module which allow us to not only see the exception message, but also test the type of exception thrown.
+A function might have several different type of exceptions to throw as well, so to guarantee it is useful to have unique messages and/or exception types thrown.
+For example:
+
+\begin{lstlisting}
+>>> def divide(a,b):
+...     if b==0:
+...         raise ValueError("You can't give a zero for b, that breaks this function")
+...     else:
+...         return float(a)/float(b)
+\end{lstlisting}
+Could be tested by this test function:
+\begin{lstlisting}
+>>> from solutions import divide
+>>> import pytest
+>>> def test_divide():
+...     assert divide(1,2) == .5
+...     assert divide(5,4) == 1.25
+...     with pytest.raises(Exception) as excinfo:
+...         divide(4,0)
+...     excinfo.typename == 'ValueError'
+...     assert excinfo.value.args[0] == "You can't give a zero for b, that breaks this function"
+\end{lstlisting}
+
+\begin{problem}
+Write tests for the operator function and the division function. Be sure to handle get every statement and check against every exception.
+Be sure to check both typename and the message, that way you can say with certainty that the test is adequately testing your code.
+(The number of statements missed should go from 92 to 79)
+\end{problem}
+
+Pytest also offers an option to make "pytest fixtures" These are wildly useful for mocking data or preventing constant code duplication.
+Mocking data is useful when you don't want certain test to be dependent on the working of completely separate code.
+For example if we had a feature which was dependent upon a user service working correctly, rather than having my tests make a call to the user service I may write a fixture which simply gives existing mock data that I expect for my feature.
+As far as preventing code duplication a fixture may also be utilized to create a class object which we can then call within our function.
+
+\begin{lstlisting}
+class ComplexNumber(object):
+... def __init__(self, real=0, imag=0):
+...     self.real = real
+...     self.imag = imag
+... def conjugate(self):
+...     conjugate = ComplexNumber(real=self.real, imag=-self.imag)
+...     return conjugate
+... def norm(self):
+...     magnitude = math.sqrt(self.real**2 + self.imag**2)
+...     return magnitude
+... def __add__(self, other):
+...     real = self.real + other.real
+...     imag = self.imag + other.imag
+...     return ComplexNumber(real=real, imag=imag)
+... def __sub__(self, other):
+...     real = self.real - other.real
+...     imag = self.imag - other.imag
+...     return ComplexNumber(real=real, imag=imag)
+... def __mul__(self, other):
+...     real = self.real*other.real - self.imag*other.imag
+...     imag = self.imag*other.real + other.imag*self.real
+...     return ComplexNumber(real=real, imag=imag)
+... def __div__(self, other):
+...     if other.real==0 and other.imag==0:
+...         raise ValueError("Cannot divide by zero")
+...     bottom = (other.conjugate()*other*1.).real
+...     top = self*other.conjugate()
+...     return ComplexNumber(real=(top.real/bottom), imag=(top.imag/bottom))
+... def __eq__(self, other):
+...     return self.imag == other.imag and self.real == other.real
+... def __str__(self):
+...     return str(self.real)+('+' if self.imag>=0 else '')+str(self.imag)+'i'
+\end{lstlisting}
+Could have reduced code setup by test fixture:
+\begin{lstlisting}
+>>> from solutions import ComplexNumber
+>>> import pytest
+>>> @pytest.fixture
+... def set_up_complex_nums():
+...     number_1 = ComplexNumber(1, 2)
+...     number_2 = ComplexNumber(5, 5)
+...     number_3 = ComplexNumber(2, 9)
+...     return number_1, number_2, number_3
+>>> def test_complex_addition(set_up_complex_nums):
+...     number_1, number_2, number_3 = set_up_complex_nums
+...     assert number_1 + number_2 == ComplexNumber(6, 7)
+...     assert number_1 + number_3 == ComplexNumber(3, 11)
+...     assert number_2 + number_3 == ComplexNumber(7, 14)
+...     assert number_3 + number_3 == ComplexNumber(4, 18)
+>>> def test_complex_multiplication(set_up_complex_nums):
+...     number_1, number_2, number_3 = set_up_complex_nums
+...     assert number_1 * number_2 == ComplexNumber(-5, 15)
+...	assert number_1 * number_2 == solutions.ComplexNumber(-5, 15)
+...	assert number_1 * number_3 == solutions.ComplexNumber(-16, 13)
+...	assert number_2 * number_3 == solutions.ComplexNumber(-35, 55)
+...	assert number_3 * number_3 == solutions.ComplexNumber(-77, 36)
+
+\end{lstlisting}
+
+\begin{problem}
+Finish writing unit test for the complex numbers class. Be sure to utilize fixtures in order to reduce on the length of your code.
+Also it would be most useful to write a different test function for each method in the ComplexNumberClass.
+(The number of statements missed should go from 79 to 66)
+\end{problem}
+
+\begin{problem}
+Write unit tests for the "linked list node" and "linked list" classes provided in solutions.py It is not necessary but it will be helpful to getting total line coverage if ever method is split up into it's own test.
+If you have trouble finding everything consider deleting sections of code and seeing if the over all statement coverage goes down (in the solutions.py, the test\_solutions.py will probably break when you do this).
+If it does then you know that part of what you deleted is un-tested.
+(At the end of this the number of missed statements should be 0)
+\end{problem}
+
+\section*{Test Driven Development}
+
+Kent Beck, the creator of \href{https://en.wikipedia.org/wiki/Extreme_programming}{Extreme programming} claims to have re-discovered  Test Driven Development (TDD), saying:
+"The original description of TDD was in an ancient book about programming. It said you take the input tape, manually type in the output tape you expect, then program until the actual output tape matches the expected output."
+TDD incentivizes simple design, elegant code, and gives quantifiable checkpoints in the development process.
+The idea is simple enough:
+\begin{tikzpicture}
+\matrix [column sep=40mm, row sep=5mm] {
+  & \node (id) [draw, shape=rectangle] {    Idea    }; & \\
+  & \node (ts) [draw, shape=circle] {    Test    }; & \\
+  & \node (im) [draw, shape=rectangle] {Implementation}; & \\
+};
+\draw[->, thick] (id) -- (ts);
+\draw[->, thick] (ts) -- (im);
+\end{tikzpicture}\\
+The idea must be a bit more concrete then "I want to add a chat room to my website." The general idea of how the chat room will look in code (like a history module, a data base, and a sketch of required functions, etc.) is required.
+Next that idea is transformed into tests because the inputs and outputs of required functionality are understood.
+Following the example of the chat room you could write a unit test that checks what a given api returns when a user has broadcasted some message.
+The implementation is simply adding, changing and editing code until all the required tests pass.
+
+\begin{problem}
+Use TDD to create a module which takes a infix polynomial (of one arbitrary variable) and plots it. For example it should take in:
+"$5x^4 + 4x^3 + 3x^2+ 2x + 1$" and plot:
+Equivalently "$5y^4 + 4y^3 + 3y^2+ 2y + 1$" (you may throw an exception if two variables are given).
+(OR if you wanna get really "wolf ram alpaha-y" allow "$5y4 + 4y3 + 3y2+ 2y + 1$ as valid input)
+\end{problem}
+\end{document}
+
+

@@ -1,0 +1,368 @@
+\lab{Metropolis Algorithm}{Metropolis Algorithm}
+\objective{Understand the basic principles of the Metropolis algorithm and apply these ideas to the
+Ising Model.}
+
+\section*{The Metropolis Algorithm}
+Sampling from a given probability distribution is an important task in many different applications found throughout the sciences.
+When these distributions are complicated, as is often the case when modeling real-world problems, direct sampling methods
+can become difficult, as they might involve computing high-dimensional integrals.
+The Metropolis algorithm is an effective method to sample from many distributions, requiring only that we
+be able to evaluate the probability density function up to a constant of proportionality. In particular,
+the Metropolis algorithm does not require us to compute difficult high-dimensional integrals, such as those that are found
+in the denominator of Bayesian posterior distributions.
+
+The Metropolis algorithm is an MCMC sampling method which generates a sequence of random variables, similar to Gibbs sampling. 
+These random variables form a Markov Chain whose invariant distribution is equal to the distribution from which we wish
+to sample. Suppose that $h : \mathbb{R}^n \rightarrow \mathbb{R}$ is the probability density function of distribution,
+and suppose that $f(\theta) = c \cdot h(\theta)$ for some nonzero constant $c$ (in practice, we assume that $f$ is an easy
+function to evaluate, while $h$ is difficult). Let $Q : \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}$ be
+a symmetric \emph{proposal function}
+(so that $Q(\cdot, y)$ is a probability density function for all $y \in \mathbb{R}^n$,
+ and $Q(x,y) = Q(y,x)$ for all $x,y \in \mathbb{R}^n$) and let
+ $A : \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}$ be an \emph{acceptance function} defined by
+\[
+A(x,y) = \min\left(1, \frac{f(x)}{f(y)}\right).
+\]
+We can combine these functions in such a way so as to sample from the aforementioned Markov Chain by following Algorithm \ref{alg:metropolis}.
+\begin{algorithm}
+\begin{algorithmic}[1]
+\Procedure{Metropolis Algorithm}{}
+    \State \textrm{Choose initial point } $x_0$.
+    \For{$t=1,2,\ldots$}
+        \State \textrm{Draw } $x' \sim Q(\cdot, x_{t-1})$
+        \State \textrm{Draw } $a \sim \text{unif}(0,1)$
+        \If{$a \leq A(x',x_{t-1})$}
+            \State $x_t = x'$
+        \Else
+            \State $x_t = x_{t-1}$
+        \EndIf
+    \EndFor
+    \State \textrm{Return } $x_1,x_2,x_3,\ldots$
+\EndProcedure
+\end{algorithmic}
+\caption{Metropolis Algorithm}
+\label{alg:metropolis}
+\end{algorithm}
+The Metropolis algorithm can be interpreted as follows:
+given our current state $y$, we propose a new state according to the distribution $Q(\cdot, y)$. We then accept or reject it according to $A$.  We continue by repeating the process. So long as $Q$ defines an irreducible, aperiodic, and non-null recurrent Markov chain, we will have a Markov chain whose unique invariant distribution will have density $h$. Furthermore, given any initial state, the chain will converge to this invariant distribution.
+Note that for numerical reasons, it is often wise to make calculations of the acceptance functions in log space:
+\[
+\log A(x,y) = \min(0, \log f(x) - \log f(y)).
+\]
+
+
+Let's apply the Metropolis algorithm to a simple example of Bayesian analysis.
+Consider the problem of computing the posterior distribution over the mean $\mu$ and variance $\sigma^2$
+of a normal distribution for which we have $N$ data points $y_1,\ldots,y_N$. For concreteness,
+we use the data in {\tt examscores.csv} and we assume
+the prior distributions
+\begin{align*}
+\mu &\sim N(\mu_0=80,\sigma_0^2=16)\\
+\sigma^2 &\sim IG(\alpha=3,\beta=50).
+\end{align*}
+In this situation, we wish to sample from the posterior distribution
+\[
+p(\mu,\sigma^2 \,|\,y_1,\ldots,y_N) = \frac{p(\mu)p(\sigma^2)\prod_{i=1}^N N(y_i \, | \, \mu, \sigma^2)}
+{\int_{-\infty}^\infty\int_{0}^\infty p(\mu)p(\sigma^2)\prod_{i=1}^N N(y_i \, | \, \mu, \sigma^2)\,d\sigma^2d\mu}
+\].
+However, we can conveniently calculate only the numerator of this expression. Since the denominator
+is simply a constant with respect to $\mu$ and $\sigma^2$, the numerator can serve as the function $f$
+in the Metropolis algorithm, and the denominator can serve as the constant $c$. 
+We choose our proposal function to be based on a bivariate Normal distribution:
+\[
+Q(x,y) = N(x\, | \, y, sI),
+\]
+where $I$ is the $2\times 2$ identity matrix and $s$ is some positive scalar.
+Let's create these functions in Python:
+\begin{lstlisting}
+import numpy as np
+from math import sqrt, exp, log
+import scipy.stats as st
+from matplotlib import pyplot as plt
+from scipy.stats import gaussian_kde
+
+# load in the data
+scores = np.loadtxt('examscores')
+
+# initialize the hyperparameters
+alpha = 3
+beta = 50
+mu0 = 80
+sig20 = 16
+
+# initialize the prior distributions
+muprior = st.norm(loc=mu0, scale=sqrt(sig20))
+sig2prior = st.invgamma(alpha,scale=beta)
+
+# define the proposal function
+def proposal(y, s):
+    return st.multivariate_normal.rvs(mean=y, cov=s*np.eye(len(y)))
+
+# define the log of the proportional density
+def propLogDensity(x):
+    return muprior.logpdf(x[0])+sig2prior.logpdf(x[1])+st.norm.logpdf(scores,loc=x[0],scale=sqrt(x[1])).sum()
+\end{lstlisting}
+\begin{figure}
+	\begin{subfigure}[b]{.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{mu_traces.pdf}
+	\end{subfigure}
+	\begin{subfigure}[b]{.49\textwidth}
+		\centering
+		\includegraphics[width=.75\textwidth]{mu_kernel.pdf}
+	\end{subfigure}
+	\begin{subfigure}[b]{.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{sig_traces.pdf}
+	\end{subfigure}
+	\begin{subfigure}[b]{.49\textwidth}
+		\centering
+		\includegraphics[width=.75\textwidth]{sig_kernel.pdf}
+	\end{subfigure}
+\caption{Metropolis samples and KDEs for the marginal posterior distribution of $\mu$ (top row) and $\sigma^2$ (bottom row).}
+\label{fig:metropolis_results}
+\end{figure}
+\begin{figure}
+\centering
+\includegraphics[width=.75\textwidth]{logprobs.pdf}
+\caption{Log densities of the first 500 Metropolis samples.}
+\label{fig:logprobs}
+\end{figure}
+We are now ready to code up the Metropolis algorithm using these functions.
+We will keep track of the samples generated by the algorithm, along with the proportional log densities of the
+samples and the proportion of proposed samples that were accepted. Study the implementation below to make sure
+you understand the process:
+\begin{lstlisting}
+def metropolis(x0, s, n_samples):
+    """
+    Use the Metropolis algorithm to sample from posterior.
+
+    Parameters
+    ----------
+    x0 : ndarray of shape (2,)
+        The first entry is mu, the second entry is sigma2
+    s : float > 0
+        The standard deviation parameter for the proposal function
+    n_samples : int
+        The number of samples to generate
+
+    Returns
+    -------
+    draws : ndarray of shape (n_samples, 2)
+        The MCMC samples
+    logprobs : ndarray of shape (n_samples)
+        The log density of the samples
+    accept_rate : float
+        The proportion of proposed samples that were accepted
+    """
+    accept_counter = 0
+    draws = np.empty((n_samples,2))
+    logprob = np.empty(n_samples)
+    x = x0.copy()
+    for i in xrange(n_samples):
+        xprime = proposal(x,s)
+        u = np.random.rand(1)[0]
+        if log(u) <= propLogDensity(xprime) - propLogDensity(x):
+            accept_counter += 1
+            x = xprime
+        draws[i] = x
+        logprob[i] = propLogDensity(x)
+    return draws, logprob, accept_counter/float(n_samples)
+\end{lstlisting}
+Now let's sample from the posterior. We will choose an initial guess of $\mu=40$ and $\sigma^2=10$,
+and we will set $s = 20$. We draw $10000$ samples as follows:
+\begin{lstlisting}
+>>> draws, lprobs, rate = metropolis(np.array([40, 10], dtype=float), 20., 10000)
+>>> print "Acceptance Rate:", r
+Acceptance Rate: 0.3531
+\end{lstlisting}
+
+We can evaluate the quality of our results by plotting the log probabilities, the $\mu$ samples, the $\sigma^2$ samples,
+and kernel density estimators for the marginal posterior distributions of $\mu$ and $\sigma^2$. The code
+below will accomplish this task:
+\begin{lstlisting}
+>>> # plot the first 500 log probs
+>>> plt.plot(lprobs[:500])
+>>> plt.show()
+>>> # plot the mu samples
+>>> plt.plot(draws[:,0])
+>>> plt.show()
+>>> # plot the sigma2 samples
+>>> plt.plot(draws[:,1])
+>>> plt.show()
+>>> # build and plot KDE for posterior mu
+>>> mu_kernel = gaussian_kde(draws[50:,0])
+>>> x_min = min(draws[50:,0]) - 1
+>>> x_max = max(draws[50:,0]) + 1
+>>> x = np.arange(x_min, x_max, step=0.1)
+>>> plt.plot(x,mu_kernel(x))
+>>> plt.show()
+>>> # build and plot KDE for posterior sigma2
+>>> sig_kernel = gaussian_kde(draws[50:,1])
+>>> x_min = 20
+>>> x_max = 200
+>>> x = np.arange(x_min, x_max, step=0.1)
+>>> plt.plot(x,sig_kernel(x))
+>>> plt.show()
+\end{lstlisting}
+Your results should be close to those given in Figures \ref{fig:metropolis_results} and \ref{fig:logprobs}.
+
+\begin{comment}
+We will use the Metropolis algorithm to obtain samples from a multivariate normal distribution to demonstrate this process.
+Suppose also that we desire to obtain samples from a multivariate normal distribution with arbitrary covariance matrix $\Sigma$, and that this is difficult (obviously we can do this directly in Python, but this is merely a tutorial to see how the Metropolis algorithm works). Suppose further that we are able to easily compute the ratio of the density of this distribution at two points $\mathbf{x}$ and $\mathbf{y}$ of length $K$, i.e.
+\begin{align*}
+\frac{N(\mathbf{x} \; ; \; \mu, \Sigma)}{N(\mathbf{y} \; ; \; \mu, \Sigma)} & = \frac{\frac{1}{(2\pi)^{K/2}|\Sigma|^{1/2}} e^{-\frac{1}{2}(\mathbf{x} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu)}}{\frac{1}{(2\pi)^{K/2}|\Sigma|^{1/2}} e^{-\frac{1}{2}(\mathbf{y} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu)}} \\
+& = \frac{e^{-\frac{1}{2}(\mathbf{x} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu)}}{e^{-\frac{1}{2}(\mathbf{y} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu)}} \\
+& = e^{-\frac{1}{2}\left((\mathbf{x} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu) - (\mathbf{y} - \mu)^{T} \Sigma^{-1} (\mathbf{y} - \mu)\right)}
+\end{align*}
+
+\begin{problem} \label{problem1}
+Write an acceptance function that computes
+\begin{equation*}
+p = \min \{1, e^{-\frac{1}{2}\left((\mathbf{x} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu) - (\mathbf{y} - \mu)^{T} \Sigma^{-1} (\mathbf{y} - \mu)\right)}\}
+\end{equation*}
+given $\mathbf{x}, \mathbf{y}, \mu,$ and $\Sigma$, and then draws from a Bernoulli distribution with parameter $p$. It should return a $1$ if it accepts the new state, and a $0$ if it rejects it.
+\end{problem}
+
+Specifically, we will try to sample from the distribution centered at the origin, with covariance matrix
+\begin{equation*}
+\Sigma = \left[ \begin{array}{cc} 12 & 4 \\ 4 & 16 \end{array} \right]
+\end{equation*}
+
+\begin{lstlisting}
+>>> mu = np.zeros(2)
+>>> sigma = np.array([[12., 10.], [10., 16.]])
+\end{lstlisting}
+
+We will let $Q(\mathbf{x} | \mathbf{y}) = N(\mathbf{x} \; ; \; \mathbf{y}, I)$ be our proposal distribution, given that we are currently in state $\mathbf{y}$, i.e. we propose a new state by drawing from the multivariate normal distribution centered at $\mathbf{y}$ with identity covariance. We then accept according to our acceptance probability, computed in Problem \ref{problem1}.
+
+\begin{problem}
+Write a function that accepts a current state, the mean and covariance from the distribution we desire to sample from, and returns the next state. We should propose according to $Q$ described above, and accept according to the function in Problem \ref{problem1}.
+\end{problem}
+
+We now have a way to sample a new state from an old state. As we've stated before, this method creates a Markov chain that \emph{converges} to the desired distribution; at the beginning, however, if our initial guess is highly unlikely for the desired distribution, it may take a while before we get there. We would like to measure our progress.
+
+\begin{problem}
+Write a function that computes the log of the multivariate normal density of a point $\mathbf{x}$ given a mean $\mu$ and covariance matrix $\Sigma$. Be intelligent about how you implement this, that is, do not simply compute the multivariate normal density and then take the log of it, as this may lead to numerical issues. The whole purpose of looking at the multivariate log is to make this more stable.
+\end{problem}
+
+We will finally put everything together.
+
+\begin{problem}
+Write a function that accepts an initial point $\mathbf{x}$, a mean $\mu$ and covariance $\Sigma$ for the desired sampling distribution, and which performs the Metropolis algorithm for a number of iterations, $n\_samples$. Save each sample $\mathbf{x}$ as produced by the algorithm. Also compute the log of the multivariate normal density of each point, and return both the samples and the logprobs.
+\end{problem}
+
+We would like to see how long it takes for our algorithm to converge to the right distribution. We can do this by plotting the log-probs returned by our function. Here we use an initial state $\mathbf{x} = \left[\begin{array}{cc} 100 & 100 \end{array}\right]$.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{logprobs.pdf}
+\caption{Log probabilities of our samples.}
+\end{figure}
+
+From this we can see that after between $300$ and $500$ iterations, we had converged to the correct distribution. We can visualize the path of our sampler by plotting the samples themselves:
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{samples.pdf}
+\caption{Samples from the Metropolis algorithm.}
+\end{figure}
+
+\begin{problem}
+Using $\mu$ and $\Sigma$ as defined previously and using an initial state $\mathbf{x} = \left[ \begin{array}{cc} 1000 & -1000 \end{array} \right]$ run your Metropolis sampler for $10000$ iterations. Plot the log probs as well as the samples. How long did it take to converge?
+\end{problem}
+\end{comment}
+
+
+\section*{The Ising Model}
+In statistical mechanics, the Ising model describes how atoms interact in ferromagnetic material. Assume we have some lattice $\Lambda$ of sites. We say $i \sim j$ if $i$ and $j$ are adjacent sites. Each site $i$ in our lattice is assigned an associated \emph{spin} $\sigma_{i} \in \{\pm 1\}$. A \emph{state} in our Ising model is a particular spin configuration $\sigma = (\sigma_{k})_{k \in \Lambda}$. If $L = |\Lambda|$, then there are $2^{L}$ possible states in our model. If $L$ is large, the state space becomes huge, which is why MCMC sampling methods (in particular the Metropolis algorithm) are so useful in calculating model estimations.
+
+With any spin configuration $\sigma$, there is an associated energy
+\[
+H(\sigma) = -J \sum_{i \sim j} \sigma_{i} \sigma_{j}
+\]
+ where $J > 0$ for ferromagnetic materials, and $J < 0$ for antiferromagnetic materials. Throughout this lab, we will assume $J = 1$, leaving the energy equation to be $H(\sigma) = -\sum_{i \sim j} \sigma_{i}\sigma_{j}$ where the interaction from each pair is added only once.
+
+We will consider a lattice that is a $100 \times 100$ square grid. The adjacent sites for a given site are those directly above, below, to the left, and to the right of the site, so to speak. For sites on the edge of the grid, we assume it wraps around. In other words, a site at the farthest left side of the grid is adjacent to the corresponding site on the farthest right side. Thus, a single spin configuration can be represented as a $100 \times 100$ array, with entries of $\pm 1$.
+
+\begin{problem}
+Write a function that initializes a spin configuration for an $n \times n$ lattice. It should return an $n \times n$ array, each entry of which is either $1$ or $-1$, chosen randomly. Test this for the grid described above, and plot the spin configuration using \li{matplotlib.pyplot.imshow}. It should look fairly random, as in Figure \ref{fig:random_spin}.
+\end{problem}
+
+\begin{figure}
+\centering
+\includegraphics[width=.5\textwidth]{init.pdf}
+\caption{Spin configuration from random initialization.}
+\label{fig:random_spin}
+\end{figure}
+
+\begin{problem}
+Write a function that computes the energy of a wrap-around $n \times n$ lattice with a given spin configuration, as described above. Make sure that you do not double count site pair interactions!
+\end{problem}
+
+Different spin configurations occur with different probabilities, depending on the energy of the spin configuration and $\beta > 0$, a quantity inversely proportional to the temperature. More specifically, for a given $\beta$, we have
+\begin{equation*}
+\mathbb{P}_{\beta}(\sigma) = \frac{e^{-\beta H(\sigma)}}{Z_{\beta}}
+\end{equation*}
+where $Z_{\beta} = \sum_{\sigma} e^{-\beta H(\sigma)}$. Because there are $2^{100 \cdot 100} = 2^{10000}$ possible spin configurations for our particular lattice, computing this sum is infeasible. However, the numerator is quite simple, provided we can efficiently compute the energy $H(\sigma)$ of a spin configuration. Thus the ratio of the probability densities of two spin configurations is simple:
+\begin{align*}
+\frac{\mathbb{P}_{\beta}(\sigma^{*})}{\mathbb{P}_{\beta}(\sigma)} & = \frac{e^{-\beta H(\sigma^{*})}}{e^{-\beta H(\sigma)}} \\
+& = e^{\beta (H(\sigma) - H(\sigma^{*}))}
+\end{align*}
+
+The simplicity of this ratio should lead us to think that a Metropolis algorithm might be an appropriate way by which to sample from the spin configuration probability distribution, in which case our acceptance probability would be
+\begin{equation*}
+A(\sigma^{*}, \sigma) = \begin{cases} 1 & \mbox{if } H(\sigma^{*}) < H(\sigma) \\ e^{\beta (H(\sigma) - H(\sigma^{*}))} & \mbox{ otherwise.} \end{cases}
+\end{equation*}
+
+By choosing our transition matrix $Q$ cleverly, we can also make it easy to compute the energy for any proposed spin configuration. We restrict our possible proposals to only those spin configurations in which we have flipped the spin at exactly one lattice site, i.e. we choose a lattice site $i$ and flip its spin. Thus, there are only $L$ possible proposal spin configurations $\sigma^{*}$ given $\sigma$, each being proposed with probability $\frac{1}{L}$, and such that $\sigma_{j}^{*} = \sigma_{j}$ for all $j \neq i$, and $\sigma_{i}^{*} = - \sigma_{i}$. Note that we would never actually write out this matrix (it would be $2^{10000} \times 2^{10000}$!!!). Computing the proposed site's energy is simple: if the spin flip site is $i$, then we have $H(\sigma^{*}) = H(\sigma) + 2\sum_{j: j \sim i} \sigma_{i}\sigma_{j}$.
+
+\begin{problem}
+Write a function that proposes a new spin configuration given the current spin configuration on an $n \times n$ lattice, as described above. This function simply needs to return a pair of indices $(i,j)$, chosen with probability $\frac{1}{n^{2}}$.
+\end{problem}
+
+\begin{problem}
+Write a function that computes the energy of a proposed spin configuration, given the current spin configuration, its energy, and the proposed spin flip site indices.
+\end{problem}
+
+\begin{problem}
+Write a function that accepts or rejects a proposed spin configuration, given the current configuration. It should accept the current energy, the proposed energy, and $\beta$, and should return a boolean.
+\end{problem}
+
+To track the convergence of the Markov chain, we would like to look at the probabilities of each sample at each time. However, this would require us to compute the denominator $Z_{\beta}$, which--as we explained previously--is generally the reason we have to use a Metropolis algorithm to begin with.
+We can get away with examining only $-\beta H(\sigma)$. We should see this value increase as the algorithm proceeds, and it should converge once we are sampling from the correct distribution. Note that we don't expect these values to converge
+to a specific value, but rather to a restricted range of values.
+
+\begin{problem}
+Write a function that initializes a spin configuration for an $n \times n$ lattice as done previously, and then performs the Metropolis algorithm, choosing new spin configurations and accepting or rejecting them. It should burn in first, and then iterate $n\_samples$ times, keeping every $100^{\text{th}}$ sample (this is to prevent memory failure) and all of the above values for $-\beta H(\sigma)$ (keep the values even for the burn-in period). It should also accept $\beta$ as an argument, allowing us to effectively adjust the temperature for the model.
+\end{problem}
+
+\begin{problem}
+Test your Metropolis sampler on a $100 \times 100$ grid, with $200000$ iterations, with $n\_samples$ large enough so that you will keep $50$ samples, testing with $\beta = 1$ and then with $\beta = 0.2$. Plot the proportional log probabilities, and also plot a late sample from each test using \li{matplotlib.pyplot.imshow}. How does the ferromagnetic material behave differently with differing temperatures? Recall that $\beta$ is an inverse function of temperature. You should see more structure with lower temperature, as illustrated in Figures \ref{fig:config1} and \ref{fig:config2}.
+\end{problem}
+
+\begin{figure}
+	\begin{subfigure}[b]{.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{beta1_logprobs.pdf}
+		\caption{Proportional log probs when $\beta = 1$.}
+		\label{fig:lprobs1}
+	\end{subfigure}
+	\begin{subfigure}[b]{.49\textwidth}
+		\centering
+		\includegraphics[width=.75\textwidth]{beta1.pdf}
+		\caption{Spin configuration sample when $\beta = 1$.}
+		\label{fig:config1}
+	\end{subfigure}
+	\begin{subfigure}[b]{.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{beta0_2_logprobs.pdf}
+		\caption{Proportional log probs when $\beta = 0.2$.}
+		\label{fig:lprobs2}
+	\end{subfigure}
+	\begin{subfigure}[b]{.49\textwidth}
+		\centering
+		\includegraphics[width=.75\textwidth]{beta0_2.pdf}
+		\caption{Spin configuration sample when $\beta = 0.2$.}
+		\label{fig:config2}
+	\end{subfigure}
+\end{figure}

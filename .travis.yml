@@ -1,0 +1,54 @@
+# .travis.yml
+
+language: python
+
+python:
+  - 2.7
+
+env:
+  - PATH: /tmp/texlive/bin/x86_64-linux:$PATH
+
+before_install:
+  - python travis_pre.py
+
+install: # Download and install a vanilla TexLive.
+  - wget http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz
+  - tar -xzf install-tl-unx.tar.gz
+  - cd install-tl-20*
+  - sudo ./install-tl -profile=../.nmc.profile
+  - sudo /usr/local/texlive/20*/bin/x86_64-linux/tlmgr install algorithmicx
+  - sudo /usr/local/texlive/20*/bin/x86_64-linux/tlmgr install algorithms
+  - sudo /usr/local/texlive/20*/bin/x86_64-linux/tlmgr update --self --all --no-auto-install
+  - cd ../
+
+script: # Compile the major tex files (twice for references).
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex Vol1.tex
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex Vol2.tex
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex Vol3.tex
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex Vol4.tex
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex ExtraLabs.tex
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex InstructorNotes.tex
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex Vol1.tex
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex Vol2.tex
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex Vol3.tex
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex Vol4.tex
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex ExtraLabs.tex
+  - /usr/local/texlive/20*/bin/x86_64-linux/pdflatex InstructorNotes.tex
+  - python travis_post.py
+
+deploy: # Deploy the major pdf files to releases when tagged.
+  provider: releases
+  api_key:
+    secure: gLC3oZ1Cr7mfvcvcbKjPBi/hZzfxSDNmudm97DO8Mr6XnnSW+Aaj5dGhShfeoDancIciTVhgscY7uTjWQxx2vsc38rnd29SAUtMi+mWUCuYZ9Zg2vR7exQCd+y0T/r641PGJ9x48o/53GG7MFSPzBKuxCJx973jBmJKeA/oUb5w=
+  file:
+    - "Vol1.pdf"
+    - "Vol2.pdf"
+    - "Vol3.pdf"
+    - "Vol4.pdf"
+  skip_cleanup: true
+  on:
+    tags: true
+
+
+
+

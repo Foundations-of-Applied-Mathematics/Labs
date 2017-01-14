@@ -1,0 +1,411 @@
+\lab{Object Oriented Programming}{Object-Oriented Programming}
+\label{lab:OOP}
+\objective{Teach how to use OOP in Python and illustrate the uses of OOP in programming graphical user interfaces.}
+
+\section*{Programming Paradigms}
+
+Writing readable code is one of the most important skills for a programmer to learn.
+Good code should not only perform well, but should be understandable to others.
+The main key to understandability is good organization; common ways of organizing code are called \emph{programming paradigms}.
+
+\emph{Object-oriented programming} (OOP) is one of these paradigms.
+It allows us to model and replicate organization and structure from real life.
+OOP also allows us to create a ``black box'' that can be used without understanding the inner workings of the class and its methods.
+
+Object-oriented programming has become a prominent and important programming paradigm used to simplify, organize, and clarify code.
+In this lab we will first learn how to use OOP with Python and implement some simple examples.
+Then we will learn about \emph{graphical user interfaces}, or GUI's (pronounced ``gooeys") and OOP's uses in implementing them.
+
+
+\begin{comment}
+A way of organizing a program is often called a ``paradigm."
+
+Paradigms are designed to create better code by structuring or organizing the code in a more meaningful way.
+Code without any structure is often referred to as ``spaghetti code.''
+Spaghetti can be very easy to write, but very difficult to understand or modify.
+\emph{Structured programming} emphasizes the use of programming structures to select or repeat the execution of blocks of code.
+It is good practice to structure your programs in such a way that they are easy to understand, extend, or reuse.
+Making extensive use of procedures (or subfunctions) is a characteristic of \emph{procedural programming}.
+The work of the program is done in the subfunctions with one main function supervising the calling of each subfunction.
+
+Another important, albeit specialized, paradigm is \li{object oriented programming} (or OOP).
+The concept of object oriented programming is to model a problem as the interaction of a collection of objects.
+There are many other paradigms such as declarative, event-driven, and array programming.
+\end{comment}
+
+
+
+\section*{Fundamental Concepts}
+
+\begin{comment}
+At its core, object oriented programming relies on the manipulation and coordination of objects.
+An object represents a piece of code that tracks a state and provides methods for discovering or altering the state.
+
+
+There are a few concepts that define object oriented programming
+
+\begin{itemize}
+
+\item Abstraction - appropriate representation of states and data
+
+\item Encapsulation - independent behavior
+
+\item Inheritance - relations between objects
+
+\end{itemize}
+
+The general advantage of using these concepts is that it helps with organizing code.
+``Abstraction" permits the presentation of only necessary details about an object to the user.
+For example, when we ask someone if they own a computer, we can use abstraction to ask the question ``Do you own a computer?'' rather than asking about each and every combination of hardware that we could classify as a computer.
+Inheritance helps us easily achieve this abstraction.
+We could have an object called \li{Computer}.
+Various brands would then subclass, or inherit, the properties of \li{Computer}.
+We could continue by having each product line inherit from their respective brands, until we arrive at the product level.
+Then each individual product would represent an instantiation of that product's class.
+%Need graphic
+Encapsulation means each function contains all of the data it needs to calculate a result.
+Encapsulation is used to avoid the use of global data structures and makes managing data involved in computation more convenient.
+\end{comment}
+
+At its core, object-oriented programming relies on the manipulation and coordination of \emph{objects}.
+A programming object represents a piece of code that tracks the \emph{state} of an object's various attributes and provides methods for accessing or altering these attributes. 
+Python, like most modern programming languages, supports object oriented programming concepts; in fact, \emph{everything} in Python is an object.
+
+The attributes of an object are referred to as variables; the grouping of an object's variables and the various methods for accessing or altering these variables is called \emph{encapsulation}, which is another important concept in OOP.
+Strings, lists, and integers are examples of objects in Python, which is why they have \emph{methods}, functions that belong specifically to those objects.
+We can create our own objects in Python by defining a \emph{class}, or a blueprint that describes how to create an object.
+
+\begin{lstlisting}
+class Backpack(object):
+	# Use pass whenever you need to declare a function or class but are not yet ready to implement it.
+	pass
+\end{lstlisting}
+
+We now have a class \li{Backpack} which contains nothing.
+We put \li{object} in parenthesis to make our \li{Backpack} a subclass of Python's \li{object} class.
+This is an example of \emph{inheritance}, the third important concept in OOP.
+Because our backpack class is a subclass of Python's \li{object} class, it inherits the properties and methods implemented in the \li{object} class.
+
+To create a \li{Backpack} object, we can run something like \li{b = Backpack()}, which defines the variable \li{b} to be an \emph{instance} of the class \li{Backpack}. However, since the class contains nothing, we can't really do anything with \li{Backpack} objects after we create them.
+Let's define an initial state for our object.
+
+\begin{lstlisting}
+class Backpack(object):
+    def __init__(self):
+        self.color = 'black'
+\end{lstlisting}
+
+What's going on here?
+First, we defined a method, \li{self.color}.
+It can be called on instances of our class (\li{Backpack} objects) but on nothing else.
+The \li{__init__} method is defined for all objects and is executed immediately after the object is created.
+Its purpose is to set the initial state of the object.
+The \li{self} is a reference to the current instance of the class.
+All class methods take \li{self} as their first argument.
+In our \li{__init__} method, we are telling it to set the backpack's color to black.
+Now let's allow the user to define a different color, but keep black as the default.
+
+\begin{lstlisting}
+class Backpack(object):
+
+    # __init__ takes color as a keyword argument.
+    # color = 'black' sets black as the default color if no alternate argument is passed in.
+    def __init__(self, color='black'):
+        self.color = color
+\end{lstlisting}
+
+The variable \li{self.color} is an \emph{instance variable}. It is defined for a particular instance of a backpack, and can be different for different instances of the class.
+We can also change it outside of the class definition.
+Let's instantiate a \li{Backpack} object of the color purple.
+If we do not specify a color then it will default to black.
+
+\begin{lstlisting}
+b = Backpack(color='purple')
+a = Backpack()
+print b.color # print 'purple'
+print a.color # print 'black'
+a.color = 'yellow'
+print a.color # print 'yellow'
+\end{lstlisting}
+
+
+Finally, let's add some methods and additional state variables.
+
+\begin{lstlisting}
+class Backpack(object):
+    def __init__(self, color='black'):
+        self.color = color
+        # This creates an empty list when a backpack is created; it will store the backpack's contents.
+        self.contents = []
+
+    def put(self, item):
+        # This adds "item" into the contents list.
+        # self.contents accesses the instance variable.
+        # Then, .append() uses the list object's append function to add "item" to the end of the contents list.
+        self.contents.append(item)
+
+
+    def take(self, item):
+        # The index() method returns the index of "item."
+        # Then, the pop() method removes the item at the given index.
+        return self.contents.pop(self.contents.index(item))
+
+
+\end{lstlisting}
+
+Now that we have defined methods for our \li{Backpack} class, we can interact with it.
+
+
+\begin{lstlisting}
+b = Backpack(color='green')
+print b.color # print 'green'
+print b.contents # print '[]'
+b.put(5)
+b.put(3)
+b.put(9)
+b.put(1)
+print b.contents # print '[5, 3, 9, 1]'
+b.take(3)
+print b.contents # print '[5, 9, 1]'
+\end{lstlisting}
+
+Our \li{Backpack} class is an example of \emph{encapsulation}.
+Encapsulation refers to bundling together data and the methods that are used on that data.
+In \li{Backpack}, the color and list of contents are our data while \li{put()} and \li{take()} are our methods.
+
+\begin{problem}
+Create a class called \li{People} that allows you to keep track of professors and students.
+Each instance of \li{People} should have a variable that can be set to `Student' or `Professor' and a list to keep track of their courses.
+Include methods that allow you to add and take away a course.
+\label{prob:School}
+\end{problem}
+
+One ability that our classes are missing is the ability to interact with common operations and functions.
+Built-in Python objects such as strings, lists, and integers can interact with \li{print},  $ =, - , >, \text{and} <$.
+However, if we were to use \li{print} on an instance of \li{Backpack}, Python would not know how to interpret it as a string and not know what to print.
+Similarly, Python would not know how to compare one backpack to another using $ =, - , >, \text{or} <$.
+We can fix this by using \emph{magic methods}.
+Magic methods are special methods that allow classes to interact with these operations, so that they behave like built-in Python objects. This way, we can avoid writing ugly, counterintuitive functions like \li{self.equals(other)}, as we might do in other programming languages, and instead use magic methods to define what \li{self == other} means for a particular class. Note that if not overwritten, non-overridden magic functions tend to base their output on memory location; be aware of this when testing your code.
+Magic methods can be recognized by the double underscores in their names.
+
+Let's add two magic methods to \li{Backpack}.
+The \li{__repr__} method tells Python how to represent our class as a string.
+Then we will be able to call \li{print b} and it will print our backpack, b.
+The \li{__lt__} method will implement the $<$ operator, letting us compare two backpacks.
+
+\begin{lstlisting}
+class Backpack(object):
+    def __init__(self, color='black'):
+    	self.color = color
+    	self.contents = []
+
+    def put(self, item):
+    	self.contents.append(item)
+
+    def take(self, item):
+    	return self.contents.pop(self.contents.index(item))
+
+    def __repr__(self):
+    '''Tell the class how to represent the Backpack object as a string.'''
+    	# Return a string version of the contents list
+        return str(self.contents)
+
+
+   def __lt__(self, other):
+   '''Compare the length of the two backpacks' contents' lists.'''
+     	 return len(self.contents) < len(other.contents)
+
+\end{lstlisting}
+
+The other comparison operators are implemented in a similar way.
+Now, let's test our magic methods.
+
+\begin{lstlisting}
+b = Backpack(color='green')
+c = Backpack(color='yellow')
+b.put(2)
+b.put(5)
+c.put(7)
+c.put(1)
+c.put(8)
+print b # print '[2, 5]'
+print c # print '[7, 1, 8]'
+# Should return True, sending you into the if branch.
+if b < c:
+	print 'b is less than c'
+
+\end{lstlisting}
+
+For more information on creating methods and using magic methods, read the official Python documentation at \url {http://docs.python.org/2/reference/datamodel.html} or another useful reference at \url{http://www.rafekettler.com/magicmethods.html}.
+This information may be helpful in solving Problem \ref{prob:complexNum}.
+
+\begin{problem}
+Create a \li{ComplexNumber} object that supports the basic operations of a complex number.
+You must implement methods that will compare, add, subtract, multiply, divide, and conjugate complex numbers.
+Also, implement a \li{norm()} method that will calculate the Euclidean distance between two points on the complex plane.
+\label{prob:complexNum}
+\end{problem}
+
+\section*{Graphical User Interfaces}
+
+GUI's are powerful tools for creating applications that users can interact with.
+PySide is a helpful library to build GUI's.
+From PySide, we will use two modules, QtGui and QtCore.
+QtCore has functions that will help us implement the inner workings of our GUI while QtGui will allows us to implement the graphics as well as the interface itself.
+To demonstrate the main ideas behind building a GUI, we will create a simple program that displays inputted text. As you read, follow along by typing the code into a text editor and running it from your command line (type in python filename.py). Hands on experience is the best way for GUI concepts to solidify.
+
+\begin{lstlisting}
+from PySide import QtGui, QtCore
+
+class Printer(QtGui.QWidget):
+	# This class inherits from the QWidget class found in the QtGui module.
+	def __init__(self):
+		# Call the __init__ method from QWidget, the class Printer is sub-classed from (its "super" class).
+		super(Printer, self).__init__()
+
+\end{lstlisting}
+
+\emph{Widgets} are what make the magic happen in GUI's.
+In Qt, widgets are objects that represent various elements of a GUI.
+They keep track of drawing and refreshing the graphical display of the elements, abstracting the behavior of the elements, and defining ways to interact with other widgets.
+When you push a button or enter text, widgets are what notice and respond accordingly.
+In our \li{Printer} we will use \li{QLineEdit} and \li{QLabel}.
+
+\begin{lstlisting}
+from PySide import QtGui, QtCore
+
+class Printer(QtGui.QWidget):
+	def __init__(self):
+		super(Printer, self).__init__()
+		# Call the _initUI function.
+		self._initUI()
+	
+	def _initUI(self):
+		'''Creates the widgets and tells them how to interact.'''
+		
+		# Create a class variable called textBar that is a QLineEdit widget.
+		self.textBar = QtGui.QLineEdit()
+		# Create a class variable called label that is a QLabel widget.
+		self.label = QtGui.QLabel()
+
+\end{lstlisting}
+
+Now that we have our widgets, we need to tell them how to communicate.
+Qt uses a system of \emph{signals} and \emph{slots}.
+When a button is pushed or when text is entered, a widget throws a \emph{signal}.
+We can specify which \emph{slot} catches the signal.
+In this case, the signal being thrown is the text being entered in the text bar. We want a function that catches the signal, updates the displayed text, and clears the text bar.
+
+\begin{lstlisting}
+from PySide import QtGui, QtCore
+
+class Printer(QtGui.QWidget):
+	def __init__(self):
+		super(Printer, self).__init__()
+		self._initUI()
+
+	def _initUI(self):
+		self.textBar = QtGui.QLineEdit()
+		self.label = QtGui.QLabel()
+		
+		# When return is pressed in the textBar, it sends a signal and goes into the function updateText.
+        # self.textBar accesses the textBar object.
+        # returnPressed defines the inputted signal.
+        # connect links the signal to the method later defined in this class: updateText.
+		self.textBar.returnPressed.connect(self.updateText)
+	
+		
+	def updateText(self):
+	'''Updates what text is displayed and clears the textBar'''
+		self.label.setText(self.textBar.displayText())
+		self.textBar.clear()
+
+\end{lstlisting}
+
+Next, we need to set the layout and create a function that can be called from the command line.
+
+\begin{lstlisting}
+from PySide import QtGui, QtCore
+import sys
+
+class Printer(QtGui.QWidget):
+	def __init__(self):
+		super(Printer, self).__init__()
+		self._initUI()
+
+	def _initUI(self):
+		self.textBar = QtGui.QLineEdit()
+		self.label = QtGui.QLabel()
+		
+		self.textBar.returnPressed.connect(self.updateText)
+	
+		# Create a vertical box layout.
+		# This will stack all widgets added to it vertically.
+		vbox = QtGui.QVBoxLayout()
+		# Add textBar as a widget and display it on the first row (0) in the first column (0).
+        vbox.addWidget(self.textBar, 0, 0)
+		vbox.addWidget(self.label, 1, 0)
+		
+		# Assemble the layout.
+		self.setLayout(vbox)
+		# Tell the dimensions of the vbox.
+		# The first two numbers indicate placement on the screen while the second two represent the dimensions.
+		self.setGeometry(50, 50, 200, 200)
+		self.setWindowTitle("Simple Printer")
+		self.show()
+	
+	def updateText(self):
+		self.label.setText(self.textBar.displayText())
+		self.textBar.clear()
+		
+def main():
+	# Create a QApplication.
+    # Note that if you are working in IPython Notebook, you need to restart your kernel before running the program, or a RuntimeError will occur.
+	app = QtGui.QApplication(sys.argv)
+	# Create a Printer object.
+    # Since _initUI is called in the constructor, the GUI will appear and run.
+	p = Printer()
+	sys.exit(app.exec_())
+if __name__ == "__main__":
+	main()
+
+\end{lstlisting}
+
+\begin{problem}
+Create a simple graphical user interface that will solve the quadratic formula given the necessary parameters.
+Make the GUI look similar to the one below.
+\begin{figure}[H]
+\centering
+\begin{comment}
+\begin{subfigure}[b]{.49\textwidth}
+\includegraphics[width=\textwidth]{quadratic_view.png}
+\end{subfigure}
+\end{comment}
+\begin{subfigure}[b]{.49\textwidth}
+\includegraphics[width=\textwidth]{quadratic_view2.png}
+\end{subfigure}
+\end{figure}
+The widgets that you will need are: \li{QDoubleSpinBox}, \li{QLabel}, \li{QGridLayout}, and \li{QVBoxLayout}. You may also want to import the cmath module in order to calculate complex solutions.
+You can view the documentation for these classes, including all their methods and signals, at \url{http://qt-project.org/doc/qt-4.8/classes.html}
+\label{prob:quadCalc}
+\end{problem}
+
+
+\section*{Specifications}
+
+The following is a guideline for your solutions.
+
+\begin{lstlisting}
+import sys
+from PySide import QtGui, QtCore
+
+class People(object):
+	pass
+	
+class ComplexNumber(object):
+	pass
+	
+class QuadraticCalculator(QtGui.QWidget):
+	pass
+\end{lstlisting}
+

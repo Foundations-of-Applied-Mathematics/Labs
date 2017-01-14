@@ -1,0 +1,239 @@
+\lab{NumPy Visual Guide}{NumPy Visual Guide}
+\label{appendix:numpy-visual-guide}
+\objective{NumPy operations can be difficult to visualize, but the concepts are straightforward.
+This appendix provides visual demonstrations of how NumPy arrays are used with slicing syntax, stacking, broadcasting, and axis-specific operations.
+Though these visualizations are for 1- or 2-dimensional arrays, the concepts can be extended to $n$-dimensional arrays.
+% See Lab \ref{lab:NumPy} for an introduction to NumPy operations and synatx.
+}
+
+\section*{Data Access} % ======================================================
+
+The entries of a 2-D array are the rows of the matrix (as 1-D arrays).
+To access a single entry, enter the row index, a comma, and the column index.
+Remember that indexing begins with $0$.
+
+\begin{align*}
+A[0] = \left[\begin{array}{rrrrr}
+\tikzmarkin{row1}\times & \times & \times & \times & \times\tikzmarkend{row1}\\
+\times & \times & \times & \times & \times\\
+\times & \times & \times & \times & \times\\
+\times & \times & \times & \times & \times\\
+\end{array}\right]
+&&
+A[2,1] = \left[\begin{array}{rrrrr}
+\times & \times & \times & \times & \times\\
+\times & \times & \times & \times & \times\\
+\times & \tikzmarkin{entry} \times \tikzmarkend{entry} & \times & \times & \times\\
+\times & \times & \times & \times & \times
+\end{array}\right]
+\end{align*}
+
+\section*{Slicing} % ==========================================================
+
+A lone colon extracts an entire row or column from a 2-D array.
+The syntax \li{[a:b]} can be read as ``the $a^{th}$ entry up to (but not including) the $b^{th}$ entry.''
+Similarly, \li{[a:]} means ``the $a^{th}$ entry to the end'' and \li{[:b]} means ``everything up to (but not including) the $b^{th}$ entry.''
+
+\begin{align*}
+\text{\li{A[1]}} = \text{\li{A[1,:]}} = \left[\begin{array}{rrrrr}
+\times & \times & \times & \times & \times\\
+\tikzmarkin{row2}\times & \times & \times & \times & \times\tikzmarkend{row2}\\
+\times & \times & \times & \times & \times\\
+\times & \times & \times & \times & \times\\
+\end{array}\right]
+&&
+\text{\li{A[:,2]}} = \left[\begin{array}{rrrrr}
+\times & \times & \tikzmarkin{col}\times & \times & \times\\
+\times & \times & \times & \times & \times\\
+\times & \times & \times & \times & \times\\
+\times & \times & \times\tikzmarkend{col} & \times & \times
+\end{array}\right]
+\end{align*}
+
+\begin{align*}
+\text{\li{A[1:,:2]}} = \left[\begin{array}{rrrrr}
+\times & \times & \times & \times & \times\\
+\tikzmarkin{block}\times & \times & \times & \times & \times\\
+\times & \times & \times & \times & \times\\
+\times & \times\tikzmarkend{block} & \times & \times & \times
+\end{array}\right]
+&&
+\text{\li{A[1:-1,1:-1]}} = \left[\begin{array}{rrrrr}
+\times & \times & \times & \times & \times\\
+\times & \tikzmarkin{interior} \times & \times & \times & \times\\
+\times & \times & \times & \times \tikzmarkend{interior} & \times\\
+\times & \times & \times & \times & \times\end{array}\right]
+\end{align*}
+
+\section*{Stacking} % =========================================================
+
+\li{np.hstack()} stacks sequence of arrays horizontally and \li{np.vstack()} stacks a sequence of arrays vertically.
+
+\begin{align*}
+A = \left[\begin{array}{ccc}
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}\\
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}\\
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}
+\end{array}\right]
+&&
+B = \left[\begin{array}{ccc}
+\textcolor{red}{*} & \textcolor{red}{*} & \textcolor{red}{*} \\
+\textcolor{red}{*} & \textcolor{red}{*} & \textcolor{red}{*} \\
+\textcolor{red}{*} & \textcolor{red}{*} & \textcolor{red}{*}
+\end{array}\right]
+\end{align*}
+
+\begin{align*}
+\text{\li{np.hstack((A,B,A))}} =
+\left[\begin{array}{ccccccccc}
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}&
+\textcolor{red}{*} & \textcolor{red}{*} & \textcolor{red}{*}&
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}\\
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}&
+\textcolor{red}{*} & \textcolor{red}{*} & \textcolor{red}{*}&
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}\\
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}&
+\textcolor{red}{*} & \textcolor{red}{*} & \textcolor{red}{*}&
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}
+\end{array}\right]
+\end{align*}
+
+\begin{align*}
+\text{\li{np.vstack((A,B,A))}} =
+\left[\begin{array}{ccc}
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}\\
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}\\
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}\\
+\textcolor{red}{*} & \textcolor{red}{*} & \textcolor{red}{*} \\
+\textcolor{red}{*} & \textcolor{red}{*} & \textcolor{red}{*} \\
+\textcolor{red}{*} & \textcolor{red}{*} & \textcolor{red}{*} \\
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}\\
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}\\
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}
+\end{array}\right]
+\end{align*}
+Because 1-D arrays are flat, \li{np.hstack()} concatenates 1-D arrays and \li{np.vstack()} stacks them vertically.
+To make several 1-D arrays into the columns of a 2-D array, use \li{np.column_stack()}.
+
+\begin{align*}
+x = \left[\begin{array}{cccc}
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}
+\end{array}\right]
+&&
+y = \left[\begin{array}{cccc}
+\textcolor{red}{*}&\textcolor{red}{*}&\textcolor{red}{*}&\textcolor{red}{*}\end{array}\right]
+\end{align*}
+
+\begin{align*}
+\text{\li{np.hstack((x,y,x))}} =
+\left[\begin{array}{cccccccccccc}
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}&
+\textcolor{red}{*}&\textcolor{red}{*}&\textcolor{red}{*}&\textcolor{red}{*}&
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}
+\end{array}\right]
+\end{align*}
+
+\begin{align*}
+\text{\li{np.vstack((x,y,x))}} =
+\left[\begin{array}{cccc}
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}\\
+\textcolor{red}{*}&\textcolor{red}{*}&\textcolor{red}{*}&\textcolor{red}{*}\\
+\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}&\textcolor{blue}{\times}
+\end{array}\right]
+&&
+\text{\li{np.column_stack((x,y,x))}} =
+\left[\begin{array}{ccc}
+\textcolor{blue}{\times}&\textcolor{red}{*}&\textcolor{blue}{\times}\\
+\textcolor{blue}{\times}&\textcolor{red}{*}&\textcolor{blue}{\times}\\
+\textcolor{blue}{\times}&\textcolor{red}{*}&\textcolor{blue}{\times}\\
+\textcolor{blue}{\times}&\textcolor{red}{*}&\textcolor{blue}{\times}
+\end{array}\right]
+\end{align*}
+
+\section*{Broadcasting} % =====================================================
+
+NumPy automatically aligns arrays for component-wise operations whenever possible.
+% The default behavior adds the first element to the first element of each row, the second element to the second element of each row, and so on.
+See \url{http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html} for more in-depth examples and broadcasting rules.
+
+\begin{align*}
+A = \left[\begin{array}{ccc}
+1 & 2 & 3\\
+1 & 2 & 3\\
+1 & 2 & 3\\
+\end{array}\right]
+&&
+x = \left[\begin{array}{ccc}
+10 & 20 & 30
+\end{array}\right]
+\end{align*}
+
+\begin{align*}
+\text{\li{A + x}}
+&= \begin{blockarray}{ccc}
+\begin{block}{[ccc]}
+1 & 2 & 3\\
+1 & 2 & 3\\
+1 & 2 & 3\\
+\end{block}
+  & + &  \\
+\begin{block}{[ccc]}
+10 & 20 & 30\\
+\end{block}
+\end{blockarray}
+&= \left[\begin{array}{ccc}
+11 & 22 & 33\\
+11 & 22 & 33\\
+11 & 22 & 33
+\end{array}\right]
+\\ \\
+\text{\li{A + np.vstack(x)}}
+&= \left[\begin{array}{ccc}
+1 & 2 & 3 \\
+1 & 2 & 3 \\
+1 & 2 & 3 \\
+\end{array}\right]
++ \left[\begin{array}{c}
+10 \\ 20 \\ 30\\
+\end{array}\right]
+&= \left[\begin{array}{ccc}
+11 & 12 & 13\\
+21 & 22 & 23\\
+31 & 32 & 33\\
+\end{array}\right]
+\end{align*}
+
+\section*{Operations along an Axis} % =========================================
+
+Most array methods have an \li{axis} argument that allows an operation to be done along a given axis.
+To compute the sum of each column, use \li{axis=0}; to compute the sum of each row, use \li{axis=1}.
+
+\begin{align*}
+A = \left[\begin{array}{cccc}
+1 & 2 & 3 & 4\\
+1 & 2 & 3 & 4\\
+1 & 2 & 3 & 4\\
+1 & 2 & 3 & 4
+\end{array}\right]
+\end{align*}
+
+\begin{align*}
+\text{\li{A.<<sum>>(axis=0)}} &= %np.array([sum(A[:,i] for i in xrange(A.shape[1]))])}} =
+\left[\begin{array}{cccc}
+\tikzmarkin{col1}1 & \tikzmarkin{col2}2 & \tikzmarkin{col3}3 & \tikzmarkin{col4}4\\
+1 & 2 & 3 & 4\\
+1 & 2 & 3 & 4\\
+1\tikzmarkend{col1} & 2\tikzmarkend{col2} & 3\tikzmarkend{col3} & 4\tikzmarkend{col4}
+\end{array}\right]
+= \left[\begin{array}{cccc} 4 & 8 & 12 & 16 \end{array}\right]
+\\ \\
+\text{\li{A.<<sum>>(axis=1)}} &= %np.array([sum(A[i,:] for i in xrange(A.shape[0]))])}} =
+\left[\begin{array}{cccc}
+\tikzmarkin{rowA}1 & 2 & 3 & 4\tikzmarkend{rowA}\\
+\tikzmarkin{rowB}1 & 2 & 3 & 4\tikzmarkend{rowB}\\
+\tikzmarkin{rowC}1 & 2 & 3 & 4\tikzmarkend{rowC}\\
+\tikzmarkin{rowD}1 & 2 & 3 & 4\tikzmarkend{rowD}\\
+\end{array}\right]
+= \left[\begin{array}{cccc} 10 & 10 & 10 & 10 \end{array}\right]
+\end{align*}
+

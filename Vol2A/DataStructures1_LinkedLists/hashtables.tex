@@ -1,0 +1,143 @@
+\lab{Hash Tables}{Hash Tables}
+\label{lab:HashTables}
+\objective{Empower students with basic knowledge of the fundamental, canonical data structures in order to understand performance and runtime characteristics.}
+
+\section*{Hash Tables}
+A \emph{hash table} is a very simple data structure that trades memory space for speed.
+The key advantage of a hash table is this speed; most of the operations of a hash table execute very efficiently, independent of its size.
+As such, hash tables have very fast lookup times; they form the underlying data structure for Python's set and dictionary types.
+
+One of the key components of a hash table is a \emph{hash function}.
+A hash function takes a piece data as an input and outputs a natural number which corresponds to the index for that piece of data.
+Since the hash function must be executed to perform any operation on the hash table (e.g. insertion or lookup), it is imperative that the hash function execute quickly.
+Thus, the heart of a hash table is a good hash function.
+
+We begin defining our \li{HashTable} class, then, by allocating space within a one-dimensional array (in this case, a Python list) and by taking both the array size and the hash function as arguments.
+\begin{lstlisting}
+class HashTable(object):
+    def __init__(self, capacity):
+        # Efficiently extend a list to the designated hash table size
+        self.hashtable = [None] * capacity
+        # Keeps track of the number of elements within the hash table
+        self.size = 0
+        # Indicates the size of the hash table
+        self.capacity = capacity
+
+    def load_factor(self):
+        # The load factor tells how saturated a hash table is
+        return float(self.size)/self.capacity
+\end{lstlisting}
+
+
+A good hash function will execute quickly and distribute items uniformly throughout the table.
+In the hash tables in this lab, we will use Python's built-in \li{hash} function.
+This code demonstrates the principle steps of inserting into a hash function.
+Instead of using our \li{HashTable} class, however, we simply use a similar construct to show how the steps might be implemented in a specific instance:
+\begin{lstlisting}
+>>> capacity = 5
+>>> table = [None] * capacity
+>>> hash('three')
+8354070563160704301
+>>> hash('three') % capacity
+1
+>>> table[1] = 'one'
+>>> print table
+[None, 'three', None, None, None]
+>>> table[hash('four') % capacity] = 'four'
+>>> table[hash('five') % capacity] = 'five'
+>>> print table
+['four', 'three', 'five', None, None]
+
+# We can locate 'five' quickly
+# Notice that is faster than the list's builtin methods
+>>> %timeit table.index('five')
+1000000 loops, best of 3: 190 ns per loops
+>>> %timeit table[hash('five') % capacity]
+10000000 loops, best of 3: 111 ns per loop
+>>> table[hash('two') % capacity] = 'two'
+# Note that our load factor is 4/5.
+>>> print table
+['four', 'three', 'five', 'two', None]
+
+# When our load factor passes a certain threshold, we need to make the hash table bigger
+# Resizing the hash table means rehashing everything in it
+>>> def resize(table, new_cap):
+        new_table = [None] * new_cap
+        for i in table:
+            new_table[hash(i) % new_cap] = i
+        return new_table
+>>> table = resize(table, 7)
+>>> print table
+[None, None, None, 'two', None, None, 'four']
+\end{lstlisting}
+
+The ideal hash function maps unique inputs to unique outputs that are uniformly distributed over the hash space.
+However, it is extremely difficult to create an ideal hash function; most hash functions will experience hash collisions.
+Hash collisions are when two unique inputs are mapped to the same index in the hash table (in our example above, resizing the hash table resulted in hash collisions that lost half the strings we stored in the table).
+Fortunately, there are ways to handle hash collisions.
+
+\paragraph{Probing.}
+One method that we can use to resolve hash collisions is probing.
+A short example will be succintly illustrate this method.
+\begin{lstlisting}
+>>> capacity = 5
+>>> table = [None] * capacity
+# Now we add the words 'one' and 'two'
+# Notice what happens when we add 'two'
+>>> table[hash('one') % capacity] = 'one'
+>>> print table
+[None, None, None, 'one', None]
+>>> table[hash('two') % capacity]
+'one'
+
+# We can resolve the collision by looking for the next available index
+# Starting at index 3, we look at index 3+1 % capacity, 3+2 % capacity, 3+3 % capacity, ..., until we find and empty index
+# Seeing that index 4 is None, we store 'two' there
+>>> table[4] = 'two'
+>>> print table
+[None, None, None, 'one', 'two']
+\end{lstlisting}
+This is called linear probing.
+There are other variations of this idea which are more optimal.
+
+\paragraph{Chaining.}
+Another method for resolving hash collisions is chaining.
+This method slightly alters the structure of our hash table, so that at each index, a list is stored.
+When an item is mapped to an index, it is appeneded to the list at that index.
+\begin{lstlisting}
+>>> capacity = 5
+>>> table = [list() for i in xrange(capacity)]
+
+# Now we add the words 'one' and 'two'
+# Notice what happens when we add 'two'
+>>> table[hash('one') % capacity].append('one')
+>>> print table
+[[], [], [], ['one'], []]
+>>> table[hash('two') % capacity].append('two')
+>>> print table
+[[], [], [], ['one', 'two'], []]
+\end{lstlisting}
+
+\begin{problem}
+Using the concepts illustrated in the examples above, and an insert method to your \li{HashTable} class.
+Don't forget to update your size for the number of elements within the hashtable!
+Use chaining to handle hash collisions (namely, implement your insert method via chaining).
+
+Then, create a method for your hash table to resize.
+Implement this method such that, when your hash table exceeds a load factor of $.8$, it will resize the hash table so that the load factor is below $.3$.
+Don't forget to rehash the elements already within your table!
+
+Initialize a hash table of size 4 and insert the following felines: `lion', `tiger', `cheetah', `cougar', `colocolo', `cat', `clouded leopard', and `jaguar'.
+Print your hash table.
+\label{prob:hash_table}
+\end{problem}
+
+\begin{info}
+Usually exisiting implementations of data structures are better to use.
+The implementations of linked lists, trees, and hash tables in this lab were designed to familiarize you with the data structure's mechanics through example and practice.
+In real situations, you will likely use Python's deques, sets, or dictionaries.
+Python doesn't have a built-in implementation of trees, but there are several Python libraries that have highly optimized implementations of trees.
+
+Performance tuning for data structures can be tricky even for professionals.
+For this reason, it is better to avoid writing your implementation when one already exists.
+\end{info}

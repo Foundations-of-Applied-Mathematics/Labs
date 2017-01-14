@@ -1,0 +1,139 @@
+\lab{Windows 64-bit Installation}{Windows 64-bit}
+\label{win64install}
+
+\objective{Install fundamental package requirements for the labs on a Windows 64-bit machine.}
+
+\begin{warn}
+The information provided in this appendix is for convenience only.
+The reader assumes all the liability and risk involved in making any change to configuration mentioned in this appendix.
+The authors of this appendix are not responsible for any damage that may result from any changes covered in following material.
+Some of the changes could cause unexpected behavior in the computer system.
+\end{warn}
+
+There are a wide variety of ways to install most of the Python packages required for these labs.
+There are, however, some problems with Cython and F2py since the distutils package included in Python is currently not very good for building new extension modules on 64-bit Windows machines.
+Installing these libraries can be difficult; the following are ways that have worked for us.
+They still may not work on every computer.
+
+% We suggest students use Anaconda because it includes nearly all the packages we use.
+% They also tend to update their packages more often.
+% It is also much less intrusive on the host filesystem.
+\section*{Installing Using the Anaconda Python Distribution}
+\begin{enumerate}
+\item Note: you can get an academic license for more of the features of the Anaconda Distribution.
+The primary benefit is that it will allow many basic linear algebra routines to run much faster.
+To obtain an academic license, see \url{https://store.continuum.io/cshop/academicanaconda}.
+To activate your academic license, follow the steps in the confirmation email.
+
+\item Install the Anaconda Python Distribution from \url{http://www.continuum.io/downloads}
+
+\item Add the main \li{Anaconda} directory and the \li{bin}, \li{libs}, and \li{include} subdirectories to your system path if they aren't already there.
+You can find this option by opening the file explorer to "Computer", right clicking on the background and clicking on "Properties", then clicking on "Advanced Settings", then clicking on "Environment Variables", then add the following to the end of the path if it isn't already there:
+
+\li{;C:\\Anaconda\\; C:\\Anaconda\\Scripts; C:\\Anaconda\\libs; C:\\Anaconda\\include}
+
+This should be done to the path variable in the box for "System Variables" (the system path instead of the user path).
+
+% This is what allows f2py to work on 64-bit windows.
+% The version of MinGW that comes as a part of Anaconda is
+% currently a 64-bit version of gcc and gfortran 4.7.
+% Using MinGW64 with f2py is not officially supported, but it works.
+\item Open \li{C:\\Anaconda\\Lib\\site-packages\\numpy\\distutils\\fcompiler\\gnu.py} and comment out the two lines that read 
+\begin{lstlisting}
+else:
+    raise NotImplementedError("Only MS compiler supported with gfortran on win64")
+\end{lstlisting}
+They are probably somewhere around line $330$.
+Once you have modified them, they should read
+\begin{lstlisting}
+#else:
+#    raise NotImplementedError("Only MS compiler supported with gfortran on win64")
+\end{lstlisting}
+
+% The first definition eliminates the issue with "unable to find vcvarsall.bat" error.
+% It is currently already included as a part of Anaconda.
+% The second, as of this writing, is not currently included in Anaconda.
+% It is needed for pyximport to work properly.
+\item Open the file \li{C:\\Anaconda\\Lib\\distutils\\distutils.cfg} (create it if it doesn't already exist) and make sure it contains the following two definitions
+\begin{lstlisting}
+[build]
+compiler=mingw32
+
+[build_ext]
+compiler=mingw32
+\end{lstlisting}
+
+% These are miscellaneous packages used in different parts of the labs.
+% The map reduce frameworks are not included here.
+% Those are designed to be run from Unix servers.
+\item Install and install the following additional packages from \url{http://www.lfd.uci.edu/~gohlke/pythonlibs/}
+\begin{enumerate}
+	% Recommended for several different labs.
+	% Strictly speaking, scipy.fftpack is good enough for what we do,
+	% but pyfftw is faster and more common.
+	\item pyfftw
+	% Used in the wavelets labs.
+	\item pywavelets
+	% Used in the optimization labs.
+	\item cvxopt
+	% Used in the parallel computing labs.
+	\item mpi4py
+	% This is a requirement in our custom matplotlibrc file.
+	% This package is what allows us to render plots from matplotlib as
+	% a vector graphic instead of a pixellated image.
+	\item pycairo (optional for students, required for anyone that contributes to these labs)
+\end{enumerate}
+
+\item Install the \li{scikits.bvp_solver} package by opening a command terminal and running the command
+\begin{lstlisting}[style=ShellInput]
+pip install scikits.bvp_solver
+\end{lstlisting}
+
+% This is used later on as a turnin system.
+% It is most important for people that contribute to these labs though.
+\item Download and install the Git version control system.
+You can get an installer at \url{http://git-scm.com/downloads}.
+
+% Useful for students.
+% Absolutely required for contributors.
+\item Download and install MikTex from \url{http://miktex.org/download}.
+You can use either the 32-bit or 64-bit version in this case.
+
+\end{enumerate}
+
+\section*{Updating packages}
+As a general rule, you update your packages using the same system you used to install them.
+If you want to update a package included by default in Anaconda, you can run (in the command terminal) the command
+\begin{lstlisting}[style=ShellInput]
+conda update <packagename>
+\end{lstlisting}
+where \li{<packagename>} is the name of the package you want to update.
+
+If you installed a package via an online installer, get an updated version from the same source.
+
+If you installed a package via pip (a Python package manager), you can upgrade it using the command
+\begin{lstlisting}[style=ShellInput]
+pip install --upgrade <packagename>
+\end{lstlisting}
+where \li{<packagename>} is the name of the package you want to update.
+
+If you want to update all of the packages that are included in anaconda, you can run the two commands
+\begin{lstlisting}[style=ShellInput]
+conda update conda
+conda update anaconda
+\end{lstlisting}
+The fist of these commands updates Anaconda's package manager.
+The second updates all packages so that they match with the current release version of Anaconda.
+
+\begin{info}
+If you update NumPy, you will need to modify the file \li{C:\\Anaconda\\Lib\\site-packages\\numpy\\distutils\\fcompiler\\gnu.py} the same way you did when you first installed everything.
+\end{info}
+
+\begin{warn}
+Be careful not to try to update a Python package while it is in use.
+It is safest to update packages while there is no Python interpreter currently running.
+\end{warn}
+
+\begin{info}
+All the packages used in these labs have Python 3 versions available, but the code in these labs is currently all written for Python 2.7.
+\end{info}
