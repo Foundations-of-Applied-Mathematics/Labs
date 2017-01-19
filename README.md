@@ -49,7 +49,6 @@ See the [Wiki page](https://github.com/Foundations-of-Applied-Mathematics/Lab-De
 - J. Grout, Drake University
 - J. Humpherys, Brigham Young University
 - T. Jarvis, Brigham Young University
-- J. West, University of Michigan
 - J. Whitehead, Brigham Young University
 
 The following students contributed to the labs while studying at Brigham Young University.
@@ -99,4 +98,5 @@ Graduate student contributors are marked in bold.
 - M. Victors
 - **J. Webb**
 - **R. Webb**
+- J. West
 - A. Zaitzeff
