@@ -20,27 +20,26 @@ Visit the [releases page](https://github.com/Foundations-of-Applied-Mathematics/
 
 To gain access to the entire repository, fork this repository and clone it.
 Each volume can then be built separately using the LaTex files listed below.
-- Volume 1, Mathematical Analysis: `Vol1.tex`
-- Volume 2, Algorithm Design and Optimization: `Vol2.tex`
-- Volume 3, Modeling with Uncertainty and Data: `Vol3.tex`
-- Volume 4, Modeling with Dynamics and Control: `Vol4.tex`
+- Volume 1, Mathematical Analysis: `Volume1.tex`
+- Volume 2, Algorithm Design and Optimization: `Volume2.tex`
+- Volume 3, Modeling with Uncertainty and Data: `Volume3.tex`
+- Volume 4, Modeling with Dynamics and Control: `Volume4.tex`
 
 Compile the files using TeXShop or a similar program, or via the command line:
 ```bash
-$ latexmk -pdf Vol1.tex
+$ latexmk -pdf Volume1.tex
 ```
 or
 ```bash
-$ pdflatex Vol1.tex
+$ pdflatex Volume1.tex
 ```
-(These commands create a PDF called, for example, `Vol1.pdf`.)
+(These commands create a PDF called, for example, `Volume1.pdf`.)
 
 ## Data Files
 
-The data sets used in these labs can be found at http://acme.byu.edu/data/.
-They are organized by semester: Volume 1 first half as `Vol1A`, second half as `Vol1B`, and so on.
+The data sets used in these labs can be found at [Foundations-of-Applied-Mathematics/Data](https://github.com/Foundations-of-Applied-Mathematics/Data), organized by volume.
 
-See the [Wiki page](https://github.com/Foundations-of-Applied-Mathematics/Lab-Development/wiki/File-Dependencies-Index) for an index of labs and data file dependencies.
+<!-- See the [Wiki page](https://github.com/Foundations-of-Applied-Mathematics/Lab-Development/wiki/File-Dependencies-Index) for an index of labs and data file dependencies. -->
 
 ## Contributors
 
