@@ -2,12 +2,12 @@
 """Ensure that there are no unapproved files exceeding the max filesize."""
 
 from os import popen
-from travis_common import raise_msg
-
 
 # 200KB in bytes
 MAX_FILESIZE = 204800
 
+class BuildError(Exception):
+    pass
 
 def getOutput(cmd):
     return popen(cmd).read()
@@ -39,7 +39,7 @@ def find_big_files(fatal=True):
                                                         for v in violations]))
         msg = "Large files present:\n{}\nAdd these files to ".format(files)
         msg += "'travis_large_files.txt' if they are necessary to keep."
-        raise_msg(msg, fatal=fatal)
+        raise BuildError(msg)
 
 
 if __name__ == "__main__":
