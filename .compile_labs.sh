@@ -1,7 +1,7 @@
 #!/bin/bash
 # Compile the main tex files and ensure that there are no errors.
 
-USAGE="usage: ./validate.sh [LaTeX compiler, defaults to pdflatex]"
+USAGE="usage: ./.compile_labs.sh [LaTeX compiler, defaults to pdflatex]"
 MAX_TIME=15
 
 set -e
