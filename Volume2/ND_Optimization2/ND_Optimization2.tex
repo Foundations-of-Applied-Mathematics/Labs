@@ -1,9 +1,32 @@
-\lab{Conjugate-Gradient}{Conjugate-Gradient}
-\objective{Learn about the Conjugate-Gradient Algorithm and its Uses}
+\lab{Gradient Methods}{Gradient Methods}
+
+\objective{Discuss Steepest Descent Methods and Conjugate Gradient Methods and understand when and why to use each}
+
+\section*{Gradient Methods}
+
+The gradient of a function points in the direction of steepest increase of that function. It follows that the opposite direction is the 
+direction of steepest decrease, or \emph{descent}. The obvious candidate for the descent direction from some point $x_i$ is now simply
+$-\nabla f(x_i)$. This procedure is known as the Method of Steepest
+Descent. A simple version of Steepest Descent assumes a step size of one, checks that it is actually decreasing, and moves in that direction.
+If the step size is too large, it halves the step size and tries again. It does this until the step size for which is actually decreasing
+is below a certain tolerance.
+
+\begin{problem}
+Implement a basic Steepest Descent method.
+Write a function \li{steepestDescent()} that accepts an initial
+guess $x_0$, the derivative of a convex function, $Df$, and a default tolerance of .0001 as inputs.
+Continue the algorithm until $\alpha$ is less than the tolerance.
+Return the optimizer $x^*$.
+\end{problem}
+
+Steepest descent, however, can be very inefficient for certain problems: depending on the geometry
+of the objective function, the sequence of points can ``zig-zag" back and forth without making appreciable progress toward the true
+minimizer. In contrast, the Conjugate-Gradient algorithm ensures that the true global minimizer is reached in at most $n$ steps. See
+Figure \ref{basis:steepVsConj} for an illustration of this contrast.
 
 \section*{Descent Algorithms and the Conjugate-Gradient Method}
-There are many possibilities for solving a linear system of equations, each method with its own set of pros and cons. In this lab, we
-will explore the \emph{Conjugate-Gradient algorithm}, which is a method for solving large systems of equations where other methods,
+There are many possibilities for solving a linear system of equations, each method with its own set of pros and cons. We
+will now explore the \emph{Conjugate-Gradient algorithm}, which is a method for solving large systems of equations where other methods,
 such as Cholesky factorization and simple Gaussian elimination, are unsuitable. This algorithm, however, works equally well for
 optimizing convex quadratic functions, and it can even be extended to more general classes of optimization problems.
 
@@ -29,17 +52,12 @@ this particular point along which the objective function decreases (called a \em
 find a new point $x_1$ satisfying $f(x_1) < f(x_0)$. Continue iteratively to produce a sequence of points $\{x_0, x_1, x_2, \ldots \}$
 that (hopefully) converges to the true minimizer.
 
-One obvious candidate for the descent direction from some point $x_i$ is simply
-$-\nabla f(x_i)$, since this vector points in the direction of steepest decrease. This procedure is known as the Method of Steepest
-Descent. Steepest descent, however, can be very inefficient for certain problems: depending on the geometry
-of the objective function, the sequence of points can ``zig-zag" back and forth without making appreciable progress toward the true
-minimizer. In contrast, the Conjugate-Gradient algorithm ensures that the true global minimizer is reached in at most $n$ steps. See
-Figure \ref{basis:steepVsConj} for an illustration of this contrast.
-To understand why this is the case and how the algorithm chooses each descent direction, we next discuss the idea of vector conjugacy.
+To understand why this algorithm is much more effective than a simple steepest descent and how the algorithm chooses each descent direction,
+we next discuss the idea of vector conjugacy.
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{steepVsConj.pdf}
+\includegraphics[width=.7\textwidth]{steepVsConj.pdf}
 \caption{Paths traced by Steepest Descent (blue) and Conjugate-Gradient (green). Notice the
 zig-zagging nature of the Steepest Descent path, as opposed to the direct Conjugate-Gradient path,
 which finds the minimizer in 2 steps.}
@@ -355,40 +373,37 @@ using the values $\beta_0, \beta_1$ that we obtained from the minimization.
 >>> plt.show()
 \end{lstlisting}
 
-Using this procedure, we obtain the plot in Figure \ref{conj:logreg}. Note that the graph of $\phi$, known as a \emph{sigmoidal curve},
-gives the probability of $y$ taking the value $1$ at a particular value of $x$. Observe that as $x$ increases,
-this probability approaches $1$. This is reflected in the data.
-\begin{figure}
+Using this procedure, we obtain the plot in Figure \ref{fig:logistic_curve}.
+Note that the graph of $\phi$, known as a \emph{sigmoidal curve},
+gives the probability of $y$ taking the value $1$ at a particular value of $x$.
+Observe that as $x$ increases, this probability approaches $1$.
+This is reflected in the data.
+
+\begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{logreg.pdf}
-\caption{Data from the logistic regression example together with the calculated
-sigmoidal curve.}
-\label{conj:logreg}
+    \includegraphics[width=.7\textwidth]{logreg.pdf}
+    \caption{Data from the logistic regression example together with the calculated sigmoidal curve.}
+    \label{fig:logistic_curve}
 \end{figure}
 
 \begin{problem}
-Following along with the example given above, find the maximum likelihood estimate of the parameters for
-the logistic regression data in the file \texttt{logregression.txt}. This is a whitespace-delimited text file
-formatted so that the $i$-th row consists of $y_i, x_{i,1}, x_{i,2}, x_{i,3}.$ Since there are three
-predictor variables, there are four parameters in the model. Report the calculated values.
+Following the example given above, find the maximum likelihood estimate of the parameters for the logistic regression data in the file \texttt{logregression.txt}.
+This is a whitespace-delimited text file formatted so that the $i$-th row consists of $y_i, x_{i,1}, x_{i,2}, x_{i,3}.$
+Since there are three predictor variables, there are four parameters in the model.
+Report the calculated values.
 
-You should be able to use much of the code above unchanged. In particular, the function \li{objective()} does
-not need any changes. You simply need to set your variables \li{y} and \li{x} appropriately, and
-choose a new initial guess (an array of length four). Note that \li{x} should be an $m \times 4$ array whose first
-column consists entirely of ones, whose second column contains the values in the second column of the data file,
-and so forth.
+You should be able to use much of the code above unchanged.
+In particular, the function \li{objective()} does not need any changes.
+You simply need to set your variables \li{y} and \li{x} appropriately, and choose a new initial guess (an array of length four).
+Note that \li{x} should be an $m \times 4$ array whose first column consists entirely of ones, whose second column contains the values in the second column of the data file, and so forth.
 \end{problem}
 
-Logistic regression can become a bit more tricky when some of the predictor variables take on binary or categorical
-values. In such situations, the data requires a bit of pre-processing before running the minimization.
+Logistic regression can become a bit more tricky when some of the predictor variables take on binary or categorical values.
+In such situations, the data requires a bit of pre-processing before running the minimization.
 
-The values of the parameters that we obtain can be useful in analyzing relationships
-between the predictor variables and the $y_i$ data points. They can also be used to classify or predict values of new
-data points.
+The values of the parameters that we obtain can be useful in analyzing relationships between the predictor variables and the $y_i$ data points.
+They can also be used to classify or predict values of new data points.
 
-%should I give the Polak-Ribi\`{e}, Fletcher-Reeves, and Hestenes-Stiefel formulas? Maybe in the exercises? Should I
-%include a discussion of when each choice is appropriate?
-
-
-
+% should I give the Polak-Ribi{e}, Fletcher-Reeves, and Hestenes-Stiefel formulas? Maybe in the exercises?
+% Should I include a discussion of when each choice is appropriate?
 
