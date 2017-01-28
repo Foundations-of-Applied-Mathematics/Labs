@@ -14,5 +14,5 @@ find . -type f -name "*.aux"  -delete
 find . -type f -name "*.log" -delete
 for FILE in ${FILES[@]}
 do
-    find . -type f -name "$FILE.*" ! -name "$FILE.tex" ! -name "$FILE.pdf" -delete
+    find . -depth 1 -type f -name "$FILE.*" ! -name "$FILE.tex" -delete
 done
