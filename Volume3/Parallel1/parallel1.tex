@@ -1,5 +1,5 @@
 \lab{Parallel Computing with $\texttt{ipyparallel}$}{Parallel Computing with $\texttt{ipyparallel}$}
-\objective{(TODO: Awesome objective coming!)}
+\objective{For most computer programs, one processor suffices to run the program effectively. Many computers, however, have more than one processor in order to allow for efficient multitasking. For more computationally expensive code, it may be beneficial to utilize more than one of the machine's processors so that the code can run faster. This lab teaches about \li{ipyparallel}, a python module that allows users to directly access and run code on multiple processors at the same time.}
 \label{lab:parallel1}
 
 \section*{Why Parallel Computing?}
@@ -38,7 +38,7 @@ You should have seen one of the cores get maxed out at 100\%. It is also possibl
 \label{fig:htop}
 \end{figure}
 
-As you saw in the exercise above, only one of the cores was carrying the load at a time. This means that we are only using a fraction of the computer's resources. When working on a personal computer, this would often be to your benefit. Dividing jobs among multiple cores is part of what makes smooth multitasking possible. However, in the event you wish to devote all the computer's resources to executing your code, we employ the help of the \li{ipyparallel} module. In theory, you can make your code run $N$ times faster when executing in parallel where $N$ is the number of cores
+As you saw in the exercise above, only one of the cores was carrying the load at a time. This means that we are only using a fraction of the computer's resources. When working on a personal computer, this would often be to your benefit. Dividing jobs among multiple cores is part of what makes smooth multitasking possible. However, in the event you wish to devote all the computer's resources to executing your code, we employ the help of the \li{ipyparallel} module. In theory, you can make your code run $N$ times faster when executing in parallel where $N$ is the number of cores.
 
 \section*{The $\texttt{ipyparallel}$ Module}
 We will begin our discussion on parallel computing by learning about the \li{ipyparallel} module. Even though this may not be the fastest parallel computing framework available, it is very easy to take advantage of all the cores on your computer with relatively little code. As mentioned before, you cannot expect your code to magically run faster if you requests the usage of more cores on your computer. You have to specify what happens on each core. This concept is key to understanding parallel computing.
@@ -53,7 +53,11 @@ $ conda update anaconda
 $ conda install ipyparallel
 \end{lstlisting}
 
-With \li{ipyparallel} installed, we can now initialize an IPython cluster. We won't go too much into the architecture of the IPython cluster, but if you are interested in learning more, visit \url{https://ipyparallel.readthedocs.io/en/latest/intro.html#architecture-overview}.
+With \li{ipyparallel} installed, we can now initialize an IPython cluster. 
+This cluster contains, among other things, a controller, which has processes to access the machine's various engines.
+The controller can be accessed through the \li{Client} object, which has two classes, \li{DirectView}, and \li{LoadBalancedView}.
+These will be discussed in further detail later.
+We won't go too much more into the architecture of the IPython cluster, but if you are interested in learning more, visit \url{https://ipyparallel.readthedocs.io/en/latest/intro.html#architecture-overview}.
 
 Now to initialize an IPython cluster, run the following code:
 
@@ -61,10 +65,12 @@ Now to initialize an IPython cluster, run the following code:
 $ ipcluster start
 \end{lstlisting}
 
+% Add some explanation (perhaps here) regarding the controller, etc and how dview interacts with it.
+
 This will start a cluster with one engine per processor. If you would like to specify the number of engines to initialize, run the following:
 
 \begin{lstlisting}
-# start a cluster with 8 engines.
+# Start a cluster with 8 engines.
 $ ipcluster start --n 8
 \end{lstlisting}
 
@@ -112,12 +118,12 @@ For the purposes of having more control over each engine, we will focus on the \
 >>> from ipyparallel import Client
 >>> client = Client()
 
-# verify the dview has been generated correctly.
-#   On my system, I have 4 processors.
+# Verify the dview has been generated correctly.
+# If you had four processors, the output would be as follows.
 >>> client.ids
 [0, 1, 2, 3]
 
-# initialize DirectView
+# Initialize DirectView
 >>> dview = client[:]
 \end{lstlisting}
 
@@ -125,7 +131,7 @@ For the purposes of having more control over each engine, we will focus on the \
 When using multiple processors, each engine has its own namespace. Therefore, just because a variable has been initialized does not mean that each engine is aware of that variable. You must initialize these variables explicitly on each engine. There are a few different ways to do this.
 
 \begin{lstlisting}
-# To share the variable `a' across all engines
+# To share the variable 'a' across all engines
 >>> a = 10
 >>> b = 5
 >>> dview["a"] = a
@@ -177,21 +183,64 @@ You can also pass variables into your function as part of call to \li{apply\_syn
 [9, 9, 9, 9]
 \end{lstlisting}
 
-\begin{problem}
-To this point, the examples of what you can do with parallel computing may not have been very convincing since we were just getting the same answer on each engine. In this problem, we will make better use of each of the engines.
+To this point, the examples of what you can do with parallel computing may not seem too interesting since each engine is producing the same result.
+There are, however, circumstances in which the engines return different results.
+In these situations, parallel computing can drastically speed up the result.
 
-Using \li{apply\_sync()}, draw 1,000,000 samples from a standard normal distribution. Report the mean, max, and min for draws on each individual engine. For example if you have four engines running, your output should look like:
+\begin{lstlisting}
+# A function that draws four samples from a standard normal distribution
+>>> def draw():
+...    import numpy as np
+...    a = np.random.randn(4)
+...    return a
+
+# Runs draw() on all engines simultaneously and returns the results
+>>> dview.apply_sync(draw)
+[array([-0.7277754 , -0.39273127,  0.05636817, -0.26855806]),
+ array([ 0.46569263,  0.63911368, -0.02812979,  1.63223456]),
+ array([ 0.92278649, -1.42868485,  0.32370856, -0.2386319 ]),
+ array([-0.93787564,  1.16286507, -0.0388443 , -1.10649599])]
+
+\end{lstlisting}
+
+\begin{info}
+In the code above, notice that NumPy is imported within the function. 
+Since each engine has its own namespace, we must ensure that the desired modules are imported in each engine.
+There is more than one way to do this. 
+
+For example, the following command imports NumPy to all engines simultaneously.
+
+\begin{lstlisting}
+>>> dview.execute("import numpy as np")
+\end{lstlisting}
+\end{info}
+
+\begin{problem}
+Using \li{apply\_sync()}, draw 1,000,000 samples from a standard normal distribution. Print the mean, max, and min for draws on each individual engine. For example if you have four engines running, your output should look like:
 \begin{lstlisting}
 means = [0.0031776784, -0.0058112042, 0.0012574772, -0.0059655951]
 maxs = [4.0388107, 4.3664958, 4.2060184, 4.3391623]
 mins = [-4.1508589, -4.3848019, -4.1313324, -4.2826519]
 \end{lstlisting}
+\end{problem}
 
 In theory, using parallel computing for this problem should be approximately $n$ times faster where $n$ is the number of engines you are using.
+In practice, however, the scaling is not quite linear.
+This is due in part to the fact that the controller must be run on one of the engines.
+We test this in the following problem.
+
+\begin{problem}
+Using the function you wrote and passed into \li{apply\_sync()} in the previous problem, compare the time it takes to run the function with parallel computing to the time it takes to run the function serially.
+That is, time how long it takes to run the function on all of your machine's engines simultaneously using \li{apply\_sync}, and time how long it takes to run the function in a \li{for} loop $n$ times, where $n$ is the number of engines on your machine. 
+Print the results.
 \end{problem}
 
 \begin{problem}
-Now let's do a problem that is a bit more computationally intensive. Define the random variable $X$ to be the maximum out of a $N$ draws from the standard normal distribution. Take 500,000 draws from this distribution and plot the draws in a histogram. The resulting histogram will approximate the p.d.f. of $X$.
+Now let's do a problem that is a bit more computationally intensive. 
+Define the random variable $X$ to be the maximum out of $N$ draws from the standard normal distribution.
+For example, one draw from $X$ when $N$ = 10 would be the maximum out of 10 draws from the normal distribution.
+Write a function that accepts an integer $N$, takes 500,000 draws from this distribution ($X$), and plots the draws in a histogram.
+The resulting histogram will approximate the p.d.f. of $X$.
 
 Write your function in such a way that each engine will carry an equal load. Also write your function in such a way that it is flexible to the number of engines that are running. HINT: Remember that you can get a list of all available engines using \li{clients.ids}.
 \end{problem}
@@ -209,7 +258,7 @@ We will first introduce an example of \li{scatter()} and explain the proper usag
 #   named "a_partition" on each of the engines.
 >>> dview.scatter("a_partition", a)
 
-# Verify that the data has been successfully scattered
+# Verify that the data has been successfully scattered.
 #    Notice that the data has been scattered as
 #    equally as possible.
 >>> client[0]["a_partition"]
@@ -244,7 +293,7 @@ If you are using a Jupyter Notebook, there is a built in magic function that is 
 We have now computed the sum of each of these pieces of the data and stored the result in the variable $b$. Now how can we gain access to all these results? We use the \li{gather()} method.
 
 \begin{lstlisting}
-# gather all the 'b' values into a list.
+# Gather all the 'b' values into a list.
 >>> b_list = dview.gather("b", block=True)
 [3, 12, 13, 17]
 

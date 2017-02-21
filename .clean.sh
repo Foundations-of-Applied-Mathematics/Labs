@@ -1,7 +1,7 @@
 #!/bin/bash
 # Clean up the repository by removing auxiliary files.
 
-FILES=(PythonEssentials Volume1 Volume2 Volume3 Volume4 ExtraLabs InstructorNotes)
+FILES=(PythonEssentials Volume1 Volume2 Volume3 Volume4 ExtraLabs InstructorNotes onelab)
 
 set +e      # Ignore any failures
 

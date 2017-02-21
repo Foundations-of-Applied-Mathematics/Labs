@@ -1,17 +1,13 @@
 \lab{Profiling and Optimizing Python Code}{Profiling}
-\objective{Identify which portions of the code are most time consuming using a
-profiler. Optimize Python code using good coding practices and just-in-time compilation with Numba.}
+\objective{
+The best code goes through multiple drafts.
+In a first draft, you should focus on writing code that does what it is supposed to and is easy to read.
+Once you have working code, you may need to speed it up to meet the demands of the application.
+In this lab we learn to identify the parts of code that take the most time to run and how speed up slow code.}
 \label{lab:ProfilingCode}
 
-The best code goes through multiple drafts.
-In a first draft, you should focus on writing code that does what it is supposed
-to and is easy to read. After writing a first draft, you may find that your code
-does not run as quickly as you need it to. Then it is time to \emph{optimize}
-the most time consuming parts of your code so that they run as quickly as possible.
-
-In this lab we will optimize the function \li{qr1()} that computes the QR
-decomposition of a matrix via the modified Gram-Schmidt algorithm
-(see Lab \ref{lab:QRdecomp}).
+% TODO: DO SOMETHING THAT DOESN'T DEPEND ON VOLUME 1 OR 2 LABS!! Maybe some Project Euler problems?
+In this lab we will optimize the function \li{qr1()} that computes the QR decomposition of a matrix via the modified Gram-Schmidt algorithm.
 
 \begin{lstlisting}
 import numpy as np
@@ -30,18 +26,16 @@ def qr1(A):
     return Q, R
 \end{lstlisting}
 
-\section*{What to Optimize}
-Python provides a \emph{profiler} that can identify where code spends most of
-its runtime. The output of the profiler will tell you where to begin your
-optimization efforts.
+\section*{Profiling Slow Code} % ==============================================
 
-In IPython\footnote{If you are not using IPython, you will need to use the
-\li{cProfile} module documented here: \url{https://docs.python.org/2/library/profile.html}.},
-you can profile a function with \li{\%prun}.
+Python provides a \emph{profiler} that can identify where code spends most of its runtime.
+The output of the profiler will tell you where to begin your optimization efforts.
+In IPython\footnote{If you are not using IPython, you will need to use the \li{cProfile} module documented here: \url{https://docs.python.org/2/library/profile.html}.}, you can profile a function with \li{\%prun}.
 Here we profile \li{qr1()} on a random $300 \times 300$ array.
 
 \begin{lstlisting}
-In [1]: A = np.random.rand(300, 300)
+In [1]: A = np.random.random((300, 300))
+
 In [2]: %prun qr1(A)
 \end{lstlisting}
 
@@ -54,7 +48,7 @@ On the author's computer, we get the following output.
    Ordered by: internal time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-        1    0.998    0.998    1.342    1.342 profiling_hw.py:4(qr1)
+        1    0.998    0.998    1.342    1.342 profiling.py:4(qr1)
     89700    0.319    0.000    0.319    0.000 {method 'dot' of 'numpy.ndarray' objects}
       600    0.006    0.000    0.012    0.000 function_base.py:526(asarray_chkfinite)
       600    0.006    0.000    0.009    0.000 linalg.py:1840(norm)
@@ -73,26 +67,20 @@ On the author's computer, we get the following output.
 \end{verbatim}
 }
 
-
-The first line of the output tells us that executing \li{qr1(A)} results in
-almost 100,000 function calls. Then we see a table listing these functions along
-with data telling us how much time each takes. Here, \li{ncalls} is the number
-of calls to the function, \li{tottime} is the total time spent in the function,
-and \li{cumtime} is the amount of time spent in the function including calls
-to other functions.
+The first line of the output tells us that executing \li{qr1(A)} results in almost 100,000 function calls.
+Then we see a table listing these functions along with data telling us how much time each takes.
+Here, \li{ncalls} is the number of calls to the function, \li{tottime} is the total time spent in the function, and \li{cumtime} is the amount of time spent in the function including calls to other functions.
 
 For example, the first line of the table is the function \li{qr1(A)} itself.
-This function was called once, it took 1.342s to run, and 0.344s of that was
-spent in calls to other functions. Of that 0.344s, there were 0.319s spent on
-89,700 calls to \li{np.dot()}.
+This function was called once, it took 1.342s to run, and 0.344s of that was spent in calls to other functions.
+Of that 0.344s, there were 0.319s spent on 89,700 calls to \li{np.dot()}.
 
 With this output, we see that most time is spent in multiplying matrices.
-Since we cannot write a faster method to do this multiplication, we may want to
-try to reduce the number of matrix multiplications we perform.
+Since we cannot write a faster method to do this multiplication, we may want to try to reduce the number of matrix multiplications we perform.
 
-\section*{How to Optimize}
-Once you have identified those parts of your code that take the most time,
-how do you make them run faster?
+\section*{Speeding Up Code} % =================================================
+
+Once you have identified those parts of your code that take the most time, how do you make them run faster?
 Here are some of the techniques we will address in this lab:
 
 \begin{itemize}
@@ -106,36 +94,36 @@ Here are some of the techniques we will address in this lab:
 \item Use a more efficient algorithm
 \end{itemize}
 
-You should always use the profiling and timing functions to help you decide
-when an optimization is actually useful.
+You should always use the profiling and timing functions to help you decide when an optimization is actually useful.
 
 \begin{problem}
 In this lab, we will perform many comparisons between the runtimes of various
-functions. To help with these comparisions, implement the following function:
+functions.
+To help with these comparisions, implement the following function:
 
 \begin{lstlisting}
 def compare_timings(f, g, *args):
-    """Compares the timings of 'f' and 'g' with arguments '*args'.
+    """Compare the timings of 'f' and 'g' with arguments '*args'.
 
     Inputs:
-        f (callable): first function to compare.
-        g (callable): second function to compare.
-        *args (any type): arguments to use when callings functions
-            'f' and 'g'
+        f (func): first function to compare.
+        g (func): second function to compare.
+        *args: arguments to use when callings functions 'f' and 'g',
+            i.e., call f with f(*args).
     Returns:
-        comparison (string): The comparison of the runtimes of functions
-            'f' and 'g' in the following format :
+        comparison (str): The comparison of the runtimes of functions
+            'f' and 'g' in the following format:
                 Timing for <f>: <time>
                 Timing for <g>: <time>
-            where the values inside <> vary depending on the inputs)
+    """
 \end{lstlisting}
-Hint: You can gain access to the name of many functions by using its
-\li{func_name} method. However, this method does not exist for all functions
-we will be interested in timing. Therefore, even though it is not as clean, use
-\li{str(f)} to print a string representation of f.
+(Hint: You can gain access to the name of many functions by using its \li{func_name()} method.
+However, this method does not exist for all functions we will be interested in timing.
+Therefore, even though it is not as clean, use \li{str(f)} to print a string representation of f.)
 \end{problem}
 
-\subsection*{Avoid Recomputing Values}
+\subsection*{Avoid Recomputing Values} % --------------------------------------
+
 In our function \li{qr1()}, we can avoid recomputing \li{R[i,i]} in the outer
 loop and \li{R[i,j]} in the inner loop.
 The rewritten function is as follows:
@@ -162,7 +150,7 @@ Profiling \li{qr2()} on a $300 \times 300$ matrix produces the following output.
    Ordered by: internal time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-        1    0.863    0.863    1.047    1.047 profiling_hw.py:16(qr2)
+        1    0.863    0.863    1.047    1.047 profiling.py:16(qr2)
     44850    0.171    0.000    0.171    0.000 {method 'dot' of 'numpy.ndarray' objects}
       300    0.003    0.000    0.006    0.000 function_base.py:526(asarray_chkfinite)
       300    0.003    0.000    0.005    0.000 linalg.py:1840(norm)
@@ -185,81 +173,93 @@ Our optimization reduced almost every kind of function call by half, and reduced
 
 Some less obvious ways to eliminate excess computations include moving computations out of loops, not copying large data structures, and simplifying mathematical expressions.
 
-\subsection*{Avoid Nested Loops}
-For many algorithms, the temporal complexity of an algorithm is determined by its loops. Nested loops quickly increase the temporal complexity.
+\subsection*{Avoid Nested Loops} % --------------------------------------------
+
+For many algorithms, the temporal complexity of an algorithm is determined by its loops.
+Nested loops quickly increase the temporal complexity.
 The best way to avoid nested loops is to use NumPy array operations instead of iterating through arrays.
 If you must use nested loops, focus your optimization efforts on the innermost loop, which gets called the most times.
 
+% TODO: ALSO CHANGE THIS TO A NON-VOLUME PROBLEM!!
 \begin{problem}
-The code below is an inefficient implementation of the LU
-algorithm. Write a function \li{LU_opt()} that is an optimized
-version of \li{LU()}. Look for ways to avoid recomputing values
-and avoid nested loops by using array slicing instead.
-Print a comparison of the timing of the
-original function and your optimized function using your
-\li{compare_timings} function.
+The code below is an inefficient implementation of the LU algorithm.
+Write a function \li{LU_opt()} that is an optimized version of \li{LU()}.
+Look for ways to avoid recomputing values and avoid nested loops by using array slicing instead.
+Print a comparison of the timing of the original function and your optimized function using your \li{compare_timings()} function.
+
 \begin{lstlisting}
 def LU(A):
-    """Returns the LU decomposition of a square matrix."""
+    """Return the LU decomposition of a square matrix."""
     n = A.shape[0]
     U = np.array(np.copy(A), dtype=float)
     L = np.eye(n)
-    for i in range(1,n):
+    for i in range(1, n):
         for j in range(i):
-            L[i,j] = U[i,j]/U[j,j]
-            for k in range(j,n):
+            L[i,j] = U[i,j] / U[j,j]
+            for k in range(j, n):
                 U[i,k] -= L[i,j] * U[j,k]
-    return L,U
+    return L, U
 \end{lstlisting}
 \end{problem}
 
-\subsection*{Use Existing Functions Instead of Writing Your Own}
+\subsection*{Use Built-in Functions} % ----------------------------------------
+
 If there is an intuitive operation you would like to perform on an array, chances are that NumPy or another library already has a function that does it.
 Python and NumPy functions have already been optimized, and are usually many times faster than the equivalent you might write.
 We saw an example of this in Lab \ref{lab:NumPyArrays} where we compared NumPy array multiplication with our own matrix multiplication implemented in Python.
 
-\begin{problem} \label{prob:add}
-Without using any builtin functions, implement that following function:
+\begin{problem}
+Without using any builtin functions, implement the following function.
+
 \begin{lstlisting}
-def mysum(X):
-    """ Return the sum of the elements of X.
+def mysum(x):
+    """Return the sum of the elements of X without using a built-in function.
+
     Inputs:
-        X (array) - a 1-D array
+        x (iterable): a list, set, 1-d NumPy array, or another iterable.
     """
 \end{lstlisting}
-Perform a comparision of \li{mysum} to Python's builtin \li{<<sum>>} function and
-NumPy's \li{<<np.sum>>} using your \li{compare_timings} function.
+
+Compare \li{mysum()} to Python's builtin \li{sum()} function and NumPy's \li{<<np.sum()>>} using your \li{compare_timings()} function.
+\label{prob:add}
 \end{problem}
 
-\subsection*{Use Generators When Possible}
+\subsection*{Use Generators} % ------------------------------------------------
+
 When you are iterating through a list, you can often replace the list with a \emph{generator}.
 Instead of storing the entire list in memory, a generator computes each item as it is needed.
 For example, the code
+
 \begin{lstlisting}
 >>> for i in range(100):
 ...     print i
 \end{lstlisting}
+%
 stores the numbers 0 to 99 in memory, looks up each one in turn, and prints it.
 On the other hand, the code
+
 \begin{lstlisting}
 >>> for i in xrange(100):
 ...     print i
 \end{lstlisting}
+%
 uses a generator instead of a list.
 This code computes the first number in the specified range (which is 0), and prints it.
 Then it computes the next number (which is 1) and prints that.
 
-In our example, replacing each \li{range} with \li{xrange} does not speed up \li{qr2()} by a noticeable amount.
+In our example, replacing each \li{range()} with \li{xrange()} does not speed up \li{qr2()} by a noticeable amount.
 
 Though the example below is contrived, it demonstrates the benefits of using generators.
+
+% TODO: change this to a %timeit thing.
 \begin{lstlisting}
 # both these functions will return the first iterate of a loop of length 10^8.
 def list_iter():
-    for i in range(10**8):
+    for i in range(10**8):              # Use range()
         return i
 
 def generator_iter():
-    for i in xrange(10**8):
+    for i in xrange(10**8):             # Use xrange()
         return i
 
 >>> compare_timings(list_iter,generator_iter)
@@ -268,7 +268,13 @@ Timing for <function generator_iter at 0x7f3deb5a4500>: 1.19209289551e-05
 \end{lstlisting}
 
 It is also possible to write your own generators.
-Say we have a function that returns an array. And say we want to iterate through this array later in our code. In situations like these, it is valuable to consider turning your function into a generator instead of returning the whole list. The benefits of this approach mirror the benefits of using \li{xrange} instead of {range}. The only thing that needs to be adjusted is to change the \li{return} statement to a \li{yield} statement. Here is a quick example:
+Say we have a function that returns an array.
+And say we want to iterate through this array later in our code.
+In situations like these, it is valuable to consider turning your function into a generator instead of returning the whole list.
+The benefits of this approach mirror the benefits of using \li{xrange()} instead of \li{range()}.
+The only thing that needs to be adjusted is to change the \li{return} statement to a \li{yield} statement.
+Here is a quick example:
+
 \begin{lstlisting}
 def return_squares(n):
     squares = []
@@ -280,32 +286,38 @@ def yield_squares(n):
     for i in xrange(1,n+1):
         yield i**2
 \end{lstlisting}
-When yield is called, the single value is returned and all the local variables for the function are stored away until the next iteration. To iterate step-by-step through a generator, use the generator's \li{<<next>>} method.
+
+The \li{yield} statement ``returns'' the single value, but all the local variables for the function are stored away until the next iteration.
+To iterate step-by-step through a generator, use the builtin \li{next()} function..
 \begin{lstlisting}
 >>> squares = yield_squares(3)
->>> squarees.next()
+>>> next(squares)
 1
->>> squares.next()
+>>> next(squares)
 4
->>> squares.next()
+>>> next(squares)
 9
 \end{lstlisting}
 
-We can also easily iterate through a generator using a for loop.
+We can also iterate through a generator using a for loop.
+
 \begin{lstlisting}
->>> for s in squares:
+>>> for s in yield_squares(3):
 ...    print s,
 ...
 1 4 9
 \end{lstlisting}
 
 \begin{problem}
-Write a generator that yields the first \li{n} Fibonacci numbers.
+The \emph{Fibonacci sequence} is defined by the recurrence relation $F_{n+1} = F_n + F_{n-1}$, where $F_1 = F_2 = 1$.
+Write a generator that yields the first $n$ Fibonacci numbers.
+% TODO: then, use your generator with enumerate() to determine the index of the first Fibonacci number containing more than 1000 digits (reference: Project Euler #25).
 \end{problem}
 
 If you are interested in learning more about writing your own generators, see \url{https://docs.python.org/2/tutorial/classes.html#generators} and \url{https://wiki.python.org/moin/Generators}.
 
-\subsection*{Avoid Excessive Function Calls}
+\subsection*{Avoid Excessive Function Calls} % --------------------------------
+
 Function calls take time.
 Moreover, looking up methods associated with objects takes time.
 Removing ``dots'' can significantly speed up execution time.
@@ -314,7 +326,7 @@ For example, we could rewrite our function to reduce the number of times we need
 
 \begin{lstlisting}
 def qr2(A):
-    norm = la.norm # this reduces the number of function look ups.
+    norm = la.norm      # This reduces the number of function lookups.
     ncols = A.shape[1]
     Q = A.copy()
     R = np.zeros((ncols, ncols))
@@ -328,27 +340,36 @@ def qr2(A):
 \end{lstlisting}
 Once again, an analysis with \li{\%prun} reveals that this optimization does not help significantly in this case.
 
+\subsection*{Write Pythonic Code} % -------------------------------------------
 
-\subsection*{Write Pythonic Code}
 Several special features of Python allow you to write fast code easily.
-First, list comprehensions are much faster than for loops. These are particularly useful when building lists inside a loop.
+First, list comprehensions are much faster than for loops.
+These are particularly useful when building lists inside a loop.
 For example, replace
+
 \begin{lstlisting}
 >>> mylist = []
 >>> for i in xrange(100):
 ...     mylist.append(math.sqrt(i))
+
 \end{lstlisting}
+%
 with
+
 \begin{lstlisting}
 >>> mylist = [math.sqrt(i) for i in xrange(100)]
 \end{lstlisting}
+
 We can accomplish the same thing using the \li{map()} function, which is even faster.
+
 \begin{lstlisting}
 >>> mylist = map(math.sqrt, xrange(100))
 \end{lstlisting}
+
 The analog of a list comprehension also exists for generators, dictionaries, and sets.
 
 Second, swap values with a single assignment.
+
 \begin{lstlisting}
 >>> a, b = 1, 2
 >>> a, b = b, a
@@ -360,15 +381,19 @@ Third, many non-Boolean objects in Python have truth values.
 For example, numbers are \li{False} when equal to zero and \li{True} otherwise.
 Similarly, lists and strings are \li{False} when they are empty and \li{True} otherwise.
 So when \li{a} is a number, instead of
+
 \begin{lstlisting}
 >>> if a != 0:
 \end{lstlisting}
+%
 use
+
 \begin{lstlisting}
 >>> if a:
 \end{lstlisting}
 
 Lastly, it is more efficient to iterate through lists by iterating over the elements instead of iterating over the indices.
+
 \begin{lstlisting}
 # Bad
 for i in xrange(len(my_list)):
@@ -379,10 +404,13 @@ for x in my_list:
     print x,
 \end{lstlisting}
 
-However, there are situations where you will need to know the indices of the elements over which you are iterating. In these situations, use \li{enumerate}.
+However, there are situations where you will need to know the indices of the elements over which you are iterating.
+In these situations, use \li{enumerate}.
 
+% TODO: this problem is REALLY dumb.
 \begin{problem}
-Using \li{\%prun}, find out which portions of the code below require the most runtime. Then, rewrite the function using some of the optimization techniques we have discussed thus far.
+Consider the following poorly-written function.
+
 \begin{lstlisting}
 def foo(n):
     my_list = []
@@ -391,20 +419,27 @@ def foo(n):
         my_list.append(num)
     evens = 0
     for j in range(n):
-        if j%2 == 0:
+        if my_list[j] % 2 == 0:
             evens += my_list[j]
     return my_list, evens
 \end{lstlisting}
 
-Hint: If you are unsure where to begin optimizing, walk through the code line by line to determine what the code is accomplishing. Then, write your own function to perform the same task in a more efficient way using the optimization techniques we have discuessed.
+Walk through the code line by line to determine what the code is accomplishing.
+Using \li{\%prun}, find out which portions of the code below require the most runtime.
+Rewrite the function to perform the same task in a more efficient way using the optimization techniques we have discussed.
 \end{problem}
 
-\subsection*{Compiling Using Numba}
-Though it is much easier to write simple, readable code in Python, it is also much slower than compiled languages such as C. Compiled languages, in general, are much faster.
-Numba is a tool that you can use to optimize your code. Numba uses \emph{just-in-time} (JIT) compilation.
+\section*{Numba} % ============================================================
 
-This means that the code is compiled right before it is executed. We will discuss this process a bit later in this section.
-The API for using Numba is incredibly simple. All one has to do is import Numba and add the \li{@jit} function decorator to your function. The following code would be a Numba equivalent to Problem \ref{prob:add}.
+Though it is much easier to write simple, readable code in Python, it is also much slower than compiled languages such as C.
+Compiled languages, in general, are much faster.
+\emph{Numba} is a tool that uses \emph{just-in-time} (JIT) compilation to optimize code, meaning that the code is compiled right before it is executed.
+We will discuss this process a bit later in this section.
+
+The API for using Numba is incredibly simple.
+All one has to do is import Numba and add the \li{@jit} function decorator to your function.
+The following code would be a Numba equivalent to Problem \ref{prob:add}.
+
 \begin{lstlisting}
 from numba import jit
 @jit
@@ -415,18 +450,27 @@ def numba_sum(A):
     return total
 \end{lstlisting}
 
-Though this code looks very simple, a lot is going on behind the scenes. Without getting into too many details, one of the reasons compiled languages like C are so much faster than Python is because they have explicitly defined datatypes. The main strategy used by Numba is to speed up the Python code by assigning datatypes to all the variables. Rather than requiring us to define the datatypes explicitly as we would need to in any compiled language, Numba attempts to \emph{infer} the correct datatypes based on the datatypes of the input.
+Though this code looks very simple, a lot is going on behind the scenes.
+One of the reasons compiled languages like C are so much faster than Python is because they have explicitly defined datatypes.
+The main strategy used by Numba is to speed up the Python code by assigning datatypes to all the variables.
+Rather than requiring us to define the datatypes explicitly as we would need to in any compiled language, Numba attempts to \emph{infer} the correct datatypes based on the datatypes of the input.
 
-In the code above, for example, say that our array \li{A} was an array of integers. Though we have not explicitly defined a datatype for the variable \li{total}, Numba will infer that the datatype for total should also be an integer.
+In the code above, for example, say that our array \li{A} was an array of integers.
+Though we have not explicitly defined a datatype for the variable \li{total}, Numba will infer that the datatype for total should also be an integer.
 
-Once all the datatypes have been inferred and assigned, the code is translated to machine code by the LLVM library. Numba will then cache this compiled version of our code. This means that we can bypass this whole inference and compilation process the next time we run our function.
+Once all the datatypes have been inferred and assigned, the code is translated to machine code by the LLVM library.
+Numba will then cache this compiled version of our code.
+This means that we can bypass this whole inference and compilation process the next time we run our function.
 
-\subsubsection*{More Control Within Numba}
-Though the inference engine within Numba does a good job, it's not always perfect. There are times that Numba is unable to infer all the datatypes correctly.
+\subsection*{More Control Within Numba} % -------------------------------------
+
+Though the inference engine within Numba does a good job, it's not always perfect.
+There are times that Numba is unable to infer all the datatypes correctly.
 
 If you add the keyword argument, \li{nopython=True} to the \li{jit} decorator, an error will be raised if Numba was unable to convert everything to explicit datatypes.
 
-If your function is running slower than you would expect, you can find out what is going on under the hood by calling the \li{inspect_types()} method of the function. Using this, you can see if all the datatypes are being assigned as you would expect.
+If your function is running slower than you would expect, you can find out what is going on under the hood by calling the \li{inspect_types()} method of the function.
+Using this, you can see if all the datatypes are being assigned as you would expect.
 
 \begin{lstlisting}
 # Due to the length of the output, we will leave it out of the lab text.
@@ -435,7 +479,8 @@ If your function is running slower than you would expect, you can find out what 
 
 If you would like to have more control, you may specify datatypes explicity as demonstrated in the code below.
 
-In this example, we will assume that the input will be doubles. Note that is necessary to import the desired datatype from the Numba module.
+In this example, we will assume that the input will be doubles.
+Note that is necessary to import the desired datatype from the Numba module.
 
 \begin{lstlisting}
 from numba import double
@@ -447,20 +492,25 @@ def numba_sum(A):
         total += A[i]
     return total
 \end{lstlisting}
-Notice that the jit function decorator is the only thing that changed. Note also that this means that we will not be allowed to pass an array of integers to this function. If we had not specified datatypes, the inference engine would allow us to pass arrays of any numerical datatype. In the case that our function sees a datatype that it has not seen before, the inference and compilation process would have to be repeated. As before, the new version will also be cached.
+
+Notice that the jit function decorator is the only thing that changed.
+Note also that this means that we will not be allowed to pass an array of integers to this function.
+If we had not specified datatypes, the inference engine would allow us to pass arrays of any numerical datatype.
+In the case that our function sees a datatype that it has not seen before, the inference and compilation process would have to be repeated.
+As before, the new version will also be cached.
 
 \begin{problem}
 % TODO Change this problem to something more compelling.
+% TODO: this might be an okay problem, but there are WAY more efficient algorithms for doing this, and speeding up a bad algorithm isn't nearly as good as just using a better algorithm.
 The code below defines a Python function which takes a matrix to the $n$th power.
+
 \begin{lstlisting}
 def pymatpow(X, power):
-    """ Return X^{power}.
+    """Return X^{power}, the matrix product XX...X, 'power' times.
 
     Inputs:
-        X (array) - A square 2-D NumPy array
-        power (int) - The power to which we are taking the matrix X.
-    Returns:
-        prod (array) - X^{power}
+        X ((n,n) ndarray): A square matrix.
+        power (int): The power to which to raise X.
     """
     prod = X.copy()
     temparr = np.empty_like(X[0])
@@ -477,22 +527,26 @@ def pymatpow(X, power):
 \end{lstlisting}
 
 \begin{enumerate}
-\item Create a function \li{numba_matpow} that is the compiled version of \li{pymatpow} using Numba.
-\item Write a function \li{numpy_matpow} that performs the same task as \li{pymatpow} but uses \li{np.dot()}. Compile this function using Numba.
-\item Compare the speed of \li{pymatpow},  \li{numba_matpow} and the \li{numpy_matpow} function. Remember to time \li{numba_matpow} and \li{numpy_matpow} on the second pass so the compilation process is not part of your timing. Perform your comparisons using your \li{compare_timings} function.
+\item Create a function \li{numba_matpow()} that is the compiled version of \li{pymatpow()} using Numba.
+
+\item Write a function \li{numpy_matpow()} that performs the same task as \li{pymatpow} but uses \li{np.dot()}.
+Compile this function using Numba.
+
+\item Compare the speed of \li{pymatpow()},  \li{numba_matpow()} and the \li{numpy_matpow()} function.
+Remember to time \li{numba_matpow()} and \li{numpy_matpow()} on the second pass so the compilation process is not part of your timing.
+Perform your comparisons using your \li{compare_timings()} function.
 \end{enumerate}
 
 NumPy takes products of matrices by calling BLAS and LAPACK, which are heavily optimized linear algebra libraries written in C, assembly, and Fortran.
 \end{problem}
 
 \begin{warn}
-NumPy's array methods are often faster than a Numba equivalent you could code yourself.
+NumPy's array methods are often faster than a Numba equivalent that you could code yourself.
 If you are unsure which method is fastest, time them.
 \end{warn}
 
-
-
-\subsection*{Use a More Efficient Algorithm}
+% TODO: We should talk about this at the beginning! Speeding up a bad algorithm isn't nearly as good as just using a better algorithm.
+\section*{Use a More Efficient Algorithm} % ===================================
 
 The optimizations discussed thus far will speed up your code at most by a constant.
 They will not change the complexity of your code.
@@ -500,8 +554,8 @@ In order to reduce the complexity (say from $O(n^2)$ to $O(n \log(n))$), you typ
 We will address the benefits of using more efficient algorithms in Problem \ref{prob:tridiag}.
 
 A good algorithm written with a slow language (like Python) is faster than a bad algorithm written in a fast language (like C).
-Hence, focus on writing fast algorithms with good Python code, and only Numba when and where it is necessary. In other words, Numba will not always save you from a poor algorithm design.
-
+Hence, focus on writing fast algorithms with good Python code, and only Numba when and where it is necessary.
+In other words, Numba will not always save you from a poor algorithm design.
 
 \begin{comment}
 \begin{problem}
@@ -509,71 +563,71 @@ Optimize the following function using techniques described in this lab:
 \begin{lstlisting}
 # TODO: COME UP WITH SOME ALGORITHM TO DO HERE!!
 \end{lstlisting}
-It should also include a list of changes, the reasoning behind the changes, and the effect of the changes on runtime. On the author's computer, computing the LU-decomposition on a 1000x1000 matrix took over 2 and a half minutes. The optimized version took a little over a second.
+It should also include a list of changes, the reasoning behind the changes, and the effect of the changes on runtime.
+On the author's computer, computing the LU-decomposition on a 1000x1000 matrix took over 2 and a half minutes.
+The optimized version took a little over a second.
 
-Hint: The best way to approach this problem is to analyze what each piece of code is actually doing. Then, determine if there is a more efficient way to accomplish the same task. Specifically, look for ways to use array operations instead of for loops, ways to replace blocks of code with built-in Python functions, and ways to avoid recomputing values.
+Hint: The best way to approach this problem is to analyze what each piece of code is actually doing.
+Then, determine if there is a more efficient way to accomplish the same task.
+Specifically, look for ways to use array operations instead of for loops, ways to replace blocks of code with built-in Python functions, and ways to avoid recomputing values.
 \end{problem}
 \end{comment}
 
 The correct choice of algorithm is more important than a fast implementation.
 For example, suppose you wish to solve the following tridiagonal system.
-\[\begin{bmatrix}
+\[
+A\x = \left[\begin{array}{ccccccc}
 b_1 & c_1 & 0 & 0 & \cdots & \cdots & 0 \\
 a_2 & b_2 & c_2 & 0 & \cdots & \cdots & 0 \\
 0 & a_3 & b_3 & c_3 & \cdots & \cdots & 0 \\
 \vdots & \vdots & \vdots & \vdots & \ddots & \ddots & \vdots \\
 \vdots & \vdots & \vdots & \vdots & \ddots & \ddots & c_{n-1} \\
 0 & 0 & 0 & 0 & \cdots & a_n & b_n
-\end{bmatrix}
-\begin{bmatrix}
-x_1\\
-x_2\\
-x_3\\
-\vdots\\
-\vdots\\
-x_n
-\end{bmatrix}
+\end{array}\right]
+\left[\begin{array}{c}
+x_1 \\ x_2 \\ x_3\\ \vdots \\ \vdots \\ x_n
+\end{array}\right]
 =
-\begin{bmatrix}
-d_1\\
-d_2\\
-d_3\\
-\vdots\\
-\vdots\\
-d_n
-\end{bmatrix}\]
-One way to do this is with the general \li{solve} method in SciPy's \li{linalg} module.
+\left[\begin{array}{c}
+d_1 \\ d_2 \\ d_3 \\ \vdots \\ \vdots \\ d_n
+\end{array}\right] = \mathbf{d}
+\]
+One way to do this is with the \li{solve()} method in SciPy's \li{linalg} module.
 Alternatively, you could use an algorithm optimized for tridiagonal matrices.
-The code below implements one such algorithm in Python. This is called the Thomas algorithm.
+The code below implements one such algorithm in Python called the \emph{Thomas algorithm}.
 
 \begin{lstlisting}
 def pytridiag(a,b,c,d):
     """Solve the tridiagonal system Ax = d where A has diagonals a, b, and c.
 
     Inputs:
-        a, b, c, d (array) - All 1-D NumPy arrays of equal length.
-    Returns:
-        x (array) - solution to the tridiagonal system.
-    """
-    n = len(a)
+        a ((n-1,) ndarray): first subdiagonal of A.
+        b ((n,) ndarray): main diagonal of A.
+        c ((n-1,) ndarray): first superdiagonal of A.
+        d ((n,) ndarray): the right side of the linear system.
 
-    # Make copies so the original arrays remain unchanged
+    Returns:
+        x ((n,) array): solution to the tridiagonal system Ax = d.
+    """
+    n = len(b)
+
+    # Make copies so the original arrays remain unchanged.
     aa = np.copy(a)
     bb = np.copy(b)
     cc = np.copy(c)
     dd = np.copy(d)
 
-    # Forward sweep
+    # Forward sweep.
     for i in xrange(1, n):
-        temp = aa[i]/bb[i-1]
+        temp = aa[i-1] / bb[i-1]
         bb[i] = bb[i] - temp*cc[i-1]
         dd[i] = dd[i] - temp*dd[i-1]
 
-    # Back substitution
-    x = np.zeros_like(a)
-    x[-1] = dd[-1]/bb[-1]
-    for i in xrange(n-2, -1, -1):
-        x[i] = (dd[i]-cc[i]*x[i+1])/bb[i]
+    # Back substitution.
+    x = np.zeros_like(b)
+    x[-1] = dd[-1] / bb[-1]
+    for i in reversed(xrange(n-1)):
+        x[i] = (dd[i] - cc[i]*x[i+1]) / bb[i]
 
     return x
 \end{lstlisting}
@@ -581,57 +635,66 @@ def pytridiag(a,b,c,d):
 \begin{problem} \label{prob:tridiag}
 \leavevmode
 \begin{enumerate}
-\item Write a function \li{numba_tridiag} that is a compiled version of \li{pytridiag}.
-\item Compare the speed of your new function with \li{pytridiag} and \li{scipy.linalg.solve}.
-When comparing \li{numba_tridiag} and \li{pytridiag}, use a $1000000 \times 1000000$ sized systems.
-When comparing \li{numba_tridiag} and the SciPy algorithm, use a $1000 \times 1000$ systems. You may use the code below to generate the arrays, \li{a}, \li{b}, and \li{c}, along with the corresponding tridiagonal matrix \li{A}.
+\item Write a function that is a compiled version of \li{pytridiag()}.
+\item Compare the speed of your new function with \li{pytridiag()} and \li{scipy.linalg.solve()}.
+When comparing \li{numba_tridiag()} and \li{pytridiag()}, use $1000000 \times 1000000$ sized systems.
+When comparing \li{numba_tridiag()} and the SciPy algorithm, use a $1000 \times 1000$ systems.
 \end{enumerate}
+You may use the code below to generate the arrays \li{a}, \li{b}, and \li{c}, as well as the matrix $A$.
+
 \begin{lstlisting}
 def init_tridiag(n):
-    """Initializes a random nxn tridiagonal matrix A.
+    """Construct a random nxn tridiagonal matrix A by diagonals.
 
     Inputs:
-        n (int) : size of array
+        n (int): The number of rows / columns of A.
 
     Returns:
-        a (1-D array) : (-1)-th diagonal of A
-        b (1-D array) : main diagonal of A
-        c (1-D array) : (1)-th diagonal of A
-        A (2-D array) : nxn tridiagonal matrix defined by a,b,c.
+        a ((n-1,) ndarray): first subdiagonal of A.
+        b ((n,) ndarray): main diagonal of A.
+        c ((n-1,) ndarray): first superdiagonal of A.
+        A ((n,n) ndarray): the tridiagonal matrix.
     """
-    a = np.random.random_integers(-9,9,n).astype("float")
-    b = np.random.random_integers(-9,9,n).astype("float")
-    c = np.random.random_integers(-9,9,n).astype("float")
+    a = np.random.random_integers(-9, 9, n-1).astype("float")
+    b = np.random.random_integers(-9 ,9, n  ).astype("float")
+    c = np.random.random_integers(-9, 9, n-1).astype("float")
 
-    # Check for and change 0 values in arrays
+    # Replace any zeros with ones.
     a[a==0] = 1
     b[b==0] = 1
     c[c==0] = 1
 
-    # Create tridiagonal matrix A from a,b,c
+    # Construct the matrix A.
     A = np.zeros((b.size,b.size))
-    np.fill_diagonal(A,b)
-    np.fill_diagonal(A[1:,:-1],a[1:])
-    np.fill_diagonal(A[:-1,1:],c)
-    return a,b,c,A
+    np.fill_diagonal(A, b)
+    np.fill_diagonal(A[1:,:-1], a)
+    np.fill_diagonal(A[:-1,1:], c)
+
+    return a, b, c, A
 \end{lstlisting}
+
 Note that an efficient tridiagonal matrix solver is implemented by \li{scipy.sparse.linalg.spsolve()}.
 \end{problem}
 
-\section*{When to Stop Optimizing}
+\section*{When to Stop Optimizing} % ==========================================
+
 You don't need to apply every possible optimization to your code.
-When your code runs acceptably fast, stop optimizing. There is no need spending valuable time making optimizations once the speed is sufficient.
+When your code runs acceptably fast, stop optimizing.
+There is no need spending valuable time making optimizations once the speed is sufficient.
 
-Moreover, remember not to prematurely optimize your functions. Make sure the function does exactly what you want it to before worrying about any kind of optimization.
+Moreover, remember not to prematurely optimize your functions.
+Make sure the function does exactly what you want it to before worrying about any kind of optimization.
 
-% TODO: get these lab references correct and replace.
+\begin{comment} % WE CAN'T DO THIS because we can't assume this lab is being done after any Volume 1 labs. Scrap!
 \begin{problem}
-Optimize a function you wrote in a previous lab using the techniques discussed in this lab. Consider optimizing one of the following:
+Optimize a function you wrote in a previous lab using the techniques discussed in this lab.
+Consider optimizing one of the following:
 \begin{enumerate}
-\item Householder triangularization or Hessenburg decomposition % (Lab \ref{lab:QRdecomp}).
-\item Givens triangularization % (Lab \ref{lab:qr-applications})
-\item Image Segmentation % (Lab \ref{lab:ImgSeg_eigenvalues})
-\item Eigenvalue Solvers % (Lab \ref{lab:EigSolve})
+\item Householder triangularization or Hessenburg decomposition
+\item The QR Algorithm
+\item Image Segmentation
 \end{enumerate}
- Compare the timings of the function before and after optimization using your \li{compare_timings} function. Write a short paragraph describing what you did to optimize your function.
+ Compare the timings of the function before and after optimization using your \li{compare_timings()} function.
+Write a short paragraph describing what you did to optimize your function.
 \end{problem}
+\end{comment}
