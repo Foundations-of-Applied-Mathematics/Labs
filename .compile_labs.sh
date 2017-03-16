@@ -4,8 +4,10 @@
 USAGE="usage: ./compile_labs.sh [LaTeX compiler, defaults to pdflatex]"
 MAX_TIME=15
 FILES=(PythonEssentials Volume1 Volume2 Volume3 Volume4)
-OUTDIR="docs"
 SUCCESS=true
+LOG="_compilelog.errlog"
+SEP="===================="
+OUTDIR="docs"
 
 set -e
 echo
@@ -38,10 +40,11 @@ fi
 # Compile each tex file twice in 20 seconds or less each time.
 for FILE in ${FILES[@]}
 do
+    LOGFILE=$FILE$LOG
     echo -n "Compiling $FILE.tex..."
     for i in {1..2}
     do
-        if ! perl -e "alarm $MAX_TIME; exec @ARGV" "eval $COMPILER $FILE.tex > /dev/null"; then
+        if ! perl -e "alarm $MAX_TIME; exec @ARGV" "eval $COMPILER $FILE.tex > $LOGFILE"; then
             # Report and record a failure, then move on to the next file.
             echo "FAILURE"
             SUCCESS=false
@@ -56,20 +59,26 @@ done
 
 ./.clean.sh
 
-# Exit if any of the compilations failed.
+# If any of the compilations failed, print the end of each compile log.
 if [ "$SUCCESS" = false ]; then
-    echo -e "\nLAB COMPILATION FAILED\n"
+    echo -e "\nLAB COMPILATION FAILED"
+    for FILE in ${FILES[@]}
+    do
+        echo -e "\n$SEP $FILE Compiler Log $SEP\n"
+        LOGFILE=$FILE$LOG
+        tail $LOGFILE
+        rm $LOGFILE
+    done
     exit 1
+else    # If successful, delete compile logs and check that PDF files exist.
+    for FILE in ${FILES[@]}
+    do
+        rm $FILE$LOG
+        if [ ! -e $OUTDIR/$FILE.pdf ]; then
+            echo -e "\nFAILURE: $FILE.pdf does not exist\n"
+            exit 1
+        fi
+    done
 fi
-
-# After successful compilations, check that the PDF files exist.
-# Exit with an error message if the PDFs are not found.
-for FILE in ${FILES[@]}
-do
-    if [ ! -e $OUTDIR/$FILE.pdf ]; then
-        echo -e "\nFAILURE: $FILE.pdf does not exist\n"
-        exit 1
-    fi
-done
 
 echo -e "\nLABS SUCCESSFULLY COMPILED\n"
