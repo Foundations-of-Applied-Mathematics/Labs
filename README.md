@@ -43,17 +43,21 @@ The data sets used in these labs can be found at [Foundations-of-Applied-Mathema
 
 ## Contributors
 
+#### Managing Editors
+
+- J. Humpherys, Brigham Young University
+- T. Jarvis, Brigham Young University
+
+#### Faculty Contributors
+
 - E. Evans, Brigham Young University
 - R. Evans, Brigham Young University
 - J. Grout, Drake University
-- J. Humpherys, Brigham Young University
-- T. Jarvis, Brigham Young University
 - J. Whitehead, Brigham Young University
 
-The following students contributed to the labs while studying at Brigham Young University.
-Graduate student contributors are marked in bold.
+#### Student Contributors
 
-- **J. Adams**
+- J. Adams
 - J. Bejarano
 - Z. Boyd
 - M. Brown
@@ -62,7 +66,7 @@ Graduate student contributors are marked in bold.
 - R. Dorff
 - B. Ehlert
 - M. Fabiano
-- **A. Frandsen**
+- A. Frandsen
 - K. Finlinson
 - J. Fisher
 - R. Fuhriman
@@ -74,14 +78,14 @@ Graduate student contributors are marked in bold.
 - R. Grout
 - J. Hendricks
 - A. Henriksen
-- **I. Henriksen**
-- **C. Hettinger**
+- I. Henriksen
+- C. Hettinger
 - S. Horst
 - K. Jacobson
 - J. Leete
-- **J. Lytle**
+- J. Lytle
 - R. McMurray
-- **S. McQuarrie**
+- S. McQuarrie
 - J. Morrise
 - M. Morrise
 - A. Morrow
@@ -95,7 +99,7 @@ Graduate student contributors are marked in bold.
 - S. Suggs
 - T. Thompson
 - M. Victors
-- **J. Webb**
-- **R. Webb**
+- J. Webb
+- R. Webb
 - J. West
 - A. Zaitzeff
