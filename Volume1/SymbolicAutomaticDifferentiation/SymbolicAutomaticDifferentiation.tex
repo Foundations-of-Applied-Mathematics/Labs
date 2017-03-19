@@ -1,16 +1,496 @@
 \lab{Symbolic and Automatic Differentiation}{Symbolic and Automatic Differentiation}
 \label{lab:SymPyAutograd}
 
-\objective{
-Python is good for more than just analysis of numerical data.
-There are several packages available which allow symbolic and automatic computation in Python, two of which are SympPy and autograd.
-This lab should teach you to do some basic manipulations in SymPy and autograd as well as their applications in differentiation. Keep in mind, however, that this introduction is not comprehensive.
-% Become familiar with some of the basic tools available in SymPy and autograd.
-% Use these tools in differentiation.
-}
+\objective{Python can compute derivatives symbolically and automatically. SymPy uses symbolic computations to calculate exact derivatives.
+Autograd automatically differentiates Python and NumPy code.
+In this lab, we learn how to use these packages for differentiation.
+We will also compare the computation cost and accuracy of differentiating between SymPy, Autograd, and numerical differentiation.}
 
 \section*{SymPy} % ============================================================
 
+\subsection*{Symbolic Manipulation} % -----------------------------------------
+
+It is simple to numerically compute $2x^5 +4xy + 3x$ given any specific values of $x$ and $y$.
+In some circumstances, however, getting the entire algebraic expression is more desirable.
+We can use SymPy to create symbolic representations of expressions.
+
+To symbolically represent expressions, symbolic variables must first be defined.
+To define the symbol $x$, we write \li{x = sy.symbols('x')}.
+Multiple variables can also be defined at once with \li{sy.symbols('x,y,z')}.
+Combining symbolic objects results in a SymPy \emph{expression}.
+\begin{lstlisting}
+>>> import sympy as sy
+
+# Define the symbolic variables x and y.
+>>> x, y  = sy.symbols('x, y')
+
+# Create the expression 2x^5 + 4xy + 3x.
+>>> expr = 2*x**5 + 4*x*y + 3*x
+>>> print(expr)
+2*x**5 + 4*x*y + 3*x
+\end{lstlisting}
+
+Be careful that the function \li{sy.symbols()} is spelled correctly.
+The command \li{sy.Symbol()} will still work for a single symbolic variable, but \li{sy.symbol} is a submodule and cannot be called at all.
+
+\begin{warn} % How to represent rationals in SymPy. Could maybe expand this.
+Beware of integer division: the expression \li{(3/4)*sy.sin(x)} will evaluate to 0.
+Be careful about using floating points as well.
+The expression \li{(1/3.)*sy.sin(x)} will evaluate to \li{0.333333333333333*sy.sin(x)}.
+
+To keep $\frac{3}{4}$ symbolic, use \li{3*sy.sin(x)/4} or \li{sy.Rational(3,4)*sy.sin(x)} instead.
+\end{warn}
+
+\begin{problem}
+Write a function that creates the expression $\frac{2}{5} e^{x^2-y}\cosh(x+y) + \frac{3}{7}\log(xy+1)$ symbolically with SymPy.
+The Sympy syntax for $\cosh(x)$ and $\log(x)$ are\li{sy.cosh(x)} and \li{sy.log(x)}, respectively.
+Make sure that your constants are not floating point numbers.
+\end{problem}
+
+SymPy can be used to solve difficult expressions for given variables.
+Consider the following equation:
+\[
+\frac{w}{w-x}+\frac{x}{x-y}+\frac{y}{y-w}=0
+\]
+The explicit solution of $w$,written in terms of $x$ and $y$, would be tedious to compute by hand but SymPy can solve for this explicit solution.
+\begin{lstlisting}
+>>> w, x, y = sy.symbols('w, x, y')
+>>> expr = w/(w-x) + x/(x-y) + y/(y-w)
+
+# Solve for the expression in terms of w.
+>>> sy.solve(expr,w)
+[(x**2 + 3*x*y - 2*y**2 + (-x + y)*sqrt(x**2 - 8*x*y + 4*y**2))/(2*(2*x - y)),   (x**2 + 3*x*y - 2*y**2 + (x - y)*sqrt(x**2 - 8*x*y + 4*y**2))/(2*(2*x - y))]
+\end{lstlisting}
+
+Note that \li{sy.solve()} returns a list of expressions that solves for $w$.
+To use the expression solved, one must take that expression from the list.
+
+\begin{lstlisting}
+# Take the first expression that solves for w in terms of x and y.
+>>> sy.solve(expr,w)[0]
+(x**2 + 3*x*y - 2*y**2 + (-x + y)*sqrt(x**2 - 8*x*y + 4*y**2))/(2*(2*x - y))
+\end{lstlisting}
+
+In the example above, a symbolic expression is used instead of an equation.
+This is because SymPy automatically sets the expression equal to zero, solves for the indicated variable, and then returns the result.
+If there is an equation given, subtract everything to one side of the equality.
+
+Another way to use \li{sy.solve()} is to declare an equation.
+An equation can be defined using \li{sy.Eq}.
+To represent the equation $y=3x+2$, declare \li{equation = sy.Eq(3*x+2,y)}.
+To solve for $x$, use \li{sy.solve(equation,x)}.
+
+\begin{problem}
+Write a function that uses Sympy to solve the equation $y = \sqrt{5-e^{x^2}}$ for $x$.
+Return the list of expressions that solves for $x$. The SymPy syntax for $\sqrt{x}$ is \li{sy.sqrt(x)}.
+\end{problem}
+
+\subsection*{Symplify} % ------------------------------------------------------
+
+SymPy can also be used to expand and simplify different symbolic expressions.
+As an example we will simplify the expression
+\begin{equation*}
+\frac{w x^2 y^2 - w x^2 - w y^2 + w - x^2 y^2 z + 2 x^2 y^2 + x^2 z - 2 x^2 + y^2 z - 2 y^2 - z + 2}{w x y - w x - w y + w - x y z + 2 x y + x z - 2 x + y z - 2 y - z + 2}.
+\end{equation*}
+\begin{lstlisting}
+>>> w, x, y, z=sy.symbols('w, x, y, z')
+>>> expr = (w*x**2*y**2 - w*x**2 - w*y**2 + w - x**2*y**2*z + 2*x**2*y**2 + x**2*z - 2*x**2 + y**2*z - 2*y**2 - z + 2)/(w*x*y - w*x - w*y + w - x*y*z + 2*x*y + x*z - 2*x + y*z - 2*y - z + 2)
+>>> expr.simplify()
+x*y + x + y + 1
+\end{lstlisting}
+\li{simplify()} is the general simplification method for a SymPy expression.
+It can be called as a function from the module by using \li{sy.simplify()} or it can be used as a method for an object as in the example above.
+SymPy can compute specific types of simplification. For example, to factor an expression, use \li{factor()}.
+To expand an expression, use \li{expand()}.
+To focus purely on simplifying the trigonometric aspects of the expression, use \li{trigsimp()}.
+To cancel variable expressions in the numerator and denominator of all rational sub-expressions, use \li{cancel()}.
+There are several other kinds of algebraic manipulations in SymPy, see the documentation for a more comprehensive list.
+Many of these more important functions in SymPy are also available as methods to expressions.
+This is the case with all of the above examples.
+
+Refer to the Additional Material or \url{http://docs.sympy.org/0.7.2/tutorial.html} for other useful features.
+
+\subsection*{Differentiation using SymPy} %=============================================
+SymPy can be used to take closed form derivatives without doing it by hand.
+Derivatives can be taken in Sympy using the \li{sy.Derivative()} function:
+\begin{lstlisting}
+>>> x, y = sy.symbols('x,y')
+>>> expr = sy.sin(x)*sy.cos(x)*sy.exp(y)*(x**3+y)**4
+# Find the derivative of expr in terms of x.
+>>> sy.Derivative(expr,x).doit()
+12*x**2*(x**3 + y)**3*exp(y)*sin(x)*cos(x) - (x**3 + y)**4*exp(y)*sin(x)**2 + (x**3 + y)**4*exp(y)*cos(x)**2
+\end{lstlisting}
+The \li{.doit()} method tells SymPy to evaluate the derivative of the expression.
+
+Equivalently, one can use the  \li{.diff()} method of a SymPy expression.
+\begin{lstlisting}
+>>> expr.diff(x)
+12*x**2*(x**3 + y)**3*exp(y)*sin(x)*cos(x) - (x**3 + y)**4*exp(y)*sin(x)**2 + (x**3 + y)**4*exp(y)*cos(x)**2
+\end{lstlisting}
+
+To find the derivative of the expression above at $x=0$, substitute a symbolic variable for a value by using the \li{.sub()} method shown below:
+\begin{lstlisting}
+# Save the derivative as an expression named d_expr.
+>>> d_expr = expr.diff(x)
+# Substitute x with 0.
+>>> d_expr.subs(x,0)
+y**4*exp(y)
+\end{lstlisting}
+
+To substitute values in for multiple variables, either use a dictionary or a list of tuples for each variable and value.
+\begin{lstlisting}
+# Substitute multiple variables with a dictionary.
+>>> d_expr.subs({x:1.,y:2.})
+839.384133011589
+# Substitute multiple variables with a list of tuples.
+>>> d_expr.subs([(x,1.),(y,2.)])
+839.384133011589
+\end{lstlisting}
+Make sure that the substitutions you implemented are floating points. If they are not, Sympy will not evaluate the expression. You may use the method \li{.evalf( )} to evaluate the expression.
+\begin{lstlisting}
+#  Replace y with the integer 2.
+>>> d_expr.subs([(x,1.),(y,2)])
+113.598289385442*exp(2)
+# Use .evalf() to evaluate e^2.
+>>> d_expr.subs([(x,1.),(y,2)]).evalf()
+839.384133011589
+\end{lstlisting}
+Note that these methods return a modified version of the expression, but do not actually change the original expression.
+
+\begin{problem}
+Use SymPy to calculate the derivative of $e^{\sin\left(\cos\left(x\right)\right)}$ at $x=1$.  Use the second order centered difference quotient from the previous lab to calculate the same derivative. Compare the performance of Sympy and the centered difference quotient. Print out the total time each method takes to compute the derivative as well as the error of the approximation.
+
+The error is denoted as  $|Df(x_0) - D\tilde{f}(x_0)|$ where  $D\tilde{f}(x_0)$ is the approximated derivative and
+$Df(x_0) = -e^{\sin\left(cos\left(x\right)\right)}\sin\left(x\right)\cos\left(\cos\left(x\right)\right)$.
+
+Return the SymPy approximation as a float.
+
+Hint: Recall that the second order centered difference quotient is $$f'(x_0)\approx\frac{f(x_0+h)-f(x_0-h)}{2h}.$$ For this approximation, let $h = 1 \times 10^{-5}$.
+The result should reveal that SymPy has an error of zero but the centered difference quotient will compute it faster.
+\end{problem}
+
+From the previous problem, we could see that SymPy is very accurate in finding derivatives. However the cost of having accurate solutions is the time the method takes to compute the derivative. Finding the right method to compute differentiations will depend on which factor is more prominent. In cases where stability is more important, Sympy would be the better option. If accuracy is not as important but less computation time is important, then numerical differentiation (like centered difference quotient) might be the better choice. Later, in this lab, we will explore another differentiable tool called Autograd.
+
+\subsection*{Useful tools for Differentiation with SymPy} %================================================
+When using \li{.diff()}, the method defaults to solving the first derivative of the function. Given a function that is differentiable $n$ times, you can find the $n$th derivative of the function by having $n$ as the second argument in \li{.diff()}.
+
+The following equation takes the 20th partial derivative with respect to $x$ of
+\begin{equation*}
+\prod_{i=1}^{23} \left(x+i y\right)
+\end{equation*}
+\begin{lstlisting}
+>>> x, y, i = sy.symbols('x, y, i')
+# Define the expression.
+>>> expr = sy.product((x+i*y), (i, 1, 23))
+# Expand the product.
+>>> expr = expr.expand()
+# Take the 20th derivative with respect to x.
+>>> expr.diff(x, 20)
+4308669456480829440000*(x**3 + 36*x**2*y + 426*x*y**2 + 1656*y**3)
+\end{lstlisting}
+
+Another effective tool in Sympy is to transform a sympy expression to a lambda function through \li{sy.lambdify()}. This can be used to calculate numerical values very fast.
+Consider the following example:
+\begin{lstlisting}
+>>> x = sy.symbols('x')
+# Assign the second derivative of sin(x)^2 to expr.
+>>> expr = (sy.sin(x)**2).diff(x,2)
+# Turn the expression into a lambda function with x as the variable.
+>>> f = sy.lambdify(x,expr)
+>>> f(0)
+2.0
+>>> f(np.pi/2)
+-2.0
+>>> f(np.pi)
+2.0
+\end{lstlisting}
+
+There are many advantages of transforming a SymPy expression into a lambda function. Rather than substituting values by using the \li{.subs()} method, evaluating the lambda functions is cheaper to compute. According to the Lambdify documentation, using \li{sy.lambdify()} to do numerical evaluations ``takes on the order of hundreds of nanoseconds, roughly two orders of magnitude faster than the \li{.subs()} method."
+
+\begin{problem}
+Compare the time it takes to evaluate the 3rd derivative of $\tanh\left(x\right)$ at 10,000 randomly generated points using the \li{.subs()} method versus turning a Sympy expression into a lambda function through \li{sy.lambdify()}.
+Print out the times it takes to evaluate the 3rd derivative of $\tanh\left(x\right)$ at 10,000 random points by \li{.subs()} and through \li{sy.lambdify()}.
+\end{problem}
+
+By default, \li{sy.lambdify()} uses the \li{math} library. However, \li{sy.lambdify()} supports many other libraries including NumPy. By including \li{"numpy"} as the third argument of the function, the function generated by \li{sy.lambdify()} can have access to vectorized functions.
+Consider the following example:
+\begin{lstlisting}
+#Generate an numpy array of points.
+>>> points = np.linspace(0,2*np.pi,10)
+>>> expr = sy.sin(2*x).diff(x,2)
+# Turn expr in to a lambda function with the numpy attribute.
+>>> f = sy.lambdify(x,expr,"numpy")
+# Evaluate f with multiple points at once.
+>>> f(points)
+array([ -0.00000000e+00,  -3.93923101e+00,  -1.36808057e+00,
+         3.46410162e+00,   2.57115044e+00,  -2.57115044e+00,
+        -3.46410162e+00,   1.36808057e+00,   3.93923101e+00,
+         1.95943488e-15])
+\end{lstlisting}
+
+SymPy can also be used to compute the Jacobian of a matrix using the \li{.jacobian()} method, which takes in either a list or a matrix of the variables.  The Jacobian of $f(x,y) = \left[\begin{array}{c} x^2 \\ x+y \end{array}\right]$ is found by doing the following:
+\begin{lstlisting}
+# Create a matrix of symbolic variables.
+>>> x,y = sy.symbols('x,y')
+>>> F = sy.Matrix([x**2,x+y])
+
+# Find the jacobian of the matrix with respect to x and y.
+>>> F_jac = F.jacobian([x,y])
+>>> F_jac
+Matrix([
+[2*x, 0],
+[  1, 1]])
+
+# Evaluate the Jacobian at (1,1).
+>>> F_jac.subs([(x,1.),(y,1.)])
+Matrix([
+[2.0, 0],
+[  1, 1]])
+
+\end{lstlisting}
+
+In addition, SymPy includes several integral transforms, such as the Laplace, Fourier, sine, and cosine transforms.
+SymPy also allows you to do simple separation of variables on PDEs, Taylor Series, Laurent Series, Fourier Series, and many, \textit{many} other things.
+
+\section*{Autograd}%=====================================================
+
+Autograd is a package that allows for efficient automatic differentiation using NumPy codes.
+Unlike SymPy ,which has many diverse applications, autograd is solely used in differentiation.
+Because Autograd works on ordinary NumPy code, it is very useful to calculate gradients automatically rather than deriving the code by hand. Due to this feature, it can be very useful in machine learning.
+
+Autograd is installed by running the following command in the terminal:
+\begin{lstlisting}
+pip install autograd
+\end{lstlisting}
+See \url{https://github.com/HIPS/autograd} for more complete installation instructions.
+
+The following code computes the derivative of $e^{\sin\left(\cos\left(x\right)\right)}$ at $x=1$ using Autograd:
+\begin{lstlisting}
+>>> from autograd import grad
+>>> import autograd.numpy as anp        # Use autograd's own version of NumPy
+
+>>> g = lambda x: anp.exp(anp.sin(anp.cos(x)))
+>>> grad_g = grad(g)
+>>> grad_g(1.)
+-1.20697770398
+\end{lstlisting}
+To support most of the NumPy features\footnote{For a list of Numpy features that Autograd does not support, please refer to \url{https://github.com/HIPS/autograd/blob/701ed8518140ffa4246e7ef18256a71ed639045b/docs/tutorial.md}.}, autograd uses a thinly-wrapped version of Numpy called \li{autograd.numpy}.
+This lab will denote the Autograd's version of Numpy as \li{anp}. Use \li{anp} the way NumPy is used.
+
+The function \li{grad()} returns a function that computes the gradient of your original function.
+This new function, which returns the gradient, accepts the same parameters as the original function.
+
+When there are multiple variables, the parameter \li{argnum} allows you to specify with respect to which variable you are computing the gradient.
+\begin{lstlisting}
+>>> f = lambda x,y: 3*x*y + 2*y - x
+>>> grad_f = grad(f, argnum=0) #gradient with respect to the first variable (x)
+>>> grad_f(.25,.5)
+0.5
+>>> grad_f = grad(f, argnum=1) #gradient with respect to the second variable (y)
+>>> grad_fun(.25,.5)
+2.75
+\end{lstlisting}
+
+Finding the gradient with respect to multiple variables can by done using \li{multigrad()} by specifying which variables in the \li{argnums} parameter.
+
+\begin{lstlisting}
+>>> grad_fun = autograd.multigrad(function, argnums=[0,1])
+>>> grad_fun(.25,.5)
+(0.5, 2.75)
+\end{lstlisting}
+
+\begin{problem}
+Use Autograd to compute the derivative of $f(x) = \ln \sqrt{ \sin \left(\sqrt {x}\right) }$ at $x=\frac{\pi}{4}$.
+Compare how long it takes to compute this derivative among Autograd, SymPy, and the second order centered difference quotient and record the error each approximation.
+Print the computation time and error for each method.
+
+The error is denoted as  $|Df(x_0) - D\tilde{f}(x_0)|$ where $Df(x_0) = \frac{\cot\left(\sqrt{x}\right)}{4\sqrt{x}} $
+ and $D\tilde{f}(x_0)$ is the approximated derivative.
+
+SymPy will have the exact derivative of the function yielding zero error. However, SymPy will also have the longest computation time. Centered difference quotient will have the least amount of time with the greatest error.
+Autograd will have shorter computation time than SymPy and a smaller error than centered difference quotient.
+\end{problem}
+
+As shown in the previous problem, Autograd can be an efficient tool in differentiation.
+Although Autograd does not calculate exact derivatives, the resulting error is relatively small with less computational time than SymPy.
+
+Autograd allows users to differentiate a function as many times as desired.
+
+\begin{lstlisting}
+>>> f = lambda x: anp.sin(x) + 3**anp.cos(x)
+# Calculate the first derivative.
+>>> df = grad(f)
+# Calculate the second derivative and so forth.
+>>> df2 = grad(df)
+>>> df3 = grad(df2)
+>>> df3(1.)
+2.6834458987503522
+\end{lstlisting}
+
+Although \li{grad()} is very efficient, it does not allow for array broadcasting.
+However, Autograd has another function \li{elementwise_grad()} that does.
+
+\begin{lstlisting}
+>>> from autograd import elementwise_grad
+>>> f = lambda x: anp.sin(x) + 3**anp.cos(x)
+>>> f_grad = elementwise_grad(f)
+>>> f_grad(np.array([1.,2.,3.,]))
+array([-1.13338111, -1.04855565, -1.04224253])
+\end{lstlisting}
+
+\begin{problem}
+Use \li{elementwise_grad()} to graph $f(x)=\frac{1}{\cosh\left(x\right)}$ and it's next five derivatives where $x\in[\,-7,7 ]\,$. Display the plots in multiple subplots.
+\end{problem}
+
+While the \li{grad()} function can only output scalar-valued functions, \li{jacobian()} can allow you to find the gradient of vectors.
+The following shows how to find the Jacobian of $f(x,y) = \left[\begin{array}{c} x^2 \\ x+y \end{array}\right]$ evaluated at (1,1).
+
+\begin{lstlisting}
+from autograd import jacobian
+>>> f = lambda x: anp.array([x[0]**2, x[0]+x[1]])
+>>> jacobian_f = jacobian(f)
+>>> jacobian_f(anp.array([1.,1.]))
+array([[ 2.,  0.],
+       [ 1.,  1.]])
+\end{lstlisting}
+
+\begin{problem}
+\item Let $f: \mathbb{R}^2 \to \mathbb{R}^2$ be defined by
+%
+\begin{equation*}
+f(x, y) =
+\left[\begin{array}{c}
+e^{x} \sin(y) + y^3 \\
+3y - \cos(x)
+\end{array}\right]
+\end{equation*}
+%
+Find the Jacobian function using SymPy and Autograd.  Print out the time it takes to compute each Jacobian at $(x,y) = (1,1)$.
+
+Notice that Autograd computes the Jacobian a lot faster than SymPy.
+\end{problem}
+
+To learn more about Autograd visit \url{https://github.com/HIPS/autograd}.
+
+\newpage
+
+\section*{Additional Materials} % =============================================
+
+\subsection*{Displaying SymPy Expressions} % ----------------------------------
+
+SymPy includes a simplified plotting wrapper around Matplotlib.
+\begin{lstlisting}
+>>> x = sy.symbols('x')
+>>> expr = sy.sin(x) * sy.exp(x)
+>>> sy.plot(expr, (x, -3, 3))
+\end{lstlisting}
+The code above plots $\sin(x)e^x$ for values of $x$ from -3 to 3.
+
+SymPy also has several nice options for printing equations.
+To know what the equation looks like use \li{sy.pprint()}.
+It can interface with the IPython Notebook to display the formula more clearly as well.
+IPython Notebook  can enable pretty printing by loading the extension that comes with SymPy.
+In SymPy 7.2, this is done as follows:
+
+\begin{lstlisting}
+%load_ext sympy.interactive.ipythonprinting
+\end{lstlisting}
+
+The syntax is written a little differently in SymPy 7.3.
+
+\begin{lstlisting}
+import sympy as sy
+sy.init_printing()
+\end{lstlisting}
+
+Figure \ref{sympy:pretty_printing} shows a screenshot of SymPy's special printing in the IPython notebook.
+If at some point you need to write a formula in \LaTeX, the function \li{sy.latex()} can convert a SymPy symbolic expression to \LaTeX{}.
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{pretty_printing.png}
+\caption{A screenshot showing how SymPy can interface with the IPython Notebook to display equations.}
+\label{sympy:pretty_printing}
+\end{figure}
+
+\subsection*{Basic Number Types}%======================================
+SymPy has some good built in datatypes which can be used to represent rational numbers and arbitrary precision floating point numbers.
+Arbitrary precision floating point operations are supported through the package \li{mpmath}.
+These can be useful if computation to a very high precision is needed. It can also avoid possible overflow error in computation.
+They are, however, much more costly to compute.
+
+You can declare a rational number $\frac{a}{b}$ using \li{sy.Rational(a, b)}.
+A real number $r$ of precision $n$ can be declared using \li{sy.Float(r,n)}.
+
+A nice example of the use of these datatypes is the following function which computes $\pi$ to the $n$th digit.
+\begin{lstlisting}
+def mypi(n):
+    #Calculates pi to n decimal points.
+    tot = sy.Rational(0, 1)
+    term = 1
+    bound = sy.Rational(1, 10)**(n+1)
+    i = 0
+    while bound <= term:
+        term = 6 * sy.Rational(sy.factorial(2*i), 4**i*(sy.factorial(i))**2*(2*i+1)*2**(2*i+1))
+        tot += term
+        i += 1
+    return sy.Float(tot, n)
+\end{lstlisting}
+This function works by evaluating the Taylor series for $6\arcsin\left(\frac{1}{2}\right)$.
+We used a rather crude error estimate to ensure that we were close enough to break the loop.
+
+
+\subsection*{More Sympy Substitution}%==========================================
+Substitution also can be used (to some extent) to substitute one expression for another.
+For example, if you want to apply the double angle identity to replace products of sines and cosines, you could use the following:
+\begin{lstlisting}
+>>> expr.subs(sy.sin(x) * sy.cos(x), sy.sin(2*x)/2)
+(x**3 + y)**4*exp(y)*sin(2*x)/2
+\end{lstlisting}
+To eliminate higher powers of a variable in an expression, use something like:
+\begin{lstlisting}
+>>> expr.subs(x**3, 0)
+y**4*exp(y)*sin(x)*cos(x)
+\end{lstlisting}
+which will eliminate all terms of the expression involving $x^3$.
+At present time, this will not eliminate terms involving $x^4$ or higher powers of $x$ that are not divisible by 3.
+
+\subsection*{Integrals in SymPy}%==============================================
+
+SymPy can integrate two different variables along two different bounds.
+\begin{lstlisting}
+sy.integrate(y**2*x**2, (x, -1, 1), (y, -1, 1))
+\end{lstlisting}
+It can also integrate with respect to multiple variables.
+\begin{lstlisting}
+sy.integrate(y**2 * x**2, x, y)
+\end{lstlisting}
+Integrate a difficult expression like $e^x\sin(x)\sinh(x)$ can be done with one line in SymPy.
+\begin{lstlisting}
+sy.Integral(sy.sin(x) * sy.exp(x) * sy.sinh(x), x).doit()
+\end{lstlisting}
+
+\subsection*{Differential Equations in SymPy}%=====================================
+
+SymPy can be used to solve some sorts of basic ordinary differential equations.
+This will solve the equation $y_{xx}-2*y_x+y=\sin\left(x\right)$.
+\begin{lstlisting}
+x = sy.symbols('x')
+f = sy.Function('f')
+eq = sy.Eq(f(x).diff(x, 2) - 2*f(x).diff(x) + f(x), sy.sin(x))
+sy.dsolve(eq)
+\end{lstlisting}
+or, equivalently,
+\begin{lstlisting}
+x = sy.symbols('x')
+f = sy.Function('f')
+expr = f(x).diff(x, 2) - 2*f(x).diff(x) + f(x) - sy.sin(x)
+sy.dsolve(expr)
+\end{lstlisting}
+
+
+%Deleted Sections %===============================================================
+
+\begin{comment} % The original intro that has been taken out.
 SymPy is designed to be a fully featured computer algebra system in Python.
 It is actually used for much of the symbolic computation in Sage.
 An example of what we mean by \emph{symbolic computation} is the following:
@@ -26,269 +506,19 @@ When used properly, this package can simplify large amounts of algebra for you.
 This can be incredibly useful in a wide variety of situations.
 As you may have guessed, such packages generally have a wide variety of features.
 The official documentation for SymPy is found at \url{http://sympy.org/en/index.html}.
+\end{comment}
 
-\subsection*{Some Convenient Tools} % -----------------------------------------
-
-SymPy includes a simplified plotting wrapper around Matplotlib.
-
-\begin{lstlisting}
->>> x = sy.symbols('x')
->>> expr = sy.sin(x) * sy.exp(x)
->>> sy.plot(expr, (x, -3, 3))
-\end{lstlisting}
-
-which plots $\sin(x)e^x$ for values of $x$ from -3 to 3.
-
-SymPy also has several nice options for printing equations.
-If you want to get a rough idea of what the equation looks like, you can use \li{sy.pprint()}.
-It can interface with the IPython Notebook to display the formula more clearly as well.
-If you are using the IPython Notebook, you can enable pretty printing by loading the extension that comes with SymPy.
-In SymPy 7.2 this is done as follows:
-
-\begin{lstlisting}
-%load_ext sympy.interactive.ipythonprinting
-\end{lstlisting}
-
-In SymPy 7.3 it is:
-
-\begin{lstlisting}
-import sympy as sy
-sy.init_printing()
-\end{lstlisting}
-
-SymPy has many more useful features.
-Figure \ref{sympy:pretty_printing} shows a screenshot of SymPy's special printing in the IPython notebook.
-If at some point you need to write a formula in \LaTeX, the function \li{sy.latex()} can convert a SymPy symbolic expression to \LaTeX{} for you.
-
-\begin{figure}[H]
-\includegraphics[width=\textwidth]{pretty_printing.png}
-\caption{A screenshot showing how SymPy can interface with the IPython Notebook to display equations nicely.}
-\label{sympy:pretty_printing}
-\end{figure}
-
-\subsection*{Basic Number Types}
-SymPy has some good built in datatypes which can be used to represent rational numbers and arbitrary precision floating point numbers.
-Arbitrary precision floating point operations are supported through the package \li{mpmath}.
-These can be useful if you need to do computation to a very high precision, or to avoid possible overflow error in computation.
-They are, however, much more costly to compute.
-
-You can declare a rational number $\frac{a}{b}$ using \li{sy.Rational(a, b)}.
-A real number $r$ of precision $n$ can be declared using $sy.Float(r,n)$.
-
-A nice example of the use of these datatypes is the following function which computes $\pi$ to the $n$th digit.
-\begin{lstlisting}
-def mypi(n):
-    #calculates pi to n decimal points.
-    tot = sy.Rational(0, 1)
-    term = 1
-    bound = sy.Rational(1, 10)**(n+1)
-    i = 0
-    while bound <= term:
-        term = 6 * sy.Rational(sy.factorial(2*i), 4**i*(sy.factorial(i))**2*(2*i+1)*2**(2*i+1))
-        tot += term
-        i += 1
-    return sy.Float(tot, n)
-\end{lstlisting}
-This function works by evaluating the Taylor Series for $6\arcsin\left(\frac{1}{2}\right)$.
-We used a rather crude error estimate to ensure that we were close enough to break the loop.
-
-\begin{problem}
-Write a function \li{myexp} that takes an integer $n$ as a parameter and evaluates $e$ to the $n$th digit, using an approach similar to the code given above.
-Use the series
-\begin{equation*}
-e=\sum_{n=0}^{\infty} \frac{1}{n!}
-\end{equation*}
-Use the same condition as above to determine when to break your while loop.
-\end{problem}
-
-\subsection*{Symbolic Manipulation}
-In SymPy, you need to declare symbolic objects before you use them.
-To define a symbol $x$, we write \li{x = sy.symbols('x')}.
-This can also be used to define multiple variables at once, as in \li{x, y, z = sy.symbols('x,y,z')}.
-The string form of each variable on the right is used for showing expressions that involve the variable.
-You will need to be careful about capitalization and that last `s' in the name of the function.
-Calling \li{sy.Symbol()} will allow you to create a single symbolic variable, but \li{sy.symbol} is a submodule and cannot be called at all.
-
-SymPy can be used to solve difficult expressions for given variables.
-Not everything can be solved, but SymPy's algorithms are pretty good and can often save a great deal of time.
-We consider the following equation:
-\begin{equation*}
-\frac{w}{w-x}+\frac{x}{x-y}+\frac{y}{y-z}+\frac{z}{z-w}=0
-\end{equation*}
-Say we need an explicit solution for a given variable.
-Since the expression is symmetrical, it doesn't really matter which one, but we can solve this in the following way:
-\begin{lstlisting}
-import sympy as sy
-w, x, y, z = sy.symbols('w, x, y, z')
-expr = w/(w-x) + x/(x-y) + y/(y-z) + z/(z-w)
-sy.solve(expr, w)
-\end{lstlisting}
-In any variable, this expression is quadratic, but each coefficient will depend on the other 3 variables.
-This would be a terrible pain to do by hand, but SymPy can take care of that for us.
-It is worth noting that SymPy cannot do everything, but if we keep in mind what we are doing and are familiar with the tools it has, it can make complex algebraic operations a great deal faster.
-We should also note that \li{solve()} returns a list of expressions.
-If we want an expression to work with, we must take an item from the list.
-
-In this particular example, you will notice that we only used a symbolic expression and not a full equation.
-What SymPy did was set the expression equal to zero, solve for the variable we wanted, then return the result.
-SymPy also supports equation objects (and inequalities), but this approach is often easier.
-If you need to declare equations, they can be declared using something like \li{equation = sy.Eq(x,  y)} which represents the equation $x=y$
-
-\begin{problem}
-Use SymPy to solve the equation $y=e^x+x$ for $x$.
-The SymPy syntax for $e^x$ is simpy \li{sy.exp(x)}, provided that $x$ has been initialized as a symbol.
-The answer will be in terms of the Lambert W function, which is a special function available in most major symbolic math libraries.
-It is included in both SciPy and SymPy and is defined as the inverse of $y=x e^x$.
-\end{problem}
-
-SymPy can also be used to expand and simplify different symbolic expressions.
-As an example we will simplify the expression
-\begin{equation*}
-\frac{w x^2 y^2 - w x^2 - w y^2 + w - x^2 y^2 z + 2 x^2 y^2 + x^2 z - 2 x^2 + y^2 z - 2 y^2 - z + 2}{w x y - w x - w y + w - x y z + 2 x y + x z - 2 x + y z - 2 y - z + 2}
-\end{equation*}
-\begin{lstlisting}
->>> w, x, y, z=sy.symbols('w, x, y, z')
->>> expr = (w*x**2*y**2 - w*x**2 - w*y**2 + w - x**2*y**2*z + 2*x**2*y**2 + x**2*z - 2*x**2 + y**2*z - 2*y**2 - z + 2)/(w*x*y - w*x - w*y + w - x*y*z + 2*x*y + x*z - 2*x + y*z - 2*y - z + 2)
->>> expr.simplify()
-x*y + x + y + 1
-\end{lstlisting}
-\li{simplify()} is the general simplification method for a SymPy expression.
-It can be called as a function from the module, i.e. as \li{sy.simplify()} or it can be used as a method for an object as in the example above.
-You can also tell SymPy to do more specific types of simplification, for example if you want to factor an expression, you can use \li{factor()}.
-If you want to tell it to expand an expression you can use \li{expand()}.
-To focus purely on simplifying the trigonometric aspects of the expression you can use \li{trigsimp()}.
-If you want SymPy to cancel variable expressions in the numerator and denominator of all rational sub-expressions, use \li{cancel()}.
-There are several other kinds of algebraic manipulations you can do in SymPy, see the documentation for a more comprehensive list.
-Many of these more important functions in SymPy are also available as methods to expressions.
-This is the case with all of the above examples.
-
-Be sure to be careful when writing out symbolic expressions.
-Python floating point numbers are still floating point numbers and Python integers are still integers.
-A simple example is the expression \li{(3/4)*sy.sin(x)} which evaluates to 0, and should probably have been written as \li{3*sy.sin(x)/4} or \li{sy.Rational(3,4)*sy.sin(x)}.
-Be careful about using floating points as well.
-The expression \li{(3./4.)*sy.sin(x)} will evaluate to \li{.75*sy.sin(x)}, and the floating point calculations will carry through to the rest of your symbolic work with that expression.
-
-Another useful feature is substitution.
-Substitution can be done using the \li{subs()} method of an expression.
-%As of this writing, there is no subs function, though one has been discussed.
-%I deliberately left the ambiguity here for compatibility with future releases.
-You can substitute numbers and variables in for variables and even expressions.
-For example, if you want to see what an expression looks like if $x$ is set to zero, you can use:
-\begin{lstlisting}
->>> x, y = sy.symbols('x,y')
->>> expr = sy.sin(x)*sy.cos(x)*sy.exp(y)*(x**3+y)**4
->>> expr.subs(x, 0)
-0
-\end{lstlisting}
-where \li{expr} is the expression you have already defined.
-Note that none of these operations modify the expression in place.
-They return a modified version of the expression, but do not actually change the original.
-
-Substitution also can be used (to some extent) to substitute one expression for another.
-For example, if you want to apply the double angle identity to replace products of sines and cosines, you could use the following:
-\begin{lstlisting}
->>> expr.subs(sy.sin(x) * sy.cos(x), sy.sin(2*x)/2)
-(x**3 + y)**4*exp(y)*sin(2*x)/2
-\end{lstlisting}
-If you want to eliminate higher powers of a variable in an expression you can use something like:
-\begin{lstlisting}
->>> expr.subs(x**3, 0)
-y**4*exp(y)*sin(x)*cos(x)
-\end{lstlisting}
-which will eliminate all terms of the expression involving $x^3$.
-At present time this will not eliminate terms involving $x^4$ or higher powers of $x$ that are not divisible by 3.
-
-If you want to substitute values in for multiple variables, you can either use a dictionary or a list of tuples for each variable and value.
-\begin{lstlisting}
->>> expr.subs({x:1.,y:2.})
-272.113412745844
->>> expr.subs([(x,1.),(y,2.)])
-272.113412745844
-\end{lstlisting}
-
-\subsection*{Calculus in SymPy}
-SymPy can also be used to take limits, integrals, and derivatives.
-Again, this can be very helpful when doing things that would be difficult to do by hand.
-For example, the following equation takes the 20th partial derivative with respect to $x$ of
-\begin{equation*}
-\prod_{i=1}^{23} \left(x+i y\right)
-\end{equation*}
-\begin{lstlisting}
-x, y, i = sy.symbols('x, y, i')
-expr = sy.product((x+i*y), (i, 1, 23))
-expr = expr.expand()
-expr.diff(x, 20)
-\end{lstlisting}
-
-We can also integrate difficult things, for example, if we want to integrate $e^x\sin(x)\sinh(x)$, this can be done with one line in SymPy.
-\begin{lstlisting}
-sy.Integral(sy.sin(x) * sy.exp(x) * sy.sinh(x), x).doit()
-\end{lstlisting}
-Notice the \li{.doit()} method.
-This tells SymPy to evaluate all derivatives, integrals, limits, etc. inside the expression.
-
-Derivatives can be taken using the \li{sy.Derivative()} function, or the \li{.diff()} method of a SymPy expression.
-This can be done like this:
-\begin{lstlisting}
->>> x, y = sy.symbols('x,y')
->>> expr = sy.sin(x)*sy.cos(x)*sy.exp(y)*(x**3+y)**4
->>> sy.Derivative(expr,x).doit()
-12*x**2*(x**3 + y)**3*exp(y)*sin(x)*cos(x) - (x**3 + y)**4*exp(y)*sin(x)**2 + (x**3 + y)**4*exp(y)*cos(x)**2
-\end{lstlisting}
-or, equivalently, like this:
-\begin{lstlisting}
->>> expr.diff(x)
-12*x**2*(x**3 + y)**3*exp(y)*sin(x)*cos(x) - (x**3 + y)**4*exp(y)*sin(x)**2 + (x**3 + y)**4*exp(y)*cos(x)**2
-\end{lstlisting}
-You can find the 3rd derivative by doing the following:
-\begin{lstlisting}
-expr.diff(x, 3)
-\end{lstlisting}
-The second argument is the number of derivatives to take.
-If it is omitted, one derivative will be taken.
+\begin{comment}
 You can also pass additional variables as arguments, for example, if we want to find $\frac{\partial}{\partial x} \left( \frac{\partial}{\partial y}\sin\left(x y\right)\right)$, we can do it in this way:
 \begin{lstlisting}
 expr = sy.sin(x*y)
 expr.diff(x,y)
-\end{lstlisting}
-These tricks also work with integrals, with the exception of taking multiple integrals in the same variable.
-You can integrate two different variables along two different bounds, as in:
-\begin{lstlisting}
-sy.integrate(y**2*x**2, (x, -1, 1), (y, -1, 1))
-\end{lstlisting}
-and you can integrate with respect to multiple variables, as in:
-\begin{lstlisting}
-sy.integrate(y**2 * x**2, x, y)
-\end{lstlisting}
+ \end{lstlisting}
+\end{comment}
 
-
-\begin{problem}
-Use SymPy to symbolically evaluate
-\begin{equation*}
-\int_0^\infty \sin\left(x^2\right) dx
-\end{equation*}
-In SymPy, positive infinity is represented by the object \li{sy.oo}
-\end{problem}
-
-\begin{problem}
-Use SymPy to calculate the derivate of $e^{\sin\left(\cos\left(x\right)\right)}$ at $x=1$.  Time how long it takes to compute this derivative using SymPy as well as centered difference quotients and calculate the error for each approximation.
-\end{problem}
-
-You can also use SymPy to solve some sorts of basic ordinary differential equations.
-This will solve the equation $y_{xx}-2*y_x+y=\sin\left(x\right)$
-\begin{lstlisting}
-x = sy.symbols('x')
-f = sy.Function('f')
-eq = sy.Eq(f(x).diff(x, 2) - 2*f(x).diff(x) + f(x), sy.sin(x))
-sy.dsolve(eq)
-\end{lstlisting}
-or, equivalently,
-\begin{lstlisting}
-x = sy.symbols('x')
-f = sy.Function('f')
-expr = f(x).diff(x, 2) - 2*f(x).diff(x) + f(x) - sy.sin(x)
-sy.dsolve(expr)
-\end{lstlisting}
+%Deleted problems
+\begin{comment}
+%% Super long differential equation problem
 \begin{problem}
 Use SymPy to solve the following differential equation:
 \begin{equation*}
@@ -301,82 +531,14 @@ You may recall from your last class on differential equations that this sort of 
 Imagine how terrible this would be to do by hand!
 \end{problem}
 
-SymPy can also be used to compute the Jacobian of a matrix using the \li{.jacobian()} method, which takes in either a list or a matrix of the variables.  The Jacobian of $f(x,y) = \left[\begin{array}{c} x^2 \\ x+y \end{array}\right]$ is found by doing the following:
-\begin{lstlisting}
-x,y = sy.symbols('x,y')
-F = sy.Matrix([x**2,x+y])
-F.jacobian([x,y])
-\end{lstlisting}
-
-In addition, SymPy includes several integral transforms, such as the Laplace, Fourier, Sine, and Cosine Transforms.
-SymPy also allows you to do simple separation of variables on PDEs, Taylor Series, Laurent Series, Fourier Series, and many, \textit{many} other things.
-
-\section*{Autograd}
-
-Autograd is a package that allows you to automatically differentiate Python and NumPy code.
-Unlike SymPy which has many diverse applications, autograd is used  solely in differentiation.
-Autograd is very useful in machine learning.
-
-Autograd is installed by running the following command in the terminal:
-\begin{lstlisting}
-pip install autograd
-\end{lstlisting}
-The following code computes the derivative of $e^{\sin\left(\cos\left(x\right)\right)}$ at $x=1$ using autograd.
-\begin{lstlisting}
->>> from autograd import grad
->>> import autograd.numpy as np
->>> g = lambda x: np.exp(np.sin(np.cos(x)))
->>> grad_g = grad(g)
->>> grad_g(1.)
--1.20697770398
-\end{lstlisting}
-There are a couple of things to note from this example.  \li{autograd.numpy} is a thinly-wrapped NumPy.  Also, \li{grad()} returns a function that computes the gradient of your original function.  This new function which returns the gradient accepts the same parameters as the original function.
-
-When there are multiple variables, the parameter \li{argnum} allows you to specify with respect to which variable you are computing the gradient.
-\begin{lstlisting}
->>> f = lambda x,y: 3*x*y + 2*y - x
->>> grad_f = grad(f, argnum=0) #gradient with respect to the first variable
->>> grad_f(.25,.5)
-0.5
->>> grad_f = grad(f, argnum=1) #gradient with respect to the second variable
->>> grad_fun(.25,.5)
-2.75
-\end{lstlisting}
-Finding the gradient with respect to multiple variables can by done using \li{multigrad()} by specifying which variables in the \li{argnums} parameter.
-\begin{lstlisting}
->>> grad_fun = autograd.multigrad(function, argnums=[0,1])
->>> grad_fun(.25,.5)
-(0.5, 2.75)
-\end{lstlisting}
-
+%Section got moved to the differential equation problem
 \begin{problem}
-Use autograd to compute the derivative of $f(x) = \ln \sqrt{ \sin (\sqrt {x}) }$ at $x=\frac{\pi}{4}$.
-Time how long it takes to compute this derivative using autograd, SymPy, and the centered difference quotient.
-Calculate the error for each approximation.
-\end{problem}
-
-Computing the Jacobian is also possible using autograd.  The following shows how to find the Jacobian of $f(x,y) = \left[\begin{array}{c} x^2 \\ x+y \end{array}\right]$ evaluated at (1,1):
-\begin{lstlisting}
-from autograd import jacobian
-f = lambda x: np.array([x[0]**2, x[0]+y[0]])
-jacobian_f = jacobian(f)
-jacobian_f(np.array([1.,1.]))
-\end{lstlisting}
-It is important to remember that if you use \li{grad()} the output must be a scalar, whereas using \li{jacobian()} allows you to compute the gradient of a vector.
-
-\begin{problem}
-\item Let $f: \mathbb{R}^2 \to \mathbb{R}^2$ be defined by
-%
+Write a function \li{myexp()} that takes an integer $n$ as a parameter and evaluates $e$ to the $n$th digit, using an approach similar to the code given above.
+Use the series
 \begin{equation*}
-f(x, y) =
-\left[\begin{array}{c}
-e^{x} \sin(y) + y^3 \\
-3y - \cos(x)
-\end{array}\right]
+e=\sum_{n=0}^{\infty} \frac{1}{n!}.
 \end{equation*}
-%
-Find the Jacobian function using SymPy and autograd.  Time how long it takes to compute each Jacobian at $(x,y) = (1,1)$.
+Use the same condition as above to determine when to break your while loop.
 \end{problem}
 
-To learn more about autograd visit \url{https://github.com/HIPS/autograd}.
-
+\end{comment}

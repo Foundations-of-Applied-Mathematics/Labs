@@ -167,7 +167,8 @@ A = np.array([[ 0,  0,  0,  0,  0,  0,  0,  1],
 \end{lstlisting}
 
 \begin{problem}
-Write the following function that creates a adjacency matrix from a file.
+Write a function that creates an adjacency matrix from a file. The function should accept a filename, and an integer $N$ that represents the number of nodes in the graph described by the datafile. Return the adjacency matrix as a \li{SciPy} sparse \li{dok_matrix}. \\
+\begin{comment}
 \begin{lstlisting}
 def to_matrix( filename, n ):
     ''' Return the nxn adjacency matrix described by the file.
@@ -183,6 +184,7 @@ def to_matrix( filename, n ):
     Return a NumPy array.
     '''
 \end{lstlisting}
+\end{comment}
 Hints:
 \begin{enumerate}
 \item The file \texttt{matrix.txt} included with this lab describes the matrix in Figure \ref{fig:network1} and has the adjacency matrix \li{A} given above.
@@ -212,7 +214,7 @@ with open('./matrix.txt', 'r') as myfile:
 \end{problem}
 
 \begin{info}
-It makes sense to initialize $A$ as a sparse matrix, since $A$ is mostly zeros. To make the coding easier, throughout the rest of the lab the algorithms will be coded using non-sparse matrices. Don't forget, however, that in a real-world sparse adjacency matrices are generally much more time-efficient than dense matrices.
+It makes sense to initialize $A$ as a sparse matrix, since $A$ is mostly zeros. To make the coding easier, throughout the rest of the lab the algorithms will be coded using non-sparse matrices. This means when using an adjacency matrix created in Problem 1, cast it \li{todense()} when inputing it to test the other functions. In other words, you may say \li{test_calculateK(A.todense(), N)}. Don't forget, however, that in a real-world sparse adjacency matrices are generally much more time-efficient than dense matrices.
 \end{info}
 
 The next step is to compute $K$ from \eqref{equ:pr3}.
@@ -253,7 +255,7 @@ K = np.array([[ 0   ,  1   ,  1./8,  1./3,  1./3,  1./2,  1   ,  1   ],
               [ 1   ,  0   ,  1./8,  0   ,  0   ,  0   ,  0   ,  0   ]])
 \end{lstlisting}
 \begin{problem}
-Write a function that computes the K matrix given an adjacency matrix.
+Write a function that computes and returns the K matrix given an adjacency matrix.
 \begin{enumerate}
 \item Compute the diagonal matrix $D$.
 \item Compute the modified adjacency matrix where the rows corresponding to sinks all have ones instead of zeros.
@@ -293,9 +295,10 @@ At this point we assume we have reached the steady state.
 
 \begin{problem}
 \label{prob:pagerank_dense_iter}
-Implement the function below, using the iterative method to find the steady state of the PageRank algorithm.
+Implement a function that uses the iterative method to find the steady state of the PageRank algorithm. You function should accept an adjacency matrix \li{A}, an integer \li{N} that defaults to \li{None}, the damping factor \li{d} that defaults to \li{0.85}, and a tolerance \li{tol} that defaults to \li{1E-5}. Return the approximation to the steady state as a float.
 When the argument \li{N} is not \li{None}, work with only the upper $N \times N$ portion of the array \li{adj}.
-Test your function against the example in the lab.
+Test your function against the example datafile that accompanies this lab.\\
+\begin{comment}
 \begin{lstlisting}
 def iter_solve( adj, N=None, d=.85, tol=1E-5):
     '''
@@ -315,6 +318,7 @@ def iter_solve( adj, N=None, d=.85, tol=1E-5):
     Return the approximation to the steady state of p.
     '''
 \end{lstlisting}
+\end{comment}
 Hints:
 \begin{enumerate}
 \item Try making your initial guess for $\mathbf{p}(0)$ a random vector.
@@ -339,7 +343,8 @@ We can also compute $\mathbf{p}$ using eigenvalue solvers in SciPy.
 
 %TODO: the output from scipy.linalg.eig is not very accurate, even for the small example in this lab.
 \begin{problem}
-Implement the function below, using the eigenvalue method to find the steady state of the PageRank algorithm.
+Implement a function that uses the eigenvalue method to find the steady state of the PageRank algorithm. Your function should accept an adjacency matrix \li{A}, an integer \li{N} that defaults to \li{None}, and the damping factor \li{d} that defaults to \li{0.85}. Return the approximation to the steady state as a float.
+\begin{comment}
 \begin{lstlisting}
 def eig_solve( adj, N=None, d=.85):
     '''
@@ -357,6 +362,7 @@ def eig_solve( adj, N=None, d=.85):
     Return the approximation to the steady state of p.
     '''
 \end{lstlisting}
+\end{comment}
 \end{problem}
 
 \section*{Application: Ranking Sports Teams}
@@ -367,7 +373,8 @@ Suppose we have data about a collection of sports teams, including which teams p
 We can model this as a directed graph. Each node in the graph represents a team.
 An edge between two nodes points from the losing team to the winning team.
 If two teams never played each other, there is no edge between them.
-Wins and losses do not cancel out; if BYU and Boise played twice, and each team won once, then there is an edge from BYU to Boise and another edge from Boise to BYU. TODO: add a picture.
+Wins and losses do not cancel out; if BYU and Boise played twice, and each team won once, then there is an edge from BYU to Boise and another edge from Boise to BYU. 
+%TODO: add a picture.
 
 To simplify our model, edges are not weighted. So if Duke ever beat Harvard, no matter whether they beat them once or 5 times, there is only one edge pointing from Harvard to Duke.
 
@@ -492,5 +499,6 @@ Using these edges,
 \item Create a \li{DiGraph} object using all the edges described in \li{twitter_combined.txt}.
 \item Calcualte the page ranks for this graph. The page ranks create a ranking of which users are the most ``influential". Even though the results will just be numbers, remember that they represent actual Twitter users.
 \item Analyze the in-degree and out-degree of the top 10 ranked users. What do you notice about the second-highest ranked user? Why would this user be ranked so high? HINT: Use \li{G.in_edges()} and \li{G.out_edges()} to gain further insight into this result.
+\item Return the top 10 most influential users and their scores
 \end{enumerate}
 \end{problem}

@@ -1,7 +1,9 @@
 \lab{Conditioning and Stability}{Conditioning and Stability}
-\objective{Explore the condition of problems and the stability of algorithms.}
+\objective{The \emph{condition number} of a function measures how sensitive that function is to changes in the input.
+On the other hand, the \emph{stability} of an algorithm measures how accurately that algorithm computes the value of a function from exact input.
+In this lab, we examine the conditioning of common linear algebra problems, including computing polynomial roots and matrix eigenvalues.
+We also study several least squares algorithms to show that two algorithms for the same problem may not have the same level of stability.}
 \label{lab:conditioning_stability}
-
 
 %\begin{equation*}
 %\mathlarger{ \mathlarger{ \mathlarger{f:X \rightarrow Y}}}
@@ -18,214 +20,44 @@
 % \end{eqnarray}
 %
 
-The \emph{condition number} of a function measures how sensitive that function is to changes in the input.
-On the other hand, the \emph{stability} of an algorithm measures how well that algorithm computes the value of a function from exact input.
+\section*{Condition Numbers} % ================================================
 
-\section*{Condition Number of a Function}
-
-The (absolute) condition number of a function $f: \mathbb{R}^m \rightarrow \mathbb{R}^n$ is
- \begin{equation}\label{equ:abs_cond}
-J(\x) = \lim_{\delta \rightarrow 0} \sup_{\norm{\delta \x} \leq \delta} { \frac{\norm{\delta f}}{\norm{\delta \x}} }
+The \emph{absolute condition number} of a function $f: \mathbb{R}^m \rightarrow \mathbb{R}^n$ at a point $\x\in\mathbb{R}^m$ is defined by
+\begin{equation}\label{eq:abs_cond}
+\hat{\kappa} (\x) = \lim_{\delta \rightarrow 0^+} \sup_{\norm{\mathbf{h}} < \delta} { \frac{\norm{f(\x + \mathbf{h} ) - f(\x)}}{\norm{\mathbf{h}}} }.
 \end{equation}
-where $\delta f = f(\x+\delta\x)-f(\x)$.
-In other words, the condition number of $f$ is (the limit of) the change in output over the change of input.
 
-Similarly, the \emph{relative condition number} of $f$ is the limit of the relative change in output over the relative change in input, i.e.,
-\begin{equation}\label{equ:rel_cond}
-\kappa(\x) = \lim_{\delta \rightarrow 0} \sup_{\norm{\delta \x} \leq \delta} \left({ \frac{\norm{\delta f}}{\norm{f(\x)}} } \middle/ { \frac{\norm{\delta \x}}{\norm{\x}} }\right).
+In other words, the absolute condition number of $f$ is the limit of the change in output over the change of input.
+Similarly, the \emph{relative condition number} of $f$ is the limit of the \emph{relative} change in output over the \emph{relative} change in input:
+\begin{equation}\label{eq:rel_cond}
+\kappa(\x)
+= \lim_{\delta \rightarrow 0^+} \sup_{\norm{\mathbf{h}} < \delta} \left({ \frac{\norm{f(\x + \mathbf{h} ) - f(\x)}}{\norm{f(\x)}} } \middle/ { \frac{\norm{\mathbf{h}}}{\norm{\x}} }\right)
+= \frac{\norm{\x}}{\norm{f(\x)}} \hat{\kappa}(\x).
 \end{equation}
-In fact,
-\[
-\kappa(\x) = \frac{\norm{\x}}{\norm{f(\x)}} J(\x)
-\]
-A function is \emph{ill-conditioned} if its condition number is large.
 
+When a function's condition number is large, it is called \emph{ill-conditioned}.
+Small changes to the input of an ill-conditioned function may produce large changes in output.
+In applications, it is important to know if a function is ill-conditioned because floating point representation almost always introduces input error.
 
-Small changes to the input of an ill-conditioned function produce large changes in output.
-In applications, it is important to know if a function is ill-conditioned because there is usually some error in the parameters passed to the function.
+The \emph{condition number of a matrix} $\kappa (A)=\|A\| \|A^{-1}\|$ is an upper bound on the condition number for many of the common problems associated with the matrix, such as solving the system $A\x =\b$.
+If $A$ is square but not invertible, then $\kappa(A) = \infty$ by convention.
+To compute $\kappa(A)$, we often use the matrix 2-norm, which is the largest singular value $\sigma_{\max}$ of $A$.
+Then since if $\sigma$ is a singular value of $A$, $\frac{1}{\sigma}$ is a singular value of $A^{-1}$, we have
+\begin{equation}\label{eq:matrix_cond}
+\kappa(A) = \frac{\sigma_{\max}}{\sigma_{\min}},
+\end{equation}
+which is also a valid equation for non-square matrices.
 
-\subsection*{Example: the Wilkinson Polynomial}
+\begin{problem}\label{matrix-cond} % Compute matrix condition number.
+Write a function that accepts a matrix $A$ and computes its condition number using (\ref{eq:matrix_cond}).
+Use \li{scipy.linalg.svd()}, \li{scipy.linalg.svdvals()}, or \li{np.linalg.svd()} to compute the singular values of $A$, and avoid computing $A^{-1}$.
+If the smallest singular value is 0, return infinity (\li{np.inf}).
 
-Let $f:\mathbb{C}^{n+1} \rightarrow \mathbb{C}^n$ be the function that sends $(a_1, \ldots, a_{m+1})$ to the roots of $a_1x^n+a_2x^{n-1}+\ldots+a_nx+a_{n+1}$.
-In other words, this function describes the problem of finding the roots of a polynomial.
-Unfortunately, root finding is extremely ill-conditioned.
-
-A classic example is the Wilkinson polynomial
-\[
-w(x) = \prod_{r=1}^{20}(x-r) = x^{20}-210x^{19}+20615x^{18}-\ldots.
-\]
-We will use NumPy to explore the condition number of $f$ at the coefficients of $w(x)$.
-These coefficients are contained in the NumPy array \li{w_coeffs} below.
-We also create an array \li{w_roots} containing the roots of $w(x)$.\footnote{
-It is possible to create this array in NumPy by expanding the product $\prod_{r=1}^{20}(x-r)$, for example using \li{np.poly()}.
-However, this approach is \emph{unstable} and will give you the wrong coefficients!}
-\begin{lstlisting}
->>> import numpy as np
->>> from scipy import linalg as la
->>> w_coeffs = np.array([1, -210, 20615, -1256850, 53327946, -1672280820,
-                    40171771630, -756111184500, 11310276995381,
-                    -135585182899530, 1307535010540395,
-                    -10142299865511450, 63030812099294896,
-                    -311333643161390640, 1206647803780373360,
-                    -3599979517947607200, 8037811822645051776,
-                    -12870931245150988800, 13803759753640704000,
-                    -8752948036761600000, 2432902008176640000])
->>> w_roots = np.arange(1, 21)
-\end{lstlisting}
-
-Next we perturb the polynomial by changing the $x^{19}$-coefficient from $-210$ to $-210.0000001$.
-\begin{lstlisting}
->>> perturb = np.zeros(21)
->>> perturb[1]=1e-7
->>> perturbed_coeffs = w_coeffs - perturb
-\end{lstlisting}
-
-Now we find the roots of the perturbed polynomial.
-The function \li{np.poly1d()} creates a polynomial object using the array passed to it as coefficients, and \li{np.roots()} finds the roots of a polynomial.
-\begin{lstlisting}
->>> perturbed_roots = np.roots(np.poly1d(perturbed_coeffs))
-\end{lstlisting}
-The new roots are plotted with the original roots in Figure \ref{fig:wilkinsonpolynomial}.
-
-Finally we compute an approximation to the condition number.
-We sort the roots before we compare them to ensure that they are in the same order.
-\begin{lstlisting}
->>> w_roots = np.sort(w_roots)
->>> perturbed_roots = np.sort(perturbed_roots)
->>> la.norm(perturbed_roots-w_roots)/la.norm(perturb)
-68214100.15878984
-\end{lstlisting}
-Thus, the condition number of this problem is something like $10^7$.
-
-When we try to estimate the relative condition number, NumPy will not compute the 2-norm of \li{w_coeffs} because it is so large.
-NumPy will not compute the square root of a very large number.
-One easy solution is to use a different norm that does not require the square root.
-\begin{lstlisting}
->>> # Estimate the absolute condition number in the infinity norm
->>> k = la.norm(perturbed_roots-w_roots, np.inf)/la.norm(perturb, np.inf)
->>> k
-28260604.34345689
->>> # Estimate the relative condition number in the infinity norm
->>> k*la.norm(w_coeffs, np.inf)/la.norm(w_roots, np.inf)
-1.9505129642488696e+25
-\end{lstlisting}
-As you can see, the order of magnitude of the absolute condition number is the same as when we computed it with the 2-norm.
-The relative condition number for this problem is approximately $10^{24}$.
-
-
-There are some caveats to this example.
-First, when we compute the quotients in \eqref{equ:abs_cond} and \eqref{equ:rel_cond} for a fixed $\delta \x$, we are only \emph{approximating} the condition number.
-The actual condition number is a limit of such quotients.
-We hope that when $||\delta \x||$ is small, a random quotient is at least the same order of magnitude as the limit, but we have no way to be sure.
-
-Second, this example assumes that NumPy's root-finding algorithm is \emph{stable}, so that the difference between the roots of \li{w_coeffs} and \li{perturbed_coeffs} is due to the difference in coefficients, and not the difference in roots.
-We will return to this issue in the next section.
-
-\begin{figure}
-\centering
-\includegraphics[height=2.25in]{figures/wilk2.png}
-\caption{In these images, blue is associated with $w(x)$ and red is associated with $w(x)$ perturbed by 1e-7 in the $x^{19}$-coefficient. On the left is a plot of the two polynomials. On the right is a graphical representation of the roots of the polynomials. The blue dots are the roots of $w(x)$. The red x's are the roots of the perturbed polynomial. }
-\label{fig:wilkinsonpolynomial}
-\end{figure}
-
-\begin{problem}\label{prob:wilk}
-Write a Python function that investigates the condition number of the Wilkinson polynomial by doing the following.
-\begin{enumerate}
-\item Perform this experiment:
-
-\begin{quote}
-Randomly perturb $w(x)$ by replacing each coefficient $a_i$ with $a_i*r_i$, where $r_i$ is drawn from a normal distribution centered at 1 with standard deviation $1e-10$.
-\end{quote}
-
-Plot the results of 100 such experiments in a single graphic, along with the roots of the unperturbed polynomial $w(x)$. The plot should look something like Figure \ref{fig:wilkinsonpolynomial_many}. This exercise reproduces Figure 12.1 on p. 93 of \emph{Numerical Linear Algebra} by Lloyd N. Trefethen and David Bau III.
-\item Using the final experiment only, estimate the relative and absolute condition number (in any norm you prefer). Print these numbers to the screen.
-\end{enumerate}
-
-\begin{figure}[H]
-\includegraphics[height=3in]{figures/wilkinsonpolynomial_many.pdf}
-\caption{Sample result of Problem \ref{prob:wilk}.
-The blue dots are the roots of $w(x)$ and the black dots are roots of random perturbations.
-This figure replicates Figure 12.1 on p. 93 of \emph{Numerical Linear Algebra} by Lloyd N. Trefethen and David Bau III.}
-\label{fig:wilkinsonpolynomial_many}
-\end{figure}
-
+Test your function against \li{np.linalg.cond()}; you should expect the values to be within $10^{-7}$ of one another.
 \end{problem}
 
-%Notes on Problem 1:
-% - Make something to copy-paste with the polynomial coefficients
-% - You MUST copy paste the exact coefficients!!! Multiplying out the polynomial is not stable!!!
-% - Also "compute" the roots of the wilkinson poly. They are close but not quite right. The difference is not visible on the graph. See that is probably useful.
-
-% In introductory discussion, compute the condition number of the problem. Explain why we use the infinity norm.
-
-\subsection*{Example: Calculating Eigenvalues}
-
-Let $f:\mathbb{C}^{n^2} \rightarrow \mathbb{C}^n$ be the function that sends an $n \times n$ matrix to its $n$ eigenvalues.
-This problem is well-conditioned for symmetric matrices, but can be extremely ill-conditioned for non-symmetric matrices.
-
-Let us use NumPy to calculate the condition number of the eigenvalue problem at the identity matrix.
-First we check that the eigenvalue solver is stable here.
-\begin{lstlisting}
->>> M = np.array([[1,0],[0,1]])
->>> eigs = la.eig(M)[0]
->>> eigs
-array([ 1.+0.j,  1.+0.j])
-\end{lstlisting}
-Now we perturb $M$ by adding a matrix drawn from a random normal distribution over the complex numbers.
-We calculate the eigenvalues of the perturbed matrix.
-\begin{lstlisting}
->>> perturb = np.random.normal(0, 1e-10, M.shape) + np.random.normal(0,1e-10, M.shape)*1j
->>> eigsp = la.eig(M+perturb)[0]
-\end{lstlisting}
-Finally we use this data to approximate the condition number.
-\begin{lstlisting}
->>> k = la.norm(eigs-eigsp)/la.norm(perturb)	# Absolute condition number
-0.62957336119253127
->>> k*la.norm(M)/la.norm(eigs)	# Relative condition number
-0.62957336119253127
-\end{lstlisting}
-The absolute and relative condition number are the same because \li{la.norm(M)} and \li{la.norm(eigs)} are both $\sqrt{2}$.
-
-
-\begin{problem}[Optional]\label{prob:eigenvalue}
-Let us explore the condition number of the eigenvalue problem.
-\begin{enumerate}
-\item \begin{enumerate}
-\item Write the following function.
-\begin{lstlisting}
-def eig_condit(M):
-    '''
-    Approximate the condition number of the eigenvalue problem at M.
-
-    INPUT:
-    M  - A 2-D NumPy array, representing a matrix.
-
-    RETURN:
-    A tuple containing approximations to the absolute and relative condition numbers of the eigenvalue problem at M.
-    '''
-\end{lstlisting}
-\item Find an example of a $2\times2$ matrix with a very large condition number.
-(Hint: Look at matrices whose off-diagonal entries are very different in magnitude.)
-\item What is the order of magnitude of the condition number of a symmetric $2\times 2$ matrix?
-\end{enumerate}
-\item Write the following function.
-\begin{lstlisting}
-def plot_eig_condit(x0=-100, x1=100, y0=-100, y1=100, res=10):
-    '''
-    Plot the condition number of the eigenvalue problem on [x0, x1]x[y0,y1].
-
-    Specifically, use plt.pcolormesh to plot the relative condition number of the eigenvalue problem at [[1,x],[y,1]] on this domain.
-    The variable `res' should be the number of sample points taken along each axis, for a total of `res'**2 points in the plot.
-    '''
-\end{lstlisting}
-\item Call your function for \li{res}=10, 50, 100, 200 and 400 (output for $res=200$ is pictured below). Recall that matplotlib scales the colorbar of the output to fit the largest and smallest output values.
-What can you conclude about the condition number of the eigenvalue problem at a ``random'' $2\times2$ matrix?
-\end{enumerate}
-\begin{figure}[H]
-\includegraphics[height=3in]{figures/eigenvalue_conditioning.png}
-\caption{Output of \li{plot_eig_condit(res=200)}.}
-\end{figure}
-\end{problem}
+For large matrices where taking the SVD is difficult, the exact condition number of a matrix cannot always be computed and therefore must be estimated.
+Although not covered here, there exist many algorithms that can efficiently and accurately estimate the condition number of a matrix.
 
 %\begin{example}[Condition of a System of Equations]
 %Consider the system of equations
@@ -246,22 +78,23 @@ What can you conclude about the condition number of the eigenvalue problem at a 
 %The low condition number of orthonormal matrices is one of the primary reasons that Householder reflections and Givens rotations are used in so many algorithms.
 %\end{example}
 
-\section*{Stability of an Algorithm}
+\subsection*{Example: The Wilkinson Polynomial} % -----------------------------
 
-The stability of an algorithm is measured by the error in its output.
-Suppose we have some algorithm to compute $f: \mathbb{R}^m \rightarrow \mathbb{R}^n$.
-Let $\tilde f(\x)$ represent the value computed by the algorithm at $\x$.
-Then the \emph{forward error} of $f$ at $\x$ is $||f(\x)-\tilde f(\x)||$, and the \emph{relative forward error} of $f$ at $\x$ is
+Let $f:\mathbb{C}^{n+1} \rightarrow \mathbb{C}^n$ be the function that maps the sequence of coefficients $(a_1, \ldots, a_{n+1})$ to the roots of the polynomial $a_1x^n+a_2x^{n-1}+\ldots+a_nx+a_{n+1}$.
+% In other words, this function describes the problem of finding the roots of a polynomial.
+Finding the roots of polynomials is extremely ill-conditioned in general, so the condition number of $f$ is likely very large.
+
+For instance, consider the Wilkinson polynomial.
 \[
-\frac{||f(\x)-\tilde f(\x)||}{||f(\x)||}.
+w(x) = \prod_{r=1}^{20}(x-r) = x^{20}-210x^{19}+20615x^{18}-\ldots
 \]
-An algorithm is \emph{stable} if this relative forward error is small.
+Let $\tilde{w}(x)$ be $w(x)$ where the coefficient on $x^{19}$ is very slightly perturbed from $-210$ to $-210.0000001$.
+Below, we compute and compare the roots of $\tilde{w}(x)$ and $w(x)$ using NumPy and SymPy.
 
-As an example, let us examine the stability of NumPy's root finding algorithm that we used to investigate the Wilkinson polynomial.
-We know the exact roots of $w(x)$, and we can also compute these roots using NumPy's \li{np.roots()} function.
-
+\begin{comment}
 \begin{lstlisting}
->>> roots = np.arange(1,21)
+>>> import numpy as np
+>>> from scipy import linalg as la
 >>> w_coeffs = np.array([1, -210, 20615, -1256850, 53327946, -1672280820,
                     40171771630, -756111184500, 11310276995381,
                     -135585182899530, 1307535010540395,
@@ -270,28 +103,255 @@ We know the exact roots of $w(x)$, and we can also compute these roots using Num
                     -3599979517947607200, 8037811822645051776,
                     -12870931245150988800, 13803759753640704000,
                     -8752948036761600000, 2432902008176640000])
->>> computed_roots = np.roots(np.poly1d(w_coeffs))
+>>> w_roots = np.arange(1, 21)
 \end{lstlisting}
-
-We sort the roots to ensure they are in the same order, then compute the absolute and relative forward error.
+\end{comment}
 
 \begin{lstlisting}
->>> roots = np.sort(roots)
->>> computed_roots = np.sort(computed_roots)
->>> la.norm(roots-computed_roots)	# Forward error
-0.020612653126379665
->>> la.norm(roots-computed_roots)/la.norm(roots)	# Relative forward error
-0.00038476268486104599
+>>> import numpy as np
+>>> import sympy as sy
+>>> from scipy import linalg as la
+
+# The roots of w are 1, 2, ..., 20.
+>>> w_roots = np.arange(1, 21)
+
+# Get the exact Wilkinson polynomial coefficients using SymPy.
+>>> x, i = sy.symbols('x i')
+>>> w, _ = sy.poly_from_expr(sy.product(x-i, (i, 1, 20)))
+>>> w_coeffs = np.array(w.all_coeffs())
+
+# Perturb one of the coefficients very slightly.
+>>> perturb = np.zeros(21)
+>>> perturb[1]=1e-7
+>>> perturbed_coeffs = w_coeffs - perturb
+
+# Use NumPy to compute the roots of the perturbed polynomial.
+>>> perturbed_roots = np.roots(np.poly1d(perturbed_coeffs))
 \end{lstlisting}
 
-This analysis gives us hope that questions of stability did not interfere too much with our experiments in Problem \ref{prob:wilk}.
+Below we plot the polynomials $w(x)$ and $\tilde{w}(x)$ and compare their roots in the complex plane.
 
-\subsection*{Catastrophic Cancellation}
-\emph{Catastrophic Cancellation} is a term for when a computer takes the difference of two very similar numbers, and the result is stored with a small number of significant digits.
-Because of the way computers store and perform arithmetic on numbers, future computations can amplify a catastrophic cancellation into a huge error.
+\begin{figure}[H] % Original and pertubed Wilkinson polynomial + roots
+\captionsetup[subfigure]{justification=centering}
+\centering
+\begin{subfigure}{.4\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/perturbed_poly.pdf}
+    \caption{The original and perturbed Wilkinson polynomials.
+    They match for only about half of the domain.}
+\end{subfigure}
+\qquad
+\begin{subfigure}{.4\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/perturbed_roots.pdf}
+    \caption{Roots of the original and pertubed Wilkinson polynomials.
+    About half of the perturbed roots are imaginary.}
+    \label{fig:pertubed-roots}
+\end{subfigure}
+\label{fig:wilkinsonpolynomial}
+\end{figure}
+
+From the figure, it's clear that a perturbation drastically changes the nature of the polynomial and its root.
+To quantify the difference, we estimate the condition numbers in the $L^\infty$ norm.
+
+\begin{lstlisting}
+# Sort the roots to ensure that they are in the same order.
+>>> w_roots = np.sort(w_roots)
+>>> perturbed_roots = np.sort(perturbed_roots)
+
+# Estimate the absolute condition number in the infinity norm.
+>>> k = la.norm(perturbed_roots - w_roots, np.inf) / la.norm(perturb, np.inf)
+>>> print(k)
+28262391.3304
+
+# Estimate the relative condition number in the infinity norm.
+>>> k*la.norm(w_coeffs, np.inf) / la.norm(w_roots, np.inf)
+1.95063629993970+25                     # This is huge!!
+\end{lstlisting}
+
+There are some caveats to this example.
+First, when we compute the quotients in \eqref{eq:abs_cond} and \eqref{eq:rel_cond} for a fixed $\mathbf{h}$, we are only \emph{approximating} the condition number.
+The actual condition number is the limit of such quotients.
+We hope that when $||\mathbf{h}||$ is small, a random quotient is at least the same order of magnitude as the limit, but we have no way to be sure.
+
+Second, this example assumes that NumPy's root-finding algorithm is \emph{stable}, so that the difference between the roots of \li{w_coeffs} and \li{perturbed_coeffs} is due to the difference in coefficients, and not the difference in roots.
+We will return to this issue in the next section.
+
+\begin{problem}\label{prob:wilk}
+Write a function that carries out the following experiment 100 times.
+\begin{enumerate}
+\item Randomly perturb the true coefficients by replacing each coefficient $a_i$ with $a_i*r_i$, where $r_i$ is drawn from a normal distribution centered at 1 with standard deviation $10^{-10}$ (use \li{np.random.normal()}).
+\item Plot the perturbed roots as small points in the complex plane.
+That is, plot the real part of the coefficients on the $x$-axis and the imaginary part on the $y$-axis.
+Plot on the same figure in each experiment.
+\item Compute the absolute and relative condition numbers with the $L^{\infty}$ norm.
+\end{enumerate}
+Plot the roots of the unperturbed Wilkinson polynomial with the perturbed roots.
+Your final plot should resemble Figure \ref{fig:wilkinsonpolynomial_many}.
+Finally, return the average computed absolute and relative condition numbers.
+
+\begin{figure}[H]
+\includegraphics[width=.7\linewidth]{figures/wilkinson_prob_solution.pdf}
+\caption{
+This figure replicates Figure 12.1 on p. 93 of \emph{Numerical Linear Algebra} by Lloyd N. Trefethen and David Bau III.}
+\label{fig:wilkinsonpolynomial_many}
+\end{figure}
+\end{problem}
+
+%Notes on Problem 1:
+% - Also "compute" the roots of the wilkinson poly. They are close but not quite right. The difference is not visible on the graph. See that is probably useful.
+
+% In introductory discussion, compute the condition number of the problem. Explain why we use the infinity norm.
+
+\subsection*{Example: Calculating Eigenvalues} % ------------------------------
+
+Let $f:\mathbb{C}^{n^2} \rightarrow \mathbb{C}^n$ be the function that maps an $n \times n$ matrix to its $n$ eigenvalues.
+This problem is well-conditioned for symmetric matrices, but can be extremely ill-conditioned for non-symmetric matrices.
+Let $A$ be an $n\times n$ matrix and let $\boldsymbol{\lambda}$ be the vector of the $n$ eigenvalues of $A$.
+If $\tilde{A} = A + H$ and $\tilde{\boldsymbol{\lambda}}$ are a perturbation of $A$ and its eigenvalues, then the condition numbers of $f$ are
+\begin{equation}
+\hat{\kappa}(A) = \frac{\|\boldsymbol{\lambda} - \tilde{\boldsymbol{\lambda}}\|}{\|H\|},
+\qquad
+\kappa(A) = \frac{\|A\|}{\|\boldsymbol{\lambda}\|}\hat{\kappa}(A).
+\label{eq:eig-condition-numbers}
+\end{equation}
+
+\begin{problem}\label{prob:eigenvalue} % Eigenvalue experiments
+Write a function that accepts a matrix $A$ and estimates the condition number of the eigenvalue problem using (\ref{eq:eig-condition-numbers}).
+For the perturbation $H$, use arandom complex matrices with entries drawn from a normal distribution.
+\begin{lstlisting}
+H = np.random.normal(0, 1e-10, A.shape) + np.random.normal(
+                                                    0, 1e-10, A.shape)*1j
+\end{lstlisting}
+
+Use the 2-norm for both the vector and matrix norms.
+Return the absolute and relative condition numbers.
+\label{prob:eig-condit}
+\end{problem}
+
+\begin{problem}\label{prob:plot_eigen}
+Write a function that accepts minimal and maximal values for $x$ and $y$ as well as a resolution parameter \li{res}.
+Use your function from Problem \ref{prob:eig-condit} to compute the relative condition number of the eigenvalue for the 2x2 matrix
+\[
+\left[\begin{array}{cc}
+1 &  x\\
+y & 1\end{array}\right]
+\]
+at every point in the domain $[x_{min}\ x_{max}]\times [y_{min}\ y_{max}]$, where each axis is partitioned into \li{res} points.
+Plots these estimated relative condition numbers using \li{plt.pcolormesh()}.
+With \li{res}=200, your plot should similar to the following figure.
+
+\begin{figure}[H]
+    \includegraphics[width=.7\linewidth]{figures/eigenvalue_conditioning.png}
+\end{figure}
+\end{problem}
+
+\section*{Stability of an Algorithm} % ========================================
+
+The stability of an algorithm is measured by the error in its output.
+Suppose we have some algorithm to compute $f: \mathbb{R}^m \rightarrow \mathbb{R}^n$.
+Let $\tilde f(\x)$ represent the value computed by the algorithm given an input $\x$.
+Then the \emph{forward error} of $f$ at $\x$ is $||f(\x)-\tilde f(\x)||$, and the \emph{relative forward error} of $f$ at $\x$ is
+\[
+\frac{||f(\x)-\tilde f(\x)||}{||f(\x)||}.
+\]
+An algorithm is \emph{stable} if its relative forward error is small.
+
+As an example, let us examine the stability of NumPy's root finding algorithm that we used to investigate the Wilkinson polynomial.
+We know the exact roots of $w(x)$, and we can also compute these roots using NumPy's \li{np.roots()} function.
+
+\begin{lstlisting}
+>>> roots = np.arange(1,21)
+ # w_coeffs is an array with the coefficients of the Wilkinson polynomial.
+>>> computed_roots = np.roots(np.poly1d(w_coeffs))
+
+# Sort the roots for comparison.
+>>> roots = np.sort(roots)
+>>> computed_roots = np.sort(computed_roots)
+
+# Compute the forward error.
+>>> forward_error = la.norm(roots-computed_roots)
+>>> print(forward_error)
+0.020612653126379665
+
+# Compute the relative forward error.
+>>> forward_error / la.norm(roots)
+0.00038476268486104599                              # Nice and small.
+\end{lstlisting}
+
+This analysis suggests that questions of stability did not interfere too much with our experiments in Problem \ref{prob:wilk}.
+
+\subsection*{Example: Least Squares} % ----------------------------------------
+% An example of a problem with stable and unstable algorithms is the least squares problem.
+
+The least squares problem is to find the $\x$ that minimizes $\norm{A\x -\b}_2$ for fixed $A$ and $\b$.
+It can be shown that an equivalent problem is finding the solution of $A\trp A\x =A\trp \b$, called the \emph{normal equations}.
+We will consider two different algorithms that solve this problem.
+
+\begin{enumerate}
+\item Invert the matrix $A\trp A$ and then right multiply by $A\trp \b$ to solve the normal equations.
+Although this approach seems intuitive, it is actually highly unstable and can return an answer with a very large forward error.
+
+\item
+Use the QR-decomposition, factoring the $m\times n$ matrix $A$ of rank $n\geq m$, where $Q$ has orthonomral columns and $R$ is upper triangular.
+It can also be shown that the solution of $R \x = Q\b$ is equivalent to solving the least squares problem.
+This algorithm has the advantage of being stable.
+\end{enumerate}
+
+A common application of least squares is polynomial approximation.
+Given a set of data points $\{(x_k, y_k)\}_{k=1}^m$ we would like to find the set of coefficients $\{c_k\}_{k=1}^n$ such that
+\[
+y_k = c_n x_k^n + c_{n-1} x_k^{n-1} + \cdots + c_2 x_k^2 + c_1 x_k + c_0
+\]
+for all $k$.
+Since this system will typically be over-determined, there will not be a set of coefficients that exactly satisfies this equation for all $k$.
+A common approach is to use least squares to pick the set of coefficients that minimizes the $L^2$ error of the system of equations.
+
+\begin{lstlisting}
+>>> from scipy import linalg as la
+
+# Use least squares to approximate sin(x) with a five-degree polynomial.
+>>> x = np.linspace(0, 6, 10)           # The x-values of the data.
+>>> b = np.sin(x) + .2*np.random.randn(10) # The y-values of the data (noisy).
+>>> A = np.vander(x, 6)                 # Set up the matrix of data values.
+>>> coeffs = la.lstsq(A, b)[0]          # Get the polynomial coefficients.
+
+>>> domain = np.linspace(0, 6, 100)     # Define a finer domain for plotting.
+>>> plt.plot(x, b, 'k*')
+>>> plt.plot(domain, np.sin(domain))
+>>> plt.plot(domain, np.poly1d(coeffs)(domain))
+\end{lstlisting}
+
+\begin{problem}\label{problem:lstsqr}
+Write two functions that solve the least squares problem using the normal equation.
+One of your functions should solve the problem directly using \li{np.linalg.inv()} while the other should use a more stable algorithm, such as the QR-decomposition.
+The functions \li{la.qr()} and \li{la.solve_triangular()} may be helpful when implementing the QR-decomposition.
+Both of your functions should accept a matrix $A$ and a vector $\b$.
+
+Approximate the data from \texttt{stability\_data.npy} on the interval $[0,\ 1]$ with a degree-fourteen polynomial using two approaches to get the least squares solution:
+\begin{enumerate}
+\item Use \li{la.inv()} and the normal equations: $\x = (A\trp A)^{-1}A\trp \b$.
+\item Use \li{la.qr()} and \li{la.solve_triangular()} to solve the system $R\x = Q\b$.
+\end{enumerate}
+Plot both of your solutions with the data points for comparision.
+Return the error $\norm{A\x-\mathbf{b}}_2$ of both approximations.
+Your plot should look similar to the following figure.
+
+\begin{figure}[H] % TODO: do they really need this figure?
+    \centering
+    \includegraphics[width=.7\textwidth]{figures/lstsq_stability.pdf}
+\end{figure}
+
+\end{problem}
+
+\subsection*{Catastrophic Cancellation} % -------------------------------------
+
+A common cause of instability in algorithms is catastrophic cancellation.
+\emph{Catastrophic cancellation} is the term for when a computer takes the difference of two very similar numbers, and the result is stored with a small number of significant digits.
+Because of the way computers store and perform arithmetic on numbers, future computations can amplify a catastrophic cancellation into a large error.
 
 You are at risk for catastrophic cancellation whenever you subtract floats or large integers that are very close to each other.
-You can avoid the problem either by rewriting your program to not use subtraction, or by increasing the number of significant digits that your computer tracks.
+You can avoid this problem by either rewriting your program to not use subtraction, or by increasing the number of significant digits that your computer tracks.
 
 Here is an example of catastrophic cancellation.
 Suppose we wish to compute $\sqrt{a}-\sqrt{b}$. We can either do this subtraction directly or perform the equivalent division
@@ -299,17 +359,20 @@ Suppose we wish to compute $\sqrt{a}-\sqrt{b}$. We can either do this subtractio
 \sqrt{a}-\sqrt{b} = (\sqrt{a}-\sqrt{b})\frac{\sqrt{a}+\sqrt{b}}{\sqrt{a}+\sqrt{b}} = \frac{a-b}{\sqrt{a}+\sqrt{b}}.
 \]
 
-Let us perform this computation both ways in NumPy with $a=10^{20}+1$ and $b=10^{20}$.
+We will perform this computation both ways in NumPy with $a=10^{20}+1$ and $b=10^{20}$.
 \begin{lstlisting}
->>> np.sqrt(1e20+1)-np.sqrt(1e20)
+>>> from math import sqrt           # np.sqrt() fails for very large numbers
+
+>>> a = 10**20+1
+>>> b = 10**20
+>>> sqrt(a)- sqrt(b)
 0.0
->>> 1/(np.sqrt(1e20+1)+np.sqrt(1e20))
-5.0000000000000002e-11
+>>> (a-b) / (np.sqrt(a)+np.sqrt(b))
+5e-11
 \end{lstlisting}
-Since $a \neq b$, clearly $\sqrt{a}-\sqrt{b}$ should be nonzero.
+Since $a \neq b$, $\sqrt{a}-\sqrt{b}$ should clearly be nonzero.
 
-
-\begin{problem}
+\begin{problem} % TODO: fix this problem.
 Let $I(n) = \int_0^1 x^n e^{x - 1} dx$.
 \begin{enumerate}
 \item Prove that $0 \leq I(n) \leq 1$ for all $n$.
@@ -318,12 +381,8 @@ Let $I(n) = \int_0^1 x^n e^{x - 1} dx$.
 I(n) = \left(-1\right)^{n} !n + \left(-1\right)^{n + 1} \frac{n!}{e}
 \]
 where $!n$ is the \emph{subfactorial} of $n$.
-Use this formula to write the following function.
-\begin{lstlisting}
-def integral(n):
-    '''Return I(n).'''
-\end{lstlisting}
-Hint: The subfactorial function can be imported from SymPy with the line \li{from sympy import subfactorial}.
+Use this formula to write a function that computes the integral.
+\\ (Hint: Use SymPy's \li{subfactorial()} function.)
 \item The actual values of $I(n)$ for many values of $n$ are listed in the table below.
 Use your function \li{integral()} to compute $I(n)$ for these same values of $n$, and create a table comparing the data.
 How can you explain what is happening?
@@ -342,13 +401,12 @@ $20$ & $0.0455448840758$ \\
 $25$ & $0.0370862144237$ \\
 $30$ & $0.0312796739322$ \\
 $35$ & $0.0270462894091$ \\
-$40$& $0.023822728669$ \\
-$45$& $0.0212860390856$ \\
+$40$ & $0.023822728669$ \\
+$45$ & $0.0212860390856$ \\
 $50$ & $0.0192377544343$ \\
 \hline
 \end{tabular}
 \end{center}
-
 \end{problem}
 
 %\begin{table}
