@@ -2,15 +2,13 @@
 \label{lab:NumPy}
 \objective{NumPy is a powerful Python package for manipulating data with multi-dimensional vectors.
 Its versatility and speed makes Python an ideal language for applied and computational mathematics.
-\\ \indent
 In this lab we introduce basic NumPy data structures and operations as a first step to numerical computing in Python.}
 
 \section*{Arrays} % ===========================================================
 
 In many algorithms, data can be represented mathematically as a \emph{vector} or a \emph{matrix}.
-Conceptually, a vector is just a list of numbers and a matrix is a two-dimensional list of numbers.
-Therefore, we might try to represent a vector as a Python list and a matrix as a list of lists.
-However, even basic linear algebra operations like matrix multiplication are cumbersome to implement and slow to execute when we store data this way.
+Conceptually, a vector is just a list of numbers and a matrix is a two-dimensional list of numbers (a list of lists).
+However, even basic linear algebra operations like matrix multiplication are cumbersome to implement and slow to execute when data is stored this way.
 The \emph{NumPy} module\footnote{NumPy is \emph{not} part of the standard library, but it is included in most Python distributions.} offers a much better solution.
 
 The basic object in NumPy is the \emph{array}, which is conceptually similar to a matrix.
@@ -19,28 +17,33 @@ The simplest way to explicitly create a 1-D \li{ndarray} is to define a list, th
 
 \begin{lstlisting}
 >>> import numpy as np
+
 # Create a 1-D array by passing a list into NumPy's array() function.
 >>> np.array([8, 4, 6, 0, 2])
 array([8, 4, 6, 0, 2])
+
+# The string representation has no commas or an array() label.
+>>> print(np.array([1, 3, 5, 7, 9]))
+[1 3 5 7 9]
 \end{lstlisting}
 %
 The alias ``\li{np}'' is standard in the Python community. % Make footnote?
 
 An \li{ndarray} can have arbitrarily many dimensions.
-A 2-D array is a 1-D array of 1-D arrays, and more generally, an $n$-dimensional array is a 1-D array of $(n-1)$-dimensional arrays.
+A 2-D array is a 1-D array of 1-D arrays (like a list of lists), a 3-D array is a 1-D array of 2-D arrays (a list of lists of lists), and, more generally, an $n$-dimensional array is a 1-D array of $(n-1)$-dimensional arrays (a list of lists of lists of lists...).
 Each dimension is called an \emph{axis}.
-For a 2-D array, the 0-axis indexes the rows and the 1-axis indexes the columns.
-Elements are accessed using brackets and indices (like a regular list), and the axes are separated by commas.
+For a 2-D array, the $0$-axis indexes the rows and the $1$-axis indexes the columns.
+Elements are accessed using brackets and indices, with the axes separated by commas.
 
 \begin{lstlisting}
 # Create a 2-D array by passing a list of lists into array().
 >>> A = np.array( [ [1, 2, 3],[4, 5, 6] ] )
 >>> print(A)
-[[1, 2, 3],
- [4, 5, 6]]
+[[1 2 3]
+ [4 5 6]]
 
 # Access elements of the array with brackets.
->>> print A[0, 1], A[1, 2]
+>>> print(A[0, 1], A[1, 2])
 2 6
 
 # The elements of a 2-D array are 1-D arrays.
@@ -49,7 +52,7 @@ array([1, 2, 3])
 \end{lstlisting}
 
 \begin{problem} % Matrix Multiplication
-NumPy's \li{dot()} function performs matrix multiplication. % In Python 3.5, we can use the @ operator to perform matrix multiplication.
+There are two main ways to perform matrix multiplication in NumPy: with NumPy's \li{dot()} function (\li{np.dot(A, B)}), or with the \li{@} operator (\li{A @ B}).
 Write a function that defines the following matrices as NumPy arrays.
 \begin{align*}
 A = \left[\begin{array}{rrr}
@@ -66,14 +69,21 @@ Return the matrix product $AB$.
 % array([[ 37,  14, -32, -10],
 %        [-54,  -7,  58,  65]])
 
-NumPy has excellent documentation.
-For examples of array initialization and matrix multiplication, use IPython's object introspection feature to look up the documentation for \li{np.ndarray}, \li{np.array()} and \li{np.dot()}.
+For examples of array initialization and matrix multiplication, use object introspection in IPython to look up the documentation for \li{np.ndarray}, \li{np.array()} and \li{np.dot()}.
 \begin{lstlisting}
-In [1]: import numpy as np
-In [2]: np.array?       # press 'Enter'
+<g<In [1]:>g> import numpy as np
+
+<g<In [2]:>g> np.array?       # press 'Enter'
 \end{lstlisting}
-\label{prob:simple1}
 \end{problem}
+
+\begin{warn} % The @ operator.
+The \li{@} operator was not introduced until Python 3.5.
+It triggers the \li{__matmul__()} magic method,%
+\footnote{See the lab on Object Oriented Programming for an overview of magic methods.}
+which for the \li{ndarray} is essentially a wrapper around \li{np.dot()}.
+If you are using a previous version of Python, always use \li{np.dot()} to perform basic matrix multiplication.
+\end{warn}
 
 \subsection*{Basic Array Operations} % ----------------------------------------
 
@@ -81,29 +91,42 @@ NumPy arrays behave differently with respect to the binary arithmetic operators 
 For lists, \li{+} concatenates two lists and \li{*} replicates a list by a scalar amount (strings also behave this way).
 
 \begin{lstlisting}
->>> x = [1, 2, 3]
->>> y = [4, 5, 6]
-
-# Addition performs list concatenation.
->>> x + y
+# Addition concatenates lists together.
+>>> [1, 2, 3] + [4, 5, 6]
 [1, 2, 3, 4, 5, 6]
 
 # Mutliplication concatenates a list with itself a given number of times.
->>> x * 4
+>>> [1, 2, 3] * 4
 [1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3]
 \end{lstlisting}
 
-In contrast, these operations are component-wise for NumPy arrays.
-Thus arrays behave the same way that vectors and matrices behave mathematically.
+NumPy arrays act like mathematical vectors and matrices: \li{+} and \li{*} perform component-wise addition or multiplication.
+\begin{comment}
+\[
+\left[\begin{array}{c}1 \\ 2 \\ 3\end{array}\right]
++
+\left[\begin{array}{c}4 \\ 5 \\ 6\end{array}\right]
+=
+\left[\begin{array}{c}1+4 \\ 2+5 \\ 3+6\end{array}\right]
+=
+\left[\begin{array}{c}5 \\ 7 \\ 9\end{array}\right]
+\qquad
+4*
+\left[\begin{array}{c}1 \\ 2 \\ 3\end{array}\right]
+=
+\left[\begin{array}{c}4*1 \\ 4*2 \\ 4*3\end{array}\right]
+=
+\left[\begin{array}{c}4 \\ 8 \\ 12\end{array}\right]
+\]
+\end{comment}
 
 \begin{lstlisting}
->>> x = np.array([1, 2, 3])
->>> y = np.array([4, 5, 6])
+>>> x, y = np.array([1, 2, 3]), np.array([4, 5, 6])
 
 # Addition or multiplication by a scalar acts on each element of the array.
->>> x + 10
+>>> x + 10                          # Add 10 to each entry of x.
 array([11, 12, 13])
->>> x * 4
+>>> x * 4                           # Multiply each entry of x by 4.
 array([ 4,  8, 12])
 
 # Add two arrays together (component-wise).
@@ -118,9 +141,9 @@ array([ 4, 10, 18])
 % Subtraction and division are also component-wise operations for NumPy arrays.
 % Apart from being syntactically convenient, arithmetic operations on NumPy arrays also execute significantly faster than component-wise list operations.
 
-\begin{comment} % Probably unnecessary.
+\begin{comment}
 \begin{warn} % Don't mix up * and np.dot().
-Matrix multiplication is executed via \li{np.dot()} and scalar (component-wise) multiplication is executed via the \li{*} operator.
+Matrix multiplication is executed via \li{np.dot()} or \li{@} and scalar (component-wise) multiplication is executed via the \li{*} operator.
 The equation below is an example of scalar multiplication, which uses \li{*}.
 \begin{align*}
 2 \left[\begin{array}{rrr}
@@ -143,9 +166,8 @@ A = \left[\begin{array}{rrr}
 \]
 Return the matrix $-A^3 + 9A^2 - 15A$.
 
-In this context, $A^2 = AA$ (the matrix product).
+In this context, $A^2 = AA$ (the matrix product, not the component-wise square).
 The somewhat surprising result is a demonstration of the Cayley-Hamilton theorem.
-\label{prob:simple2}
 \end{problem}
 
 \subsection*{Array Attributes} % ----------------------------------------------
@@ -164,15 +186,13 @@ An \li{ndarray} object has several attributes, some of which are listed below.
 
 \begin{lstlisting}
 >>> A = np.array([[1, 2, 3],[4, 5, 6]])
->>> A.ndim
-2
->>> A.shape
-(2, 3)
->>> A.size
-6
+
+# 'A' is a 2-D array with 2 rows, 3 columns, and 6 entries.
+>>> print(A.ndim, A.shape, A.size)
+2 (2, 3) 6
 \end{lstlisting}
 
-Note that the \li{ndim} is the number of entries in \li{shape}, and the
+Note that \li{ndim} is the number of entries in \li{shape}, and that
 the \li{size} of the array is the product of the entries of \li{shape}.
 
 \begin{comment} % This is being severely shortened.
@@ -249,19 +269,18 @@ In addition to casting other structures as arrays via \li{np.array()}, NumPy pro
 \centering
 \begin{tabular}{r|l}
 Function & Returns \\
-\hline \li{arange()} & An array of evenly spaced values within a given interval (like \li{range()}).\\
-% \li{empty()} & A new array of given shape and type, without initializing entries. \\
-% \li{empty_like()} & A new array with the same shape and type as a given array. \\
-\li{eye()} & A 2-D array with ones on the diagonal and zeros elsewhere. \\
+\hline \li{arange()} & Array of sequential integers (like \li{list(range())}).\\
+% \li{empty()} & Array of given shape and type, without initializing entries. \\
+% \li{empty_like()} & Array with the same shape and type as a given array. \\
+\li{eye()} & 2-D array with ones on the diagonal and zeros elsewhere. \\
 % \li{identity()} & The square identity array. \\
-\li{ones()} & A new array of given shape and type, filled with ones. \\
-\li{ones_like()} & An array of ones with the same shape and type as a given array. \\
-\li{zeros()} & A new array of given shape and type, filled with zeros. \\
-\li{zeros_like()} & An array of zeros with the same shape and type as a given array. \\
-\li{full()} & A new array of given shape and type, filled with a specified value. \\
-\li{full_like()} & A full array with the same shape and type as a given array.
+\li{ones()} & Array of given shape and type, filled with ones. \\
+\li{ones_like()} & Array of ones with the same shape and type as a given array. \\
+\li{zeros()} & Array of given shape and type, filled with zeros. \\
+\li{zeros_like()} & Array of zeros with the same shape and type as a given array. \\
+\li{full()} & Array of given shape and type, filled with a specified value. \\
+\li{full_like()} & Full array with the same shape and type as a given array.
 \end{tabular}
-\label{table:numpycreate1}
 \end{table}
 
 Each of these functions accepts the keyword argument \li{dtype} to specify the data type.
@@ -283,13 +302,13 @@ array([[1, 1, 1, 1, 1],
 [[ 1.  0.]
  [ 0.  1.]]
 
-# An array of 3s the same size as 'I'.
+# Array of 3s the same size as 'I'.
 >>> np.full_like(I, 3)              # Equivalent to np.full(I.shape, 3).
 array([[ 3.,  3.],
        [ 3.,  3.]])
 \end{lstlisting}
 
-All elements of a NumPy array must be of the same data type.
+Unlike native Python data structures, \textbf{all elements of a NumPy array must be of the same data type}.
 To change an existing array's data type, use the array's \li{astype()} method.
 
 \begin{lstlisting}
@@ -301,16 +320,14 @@ To change an existing array's data type, use the array's \li{astype()} method.
 <<dtype('int64')>>
 
 # Change the data type to one of NumPy's float types.
->>> x = x.astype(np.float64)
+>>> x = x.astype(np.float64)        # Equivalent to x = np.float64(x).
 >>> print(x)
-[ 0.  1.  2.  3.  4.]
+[ 0.  1.  2.  3.  4.]               # Floats are displayed with periods.
 >>> x.dtype
 <<dtype('float64')>>
 \end{lstlisting}
 
-
-Once we have an array, we might want to extract its diagonal or get the upper or lower portion of the array.
-The following functions are very helpful for this.
+The following functions are for dealing with the diagonal, upper, or lower portion of an array.
 
 \begin{table}[H]
 \centering
@@ -325,20 +342,16 @@ Function & Description \\ \hline
 
 \begin{lstlisting}
 >>> A = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
->>> print(A)
-[[1 2 3]
- [4 5 6]
- [7 8 9]]
-
-# Get the diagonal entries of 'A' as a 1-D array.
->>> np.diag(A)
-array([1, 5, 9])
 
 # Get only the upper triangular entries of 'A'.
 >>> np.triu(A)
 array([[1, 2, 3],
        [0, 5, 6],
        [0, 0, 9]])
+
+# Get the diagonal entries of 'A' as a 1-D array.
+>>> np.diag(A)
+array([1, 5, 9])
 
 # diag() can also be used to create a diagonal matrix from a 1-D array.
 >>> np.diag([1, 11, 111])
@@ -350,8 +363,8 @@ array([[  1,   0,   0],
 See \url{http://docs.scipy.org/doc/numpy/reference/routines.array-creation.html} for the official documentation on NumPy's array creation routines.
 
 \begin{problem} % Simple Matrix Equation 3
-Write a function that defines the following matrices as NumPy arrays.
-Use the functions presented in this section instead of \li{np.array()} to construct the matrices, then calculate the matrix product $ABA$.
+Write a function that defines the following matrices as NumPy arrays using the functions presented in this section, not \li{np.array()}.
+Calculate the matrix product $ABA$.
 Change the data type of the resulting matrix to \li{np.int64}, then return it.
 \begin{align*}
 A = \left[\begin{array}{rrrrrrr}
@@ -380,20 +393,16 @@ B = \left[\begin{array}{rrrrrrr}
 %        [ -3,  -6,  -9, -12, -15, -12,  -3],
 %        [ -2,  -4,  -6,  -8, -10, -12,  -8],
 %        [ -1,  -2,  -3,  -4,  -5,  -6,  -7]])
-\label{prob:simple3}
 \end{problem}
 
 \section*{Data Access} % ======================================================
 
 \subsection*{Array Slicing} % -------------------------------------------------
 
-Indexing for a 1-D NumPy array works exactly like indexing for a Python list.
-To access a single entry of a multi-dimensional array, say a 3-D array, use the syntax \li{f[i, j, k]}.
-While the syntax \li{f[i][j][k]} will also work, it is significantly slower because each bracket returns an array slice.
-
-In slicing syntax, the colon \li{:} separates the arguments \li{start}, \li{stop}, and \li{step}.
+Indexing for a 1-D NumPy array uses the slicing syntax \li{x[start:stop:step]}.
 If there is no colon, a single entry of that dimension is accessed.
 With a colon, a range of values is accessed.
+For multi-dimensional arrays, use a comma to separate slicing syntax for each axis.
 
 \begin{lstlisting}
 # Make an array of the integers from 0 to 10 (exclusive).
@@ -401,10 +410,10 @@ With a colon, a range of values is accessed.
 >>> x
 array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
-# Access a elements of the array with slicing syntax.
+# Access elements of the array with slicing syntax.
 >>> x[3]                            # The element at index 3.
 3
->>> x[:3]                           # Everything up to index 3.
+>>> x[:3]                           # Everything up to index 3 (exclusive).
 array([0, 1, 2])
 >>> x[3:]                           # Everything from index 3 on.
 array([3, 4, 5, 6, 7, 8, 9])
@@ -417,75 +426,66 @@ array([[0, 1, 2, 3, 4],
        [5, 6, 7, 8, 9]])
 
 # Use a comma to separate the dimensions for multi-dimensional arrays.
->>> A[1, 2]                         # The element at row one, column 2.
+>>> A[1, 2]                         # The element at row 1, column 2.
 7
 >>> A[:, 2:]                        # All of the rows, from column 2 on.
 array([[2, 3, 4],
        [7, 8, 9]])
 \end{lstlisting}
 
-See Appendix \ref{appendix:numpy-visual-guide} for visual examples of slicing.
+% See Appendix \ref{appendix:numpy-visual-guide} for visual examples of slicing.
 
 \begin{info} % Views vs. Copies.
-NumPy has two ways of returning an array: as a \emph{view} and as a \emph{copy}.
-A view of an array is distinct from the original array in Python, but it references the same place in memory.
-Thus changing a array view also change the array it references.
+Indexing and slicing operations return a \emph{view} of the array.
+Changing a view of an array also changes the original array.
 In other words, \textbf{arrays are mutable}.
-
-A copy of an array is a separate array with its own place in memory.
+To create a copy of an array, use \li{np.copy()} or the array's \li{copy()} method.
 Changes to a copy of an array does not affect the original array, but copying an array uses more time and memory than getting a view.
-An array can be copied using \li{np.copy()} or the array's \li{copy()} method.
 \end{info}
 
 \subsection*{Fancy Indexing} % ------------------------------------------------
 
-So-called ``fancy indexing'' is a second way to access elements of an array.
-Instead of providing indices to obtain a slice of an array, we provide either an array of integers or an array of boolean values (called a \emph{mask}).
+So-called \emph{fancy indexing} is a second way to access or change the elements of an array.
+Instead of using slicing syntax, provide either an array of indices or an array of boolean values (called a \emph{mask}) to extract specific elements.
 
 \begin{lstlisting}
-# Make an array of every 10th integer from 0 to 50 (exclusive).
->>> x = np.arange(0, 50, 10)
+>>> x = np.arange(0, 50, 10)        # The integers from 0 to 50 by tens.
 >>> x
 array([ 0, 10, 20, 30, 40])
 
 # An array of integers extracts the entries of 'x' at the given indices.
->>> index = np.array([3, 1, 4])
+>>> index = np.array([3, 1, 4])     # Get the 3rd, 1st, and 4th elements.
 >>> x[index]                        # Same as np.array([x[i] for i in index]).
 array([30, 10, 40])
 
 # A boolean array extracts the elements of 'x' at the same places as 'True'.
 >>> mask = np.array([True, False, False, True, False])
->>> x[mask]
+>>> x[mask]                         # Get the 0th and 3rd entries.
 array([ 0, 30])
 \end{lstlisting}
 
 Fancy indexing is especially useful for extracting or changing the values of an array that meet some sort of criterion.
-Comparison operators like \li{<} and \li{==} may be used to create masks.
+Use comparison operators like \li{<} and \li{==} to create masks.
 
 \begin{lstlisting}
-# Make an array of every other integer form 10 to 20 (exclusive).
->>> y = np.arange(10, 20, 2)
+>>> y = np.arange(10, 20, 2)        # Every other integers from 10 to 20.
 >>> y
 array([10, 12, 14, 16, 18])
 
 # Extract the values of 'y' larger than 15.
->>> mask = y > 15                   # Same as np.array([num > 15 for num in y]).
+>>> mask = y > 15                   # Same as np.array([i > 15 for i in y]).
 >>> mask
-array([False, False, False,  True,  True], dtype=<<bool>>)
->>> y[mask]
+<<array([False, False, False,  True,  True], dtype=bool)>>
+>>> y[mask]                         # Same as y[y > 15]
 array([16, 18])
 
-# If the mask doesn't need to be saved, use this very readable syntax.
->>> y[y > 15]
-array([16, 18])
-
-# Change the values of 'y' larger than 15 to 0.
->>> y[mask] = 0
+# Change the values of 'y' that are larger than 15 to 100.
+>>> y[mask] = 100
 >>> print(y)
-[10 12 14  0  0]
+[10 12 14  100  100]
 \end{lstlisting}
 
-Note that slice operations and indexing always return a view and fancy indexing always returns a copy.
+While indexing and slicing always return a view, fancy indexing always returns a copy.
 
 \begin{problem} % Slicing / Fancy Indexing
 Write a function that accepts a single array as input.
@@ -497,15 +497,14 @@ Return the copy.
 
 \subsection*{Shaping} % -------------------------------------------------------
 
-Recall that arrays have a \li{shape} attribute that describes the dimensions of the array.
-We can change the shape of an array with \li{np.reshape()} or the array's \li{reshape()} method.
+An array's \li{shape} attribute describes its dimensions.
+Use \li{np.reshape()} or the array's \li{reshape()} method to give an array a new shape.
 The total number of entries in the old array and the new array must be the same in order for the shaping to work correctly.
-A $-1$ in the new shape tuple to makes the specified dimension as long as necessary.
+Using a \li{-1} in the new shape tuple makes the specified dimension as long as necessary.
 % Whenever possible, \li{np.reshape()} returns a view.
 
 \begin{lstlisting}
-# Make an array of the integers from 0 to 12 (exclusive).
->>> A = np.arange(12)
+>>> A = np.arange(12)               # The integers from 0 to 12 (exclusive).
 >>> print(A)
 [ 0  1  2  3  4  5  6  7  8  9 10 11]
 
@@ -521,26 +520,7 @@ array([[ 0,  1,  2,  3,  4,  5],
        [ 6,  7,  8,  9, 10, 11]])
 \end{lstlisting}
 
-Use \li{np.ravel()} to flatten a multi-dimensional array into a (flat) 1-D array and \li{np.transpose()} to transpose a 2-D array (in the matrix sense).
-Transposition can also be done with an array's \li{T} attribute.
-
-\begin{table}[H]
-\centering
-\begin{tabular}{r|l}
-    Function & Description\\
-    \hline
-    \li{reshape()} & Return a view of the array with a changed shape.\\
-    \li{ravel()} & Make a flattened version of an array, return a view if possible.\\
-    \li{transpose()} & Permute the dimensions of the array (also \li{ndarray.T}).\\
-    \hline
-    % \li{concatenate()} & Join a sequence of arrays along an existing axis\\
-    \li{hstack()} & Stack arrays in sequence horizontally (column wise).\\
-    \li{vstack()} & Stack arrays in sequence vertically (row wise).\\
-    \li{column_stack()} & Stack 1-D arrays as columns into a 2-D array.
-\end{tabular}
-% \caption{Some array manipulation routines.}
-\label{table:manipulation}
-\end{table}
+Use \li{np.ravel()} to flatten a multi-dimensional array into a 1-D array and \li{np.transpose()} or the \li{T} attribute to transpose a 2-D array in the matrix sense.
 
 \begin{lstlisting}
 >>> A = np.arange(12).reshape((3,4))
@@ -563,8 +543,8 @@ array([[ 0,  4,  8],
 
 \begin{info} % All 1-D Numpy arrays are flat!
 By default, all NumPy arrays that can be represented by a single dimension, including column slices, are automatically reshaped into ``flat'' 1-D arrays.
-Therefore an array will usually have 10 elements instead of 10 arrays with one element each.
-Though we usually represent vectors vertically in mathematical notation, NumPy methods such as \li{dot()} are implemented purposefully to play nicely with 1-D ``row arrays''.
+For example, by default an array will have 10 elements instead of 10 arrays with one element each.
+Though we usually represent vectors vertically in mathematical notation, NumPy methods such as \li{dot()} are implemented to purposefully work well with 1-D ``row arrays''.
 
 \begin{lstlisting}
 >>> A = np.arange(10).reshape((2,5))
@@ -573,16 +553,16 @@ array([[0, 1, 2, 3, 4],
        [5, 6, 7, 8, 9]])
 
 # Slicing out a column of A still produces a "flat" 1-D array.
->>> x = A[:,1]
+>>> x = A[:,1]                      # All of the rows, column 1.
 >>> x
-array([1, 6])
->>> x.shape
+array([1, 6])                       # Not array([[1],
+>>> x.shape                         #            [6]])
 (2,)
 >>> x.ndim
 1
 \end{lstlisting}
 
-Occasionally it is necessary to change a 1-D array into a ``column array''.
+However, it is occasionally necessary to change a 1-D array into a ``column array''.
 Use \li{np.reshape()}, \li{np.vstack()}, or slice the array and put \li{np.newaxis} on the second axis.
 Note that \li{np.transpose()} does not alter 1-D arrays.
 
@@ -591,29 +571,36 @@ Note that \li{np.transpose()} does not alter 1-D arrays.
 >>> x
 array([0, 1, 2])
 
->>> x.reshape((3,1))                # Or np.vstack(x) or x[:,np.newaxis].
+>>> x.reshape((-1,1))               # Or x[:,np.newaxis] or np.vstack(x).
 array([[0],
        [1],
        [2]])
 \end{lstlisting}
+
+Do not force a 1-D vector to be a column vector unless necessary.
 \end{info}
 
 \subsection*{Stacking} % ------------------------------------------------------
 
-Suppose we have two or more matrices that we would like to join together into a single block matrix.
-NumPy has functions for \emph{stacking} arrays with similar dimensions together for this very purpose.
+NumPy has functions for \emph{stacking} two or more arrays with similar dimensions into a single block matrix.
 Each of these methods takes in a single tuple of arrays to be stacked in sequence.
 
-\begin{lstlisting}
->>> A = np.arange(6).reshape((3,2))
->>> B = np.ones((3,4))
-
-# hstack() stacks arrays horizontally (column-wise).
->>> np.hstack((A,B,A))
-array([[ 0.,  1.,  1.,  1.,  1.,  1.,  0.,  1.],
-       [ 2.,  3.,  1.,  1.,  1.,  1.,  2.,  3.],
-       [ 4.,  5.,  1.,  1.,  1.,  1.,  4.,  5.]])
-\end{lstlisting}
+\begin{table}[H]
+\centering
+\begin{tabular}{r|l}
+    Function & Description\\
+    \hline
+    % % Shaping methods, already discussed
+    % \li{reshape()} & Return a view of the array with a changed shape.\\
+    % \li{ravel()} & Make a flattened version of an array, return a view if possible.\\
+    % \li{transpose()} & Permute the dimensions of the array (also \li{ndarray.T}).\\
+    % \hline
+    \li{concatenate()} & Join a sequence of arrays along an existing axis\\
+    \li{hstack()} & Stack arrays in sequence horizontally (column wise).\\
+    \li{vstack()} & Stack arrays in sequence vertically (row wise).\\
+    \li{column_stack()} & Stack 1-D arrays as columns into a 2-D array.
+\end{tabular}
+\end{table}
 
 \begin{lstlisting}
 >>> A = np.arange(6).reshape((2,3))
@@ -621,17 +608,32 @@ array([[ 0.,  1.,  1.,  1.,  1.,  1.,  0.,  1.],
 
 # vstack() stacks arrays vertically (row-wise).
 >>> np.vstack((A,B,A))
-array([[ 0.,  1.,  2.],
+array([[ 0.,  1.,  2.],             # A
        [ 3.,  4.,  5.],
+       [ 0.,  0.,  0.],             # B
        [ 0.,  0.,  0.],
        [ 0.,  0.,  0.],
        [ 0.,  0.,  0.],
-       [ 0.,  0.,  0.],
-       [ 0.,  1.,  2.],
+       [ 0.,  1.,  2.],             # A
        [ 3.,  4.,  5.]])
-\end{lstlisting}
 
-See Appendix \ref{appendix:numpy-visual-guide} for more visual examples of stacking, and visit \url{http://docs.scipy.org/doc/numpy-1.10.1/reference/routines.array-manipulation.html} for more array manipulation routines and documentation.
+>>> A = A.T
+>>> B = np.ones((3,4))
+
+# hstack() stacks arrays horizontally (column-wise).
+>>> np.hstack((A,B,A))
+array([[ 0.,  3.,  1.,  1.,  1.,  1.,  0.,  3.],
+       [ 1.,  4.,  1.,  1.,  1.,  1.,  1.,  4.],
+       [ 2.,  5.,  1.,  1.,  1.,  1.,  2.,  5.]])
+
+# column_stack() stacks arrays horizontally, including 1-D arrays.
+>>> np.column_stack((A, np.zeros(3), np.ones(3), np.full(3, 2)))
+array([[ 0.,  3.,  0.,  1.,  2.],
+       [ 1.,  4.,  0.,  1.,  2.],
+       [ 2.,  5.,  0.,  1.,  2.]])
+\end{lstlisting}
+%
+See \url{http://docs.scipy.org/doc/numpy-1.10.1/reference/routines.array-manipulation.html} for more array manipulation routines and documentation.
 
 \begin{problem} % Simple Matrix Equation 4
 Write a function that defines the following matrices as NumPy arrays.
@@ -657,10 +659,9 @@ Use NumPy's stacking functions to create and return the block matrix:
 A & \0 & \0 \\
 B & \0 & C \end{array}\right],
 \end{align*}
-where $I$ is the identity matrix of the appropriate size and each $\0$ is a matrix of all zeros, also of appropriate sizes.
+where $I$ is the $3\times 3$ identity matrix and each $\0$ is a matrix of all zeros of appropriate size.
 
 A block matrix of this form is used in the Interior Point method for linear optimization.
-\label{prob:simple3}
 \end{problem}
 
 \subsection*{Array Broadcasting} % --------------------------------------------
@@ -668,9 +669,9 @@ A block matrix of this form is used in the Interior Point method for linear opti
 Many matrix operations make sense only when the two operands have the same shape, such as element-wise addition.
 \emph{Array broadcasting} extends such operations to accept some (but not all) operands with different shapes, and occurs automatically whenever possible.
 
-Suppose, for example, that we would like to add different values to the different columns of an $m\times n$ matrix $A$.
+Suppose, for example, that we would like to add different values to the columns of an $m\times n$ matrix $A$.
 Adding a 1-D array $x$ with the $n$ entries to $A$ will automatically do this correctly.
-To add different values to the different rows of $A$, we must first reshape a 1-D array of $m$ values into a column array.
+To add different values to the different rows of $A$, first reshape a 1-D array of $m$ values into a column array.
 Broadcasting then correctly takes care of the operation.
 
 Broadcasting can also occur between two 1-D arrays, once they are reshaped appropriately.
@@ -719,8 +720,8 @@ array([[ 0,  1,  2],
 
 \subsection*{Universal Functions} % -------------------------------------------
 
-A universal function is one that operates on an entire array element-wise.
-Using a universal function is almost always significantly more efficient than iterating through the array.
+A \emph{universal function} is one that operates on an entire array element-wise.
+Universal functions are significantly more efficient than using a loop to operate individually on each element of an array.
 
 \begin{table}[H]
 \centering
@@ -738,19 +739,43 @@ Using a universal function is almost always significantly more efficient than it
 \label{table:ufuncs}
 \end{table}
 
-Many scalar functions from the Python standard library have a corresponding universal function in NumPy.
-% For instance, \li{math.sin()} operates on scalars, while \li{np.sin()} operates on arrays.
-If you have a simple operation to perform element-wise on an array, check if NumPy has a universal function for it (it probably does).
+\begin{lstlisting}
+>>> x = np.arange(-2,3)
+>>> print(x, np.<<abs>>(x))             # Like np.array([abs(i) for i in x]).
+[-2 -1  0  1  2] [2 1 0 1 2]
+
+>>> np.sin(x)                       # Like np.array([math.sin(i) for i in x]).
+array([-0.90929743, -0.84147098,  0.        ,  0.84147098,  0.90929743])
+\end{lstlisting}
+
 See \url{http://docs.scipy.org/doc/numpy/reference/ufuncs.html#available-ufuncs} for a more comprehensive list of universal functions.
 
-\begin{comment} % Warning? Or just delete it...
-Although universal functions also accept scalar inputs, they can be much slower than the corresponding standard library function.
-Thus, use standard library functions on scalars and universal functions on arrays.
-\end{comment}
+\begin{warn}
+The \li{math} module has many useful functions for numerical computations.
+However, most of these functions can only act on single numbers, not on arrays.
+NumPy functions can act on either scalars or entire arrays, but \li{math} functions tend to be a little faster for acting on scalars.
+\begin{lstlisting}
+>>> import math
+
+# Math and NumPy functions can both operate on scalars.
+>>> print(math.exp(3), np.exp(3))
+20.085536923187668 20.0855369232
+
+# However, math functions cannot operate on arrays.
+>>> x = np.arange(-2, 3)
+>>> np.tan(x)
+array([ 2.18503986, -1.55740772,  0.        ,  1.55740772, -2.18503986])
+>>> math.tan(x)
+<<Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: only length-1 arrays can be converted to Python scalars>>
+\end{lstlisting}
+Always use universal NumPy functions, not the \li{math} module, when working with arrays.
+\end{warn}
 
 \subsection*{Other Array Methods} % -------------------------------------------
 
-Often the easiest way to compute information is by using methods of the \li{np.ndarray} class on existing arrays.
+The \li{np.ndarray} class itself has many useful methods for numerical computations.
 
 \begin{table}[H]
 \centering
@@ -762,7 +787,7 @@ Often the easiest way to compute information is by using methods of the \li{np.n
     \li{argmax()} & Index of the maximum value.\\
     \li{argmin()} & Index of the minimum value.\\
     \li{argsort()} & Indices that would sort the array.\\
-    % \li{clip} & restrict values in an array to fit within a given range\\
+    \li{clip()} & restrict values in an array to fit within a given range\\
     \li{<<max()>>} & The maximum element of the array.\\
     \li{mean()} & The average value of the array.\\
     \li{<<min()>>} & The minimum element of the array.\\
@@ -775,13 +800,14 @@ Often the easiest way to compute information is by using methods of the \li{np.n
 \label{table:ndarraymethods}
 \end{table}
 
-Each of these \li{np.ndarray} methods has a corresponding (and equivalent) NumPy function.
-Thus \li{A.<<max>>()} and \li{np.<<max>>(A)} are equivalent.
+Each of these \li{np.ndarray} methods has an equivalent NumPy function.
+For example, \li{A.<<max>>()} and \li{np.<<max>>(A)} operate the same way.
 The one exception is the \li{sort()} function: \li{np.sort()} returns a sorted copy of the array, while \li{A.sort()} sorts the array in-place and returns nothing.
 
-Every method listed above has the option to operate \emph{along an axis} via the keyword argument \li{axis}.
+Every method listed can operate \emph{along an axis} via the keyword argument \li{axis}.
 If \li{axis} is specified for a method on an $n$-D array, the return value is an $(n-1)$-D array, the specified axis having been collapsed in the evaluation process.
 If \li{axis} is not specified, the return value is usually a scalar.
+Refer to the NumPy Visual Guide in the appendix for more visual examples.
 
 \begin{lstlisting}
 >>> A = np.arange(9).reshape((3,3))
@@ -795,26 +821,24 @@ array([[0, 1, 2],
 8
 
 # Find the minimum value of each column.
->>> A.<<min>>(axis=0)                   # np.array([min(A[:,i]) for i in xrange(3)])
+>>> A.<<min>>(axis=0)                   # np.array([min(A[:,i]) for i in range(3)])
 array([0, 1, 2])
 
 # Compute the sum of each row.
->>> A.<<sum>>(axis=1)                   # np.array([sum(A[i,:]) for i in xrange(3)])
+>>> A.<<sum>>(axis=1)                   # np.array([sum(A[i,:]) for i in range(3)])
 array([3, 12, 21])
 \end{lstlisting}
 
-A more comprehensive list of array methods can be found at
-\url{http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.
-html}.
-See Appendix \ref{appendix:numpy-visual-guide} for visual examples of the \li{axis} keyword argument.
+See \url{http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.
+html} for a more comprehensive list of array methods.
 
 \begin{problem} % Row stochastic matrices.
-A matrix is called \emph{row-stochastic} if its rows each sum to $1$.\footnote{Similarly, a matrix is called \emph{column-stochastic} if its columns each sum to $1$.}
+A matrix is called \emph{row-stochastic}\footnote{Similarly, a matrix is called \emph{column-stochastic} if its columns each sum to $1$.} if its rows each sum to $1$.
 Stochastic matrices are fundamentally important for finite discrete random processes and some machine learning algorithms.
 
 Write a function than accepts a matrix (as a 2-D array).
 Divide each row of the matrix by the row sum and return the new row-stochastic matrix.
-Use array broadcasting instead of a loop, and be careful to avoid integer division.
+Use array broadcasting and the \li{axis} argument instead of a loop.
 \end{problem}
 
 \begin{problem} % Project Euler #11
@@ -824,7 +848,7 @@ In the $20 \times 20$ grid below, four numbers along a diagonal line have been m
 %
 \begin{align*}
 \centering
-\scriptsize{\arraycolsep=1.4pt\begin{array}{cccccccccccccccccccc}
+\arraycolsep=1.4pt\begin{array}{cccccccccccccccccccc}
 08&02&22&97&38&15&00&40&00&75&04&05&07&78&52&12&50&77&91&08\\
 49&49&99&40&17&81&18&57&60&87&17&40&98&43&69&48&04&56&62&00\\
 81&49&31&73&55&79&14&29&93&71&40&67&53&88&30&03&49&13&36&65\\
@@ -845,7 +869,7 @@ In the $20 \times 20$ grid below, four numbers along a diagonal line have been m
 20&69&36&41&72&30&23&88&34&62&99&69&82&67&59&85&74&04&36&16\\
 20&73&35&29&78&31&90&01&74&31&49&71&48&86&81&16&23&57&05&54\\
 01&70&54&71&83&51&54&69&16&92&33&48&61&43&52&01&89&19&67&48
-\end{array}}
+\end{array}
 \end{align*}
 
 The product of these numbers is $26 \times 63 \times 78 \times 14 = 1788696$.
@@ -865,8 +889,8 @@ The na\"{i}ve method for computing the greatest product of four adjacent numbers
 
 \begin{lstlisting}
 >>> winner = 0
->>> for i in xrange(20):
-...     for j in xrange(17):
+>>> for i in range(20):
+...     for j in range(17):
 ...         winner = max(np.prod(grid[i,j:j+4]), winner)
 ...
 >>> winner
@@ -886,6 +910,15 @@ Use slicing to similarly find the greatest products of four vertical, right diag
 (Hint: Consider drawing the portions of the grid that each slice in the above code covers, like the examples in the visual guide.
 Then draw the slices that produce vertical, right diagonal, or left diagonal sequences, and translate the pictures into slicing syntax.)
 \end{problem}
+
+\begin{warn}
+All of the examples in this lab use NumPy arrays, objects of type \li{np.ndarray}.
+NumPy also has a ``matrix'' data structure called \li{np.matrix} that was built specifically for MATLAB users who are transitioning to Python and NumPy.
+It behaves slightly differently than the regular array class, and can cause some unexpected and subtle problems.
+
+For consistency (and your sanity), \textbf{never} use a NumPy matrix; \textbf{always} use NumPy arrays.
+If necessary, cast a matrix object as an array with \li{np.array()}.
+\end{warn}
 
 \newpage
 
@@ -922,6 +955,9 @@ Function & Distribution\\
 \end{tabular}
 \end{table}
 
+Note that many of these functions have counterparts in the standard library's \li{random} module.
+These NumPy functions, however, are much better suited for working with large collections of random samples.
+
 \begin{lstlisting}
 # 5 uniformly distributed values in the interval [0, 1).
 >>> np.random.random(5)
@@ -933,9 +969,11 @@ array([[17, 12, 13, 13, 18],
        [16, 10, 12, 18, 12]])
 \end{lstlisting}
 
+
+
 \subsection*{Saving and Loading Arrays} % -------------------------------------
 
-It is often useful to save an array as a file.
+It is often useful to save an array as a file for later use.
 NumPy provides several easy methods for saving and loading array data.
 
 \begin{table}[H]
@@ -969,22 +1007,15 @@ Then \li{np.load()} will return a dictionary-like object with the keyword parame
 # Save two 100x100 matrices of normally distributed random values.
 >>> x = np.random.randn(100,100)
 >>> y = np.random.randn(100,100)
->>> np.savez("normal.npz", first=x, second=y})
+>>> np.savez("normal.npz", first=x, second=y)
 
 # Read the arrays from the file and check that they match the original.
->>> arrays = np.loadz("normal.npz")
+>>> arrays = np.load("normal.npz")
 >>> np.allclose(x, arrays["first"])
 True
 >>> np.allclose(y, arrays["second"])
 True
 \end{lstlisting}
-
-\subsection*{Iterating Through Arrays} % --------------------------------------
-
-Iterating through an array (using a \li{for} loop) negates most of the advantages of using NumPy.
-Avoid iterating through arrays as much as possible by using array broadcasting and universal functions.
-When absolutely necessary, use \li{np.nditer()} to create an efficient iterator for the array.
-See \url{http://docs.scipy.org/doc/numpy/reference/arrays.nditer.html} for details.
 
 \begin{comment}
 \subsection*{Polynomials} % ---------------------------------------------------
@@ -1006,16 +1037,16 @@ Recall that
 \[
 e^x = \sum_{n=0}^{\infty} \frac{x^n}{n!}.
 \]
-The following function evaluates the $n^{th}$ partial sum of this series at the value $a$.
+The following function evaluates the $N^{th}$ partial sum of this series at the value $a$.
 
 \begin{lstlisting}
 >>> from scipy.misc import factorial
->>> def exp(a, n = 25):
+>>> def exp(a, N=25):
 ...     """Construct an array in reverse order from n to 0."""
-...     integers = np.arange(n, -1, -1)
+...     n = np.arange(N, -1, -1)
 ...     # Use broadcasting to compute coefficients
-...     coefficients = 1. / factorial(integers)
-...     poly = np.poly1d(coefficients) # make polynomial object
+...     coeffs = 1. / factorial(n)
+...     poly = np.poly1d(coeffs)        # Make a polynomial object.
 ...     return poly(a)
 ...
 \end{lstlisting}
@@ -1031,7 +1062,7 @@ np.polyval(p, a)
 \begin{enumerate}
 \item Use NumPy's polynomial objects to approximate the following series.
 \[
-\arcsin x = \sum_{n=0}^{\infty} \frac{\left[2 n\right] ! x^{2 n + 1}}{\left[2 n + 1\right]\left[n!\right]^2 4^n}
+\arcsin x = \sum_{n=0}^{\infty} \frac{\left(2 n\right) ! x^{2 n + 1}}{\left(2 n + 1\right)\left(n!\right)^2 4^n}
 \]
 This series converges on $(-1, 1)$. Use your series approximation to approximate $\pi$. Hint: think of the powers of $x$ that
 are not included in the series as having zero coefficients.
@@ -1039,11 +1070,20 @@ are not included in the series as having zero coefficients.
 \item The lambert W function is the inverse of $x e^x$.
 Its Taylor series is below (note the index starts at 1).
 \[
-W(x) = \sum_{n=1}^{\infty} \frac{\left[-n\right]^{n-1} x^n}{n!}
+W(x) = \sum_{n=1}^{\infty} \frac{\left(-n\right)^{n-1} x^n}{n!}
 \]
 This series has a radius of convergence of $\frac{1}{e}$.
 Use the series to approximate a number $x$ such that $x e^x = \frac{1}{4}$.
 Verify that your approximation is close.
 \end{enumerate}
 \end{problem}
+\end{comment}
+
+\begin{comment}
+\subsection*{Iterating Through Arrays} % --------------------------------------
+
+Iterating through an array (using a \li{for} loop) negates most of the advantages of using NumPy.
+Avoid iterating through arrays as much as possible by using array broadcasting and universal functions.
+When absolutely necessary, use \li{np.nditer()} to create an efficient iterator for the array.
+See \url{http://docs.scipy.org/doc/numpy/reference/arrays.nditer.html} for details.
 \end{comment}

@@ -1,19 +1,16 @@
 \lab{The SVD and Image Compression}{The SVD and Image Compression}
-
-\objective{Learn how to compute the compact SVD. Explore the SVD as a method of matrix approximation, and use it to perform image compression.}
 \label{lab:SVD}
-% TODO
-% - write a more compelling objective.
-% - add references to the textbook and determine what is actually needed here. The explanation in the textbook is way better.
-%
+\objective{The Singular Value Decomposition (SVD) is an incredibly useful matrix factorization that is widely used in both theoretical and applied mathematics.
+The SVD is structured in a way that makes it easy to construct low-rank approximations of matrices, and it is therefore the basis of several data compression algorithms.
+In this lab we learn to compute the SVD and use it to implement a simple image compression routine.
+}
 
-
+\begin{comment} % Vague motivation, most of which is in the book.
 The \emph{Singular Value Decomposition} or \emph{SVD} is a matrix decomposition that is widely used in both theoretical and applied mathematics.
 Originally discovered by theoretical mathematicians, it is a canonical way to decompose a matrix.
 Its practical use became apparent later on when Erhard Schmidt showed that the SVD could be a computational tool for providing low-rank matrix approximations.
 Modern developments continue to confirm the importance of the SVD in both computational and theoretical applications.
 
-\begin{comment}
 The theoretical use of the \emph{Singular Value Decomposition} or \emph{SVD} has long been appreciated.
 In fact, the idea of a canonical way of decomposing a matrix was so alluring that the SVD was independently discovered by at least four people through use of both  integral equations and systems of linear equations.
 
@@ -21,8 +18,7 @@ However, it wasn't until Erhard Schmidt showed how the SVD could be a computatio
 Since Schmidt's work, further developments have confirmed the importance of the SVD in both computational and theoretical applications.
 \end{comment}
 
-\begin{comment}
-
+\begin{comment} % Historical background, super overkill.
 The \emph{Singular Value Decomposition} is so important that it was discovered multiple times by different people in different ways.
 The foundation work in systems of linear equations was laid by Gauss and Cauchy in the 1820's and later by Jacobi in 1846 with his work with the LU decomposition; however, the real work with the SVD started with Eugenio Beltrami.
 In a paper he published in 1873 he was the first to work with the SVD; he was limited to real, square, nonsingular matrices with distinct singular values.
@@ -34,177 +30,220 @@ This rule was essentially Beltrami's work.
 However Sylvester sent the note detailing his rule to the same journal Jordan had published in, showing not just his ignorance of Jordan's and Beltrami's works but his perception of the importance of the SVD.
 
 The concurrent and independant derivation of the SVD shows its importance as a theoretical tool, but it wasn't until Erhard Schmidt discovered a computational use for the SVD that the practical applications became apparent.
-Schmidt used integral equations rather than linear equations to derive the SVD, but
-his most important contribution was showing how the SVD could be a computational tool to obtain optimal, low-rank approximations.
+Schmidt used integral equations rather than linear equations to derive the SVD, but his most important contribution was showing how the SVD could be a computational tool to obtain optimal, low-rank approximations.
 
 Since Schmidt's work, further devolpments have confirmed the importance of the SVD in both practical and theoretical applications.
 \end{comment}
 
-\subsection*{Computing the SVD}
+The SVD of a matrix $A$ is a factorization $A = U \Sigma V\hrm$ where $U$ and $V$ have orthonormal columns and $\Sigma$ is diagonal.
+The diagonal entries of $\Sigma$ are called the \emph{singular values} of $A$ and are the square roots of the eigenvalues of $A\hrm A$.
+Since $A\hrm A$ is always positive semidefinite, its eigenvalues are all real and nonnegative, so the singular values are also real and nonnegative.
+The singular values $\sigma_i$ are usually sorted in decreasing order so that $ \Sigma = \mbox{diag}(\sigma_1,\sigma_2,\ldots,\sigma_n)$ with $\sigma_1 \geq \sigma_2 \geq \ldots \geq \sigma_n \geq 0$.
+The columns $\mathbf{u}_i$ of $U$, the columns $\mathbf{v}_i$ of $V$, and the singular values of $A$ satisfy $A\mathbf{v}_i = \sigma_i \mathbf{u}_i$.
 
-
-The Singular Value Decomposition decomposes an $m \times n$ matrix $A$ into the form
-\begin{equation*}
-A = U \Sigma V\hrm
-\end{equation*}
-where $U$ and $V$ are square and unitary of sizes $m$ and $n$ respectively, and $\Sigma$ is diagonal and of size $m \times n$.
-The values along the diagonal of $\Sigma$ are called the \emph{singular values} of $A$.
-These are also the square roots of the eigenvalues of $A\hrm A$.
-% if $A$ is square, are equal to the absolute value of the eigenvalues of $A$.
-Commonly the singular values are listed in decreasing order. Thus we have
-
-\begin{equation*}
-\Sigma = \mbox{diag}(\sigma_1,\sigma_2,\ldots,\sigma_n)
-\end{equation*}
-where $\sigma_1 \geq \sigma_2 \geq \ldots \geq \sigma_n \geq 0$ are the singular values of $A$.
-
-If A is of rank $r$, then A has exactly $r$ nonzero singular values.
-The first $r$ columns of U span the range of A, and the last $n -r$ columns span the null space of $A\hrm$.
-Likewise, the first $r$ columns of V span the range of $A\hrm$ and the last $m - r$ span the null space of $A$.
-
-For a more in-depth definition and proof that the SVD exists for every matrix, refer to the section on the SVD in the text.
-Here we will focus on computing the SVD.
-
-First, we define two modifications of the regular SVD.
-In the \emph{compact SVD}, we only keep the $r$ nonzero singular values.
-Only $r$ column vectors of $U$ and $r$ row vectors of $V\hrm$, corresponding to the $r$ singular values, are calculated.
-The compact SVD takes the form $A= U_r \Sigma_r V_r\hrm$ where $U_r$ is $m\times r$, $\Sigma_r$ is $r\times r$ and diagonal, and $V_r\hrm$ is $r\times n$.
-Although we drop the decompositions of the nullspaces, by calculating $U_1 \Sigma_1 V_1\hrm$ we can still recover the full matrix $A$.
-
-The \emph{truncated SVD} is similar to the compact SVD, but instead of keeping all the nonzero singular values, we only keep the $k$ largest.
-While this saves space, it means that we cannot recover the whole matrix.
-Instead we end up with $\widehat A_k = U_k\Sigma_k V_k\hrm$ where $\widehat A_k$ is a rank $k$ approximation of $A$, $U_k$ is $m\times k$, $\Sigma$ is $k \times k$ and diagonal, and $V_k\hrm$ is $k \times n$.
-
-The components of the compact or truncated SVD can be calculated as follows:
+Every $m\times n$ matrix $A$ of rank $r$ has an SVD with exactly $r$ nonzero singular values.
+Like the QR decomposition, the SVD has two main forms.
 \begin{itemize}
-\item The singular values of $A$, which form the diagonal of $\Sigma$, are the square roots of the eigenvalues of $A\hrm A$.
-These are sorted in descending order.
-For the compact SVD, keep all of the nonzero singular values.
-For the truncated SVD, keep only the largest $k$.
-\item The columns of $V$ are the eigenvectors of $A\hrm A$, where the $i$th column $V_i$ matches the $i$th singular value.
-\item The columns of $U$ are $U_i = \frac{1}{\sigma_i} AV_i$.
+    \item \textbf{Full SVD}: Denoted $A = U\Sigma V\hrm$.
+    $U$ is $m\times m$, $V$ is $n\times n$, and $\Sigma$ is $m\times n$.
+    The first $r$ columns of $U$ span $\mathscr{R}(A)$, and the remaining $n -r$ columns span $\mathscr{N}(A\hrm)$.
+    Likewise, the first $r$ columns of $V$ span $\mathscr{R}(A\hrm)$, and the last $m - r$ columns span $\mathscr{N}(A)$.
+    \item \textbf{Compact (Reduced) SVD}: Denoted $A = U_1\Sigma_1 V\hrm_1$.
+    $U_1$ is $m\times r$ (the first $r$ columns of $U$), $V_1$ is $n \times r$ (the first $r$ columns of $V$), and $\Sigma_1$ is $r\times r$ (the first $r\times r$ block of $\Sigma$).
+    This smaller version of the SVD has all of the information needed to construct $A$ and nothing more.
+    The zero singular values and the correpsonding columns of $U$ and $V$ are neglected.
 \end{itemize}
+%
+\begin{align*} % Full and compace SVD.
+\begin{array}{cccc}
+\textcolor{red}{U_1\ (m \times r)} & \textcolor{blue}{\Sigma_1\ (r \times r)} & \textcolor{green}{V\hrm_1\ (r \times n)} \\ \\
+\left[\begin{array}{ccccccc}
+\arrayrulecolor{red}
+\cline{2-4}
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+& \lvl{\u_1} & \cdots & \rvl{\u_r} & \u_{r+1} & \cdots & \u_m \\
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+\cline{2-4}
+\end{array}\right]
+&
+\left[\begin{array}{cccccccc}
+\arrayrulecolor{blue}
+\cline{2-4}
+& \lvl{\sigma_{1}}  &   & \rvl{}         &   &        &   \\
+& \lvl{}       & \ddots & \rvl{}         &   &        &   \\
+& \lvl{}       &        & \rvl{\sigma_{r}} & &        &   \\
+\cline{2-4}
+&              &        &                & 0 &        &   \\
+&              &        &                &   & \ddots &   \\
+&              &        &                &   &        & 0 \\
+\end{array}\right]
+&
+\left[\begin{array}{ccccccc}
+\arrayrulecolor{green}
+\cline{2-6}
+& \lvl{} & & \v\hrm_1 & & \rvl{} & \\
+& \lvl{} & & \vdots   & & \rvl{} & \\
+& \lvl{} & & \v\hrm_r & & \rvl{} & \\
+\cline{2-6}
+& & & \v\hrm_{r+1} & & & \\
+& & & \vdots       & & & \\
+& & & \v\hrm_n     & & & \\
+\end{array}\right]
+\\ \\
+U\ (m \times m) & \Sigma\ (m \times n) & V\hrm (n \times n) \\
+\end{array}
+\end{align*}
 
-\begin{comment}
-\begin{algorithm}
+Finally, the SVD yields an \emph{outer product expansion} of $A$ in terms of the singular values and the columns of $U$ and $V$.
+\begin{equation}
+\label{eq:svd-outer-product}
+A = \sum_{i=1}^r \sigma_i\u_i\v\hrm_i
+\end{equation}
+Note that only terms from the compact SVD are needed for this expansion.
+
+\subsection*{Computing the Compact SVD} % -------------------------------------
+
+It is difficult to compute the SVD from scratch because it is an eigenvalue-based decomposition.
+However, given an eigenvalue solver such as \li{scipy.linalg.eig()}, the algorithm becomes much simpler.
+First, obtain the eigenvalues and eigenvectors of $A\hrm A$, and use these to compute $\Sigma$.
+Since $A\hrm A$ is normal, it has an orthonormal eigenbasis, so set the columns of $V$ to be the eigenvectors of $A\hrm A$.
+Then, since $A\v_i = \sigma_i \u_i$, construct $U$ by setting its columns to be $\u_i = \frac{1}{\sigma_i}A\v_i$.
+
+The key is to sort the singular values and the corresponding eigenvectors in the same manner.
+In addition, it is computationally inefficient to keep track of the entire matrix $\Sigma$ since it is a matrix of mostly zeros, so we need only store the singular values as a vector $\boldsymbol{\sigma}$.
+The entire procedure for computing the compact SVD is given below.
+% For the compact SVD, keep all of the nonzero singular values.
+% For the truncated SVD, keep only the largest $k$.
+
+\begin{algorithm} % Compact SVD.
 \begin{algorithmic}[1]
-\caption{SVD for Full Rank Square Matrices.}
-\label{Alg:svd_full}
-\Procedure{SVD}{$A$}
-\State $n \gets \shape{A}$
-\State $eigs \gets$ eigenvalues$(A\hrm A)$
-\State sort$(eigs)$
-\State $V \gets$ eigenvectors$(A\hrm A)$
-\State $svals \gets \sqrt{eigs}$
-\State $U \gets \allocate{n,n}$
-\For{$i=0\ldots n-1$}
-      \State $U_i \gets  \frac{1}{svals[i]} AV_i$
-\EndFor
-\State $S \gets$ diag$(svals)$
-\State \pseudoli{return} $U, S, V\hrm$
+\Procedure{compact\_SVD}{$A$}
+\State $\boldsymbol{\lambda}, V \gets$ eig$(A\hrm A)$
+    \Comment{Calculate the eigenvalues and eigenvectors of $A\hrm A$.}
+\State $\boldsymbol{\sigma} \gets \sqrt{\boldsymbol{\lambda}}$
+    \Comment{Calculate the singular values of $A$.}
+\State $\boldsymbol{\sigma} \gets$ sort$(\boldsymbol{\sigma})$
+    \Comment{Sort the singular values \textbf{from greatest to least}.}
+    \label{step:sort-singular-values}
+\State $V \gets$ sort($V$)
+    \Comment{Sort the eigenvectors \textbf{the same way} as in the previous step.}
+\State $r \gets $ count($\boldsymbol{\sigma} \ne 0)$
+    \Comment{Count the number of nonzero singular values (the rank of $A$).}
+    \label{step:nonzero-singular-values}
+\State $\boldsymbol{\sigma}_1 \gets \boldsymbol{\sigma}_{:r}$
+    \Comment{Keep only the positive singular values.}
+\State $V_1 \gets V_{:,:r}$
+    \Comment{Keep only the corresponding eigenvectors.}
+\State $U_1 \gets AV_1 / \boldsymbol{\sigma}_1$
+    \Comment{Construct $U$ with array broadcasting.}
+    \label{step:SVD-construct-U}
+\State \pseudoli{return} $U_1, \boldsymbol{\sigma}_1, V\hrm_1$
 \EndProcedure
+\caption{}
+\label{alg:compact-svd}
 \end{algorithmic}
 \end{algorithm}
-\end{comment}
 
-\begin{problem}
-Write a function \li{truncated_svd} that accepts a matrix $A$ and an optional integer \li{k = None}.
-If \li{k} is \li{None}, calculate the compact SVD. If \li{k} is an integer, calculate the truncated SVD, keeping only the \li{k} largest singular values.
-(Note: if there are fewer than \li{k} nonzero singular values, the truncated SVD will come out the same as the compact SVD.)
-Since the only difference between these two processes is the number of singular values we keep, we only need to write one function.
+\begin{problem} % Compute the compact SVD.
+Write a function that accepts a matrix $A$ and a small error tolerance \li{tol}.
+Use Algorithm \ref{alg:compact-svd} to compute the compact SVD of $A$.
+In step \ref{step:nonzero-singular-values}, compute $r$ by counting the number of singular values that are greater than \li{tol}.
 
-Here's an outline to follow:
+Consider the following tips for implementing the algorithm.
+\begin{itemize}
+    \item The Hermitian $A\hrm$ can be computed with \li{A.conj().T}.
+    \item In step \ref{step:sort-singular-values}, the way that $\boldsymbol{\sigma}$ is sorted needs to be stored so that the columns of $V$ can be sorted the same way.
+    Consider using \li{np.argsort()} and fancy indexing to do this, but remember that by default it sorts from least to greatest (not greatest to least).
+    \item Step \ref{step:SVD-construct-U} can be done by looping over the columns of $V$, but it can be done more easily and efficiently with array broadcasting.
+\end{itemize}
 
-\begin{enumerate}
-\item Find the eigenvalues and eigenvectors of $A\hrm A$.
-\item Find the singular values of $A$. Keep only the greatest \li{k}, and discard any that are equal to zero.
-\item Calculate $V$.
-\item Calculate $U$.
-\end{enumerate}
+Test your function by calculating the compact SVD for random matrices.
+Verify that $U$ and $V$ are orthonormal, that $U\Sigma V\hrm = A$, and that the number of nonzero singular values is the rank of $A$.
+You may also want to compre your results to SciPy's SVD algorithm.
+%
+\begin{lstlisting}
+>>> import numpy as np
+>>> from scipy import linalg as la
 
-Return U, the diagonal of $\Sigma$, and V.
-Check your function by calculating the compact SVD and seeing if $U\Sigma V\hrm = A$ using \li{np.allclose()}.
+# Generate a random matrix and get its compact SVD via SciPy.
+>>> A = np.random.random((10,5))
+>>> U,s,Vh = la.svd(A, full_matrices=False)
+>>> print(U.shape, s.shape, Vh.shape)
+(10, 5) (5,) (5, 5)
 
-Hint: When calculating the SVD, you will need to sort the eigenvalues while keeping track of their associated eigenvectors.
-Consider using the function \li{np.argsort} for keeping the eigenvalues and eigenvectors in the same order while sorting.
-%Look for places to use fancy indexing when sorting and selecting the singular values.
-\label{prob:calc_svd}
+# Verify that U is orthonormal, U Sigma Vh = A, and the rank is correct.
+>>> np.allclose(U.T @ U, np.identity(5))
+<<True>>
+>>> np.allclose(U @ np.diag(s) @ Vh, A)
+<<True>>
+>>> np.linalg.matrix_rank(A) == len(s)
+<<True>>
+\end{lstlisting}
+\label{prob:calculate-compact-svd}
 \end{problem}
 
-\begin{comment}
-%Commented out because finding the rest of the SVD isn't important to this lab.
-%They can reference the book for this information.
-If $A$ is full rank and square, it has $n$ nonzero singular values and this process gives us the full SVD.
-If $A$ is not full rank or not square, we can compute the first $r$ columns of $U$ and $V$, where $r$ is the number of nonzero singular values, in this way.
-To find the rest of the SVD, we can use Gram-Schmidt orthonormalization.
+\subsection*{Visualizing the SVD} % -------------------------------------------
 
-More specifically, let $r$ be the number of nonzero singular values.
-If $r<n$ then we only have $r$ eigenvectors to fill $V$, which is a $n\times n$ matrix.
-We find the remaining columns of $V$ by using Gram-Schmidt orthonormalization to finish the basis for $n$-space.
-Similarly, if $r<m$ then we only have $r$ columns of $U$ so we use Gram-Schmidt orthonormalization to finish the basis for $m$-space.
-The compact SVD does not have this problem because $U_1$ and $V_1$ only have $r$ columns, the remaining columns are the decomposition of the null space of the matrix, and are not included.
-In this lab we calculate the compact SVD for simplicity.
-\end{comment}
-
-\begin{info}
-In practice, calculating $A\hrm A$ in order to find its eigenvalues is unstable.
-We use this method here because it is mathematically the simplest.
-However, industrial SVD solvers use different methods that avoid computing $A\hrm A$.
-\end{info}
-
-\subsection*{Visualizing the SVD}
-Recall that a matrix is a way to express a linear transformation.
-An $m\times n$ matrix defines a linear transformation that sends points from $\mathbb{R}^n$ to $\mathbb{R}^m$.
-
-Intuitively, the SVD can be thought of as breaking a linear transformation into more basic steps.
-The SVD decomposes a given matrix into two rotations and a scaling.
-$V\hrm$ represents a rotation, $\Sigma$ represents a rescaling along the principal axes, and $U$ represents another rotation.
-
+An $m\times n$ matrix $A$ defines a linear transformation that sends points from $\mathbb{R}^n$ to $\mathbb{R}^m$.
+The SVD decomposes a matrix into two rotations and a scaling, so that any linear transformation can be easily described geometrically.
+Specifically, $V\hrm$ represents a rotation, $\Sigma$ a rescaling along the principal axes, and $U$ another rotation.
 
 \begin{figure}
 \centering
-\begin{subfigure}[b]{.49\textwidth}
+\begin{subfigure}{.35\textwidth}
   \centering
   \includegraphics[width=\textwidth]{figures/unit_circle.pdf}
-  \caption{The unit circle, $S$, with two unit vectors.}
+  \caption{$S$}
 \end{subfigure}
-\begin{subfigure}[b]{.49\textwidth}
+\quad
+\begin{subfigure}{.35\textwidth}
   \centering
   \includegraphics[width=\textwidth]{figures/vcircle.pdf}
   \caption{$V\hrm S$}
-  %\label{fig:svals_plot}
 \end{subfigure}
-\begin{subfigure}[b]{.49\textwidth}
+\\
+\begin{subfigure}{.35\textwidth}
   \centering
   \includegraphics[width=\textwidth]{figures/svcircle.pdf}
   \caption{$\Sigma V\hrm S$}
-  %\label{fig:svals_plot}
 \end{subfigure}
-\begin{subfigure}[b]{.49\textwidth}
+\quad
+\begin{subfigure}{.35\textwidth}
   \centering
   \includegraphics[width=\textwidth]{figures/full_transformation.pdf}
   \caption{$U \Sigma V\hrm S$}
-  %\label{fig:svals_plot}
 \end{subfigure}
 \caption{Each step in transforming the unit circle and two unit vectors using the matrix $A$.}
-\label{fig:sol1}
+\label{fig:svd-visualization}
 \end{figure}
 
-\begin{problem}
-In this problem we will use the SVD to visualize how the matrix
-\[A =  \left[\begin{array}{cc}3 & 1\\1 & 3\end{array}\right]\]
-acts on points in $\mathbb{R}^2$.
-Given a set of points $S$ in $\mathbb{R}^2$, we can calculate the transformation $AS$ in steps by using the SVD $A = U\Sigma V\hrm$.
+\begin{problem} % Visualize the SVD.
+Write a function that accepts a $2 \times 2$ matrix $A$.
+Generate a $2 \times 200$ matrix $S$ representing a set of 200 points on the unit circle, with $x$-coordinates on the top row and $y$-coordinates on the bottom row (recall the equation for the unit circle in polar coordinates:
+$x = \cos(\theta)$, $y = \sin(\theta)$, $\theta\in[0,2\pi]$).
+Also define the matrix
+\[
+E =
+\left[\begin{array}{c|c|c}
+\arrayrulecolor{gray}
+\e_1 & \0 & \e_2
+\end{array}\right]
+=
+\left[\begin{array}{ccc} 1 & 0 & 0 \\ 0 & 0 & 1 \end{array}\right],
+\]
+so that plotting the first row of $S$ against the second row of $S$ displays the unit circle, and plotting the first row of $E$ against its second row displays the standard basis vectors in $\mathbb{R}^2$.
 
-Specifically, let $S$ be a set of points on the unit circle.
-To generate the $x$- and $y$-coordinates of $S$, recall the equation for the unit circle in polar coordinates:
-\begin{align*}x = \cos(\theta) && y = \sin(\theta),\end{align*}
-where $\theta \in [0, 2\pi].$
+Compute the full SVD $A = U\Sigma V\hrm$ using \li{scipy.linalg.svd()}.
+Plot four subplots to demonstrate each step of the transformation, plotting $S$ and $E$, $V\hrm S$ and $V\hrm E$, $\Sigma V\hrm S$ and $\Sigma V\hrm E$, then $U\Sigma V\hrm S$ and $U \Sigma V\hrm E$.
 
-Plot four separate subplots to demonstrate each step of the transformation, plotting $S$, $V\hrm S$, $\Sigma V\hrm S$, then $U\Sigma V\hrm$.
-Do the same for the standard basis vectors $\e_1 = [1, 0]\trp$ and $\e_2 = [0, 1]\trp$.
-Your solution should look similar to Figure \ref{fig:sol1}.
-\\(Hint: Force the plot to use the same scale on each of the axes with \li{plt.axis("equal")}. Otherwise, the circle will appear elliptical.)
+For the matrix \[A =  \left[\begin{array}{cc}3 & 1\\1 & 3\end{array}\right],\]
+your function should produce Figure \ref{fig:svd-visualization}.
+\\
+(Hint: Use \li{plt.axis("equal")} to fix the aspect ratio so that the circles don't appear elliptical.)
 \end{problem}
 
 \begin{comment}
@@ -216,215 +255,296 @@ Larger eigenvalues correspond to columns of $U$ and $V$ that contain more inform
 This idea is used in many areas of applied mathematics including signal processing, statistics, semantic indexing (search engines), and control theory.
 \end{comment}
 
-\subsection*{The SVD and Data Compression}
-We now turn to computational uses of the SVD. We will explore how the SVD is useful for matrix approximations, and use it to compress images.
+\section*{Using the SVD for Data Compression} % ===============================
 
-\subsection*{Low-Rank Matrix Approximation}
-If the rank $r$ of a matrix $A$ is significantly smaller than its dimensions, the compact SVD offers a way to store $A$ with less memory.
-Storing an $m\times n$ matrix requires storing $mn$ values.
-By decomposing the original matrix into the compact SVD, $U_r$, $\Sigma_r$ and $V_r$ together require $mr+r+nr$ values.
-This is an efficient storage method if $r$ is much smaller than both $m$ and $n$.
-For example, suppose $m=100$, $n=200$ and $r=20$.
-Then the original matrix would require storing $20,000$ values, whereas the compact SVD only requires storing $6020$.
+\subsection*{Low-Rank Matrix Approximations} % --------------------------------
 
-The truncated SVD allows even greater efficiency.
-By only keeping the first $k$ singular values, we can create an approximation $\widehat A_k = U_k\Sigma_k V_k\hrm$.
-This requires storing only $mk+k+nk$ values.
-As we make $k$ small, we eventually require very little storage. This comes at the cost of losing information from the original matrix.
+If $A$ is a $m\times n$ matrix of rank $r < \min\{m,n\}$, then the compact SVD offers a way to store $A$ with less memory.
+Instead of storing all $mn$ values of $A$, storing the matrices $U_1$, $\Sigma_1$ and $V_1$ only requires saving a total of $mr+r+nr$ values.
+For example, if $A$ is $100 \times 200$ and has rank $20$, then $A$ has $20,000$ values, but its compact SVD only has total $6,020$ entries, a significant decrease.
 
-The beauty of the SVD is that it makes it easy to only keep the information that is most important.
+The \emph{truncated SVD} is an approximation to the compact SVD that allows even greater efficiency at the cost of a little accuracy.
+Instead of keeping all of the nonzero singular values, the truncated SVD only keeps the first $s < r$ singular values, plus the corresponding columns of $U$ and $V$.
+In this case, (\ref{eq:svd-outer-product}) becomes the following.
+%
+\begin{equation*}
+A_s = \sum_{i=1}^s \sigma_i\u_i\v\hrm_i
+\end{equation*}
+
+More precisely, the truncated SVD of $A$ is $A_s = \widehat{U}\widehat{\Sigma} \widehat{V}\hrm$, where
+$\widehat{U}$ is $m\times s$, $\widehat{V}$ is $n \times s$, and $\widehat{\Sigma}$ is $s\times s$.
+The resulting matrix $A_s$ has rank $s$ and is only an approximation to $A$, since $r - s$ nonzero singular values are neglected.
+
+\begin{align*} % Compact and truncated SVD.
+\begin{array}{cccc}
+\textcolor{red}{\widehat{U}\ (m \times s)} & \textcolor{blue}{\widehat{\Sigma}\ (s \times s)} & \textcolor{green}{\widehat{V}\hrm\ (s \times n)} \\
+\left[\begin{array}{ccccccc}
+\arrayrulecolor{red}
+\cline{2-4}
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+& \lvl{\u_1} & \cdots & \rvl{\u_s} & \u_{s+1} & \cdots & \u_r \\
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+& \lvl{}     &        & \rvl{}     &          &        &      \\
+\cline{2-4}
+\end{array}\right]
+&
+\left[\begin{array}{cccccccc}
+\arrayrulecolor{blue}
+\cline{2-4}
+& \lvl{\sigma_{1}}  &   & \rvl{}         &   &        &   \\
+& \lvl{}       & \ddots & \rvl{}         &   &        &   \\
+& \lvl{}       &        & \rvl{\sigma_{s}} & &        &   \\
+\cline{2-4}
+&              &        &                & \sigma_{s+1} &        &   \\
+&              &        &                &   & \ddots &   \\
+&              &        &                &   &        & \sigma_r \\
+\end{array}\right]
+&
+\left[\begin{array}{ccccccc}
+\arrayrulecolor{green}
+\cline{2-6}
+& \lvl{} & & \v\hrm_1 & & \rvl{} & \\
+& \lvl{} & & \vdots   & & \rvl{} & \\
+& \lvl{} & & \v\hrm_s & & \rvl{} & \\
+\cline{2-6}
+& & & \v\hrm_{s+1} & & & \\
+& & & \vdots       & & & \\
+& & & \v\hrm_r     & & & \\
+\end{array}\right]
+\\
+U_1\ (m \times r) & \Sigma_1\ (r \times r) & V\hrm_1 (r \times n) \\
+\end{array}
+\end{align*}
+
+The beauty of the SVD is that it makes it easy to select the information that is most important.
 Larger singular values correspond to columns of $U$ and $V$ that contain more information, so dropping the smallest singular values retains as much information as possible.
-In mathematical terms, given a matrix $A$ and its rank-k truncated SVD approximation $\widehat A_k = U_k\Sigma_k V_k\hrm$, the matrix $\widehat A_k$ is the \emph{best rank $k$ approximation} to $A$ (with respect to the induced 2-norm and Frobenius norm).
-This is a very significant concept in applied mathematics, appearing in areas including signal processing, statistics, semantic indexing, and control theory.
-
+In fact, given a matrix $A$, its rank-$s$ truncated SVD approximation $A_s$ is the \emph{best rank $s$ approximation} of $A$ with respect to both the induced 2-norm and the Frobenius norm.
+This result is called the \emph{Schmidt, Mirsky, Eckhart-Young Theorem}, a very significant concept that appears in signal processing, statistics, machine learning, semantic indexing (search engines), and control theory.
 
 \begin{comment}
-We can also calculate $\widehat A$ by finding the full SVD, and setting all singular values after the $k$th to zero.
+We can also calculate $A_s$ by finding the full SVD, and setting all singular values after the $k$th to zero.
 Thus the modified $\Sigma$ would be
 \begin{equation*}
-\Sigma_{\widehat A} = \mbox{diag}(\sigma_1,\sigma_2,\ldots,\sigma_s,0,\ldots,0).
+\Sigma_{s} = \mbox{diag}(\sigma_1,\sigma_2,\ldots,\sigma_s,0,\ldots,0).
 \end{equation*}
-Multiplying this matrix with the original $U$ and $V\hrm$ will give the same $\widehat A$ that was found by computing the truncated SVD directly.
+Multiplying this matrix with the original $U$ and $V\hrm$ will give the same $A_s$ that was found by computing the truncated SVD directly.
 \end{comment}
 
-\subsection*{Implementation}
-We can use SciPy's linear algebra module to create low-rank SVD approximations or a given matrix.
-The code below computes the SVD of \li{A}.
+\begin{problem} % Lowest-rank approximation.
+Write a function that accepts a matrix $A$ and a positive integer $s$.
+\begin{enumerate}
+\item Use your function from Problem \ref{prob:calculate-compact-svd} or \li{scipy.linalg.svd()} to compute the compact SVD of $A$, then form the truncated SVD by stripping off the appropriate columns and entries from $U_1$, $\Sigma_1$, and $V_1$.
+Return the best rank $s$ approximation $A_s$ of $A$ (with respect to the induced 2-norm and Frobenius norm).
+\item Also return the number of entries required to store the truncated form $\widehat{U}\widehat{\Sigma} \widehat{V}\hrm$ (where $\widehat{\Sigma}$ is stored as a one-dimensional array, not the full diagonal matrix).
+The number of entries stored in NumPy array can be accessed by its \li{size} attribute.
 \begin{lstlisting}
->>> import numpy as np
->>> import scipy.linalg as la
->>> A = np.array([[1,1,3,4], [5,4,3,7], [9,10,10,12], [13,14,15,16], [17,18,19,20]])
->>> U,s,Vh = la.svd(A, full_matrices=False)
+>>> A = np.random.random((20, 20))
+>>> A.size
+400
 \end{lstlisting}
-In the last line of code, we included the keyword argument \li{full_matrices=False} to calculate the
-compact SVD rather than the full SVD. The arrays \li{U} and \li{Vh} correspond to the matrices
-$U_r$ and $V_r\hrm$ discussed earlier. The array \li{s} gives the nonzero singular values
-of the matrix \li{A}, and we can find the rank of \li{A} by inspecting the number of entries in \li{s} (here we have a rank 4 matrix).
-
-Next, we calculate a rank 3 approximation.
-We take the first three singular values, first three columns of \li{U}, and first three rows of \li{Vh}.
-We omit the last singular value from the calculation along with the last column of \li{U} and last row of \li{Vh}.
-
-\begin{lstlisting}
->>> S = np.diag(s[:3])
->>> Ahat = U[:,:3].dot(S).dot(Vh[:3,:])
->>> la.norm(A-Ahat)
-\end{lstlisting}
-Note that $\widehat A$ is ``close'' to the original matrix $A$, but that its rank is 3 instead of 4.
-
-\begin{problem}
-Write a function \li{svd_approx} that takes as input a matrix $A$ and a positive integer $k$ and returns
-the best rank $k$ approximation to $A$ (with respect to the induced 2-norm and Frobenius norm).
-Use \li{scipy.linalg.svd}.
+\item If $s$ is greater than the number of nonzero singular values of $A$ (meaning $s > $ rank$(A)$), raise a \li{ValueError}.
+\end{enumerate}
+Use \li{np.linalg.matrix_rank()} to verify the rank of your approximation.
+% , and verify that the number of entries required is equal to $ms + s + ns$.
 \label{prob:svd_approx}
 \end{problem}
 
-\subsection*{Error of Low-Rank Approximations}
+\subsection*{Error of Low-Rank Approximations} % ------------------------------
 
-Recall that the error between the best rank $s$ approximation $\widehat{A_s}$ of $A$ with respect to the induced 2-norm is given by
-$$
-\|A - \widehat{A_s}\|_2 = \sigma_{s+1},
-$$
-where $\sigma_{s+1}$ is the $(s+1)$-th singular value of $A$.
-(See the proof of the Schmidt-Eckard-Young-Mirsky theorem in the text).
+Another result of the Schmidt, Mirsky, Eckhart-Young Theorem is that the exact 2-norm error of the best rank-$s$ approximation $A_s$ for the matrix $A$ is the $(s+1)$th singular value of $A$.
+%
+\begin{equation}
+\label{eq:svd-approximation-error}
+\|A - A_s\|_2 = \sigma_{s+1}
+\end{equation}
+%
+This offers a way to approximate $A$ within a desired error tolerance $\epsilon$:
+choose $s$ such that $\sigma_{s+1}$ is the largest singular value that is less than $\epsilon$, then compute $A_s$.
+This $A_s$ throws away as much information as possible without violating the property $\|A - A_s\|_2 < \epsilon$.
 
-This offers a way to approximate a matrix within an error tolerance:
-choose the truncated SVD approximation such that the largest discarded singular value is less than the error tolerance.
-
-\begin{problem}
-Using \li{scipy.linalg.svd}, write a function \li{lowest_rank_approx} that takes as input a matrix $A$ and a positive number $e$ and returns
-the lowest rank approximation of $A$ with error less than $e$ (with respect to the induced 2-norm).
-You should only calculate the SVD once.
+\begin{problem} % Lowest Rank Approximation
+Write a function that accepts a matrix $A$ and an error tolerance $\epsilon$.
+\begin{enumerate}
+\item Compute the compact SVD of $A$, then use (\ref{eq:svd-approximation-error}) to compute the lowest rank approximation $A_s$ of $A$ with 2-norm error less than $\epsilon$.
+Avoid calculating the SVD more than once.
+\\ (Hint: \li{np.argmax()}, \li{np.where()}, and/or fancy indexing may be useful.)
+\item As in the previous problem, also return the number of entries needed to store the resulting approximation $A_s$ via the truncated SVD.
+\item If $\epsilon$ is less than or equal to the smallest singular value of $A$, raise a \li{ValueError}; in this case, $A$ cannot be approximated within the tolerance by a matrix of lesser rank.
+\end{enumerate}
+This function should be close to identical to the function from Problem \ref{prob:svd_approx}, but with the extra step of identifying the appropriate $s$.
+Construct test cases to validate that $\| A - A_s \|_2 < \epsilon$.
 \end{problem}
 
+\subsection*{Image Compression} % ---------------------------------------------
 
-\begin{comment}
-The reduced form of the SVD also provides a way to approximate a matrix with another one of lower rank.
-This idea is used in many areas of applied mathematics including signal processing, statistics, semantic indexing (search engines), and control theory.
-If we are given a matrix $A$ of rank $r$, we can find an approximate matrix $\widehat A$ of rank $s<r$ by taking the SVD of $A$ and setting all of its singular values after $\sigma_s$ to zero, that is,
-\begin{equation*}
-\Sigma_{s} = \mbox{diag}(\sigma_1,\sigma_2,\ldots,\sigma_s,0,\ldots,0)
-\end{equation*}
-and then multiplying the matrix back together again.
-The more singular values we keep, the closer our approximation is to $A$.
-The number of singular values we decide to preserve depends on how close of an approximation we need and what our size requirements are for $U_1$, $\Sigma_{\widehat A}$, and $V_1$.
-Try plotting the singular values.
-\end{comment}
+Images are stored on a computer as matrices of pixel values.
+Sending an image over the internet or a text message can be expensive, but computing and sending a low-rank SVD approximation of the image can considerably reduce the amount of data sent while retaining a high level of image detail.
+Successive levels of detail can be sent after the inital low-rank approximation by sending additional singular values and the corresponding columns of V and U.
 
-\subsection*{Application to Image Compression}
-
-Sometimes there is not enough available bandwidth to transmit a full resolution photograph.
-Suppose you need to transmit an image from a remote location.
-You might aim to reduce the amount of data being sent, while also minimizing the loss of detail in the image.
-
-This can be done using the SVD.
-An image is just a matrix of pixel values, which means it has a singular value decomposition.
-Computing and sending a low-rank SVD approximation of the image can considerably reduce the amount of data sent, while retaining a high level of image detail.
-Additionally, successive levels of detail can be sent after the inital low-rank approximation by sending additional singular values and their corresponding columns of V and U.
-
+% TODO: redo the numbers in this paragraph for the full hubble image.
 Examining the singular values of an image gives us an idea of how low-rank the approximation can be.
-Figure \ref{fig:hubble} presents an image and a log plot of its singular values from greatest to least.
-The plot in \ref{fig:svals_plot} is typical for a photograph---the singular values start out large but drop off rapidly.
-In this rank $670$ image, $624$ of the singular values are $50$ or more times smaller than the largest singular value.
-By discarding these relatively small singular values, we can retain all but the finest image details, while storing only a rank 46 image!
-This is a huge reduction in data size.
+Figure \ref{fig:hubble} shows the image in \texttt{hubble\_gray.jpg} and a log plot of its singular values.
+The plot in \ref{fig:hubble-log-svals} is typical for a photograph---the singular values start out large but drop off rapidly.
+In this rank $1041$ image, $913$ of the singular values are $100$ or more times smaller than the largest singular value.
+By discarding these relatively small singular values, we can retain all but the finest image details, while storing only a rank $128$ image.
+This is a \textbf{huge} reduction in data size.
 
-Figure \ref{fig:rankvalues} shows several low-rank approximations of the image in Figure \ref{fig:hubble_original}.
-Even at a low rank the image is recognizable.
-By rank 40, the approximation visibly differs very little from the original.
-
-\begin{figure}
+\begin{figure}[H] % Hubble image + plot of singular values.
+\captionsetup[subfigure]{justification=centering}
 \centering
-\begin{subfigure}[b]{.49\textwidth}
-\centering
-\includegraphics[width=\textwidth*5/6]{figures/hubble_red}
-\caption{NGC 3603 (Hubble Space Telescope).}
-\label{fig:hubble_original}
+\begin{subfigure}{.49\textwidth}
+    \centering
+    \includegraphics[height=5cm]{figures/hubble_gray.jpg}
+    \caption{NGC 3603 (Hubble Space Telescope).}
+    \label{fig:hubble-original-gray}
 \end{subfigure}
-\begin{subfigure}[b]{.49\textwidth}
-\centering
-\includegraphics[width=\textwidth]{figures/hubble_svals}
-\caption{Singular values from greatest to smallest on a log scale}
-\label{fig:svals_plot}
+%
+\begin{subfigure}{.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/hubble_svals.pdf}
+    \caption{Singular values on a log scale.}
+    \label{fig:hubble-log-svals}
 \end{subfigure}
-\caption{An image and its singular values.}
+\caption{}
 \label{fig:hubble}
 \end{figure}
 
-\begin{figure}
-\centering
-\begin{subfigure}[b]{.35\textwidth}
-\centering
-\includegraphics[width=\textwidth]{figures/rank1.jpg}
-\caption{Rank 1}
-\end{subfigure}
-\begin{subfigure}[b]{.35\textwidth}
-\centering
-\includegraphics[width=\textwidth]{figures/rank14.jpg}
-\caption{Rank 14}
-\end{subfigure}
-
-\begin{subfigure}[b]{.35\textwidth}
-\centering
-\includegraphics[width=\textwidth]{figures/rank27.jpg}
-\caption{Rank 27}
-\end{subfigure}
-\begin{subfigure}[b]{.35\textwidth}
-\centering
-\includegraphics[width=\textwidth]{figures/rank40.jpg}
-\caption{Rank 40}
-\end{subfigure}
-\caption{Different rank approximations for SVD-based compression.  Notice that higher rank is needed to resolve finer detail.}
-\label{fig:rankvalues}
-\end{figure}
-
-The following code demonstrates how to use \li{plt.imread} and \li{plt.imshow} to read in an image, convert it to black and white, and show it.
-The function from Problem \ref{prob:svd_approx} can then be used to calculate an approximation of \li{X}.
-%Enter the following into IPython (note that any image you might have will work):
-\begin{lstlisting}
->>> import matplotlib.pyplot as plt
->>> # Take only one layer (layer 0) of the image
->>> X = plt.imread('hubble_image.jpg')[:,:,0].astype(float)
-% >>> X.nbytes     #number of bytes needed to store X  <---- this seems superfluous
->>> plt.imshow(X, cmap="gray")
->>> plt.show()
-\end{lstlisting}
-\begin{comment}
-Computing the SVD of your image is simple.
-Remember to make the singular values a diagonal matrix before multiplying.
-\begin{lstlisting}
->>> U,s,Vt = svd(X, full_matrices=False)
->>> S = sp.diag(s)
-\end{lstlisting}
-In the next code block, $k$ represents the desired rank of the output.
-\begin{lstlisting}
->>> k = 50
->>> u1, s1, vt1 = U[:,0:n], S[0:n,0:n], Vt[0:n,:]
->>> Xhat = u1.dot(s1).dot(vt1)
->>> (u1.nbytes + np.diag(s1).nbytes + vt1.nbytes) - X.nbytes   #should be negative
->>> plt.imshow(Xhat)
->>> plt.show()
-\end{lstlisting}
-\end{comment}
-
-\begin{problem}
-Using the \li{svd_approx} function from Problem \ref{prob:svd_approx}, write a function \li{compress_img} that accepts two parameters \li{filename} and \li{k}. The function should plot the original image and the best rank k approximation of the original image.
-
-While \li{svd_approx} worked for grayscale images, the \li{compress_img} function should work on color images.
-You may split the image into its three RGB layers and approximate each layer separately, then recombine them.
-Test your function on \li{hubble_image.jpg}
-Your output should be similar to Figure \ref{fig:compressed_image}.
-
-Hints:
-\begin{itemize}
-\item Sometimes \li{plt.imshow} does not behave as expected when being passed RGB values between 0 and 255. It behaves much better when being passed values between 0 and 1.
-\item Since the SVD provides an approximation, it is possible that the SVD will generate values slightly outside the valid range of RGB values.
-To fix this, use fancy indexing (as discussed in the NumPy and SciPy lab) to set values greater than 1 to 1 and values less than 0 to 0.
-\end{itemize}
+Figure \ref{fig:hubble-svd-rank-approximations} shows several low-rank approximations of the image in Figure \ref{fig:hubble-original-gray}.
+Even at a low rank the image is recognizable.
+By rank $120$, the approximation differs very little from the original.
 
 \begin{figure}[H]
-\includegraphics[width=\textwidth]{figures/compressed.jpg}
-\caption{Correct output for the best rank 20 approximation.}
-\label{fig:compressed_image}
+\centering
+\begin{subfigure}{.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/rank2.pdf}
+    \caption{Rank 2}
+\end{subfigure}
+%
+\begin{subfigure}{.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/rank20.pdf}
+    \caption{Rank 20}
+    \label{fig:hubble-rank20-approximation}
+\end{subfigure}
+%
+\begin{subfigure}{.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/rank120.pdf}
+    \caption{Rank 120}
+\end{subfigure}
+\caption{}
+\label{fig:hubble-svd-rank-approximations}
 \end{figure}
+
+Grayscale images are stored on a computer as 2-dimensional arrays, while color images are stored as 3-dimensional arrays---one layer each for red, green, and blue arrays.
+To read and display images, use \li{scipy.misc.imread()} and \li{plt.imshow()}.
+Images are read in as integer arrays with entries between 0 and 255 (\li{dtype=np.uint8}), but \li{plt.imshow()} works better if the image is an array of floats in the interval $[0,1]$.
+Scale the image properly by dividing the array by $255$.
+
+\begin{lstlisting}
+>>> from matplotlib import pyplot as plt
+
+# Send the RGB values to the interval (0,1).
+>>> image_gray = plt.imread("hubble_gray.jpg") / 255.
+>>> image_gray.shape            # Grayscale images are 2-d arrays.
+(1158, 1041)
+
+>>> image_color = plt.imread("hubble.jpg") / 255.
+>>> image_color.shape           # Color images are 3-d arrays.
+(1158, 1041, 3)
+
+# The final axis has 3 layers for red, green, and blue values.
+>>> red_layer = image_color[:,:,0]
+>>> red_layer.shape
+(1158, 1041)
+
+# Display a gray image.
+>>> plt.imshow(red_layer, cmap="gray")
+>>> plt.axis("off")             # Turn off axis ticks and labels.
+>>> plt.show()
+
+# Display a color image.
+>>> plt.imshow(image_color)     # cmap=None by default.
+>>> plt.axis("off")
+>>> plt.show()
+\end{lstlisting}
+
+\begin{problem} % Image compression.
+Write a function that accepts the name of an image file and an integer $s$.
+Use your function from Problem \ref{prob:svd_approx}, to compute the best rank-$s$ approximation of the image.
+Plot the original image and the approximation in separate subplots.
+In the figure title, report the difference in number of entries required to store the original image and the approximation (use \li{plt.suptitle()}).
+
+Your function should be able to handle both grayscale and color images.
+Read the image in and check its dimensions to see if it is color or not.
+Grayscale images can be approximated directly since they are represented by 2-dimensional arrays.
+For color images, let $R$, $G$, and $B$ be the matrices for the red, green, and blue layers of the image, respectively.
+Calculate the low-rank approximations $R_s$, $G_s$, and $B_s$ separately, then put them together in a new 3-dimensional array of the same shape as the original image.
+\\ (Hint: \li{np.dstack()} may be useful for putting the color layers back together.)
+
+Finally, it is possible for the low-rank approximations to have values slightly outside the valid range of RGB values.
+Set any values outside of the interval $[0,1]$ to the closer of the two boundary values.
+\\ (Hint: fancy indexing or \li{np.clip()} may be useful here.)
+
+To check, compressing \texttt{hubble\_gray.jpg} with a rank $20$ approximation should appear similar to Figure \ref{fig:hubble-rank20-approximation} and save $1,161,478$ matrix entries.
 \end{problem}
+
+% NOTE: we used to use A.nbytes instead of A.size to measure the reduction,
+% but when images (dtype=np.uint8) are converted to float arrays
+% (dtype=np.float64), the resulting arrays take much more memory to store, so =
+% reporting the number of bytes saved often ends up being bigger than the
+% original picture.
+
+\newpage
+
+\section*{Additional Material} % ==============================================
+
+\subsection*{More on Computing the SVD} % -------------------------------------
+
+For an $m\times n$ matrix $A$ of rank $r < \min\{m,n\}$, the compact SVD of $A$ neglects last $m-r$ columns of $U$ and the last $n-r$ columns of $V$.
+The remaining columns of each matrix can be calculated by using Gram-Schmidt orthonormalization.
+If $m < r < n$ or $n < r < m$, only one of $U_1$ and $V_1$ will need to be filled in to construct the full $U$ or $V$.
+Computing these extra columns is one way to obtain a basis for $\mathscr{N}(A\hrm)$ or $\mathscr{N}(A)$.
+
+Algorithm \ref{alg:compact-svd} begins with the assumption that we have a way to compute the eigenvalues and eigenvectors of $A\hrm A$.
+Computing eigenvalues is a notoriously difficult problem, and computing the SVD from scratch without an eigenvalue solver is much more difficult than the routine described by Algorithm \ref{alg:compact-svd}.
+The procedure involves two phases:
+\begin{enumerate}
+    \item Factor $A$ into $A = U_a B V\hrm_a$ where $B$ is bidiagonal (only nonzero on the diagonal and the first superdiagonal) and $U_a$ and $V_a$ are orthonormal.
+    This is usually done via \emph{Golub-Kahan Bidiagonalization}, which uses Householder reflections, or \emph{Lawson-Hanson-Chan bidiagonalization}, which relies on the QR decomposition.
+    \item Factor $B$ into $B = U_b \Sigma V\hrm_b$ by the QR algorithm or a divide-and-conquer algorithm.
+    Then the SVD of $A$ is given by $A = (U_aU_b)\Sigma (V_aV_b)\hrm$.
+\end{enumerate}
+For more details, see Lecture 31 of \emph{Numerical Linear Algebra} by Lloyd N. Trefethen and David Bau III, or Section 5.4 of \emph{Applied Numerical Linear Algebra} by James W. Demmel.
+
+\subsection*{Animating Images with Matplotlib} % ------------------------------
+
+Matplotlib can be used to animate images that change over time.
+For instance, we can show how the low-rank approximations of an image change as the rank $s$ increases, showing how the image is recovered as more ranks are added.
+Try using the following code to create such an animation.
+
+\begin{lstlisting}
+from matplotlib import pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+def animate_images(images):
+    """Animate a sequence of images. The input is a list where each
+    entry is an array that will be one frame of the animation.
+    """
+    fig = plt.figure()
+    plt.axis("off")
+    im = plt.imshow(images[0], animated=True)
+
+    def update(index):
+        plt.title("Rank {} Approximation".format(index))
+        im.set_array(images[index])
+        return im,              # Note the comma!
+
+    a = FuncAnimation(fig, update, frames=len(images), blit=True)
+    plt.show()
+\end{lstlisting}
+See \url{https://matplotlib.org/examples/animation/dynamic_image.html} for another example.

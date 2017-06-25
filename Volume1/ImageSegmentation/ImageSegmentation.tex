@@ -1,134 +1,135 @@
 \lab{Image Segmentation}{Image Segmentation}
 
-\objective{Understand some basic applications of eigenvalues to graph theory.  Learn how to calculate the Laplacian matrix of a graph.  Apply the Laplacian matrix to determine connectivity of a graph and segment an image.}
-\label{lab:ImgSeg_eigenvalues}
+\objective{Graph theory has a variety of applications.
+A graph (or network) can be represented in many ways on a computer.
+In this lab, we study a common matrix representation for graphs and show how certain properties of the matrix representation correspond to inherent properties of the original graph.
+% In this lab, we learn to represent a graph as a matrix and to calculate properties of the graph using the matrix representation.
+We also introduce tools for working with images in Python, and conclude with an application of using graphs and linear algebra to segment images.
+}
 
-\section*{Graph Theory}
-\begin{figure}
+\section*{Graphs as Matrices} % ===============================================
 
- \begin{tikzpicture}[auto,node distance=1.5cm,
- thick,main node/.style={circle,draw}]
+A \emph{graph} is a mathematical structure that represents relationships between objects.
+Graphs are defined by $G = (V,E)$, where $V$ is a set of \emph{vertices} (or \emph{nodes}) and $E$ is a set of \emph{edges}, each of which connects one node to another.
+A graph can be classified in several ways.
+\begin{itemize}
+    \item The edges of an \emph{undirected} graph are bidirectional: if an edge goes from node $A$ to node $B$, then that same edge also goes from $B$ to $A$.
+    For example, the graphs $G_1$ and $G_2$ in Figure \ref{fig:imgseg-example-graphs} are both undirected.
+    In a \emph{directed graph}, edges only go one way, usually indicated by an arrow pointing from one node to another.
+    In this lab, we focus on undirected graphs.
 
-  \node[main node] (5) [] {6};
-  \node[main node] (2) [below right of=5] {3};
-  \node[main node] (3) [above right of=5] {4};
-  \node[main node] (4) [right of=3] {5};
-  \node[main node] (1) [right of=2] {2};
-  \node[main node] (0) [below right of=4] {1};
+    \item The edges of a \emph{weighted} graph have a weight assigned to them, such as $G_2$.
+    A weighted graph could represent a collection of cities with roads connecting them: each vertex would represent a city, and the edges would represent roads between the cities.
+    The length of each road could be the weight of the corresponding edge.
+    An \emph{unweighted} graph like $G_1$ does not have weights assigned to its edges, but any unweighted graph can be thought of as a weighted graph by assigning a weight of $1$ to every edge.
 
-  \foreach \s/\t in {5/3, 3/4, 4/0, 0/1, 1/2, 2/3, 1/4, 5/0} {
-   \path[draw] (\s) edge (\t);}
-\end{tikzpicture}
-\caption{An undirected graph that is connected.}
-\label{fig:example_graph}
+    % \item A graph is \emph{simple} if no edge connects a node to itself.
+    % The graph in Figure [TODO] is simple, but the graph in Figure [TODO] is not.
+\end{itemize}
+
+\begin{figure}[H] % Two graphs.
+\captionsetup[subfigure]{justification=centering}
+\centering
+\begin{subfigure}{.45\textwidth}
+    \centering
+    \begin{tikzpicture}[auto,node distance=1.5cm,
+     thick,main node/.style={circle,draw}]
+
+      \node[main node] (5) [] {6};
+      \node[main node] (2) [below right of=5] {3};
+      \node[main node] (3) [above right of=5] {4};
+      \node[main node] (4) [right of=3] {5};
+      \node[main node] (1) [right of=2] {2};
+      \node[main node] (0) [below right of=4] {1};
+
+      \foreach \s/\t in {5/3, 3/4, 4/0, 0/1, 1/2, 2/3, 1/4, 5/0} {
+       \path[draw] (\s) edge (\t);}
+    \end{tikzpicture}
+    \caption{$G_1$, an unweighted undirected graph.}
+    \label{fig:graphexample-unweighted}
+\end{subfigure}
+\quad
+\begin{subfigure}{.45\textwidth}
+    \centering
+    \begin{tikzpicture}[auto,node distance=2cm,
+    thick,main node/.style={circle,draw}]
+
+    \node[main node] (0) [] {1};
+    \node[main node] (1) [below of=0] {2};
+    \node[main node] (2) [right of=0] {3};
+    \node[main node] (3) [below of=2] {4};
+    \node[main node] (4) [right of=2] {5};
+    \node[main node] (5) [right of=3] {6};
+
+    \path[draw] (0) edge node [left] {3} (1);
+    \path[draw] (2) edge node [left] {1} (3);
+    \path[draw] (4) edge node{1} (5);
+    \path[draw] (3) edge node{2} (4);
+    \path[draw] (3) edge node [below]{.5} (5);
+    \end{tikzpicture}
+    \caption{$G_2$, a weighted undirected graph.}
+    \label{fig:graphexample-weighted}
+\end{subfigure}
+% \qquad
+% \begin{subfigure}{.28\textwidth}
+%     \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=1.5cm,
+%     thick,main node/.style={circle,draw}]
+%
+%      \node[main node] (A) [] {A};
+%      \node[main node] (B) [below of=A] {B};
+%      \node[main node] (C) [right of=A] {C};
+%      \node[main node] (D) [below of=C] {D};
+%      \node[main node] (E) [right of=C] {E};
+%      \node[main node] (F) [right of=D] {F};
+%
+%      \foreach \s/\t in {A/C, B/A, B/D, C/E, C/F, D/C} {
+%       \path[draw] (\s) edge (\t);}
+%     \end{tikzpicture}
+%     \caption{A directed graph.}
+% \end{subfigure}
+\caption{}
+\label{fig:imgseg-example-graphs}
 \end{figure}
 
-\begin{figure}
+\subsection*{Adjacency, Degree, and Laplacian Matrices} % ---------------------
 
- \begin{tikzpicture}[auto,node distance=2cm,
- thick,main node/.style={circle,draw}]
-
-  \node[main node] (0) [] {1};
-  \node[main node] (1) [below of=0] {2};
-  \node[main node] (2) [right of=0] {3};
-  \node[main node] (3) [below of=2] {4};
-  \node[main node] (4) [right of=2] {5};
-  \node[main node] (5) [right of=3] {6};
-
-   \path[draw] (0) edge node [left] {3} (1);
-   \path[draw] (2) edge node [left] {1} (3);
-   \path[draw] (4) edge node{1} (5);
-   \path[draw] (3) edge node{2} (4);
-   \path[draw] (3) edge node [below]{.5} (5);
-\end{tikzpicture}
-\caption{A weighted undirected graph that is not connected.}
-\label{fig:example_graph2}
-\end{figure}
-
-% \begin{tikzpicture}[auto,node distance=1.5cm,
-% thick,main node/.style={circle,draw}]
+For computation and analysis, graphs are commonly represented by a few special matrices.
+For these definitions, let $G$ be a graph with $N$ nodes and let $w_{ij}$ be the weight of the edge connecting node $i$ to node $j$ (if such an edge exists).
 %
-%  \node[main node] (2) [] {2};
-%  \node[main node] (1) [below left of=2] {1};
-%  \node[main node] (0) [below right of=2] {0};
-%
-%  \foreach \s/\t in {1/1, 1/2, 1/3, 2/3} {
-%   \path[draw] (\s) edge (\t);}
-%\end{tikzpicture}
-%\caption{An undirected graph that is not simple.}
-%\label{fig:example_graph}
-%\end{figure}
-
-
-%\begin{figure}
-% \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=1.5cm,
-% thick,main node/.style={circle,draw}]
-%
-%  \node[main node] (A) [] {A};
-%  \node[main node] (B) [below of=A] {B};
-%  \node[main node] (C) [right of=A] {C};
-%  \node[main node] (D) [below of=C] {D};
-%  \node[main node] (E) [right of=C] {E};
-%  \node[main node] (F) [right of=D] {F};
-%
-%  \foreach \s/\t in {A/C, B/A, B/D, C/E, C/F, D/C} {
-%   \path[draw] (\s) edge (\t);}
-%\end{tikzpicture}
-%\caption{A simple directed graph}
-%\end{figure}
-
-
-
-Graph theory is a branch of mathematics dealing with mathematical structures called graphs.  Graphs represent relationships between objects.
-%For example, the transition diagram in Figure \ref{fig:markov1} in Lab \ref{lab:EigSolve} shows the relationship between states in a Markov chain.
-An \emph{undirected graph} is a set of nodes (or vertices) and edges, where each edge connects exactly two nodes (see Figure \ref{fig:example_graph}).
-In a \emph{directed graph}, edges are directional. Each edge only goes one way, usually visualized as an arrow pointing from one node to another.
-In this lab, we will only consider undirected graphs, which we will simply call graphs (unless we wish to emphasize the fact that they are undirected).
-
-%A graph is \emph{simple} if no edge connects a node to itself.
-%The graph in Figure [TODO!] is simple, but the graph in Figure [TODO!] is not.
-
-A \emph{weighted} graph is a graph with a weight attached to each edge.
-For example, a weighted graph could represent a collection of cities with roads connecting them.
-The vertices would be cities, the edges would be roads, and weight of an edge would be the length of a road.
-Such a graph is depicted in Figure \ref{fig:example_graph2}.
-
-Any unweighted graph can be thought of as a weighted graph by assigning a weight of 1 to each edge.
-
-\subsection*{Adjacency, Degree, and Laplacian Matrices}
-We will now introduce three matrices associated with a graph.
-Throughout this section, assume we are working with a weighted undirected graph with $N$ nodes, and that $w_{ij}$ is the weight attached to the edge connecting node $i$ and node $j$.
-We first define the adjacency matrix.
-
-\begin{definition} The \emph{adjacency matrix} is an $N \times N$ matrix whose $(i,j)$-th entry is
-\begin{center}
-	$ \begin{cases}  w_{ij} & \mbox{if an edge connects node i and node j} \\ 0 & \mbox{otherwise.} \end{cases}$
-\end{center}
-% If the graph is not simple, there are differing conventions for how to define the diagonal of the adjacency matrix.
-\end{definition}
-
-For example, the graph in Figure \ref{fig:example_graph} has the adjacency matrix $A_1$ and the graph in Figure \ref{fig:example_graph2} has the adjacency matrix $A_2$, where
+\begin{enumerate}
+\item The \emph{adjacency matrix} of $G$ is the $N\times N$ matrix $A$ with entries
 \[
-A_1 = \begin{pmatrix}
+a_{ij} =
+\begin{cases}
+w_{ij} & \text{if an edge connects node i and node j} \\
+0 & \text{otherwise.}
+\end{cases}
+\]
+% If the graph is not simple, there are differing conventions for how to define the diagonal of the adjacency matrix.
+The adjacency matrices $A_1$ of $G_1$ and $A_2$ of $G_2$ are as follows.
+\[
+A_1 = \left[\begin{array}{cccccc}
 0 & 1 & 0 & 0 & 1 & 1\\
 1 & 0 & 1 & 0 & 1 & 0\\
 0 & 1 & 0 & 1 & 0 & 0\\
 0 & 0 & 1 & 0 & 1 & 1\\
 1 & 1 & 0 & 1 & 0 & 0\\
 1 & 0 & 0 & 1 & 0 & 0
-\end{pmatrix} \qquad A_2 =
- \begin{pmatrix}
+\end{array}\right]
+\qquad A_2 =
+\left[\begin{array}{cccccc}
 0 & 3 & 0 & 0 & 0 & 0\\
 3 & 0 & 0 & 0 & 0 & 0\\
 0 & 0 & 0 & 1 & 0 & 0\\
 0 & 0 & 1 & 0 & 2 & .5\\
 0 & 0 & 0 & 2 & 0 & 1\\
 0 & 0 & 0 & .5 & 1 & 0
-\end{pmatrix}.
+\end{array}\right]
 \]
-Notice that these adjacency matrices are symmetric. This will always be the case for undirected graphs.
+Notice that these adjacency matrices are symmetric.
+This is always the case for undirected graphs since the edges are bidirectional.
 
-\begin{comment}
+\begin{comment} % Paths of a certain length via matrix powers. Not relevant. ==
 Raising the adjacency matrix to a power yields some very interesting information.
 We can discover the number of paths of length $n$ between two nodes by raising a graph's adjacency matrix to the $n$th power.
 For example, by squaring $A$, we can find the number of paths of length two between every pair of nodes.
@@ -156,7 +157,7 @@ array([[45, 54, 38, 45, 54, 16],
        [54, 51, 70, 31, 93, 34],
        [16, 11, 27,  4, 34, 14]])
 \end{lstlisting}
-We see that there are 75 unique paths of length six from node 3 to itself.
+Therefore there are 75 unique paths of length six from node 3 to itself.
 Imagine trying to count all of those paths by hand!
 It would be very easy to count incorrectly.
 This method makes it very simple to count paths without mistakes.
@@ -170,7 +171,7 @@ paths.
 \begin{problem}
 Let the following matrix represent a directed graph
 \[
-\begin{pmatrix}
+\begin{array}{ccccccc}
 0 & 0 & 1 & 0 & 1 & 0 & 1 \\
 1 & 0 & 0 & 0 & 0 & 1 & 0 \\
 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
@@ -178,304 +179,357 @@ Let the following matrix represent a directed graph
 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
 0 & 0 & 1 & 0 & 0 & 0 & 1 \\
 0 & 1 & 0 & 0 & 0 & 0 & 0
-\end{pmatrix}
+\end{array}\right]
 \]
 Between which pair of nodes does there exist the greatest number of paths
 of length five?
 From which node to which node is there no path of length seven?
 \end{problem}
-\end{comment}
+\end{comment} % ===============================================================
 
-The second matrix is the degree matrix.
-\begin{definition} The \emph{degree matrix} is an $N \times N$ diagonal matrix whose $(i,i)$-th entry is
-\[
-\sum_{j=1}^N w_{ij}.
-\]
-This quantity is the sum of the weight of each edge leaving node $i$.
-\end{definition}
+\item The \emph{degree matrix} of $G$ is the $N \times N$ diagonal matrix $D$ whose $i$th diagonal entry is
+\begin{equation}
+d_{ii} = \sum_{j=1}^N w_{ij}.
+\label{eq:degree-matrix-formula}
+\end{equation}
 %For a directed graph, each node has an \emph{out-degree} (the number of edges directed away from a node) and an \emph{in-degree} (the number edges directed toward a node).
-We call the $(i, i)$-th entry of the degree matrix the \emph{degree} of node $i$. As an example, the degree matrices of the graphs in Figures \ref{fig:example_graph} and \ref{fig:example_graph2} are $D_1$ and $D_2$, respectively.
-
+The degree matrices $D_1$ of $G_1$ and $D_2$ of $G_2$ are given below.
 \[
-D_1 = \begin{pmatrix}
+D_1 = \left[\begin{array}{cccccc}
 3 & 0 & 0 & 0 & 0 & 0\\
 0 & 3 & 0 & 0 & 0 & 0\\
 0 & 0 & 2 & 0 & 0 & 0\\
 0 & 0 & 0 & 3 & 0 & 0\\
 0 & 0 & 0 & 0 & 3 & 0\\
 0 & 0 & 0 & 0 & 0 & 2
-\end{pmatrix}. \qquad D_2 =
- \begin{pmatrix}
+\end{array}\right]
+\qquad D_2 =
+\left[\begin{array}{cccccc}
 3 & 0 & 0 & 0 & 0 & 0\\
 0 & 3 & 0 & 0 & 0 & 0\\
 0 & 0 & 1 & 0 & 0 & 0\\
 0 & 0 & 0 & 3.5 & 0 & 0\\
 0 & 0 & 0 & 0 & 3 & 0\\
 0 & 0 & 0 & 0 & 0 & 1.5
-\end{pmatrix}
+\end{array}\right]
 \]
+The $i$th diagonal entry of $D$ is called the \emph{degree} of node $i$, the sum of the weights of the edges leaving node $i$.
 
-Finally, we can combine the degree matrix and the adjacency matrix to get the Laplacian matrix.
-% Wikipedia defines the Laplacian of a simple graph only. I don't know why.
-% The graph in our application is NOT simple.
-% However, the non-simple parts cancel out, meaning that the Laplacian of the graph is the same as if you removed all self edges and then computed the Laplacian.
-% So I just define the Laplacian this way and don't talk about simple graphs.
-\begin{definition}
-The \emph{Laplacian matrix} of a graph is
-\[D - A \]
-where $D$ is the degree matrix and $A$ is the adjacency matrix of the graph.
-\end{definition}
-
-For example, the Laplacian matrix of the graphs in Figures \ref{fig:example_graph} and \ref{fig:example_graph2} are $L_1$ and $L_2$, respectively, where
-
+\item The \emph{Laplacian matrix} of $G$ is the $N\times N$ matrix $L$ given by
+\begin{equation}
+L = D - A,
+\label{eq:laplacian-matrix-formula}
+\end{equation}
+where $D$ is the degree matrix of $G$ and $A$ is the adjacency matrix of $G$.
+For $G_1$ and $G_2$, the Laplacian matrices $L_1$ and $L_2$ are given below.
 \[
-L_1 = \begin{pmatrix}
+L_1 = \left[\begin{array}{rrrrrr}
 3 & -1 & 0 & 0 & -1 & -1\\
 -1 & 3 & -1 & 0 & -1 & 0\\
 0 & -1 & 2 & -1 & 0 & 0\\
 0 & 0 & -1 & 3 & -1 & -1\\
 -1 & -1 & 0 & -1 & 3& 0\\
 -1 & 0 & 0 & -1 & 0 & 2
-\end{pmatrix}. \qquad L_2 =
- \begin{pmatrix}
+\end{array}\right]
+\qquad L_2 =
+ \left[\begin{array}{rrrrrr}
 3 & -3 & 0 & 0 & 0 & 0\\
 -3 & 3 & 0 & 0 & 0 & 0\\
 0 & 0 & 1 & -1 & 0 & 0\\
 0 & 0 & -1 & 3.5 & -2 & -.5\\
 0 & 0 & 0 & -2 & 3 & -1\\
 0 & 0 & 0 &- .5 & -1 & 1.5
-\end{pmatrix}
+\end{array}\right]
 \]
-
-In this lab we will learn about graphs by studying their Laplacian matrices.
-While the Laplacian matrix seems simple, we can learn surprising things from its eigenvalues.
-
-
-\begin{problem}
-Write a function that accepts the adjacency matrix of a graph as an argument and returns the Laplacian matrix.
-Test your function on the graphs in Figures \ref{fig:example_graph} and \ref{fig:example_graph2}.
-
-Hint: You can compute the diagonal of the degree matrix in one line by summing over an axis (see Lab 2 and NumPy Visual Guide).
-\label{prob:laplacian}
-\end{problem}
-
-
-
-\subsection*{Connectivity: First Application of Laplacians}
-
-A \emph{connected graph} is a graph where every vertex is connected to every other vertex by at least one path.
-The graph in Figure \ref{fig:example_graph} is connected, whereas the graph in Figure \ref{fig:example_graph2} is not.
-It is often important to know if a graph is connected.
-A naive approach to determine connectivity of a graph is to search every possible path from each vertex.
-While this works for very small graphs, most interesting graphs will have thousands of vertices, and for such graphs this approach is not feasible.
-
-Instead of the naive approach, we can use an interesting result from algebraic graph theory.
-This result relates the connectivity of a graph to its Laplacian.
-
-The Laplacian of any graph always has at least one zero eigenvalue.
-Why is this true?  If $L$ is the Laplacian matrix of a graph, then the rows of $L$ must sum to 0.
-(Think about how L was created.)
-Since this is true, L cannot have full rank, so $\lambda = 0$ must be an eigenvalue of $L$.
-
-Furthermore, if $L$ represents a graph that is \textit{not} connected, more than one of the eigenvalues of $L$ will be zero.
-To see this, let $J \subset \{1 \dots N\}$ such that the vertices $\{v_j\}_{j \in J}$ form a connected component of the graph.
-Define a vector $\x$ such that
- \[
-    \x_j = \begin{cases}
-        1, & j \in J \\
-        0, & j \not\in J
-        \end{cases}
-  \]
-
-Then $\x$ is an eigenvector of $L$ corresponding to the eigenvalue $\lambda = 0$.
-(Look at the Laplacian matrix in Figure \ref{fig:example_graph2} and consider the product $L_2 \x$.)
-In other words, for each connected component, 0 appears at least once as an eigenvalue.
-
-In fact, it can be rigorously proven that the number of zero eigenvalues of the Laplacian exactly \textit{equals} the number of connected components.
-If we can solve for the eigenvalues of $L$, this makes it simple to calculate how many connected components are in the graph.
-
-$L$ is always a positive semi-definite matrix when all weights in the graph are positive, so all of its eigenvalues are greater than or equal to 0.
-The second smallest eigenvalue of $L$ is known as the \textit{algebraic connectivity} of the graph.
-It is clearly 0 for non-connected graphs.
-For connected graphs, the algebraic connectivity can give us useful information about the sparsity or ``connectedness'' of a graph.
-A higher algebraic connectivity indicates that the graph is more strongly connected.
-
-\begin{comment}
-Thus, it will have real eigenvalues.
-Surprisingly, a graph is connected if the second smallest eigenvalue of its Laplacian matrix is positive.  By second smallest, we mean the second eigenvalue when they are ordered smallest to largest.  The eigenvalues of the Laplacian matrix are never negative; thus, if the second one is not zero, the graph is connected.
-In many applications, the Laplacian matrix is sparse, so by taking advantage of this sparsity, we can cheaply determine if a graph is connected.
-\end{comment}
-
-\begin{problem}
-\leavevmode
-Compute the number of connected components in a graph.
-Write a function that accepts the adjacency matrix of a graph and returns two arguments: the number of connected components, and the algebraic connectivity of the graph (second smallest eigenvalue of the Laplacian).
-
-Use the \li{scipy.linalg} package to compute the eigenvalues.
-Note that this package will return complex eigenvalues (with negligible imaginary parts). Keep only the real parts.
-Your function should also accept a tolerance value, such that all eigenvalues less than this value are assumed to be zero.
-This should default to \li{tol=1e-8}.
-
-\begin{comment}
-%Old part of problem, removed because no great way to evaluate it
-Here is a function that creates a random symmetric matrix of Boolean values with sparsity determined by the input \li{c}.
-\begin{lstlisting}
-def sparse_generator(n, c):
-    ''' Return a symmetric nxn matrix with sparsity determined by c.
-    Inputs:
-        n (int): dimension of matrix
-        c (float): a float in [0,1]. Larger values of c will produce
-             matrices with more entries equal to zero.
-    '''
-    A = np.random.rand(n**2).reshape((n, n))
-    A = ( A > c**(.5) )
-    return A.T.dot(A)
-\end{lstlisting}
-
-Test your function on matrices created by \li{sparse_generator} with inputs $n = 10, 100$ and $c = .25, .5, .95$.
-What do you notice about the likelihood that a random graph is connected?
-\end{comment}
-
-\end{problem}
-
-
-\section*{Image Segmentation: Second Application of Laplacians}
-
-\begin{figure}
-    \centering
-    \begin{subfigure}{0.31\textwidth}
-        \includegraphics[width=\textwidth]{figures/RegMon.pdf}
-    \end{subfigure}
-   \hspace*{\fill}
-    \begin{subfigure}{0.31\textwidth}
-        \includegraphics[width=\textwidth]{figures/NegMon.pdf}
-    \end{subfigure}
-    \hspace*{\fill}
-    \begin{subfigure}{0.31\textwidth}
-        \includegraphics[width=\textwidth]{figures/PosMon.pdf}
-    \end{subfigure}
-
-\caption{An image and its segments.}
-\label{fig:monument}
-\end{figure}
-Image segmentation is the process of finding natural boundaries in an image (see Figure \ref{fig:monument}).
-This is a simple task for humans, who can easily pick out portions of an image that ``belong together.''
-In this lab, you will learn one way for a computer to segment images using graph theory.
-
-The algorithm we will present comes from a paper by Jianbo Shi and Jitendra Malik in 2000 (\cite{Shi2000}).
-They segment an image using the following steps.
-\begin{enumerate}
-	\item \textbf{Represent the image as a weighted graph of pixels.}
-An image is made up of individual pixels, each having a brightness and a location.
-(Here, \emph{brightness} is equivalent to the grayscale value of the pixel.)
-To define a graph representing the image, we let each pixel be a vertex.
-%We say that two pixels are connected in the graph if they are close together, i.e. within some distance $r$ of each other, in the image.
-The weight of the edges between two pixels is determined by their distance apart and their similarity in brightness.
-We define the graph so that two similar pixels (i.e., with similar brightness and location) will be connected by a strong edge.
-	\item \textbf{Calculate the Laplacian.}
-We calculate the adjacency and degree matrices of the graph representing the image, and use these to obtain the Laplacian.
-	\item \textbf{Choose the best cut.}
-The graph we have created is connected, but not all edges have the same weight.
-Dissimilar pixels will be connected by edges that have a low weight.
-We can split the graph into two connected components by ``cutting" it along the low-weight edges.
-These components are the image segments we are looking for.
-(We can also cut an image multiple times to segment it into more than two pieces.)
-As we will see later, Shi and Malik's algorithm uses spectral information (eigenvectors) of the Laplacian to minimize the weight of the cut edges.
 \end{enumerate}
 
-\begin{comment}
-% Previous explanation which was refactored into the list form above
-Their idea is to represent an image as a weighted graph as follows.
-To a computer, an \emph{image} is a collection of \emph{pixels}.
-Each pixel has a brightness and coordinates describing its location in the image.
-To define a graph representing this image, we let every pixel be a vertex.
-Two pixels are connected if the distance between their coordinates is small (less than $r$).
-The weight of the edge connecting two pixels is related to their similarity in brightness, where a low weight means they are very different.
+\begin{problem}
+Write a function that accepts the adjacency matrix $A$ of a graph $G$.
+Use (\ref{eq:degree-matrix-formula}) and (\ref{eq:laplacian-matrix-formula}) to compute the Laplacian matrix $L$ of $G$.
+\\(Hint: The diagonal entries of $D$ can be computed in one line by summing $A$ over an axis.)
 
-After defining this graph, we will segment the image by ``cutting'' (or removing) edges with low weights, which represent lines of high contrast in the image.
-The ``cut'' is the total weight of the edges removed. Thus, to segment an image, we wish to minimize the ``cut.''
-We can ``cut'' an image multiple times to segment an image into more than two pieces.
+Test your function on the graphs $G_1$ and $G_2$ from Figure \ref{fig:imgseg-example-graphs} and validate your results with \li{scipy.sparse.csgraph.laplacian()}.
+\label{prob:imgseg-laplacian}
+\end{problem}
+
+\subsection*{Connectivity} % --------------------------------------------------
+
+A \emph{connected graph} is a graph where every vertex is connected to every other vertex by at least one path.
+For example, $G_1$ is connected, whereas $G_2$ is not because there is no path from node $1$ (or node $2$) to node $3$ (or nodes $4$, $5$, or $6$).
+The na\"ive brute-force algorithm for determining if a graph is connected is to check that there is a path from each edge to every other edge.
+While this may work for very small graphs, most interesting graphs have thousands of vertices, and for such graphs this approach is prohibitively expensive.
+Luckily, an interesting result from algebraic graph theory relates the connectivity of a graph to its Laplacian matrix.
+
+If $L$ is the Laplacian matrix of a graph, then the definition of $D$ and the construction $L = D - A$ guarantees that the rows (and columns) of $L$ must each sum to $0$.
+Therefore $L$ cannot have full rank, so $\lambda = 0$ must be an eigenvalue of $L$.
+Furthermore, if $L$ represents a graph that is \textbf{not} connected, more than one of the eigenvalues of $L$ must be zero.
+To see this, let $J \subset \{1,2,\ldots,N\}$ such that the vertices $\{v_j\}_{j \in J}$ form a connected component of the graph, meaning that there is a path between each pair of vertices in the set.
+Next, let $\x$ be the vector with entries
+ \[
+x_k = \begin{cases}
+1, & k \in J    \\
+0, & k \not\in J.
+\end{cases}
+  \]
+Then $\x$ is an eigenvector of $L$ corresponding to the eigenvalue $\lambda = 0$.
+% In other words, for each connected component, $0$ appears at least once as an eigenvalue.
+
+For example, the example graph $G_2$ has two connected components.
+\begin{enumerate}
+\item $J_1 = \{1,2\}$ so that $\x_1 = [1, 1, 0, 0, 0, 0]\trp$.
+Then
+\[
+L_2\x_1 =
+\left[\begin{array}{rrrrrr}
+3 & -3 & 0 & 0 & 0 & 0\\
+-3 & 3 & 0 & 0 & 0 & 0\\
+0 & 0 & 1 & -1 & 0 & 0\\
+0 & 0 & -1 & 3.5 & -2 & -.5\\
+0 & 0 & 0 & -2 & 3 & -1\\
+0 & 0 & 0 &- .5 & -1 & 1.5
+\end{array}\right]
+\left[\begin{array}{c}
+1 \\ 1 \\ 0 \\ 0 \\ 0 \\ 0
+\end{array}\right]
+=
+\left[\begin{array}{c}
+0 \\ 0 \\ 0 \\ 0 \\ 0 \\ 0
+\end{array}\right]
+= \0.
+\]
+
+\item $J_2 = \{3,4,5,6\}$ and hence $\x_2 = [0, 0, 1, 1, 1, 1]\trp$.
+Then
+\[
+L_2\x_2 =
+\left[\begin{array}{rrrrrr}
+3 & -3 & 0 & 0 & 0 & 0\\
+-3 & 3 & 0 & 0 & 0 & 0\\
+0 & 0 & 1 & -1 & 0 & 0\\
+0 & 0 & -1 & 3.5 & -2 & -.5\\
+0 & 0 & 0 & -2 & 3 & -1\\
+0 & 0 & 0 &- .5 & -1 & 1.5
+\end{array}\right]
+\left[\begin{array}{c}
+0 \\ 0 \\ 1 \\ 1 \\ 1 \\ 1
+\end{array}\right]
+=
+\left[\begin{array}{c}
+0 \\ 0 \\ 0 \\ 0 \\ 0 \\ 0
+\end{array}\right]
+= \0.
+\]
+\end{enumerate}
+
+In fact, it can be shown that the number of zero eigenvalues of the Laplacian exactly equals the number of connected components.
+This makes calculating how many connected components are in a graph only as hard as calculating the eigenvalues of its Laplacian.
+
+A Laplacian matrix $L$ is always a positive semi-definite matrix when all weights in the graph are positive, meaning that its eigenvalues are each nonnegative.
+The second smallest eigenvalue of $L$ is called the \emph{algebraic connectivity} of the graph.
+It is clearly $0$ for non-connected graphs, but for a connected graph, the algebraic connectivity provides useful information about its sparsity or ``connectedness.''
+A higher algebraic connectivity indicates that the graph is more strongly connected.
+
+\begin{problem}
+Write a function that accepts the adjacency matrix $A$ of a graph $G$ and a small tolerance value \li{tol}.
+Compute the number of connected components in $G$ and its algebraic connectivity.
+Consider all eigenvalues that are less than the given \li{tol} to be zero.
+
+Use \li{scipy.linalg.eig()} or \li{scipy.linalg.eigvals()} to compute the eigenvalues of the Laplacian matrix.
+These functions return complex eigenvalues (with negligible imaginary parts); use \li{np.real()} to extract the real parts.
+\end{problem}
+
+\begin{comment} % Likelihood of connectedness.
+\begin{problem}
+% Used to be part of the previous problem.
+% Rmoved because these is no great way to evaluate it.
+The folowing function creates a random symmetric matrix of Boolean values with sparsity determined by the input \li{c}.
+\begin{lstlisting}
+def sparse_generator(n, c):
+    """Return a symmetric nxn matrix with sparsity determined by c."""
+    A = np.random.rand(n**2).reshape((n, n))
+    A = ( A > c**(.5) )
+    return A.T @ A
+\end{lstlisting}
+
+Test your function from the previous problem on matrices created by \li{sparse_generator()} with inputs $n = 10, 100$ and $c = .25, .5, .95$.
+What do you notice about the likelihood that a random graph is connected?
+\end{problem}
 \end{comment}
 
+\section*{Images as Matrices} % ===============================================
 
-\subsection*{Defining the Graph and Adjacency Matrix}
+Computer images are stored as arrays of integers that indicate pixel values.
+Most $m\times n$ grayscale (black and white) images are stored in Python as a $m\times n$ NumPy arrays, while most $m\times n$ color images are stored as $3$-dimensional $m\times n \times 3$ arrays.
+Color image arrays can be thought of as a stack of three $m\times n$ arrays, one each for red, green, and blue values.
+% \footnote{See \url{http://scikit-image.org/docs/dev/user_guide/numpy_images.html\#coordinate-conventions} for other conventions.}
+The datatype for an image array is \li{np.uint8}, unsigned 8-bit integers that range from $0$ to $255$.
+A $0$ indicates a black pixel while a $255$ indicates a white pixel.
 
-%New
-We now define the graph that represents an image. In our $M \times N$ image, the associated graph will have $MN$ nodes, one representing each pixel. We let $w_{ij}$ be the weight of the edge connecting pixels $i$ and $j$, and define
+Use \li{scipy.misc.imread()} to read an image from a file.
+Matplotlib's \li{plt.imshow()} displays an image array, but it displays arrays of floats between $0$ and $1$ more cleanly than arrays of 8-bit integers.
+Therefore it is customary to scale the array by dividing each entry by $255$ before processing or showing the image.
+In this case, a $0$ still indicates a black pixel, but now a $1$ indicates pure white.
 
- \begin{equation}
- \label{eq:adjacency}
-w_{ij} = \begin{cases} \exp(-\frac{|I(i) - I(j)|}{\sigma_I^2}-\frac{d(i,j)}{\sigma_d^2}) & \mbox{ for $d(i,j) < r$} \\ 0 & \mbox{ otherwise,} \end{cases}
-\end{equation}
-where
-\begin{itemize}
-	\item$d(i,j)$ is the Euclidean distance between pixel $i$ and pixel $j$
-	\item $|I(i) - I(j)|$ is the difference in brightness of pixels $i$ and $j$
-	\item $r$, $\sigma_I$ and $\sigma_d$ are constants that we choose
-\end{itemize}
+\begin{lstlisting}
+>>> from scipy.misc import imread
+>>> from matplotlib import pyplot as plt
 
-With this definition, pixels that are farther apart than radius $r$ will never be connected.
-Pixels within $r$ will be strongly connected if they are similar in brightness ($|I(i) - I(j)|$ is small) and close together ($d(i,j)$ is small).
-Highly contrasting pixels ($|I(i) - I(j)|$ is large) will be weakly connected.
-This gives us a graph with the properties that we intuitively want.
+>>> image = imread("dream.png")     # Read a (very) small image.
+>>> print(image.shape)              # Since the array is 3-dimensional,
+(48, 48, 3)                         # this is a color image.
 
-The adjacency matrix $W$ is $(MN) \times (MN)$ and has $w_{ij}$ as its $ij$th entry.
-$W$ will be sparse as long as $r$ is small.
-Figure \ref{fig:adjacency} shows a visualization of the adjacency matrix for a $4 \times 4$ image when $r=1.2$.
+# The image is read in as integers from 0 to 255.
+>>> print(image.<<min>>(), image.<<max>>(), image.dtype)
+0 254 uint8
 
-\begin{comment}
-Now let us define the adjacency matrix of the graph associated to an image.
-Since an $M \times N$ image has $M \times N$ pixels, the adjacency matrix will be $(M \times N) \times (M \times N)$.
-After choosing a radius $r$ and some scaling factors $\sigma_I$ and $\sigma_d$, we define the adjacency matrix to be $W = (w_{ij})$, where
+# Scale the image to floats between 0 and 1 for Matplotlib.
+>>> scaled = image / 255.
+>>> print(scaled.<<min>>(), scaled.<<max>>(), scaled.dtype)
+0.0 0.996078431373 float64
 
+# Display the scaled image.
+>>> plt.imshow(scaled)
+>>> plt.axis("off")
+>>> plt.show()
+\end{lstlisting}
+
+A color image can be converted to grayscale by averaging the RGB values of each pixel, resulting in a 2-D array called the \emph{brightness} of the image.
+To properly display a grayscale image, specify the keyword argument \li{cmap="gray"} in \li{plt.imshow()}.
+
+\begin{lstlisting}
+# Average the RGB values of a colored image to obtain a grayscale image.
+>>> brightness = scaled.mean(axis=2)        # Average over the last axis.
+>>> print(brightness.shape)                 # Note that the array is now 2-D.
+(48, 48)
+
+# Display the image in gray.
+>>> plt.imshow(brightness, cmap="gray")
+>>> plt.axis("off")
+>>> plt.show()
+\end{lstlisting}
+
+Finally, it is often important in applications to flatten an image matrix into a large 1-D array.
+Use \li{np.ravel()} to convert a $m\times n$ array into a 1-D array with $mn$ entries.
+
+\begin{lstlisting}
+>>> import numpy as np
+>>> A = np.random.randint(0, 10, (3,4))
+>>> print(A)
+[[4 4 7 7]
+ [8 1 2 0]
+ [7 0 0 9]]
+
+# Unravel the 2-D array (by rows) into a 1-D array.
+>>> np.ravel(A)
+array([4, 4, 7, 7, 8, 1, 2, 0, 7, 0, 0, 9])
+
+# Unravel a grayscale image into a 1-D array and check its size.
+>>> M,N = brightness.shape
+>>> flat_brightness = np.ravel(brightness)
+>>> M*N == flat_brightness.size
+<<True>>
+>>> print(flat_brightness.shape)
+(2304,)
+\end{lstlisting}
+
+\begin{problem} % Read and display an image.
+Define a class called \li{ImageSegmenter}.
+\begin{enumerate}
+    \item Write the constructor so that it accepts the name of an image file.
+    Read the image, scale it so that it contains floats between $0$ and $1$, then store it as an attribute.
+    If the image is in color, compute its brightness matrix by averaging the RGB values at each pixel (if it is a grayscale image, the image array itself is the brightness matrix).
+    Flatten the brightness matrix into a 1-D array and store it as an attribute.
+
+    \item Write a method called \li{show_original()} that displays the original image.
+    If the original image is grayscale, remember to use \li{cmap="gray"} as part of \li{plt.imshow()}.
+\end{enumerate}
+\end{problem}
+
+\begin{warn} % Do not use plt.imread() because it is inconsistent.
+Matplotlib's \li{plt.imread()} also reads image files.
+However, this function automatically scales PNG image entries to floats between $0$ and $1$, but it still reads non-PNG image entries as 8-bit integers.
+To avoid this inconsistent behavior, always use \li{scipy.misc.imread()} to read images and divide by $255$ when scaling is desired.
+\end{warn}
+
+\section*{Graph-based Image Segmentation} % ===================================
+
+\emph{Image segmentation} is the process of finding natural boundaries in an image and partitioning the image along those boundaries (see Figure \ref{fig:imgseg-segmentation-example}).
+Though humans can easily pick out portions of an image that ``belong together,'' it takes quite a bit of work to teach a computer to recognize boundaries and sections in an image.
+However, segmenting an image often makes it easier to analyze, so image segmentation is ongoing area of research in computer vision and image processing.
+
+\begin{figure}[H] % Segmentation example.
+    \centering
+    \begin{subfigure}{.32\textwidth}
+        \includegraphics[width=\textwidth]{figures/dream.pdf}
+    \end{subfigure}
+    %
+    \begin{subfigure}{.32\textwidth}
+        \includegraphics[width=\textwidth]{figures/dream_pos.pdf}
+    \end{subfigure}
+    %
+    \begin{subfigure}{.32\textwidth}
+        \includegraphics[width=\textwidth]{figures/dream_neg.pdf}
+    \end{subfigure}
+\caption{The image \texttt{dream.png} and its segments.}
+\label{fig:imgseg-segmentation-example}
+\end{figure}
+
+There are many ways to approach image segmentation.
+The following algorithm, developed by Jianbo Shi and Jitendra Malik in 2000 \cite{Shi2000}, converts the image to a graph and ``cuts'' it into two connected components.
+
+\subsection*{Constructing the Image Graph} % ----------------------------------
+
+Let $G$ be a graph whose vertices are the $mn$ pixels of an $m\times n$ image (either grayscale or color).
+% That is, vertex $i$ in $G$ represents the pixel at index $i$ when the image is flattened to a vector with $mn$ entries.
+Each vertex $i$ has a brightness $B(i)$, the grayscale or average RGB value of the pixel, as well as a coordinate location $X(i)$, the indices of the pixel in the original image array.
+
+Define $w_{ij}$, the weight of the edge between pixels $i$ and $j$, by
 \begin{equation}
-\label{eq:adjacency}
-w_{ij} = \begin{cases} \exp(-\frac{|I(i) - I(j)|}{\sigma_I^2}-\frac{d(i,j)}{\sigma_d^2}) & \mbox{ for $d(i,j) < r$} \\ 0 & \mbox{ otherwise,} \end{cases}
+\label{eq:imgseg-edge-weight}
+w_{ij} = \begin{cases}
+\exp\left(-\frac{|B(i) - B(j)|}{\sigma_B^2}-\frac{\|X(i) - X(j)\|}{\sigma_X^2}\right) & \text{if}\ \|X(i) - X(j)\| < r \\ 0 & \text{otherwise,}
+\end{cases}
 \end{equation}
-where
-\begin{itemize}
-	\item$d(i,j)$ is the Euclidean distance between pixel $i$ and pixel $j$.
-	\item $|I(i) - I(j)|$ is the difference in brightness of pixels $i$ and $j$.
-\end{itemize}
+where $r$, $\sigma_B^2$ and $\sigma_X^2$ are constants for tuning the algorithm.
+In this context, $\|\cdot\|$ is the standard \emph{euclidean norm}, meaning that $\|X(i) - X(j)\|$ is the physical distance between vertices $i$ and $j$, measured in pixels.
 
-$W$ will be sparse as long as $r$ is small.
-Figure \ref{fig:adjacency} shows what the adjacency matrix looks like for a $4x4$ image when $r=1.2$.
-\end{comment}
+With this definition for $w_{ij}$, pixels that are farther apart than the radius $r$ are not connected at all in $G$.
+Pixels within $r$ of each other are more strongly connected if they are similar in brightness and close together (the value in the exponential is negative but close to zero).
+On the other hand, highly contrasting pixels where $|B(i) - B(j)|$ is large have weaker connections (the value in the exponential is highly negative).
 
-\begin{figure}
+\begin{figure}[H] % The adjacency matrix. DO NOT DELETE. EVER.
 \begin{tikzpicture}[dot/.style={circle,fill=black,minimum
-	size=4pt,inner sep=0pt,outer sep=-1pt}, >=stealth]
+    size=4pt,inner sep=0pt,outer sep=-1pt}, >=stealth]
 %scale=.85, transform shape,
-
 
 %image
 \draw[step=.75,thick](2.999,0)grid(6,3);
 %numbers 1-16
-\foreach \x in {1,2,3,4}
-	\foreach \y in {4}
-		\node[draw=none, anchor=south west]at(\x*.75+2.6, \y-1.4){\x};
-\foreach \x [evaluate=\x as \r using int(\x+4)]in {1,2,3,4}
-	\foreach \y in {3}
-		\node[draw=none, anchor=south west]at(\x*.75+2.6, \y-1.2){\r};
-\foreach \x [evaluate=\x as \r using int(\x+8)] in {1,2,3,4}
-	\foreach \y in {2}
-		\node[draw=none, anchor=south west]at(\x*.75+2.5, \y-.95){\r};
-\foreach \x [evaluate=\x as \r using int(\x+12)] in {1,2,3,4}
-	\foreach \y in {1}
-		\node[draw=none, anchor=south west]at(\x*.75+2.5, \y-.7){\r};
+\foreach \x in {0,1,2,3}
+    \foreach \y in {4}
+        \node[draw=none, anchor=south west]at(\x*.75+3.25, \y-1.4){\x};
+\foreach \x [evaluate=\x as \r using int(\x+4)]in {0,1,2,3}
+    \foreach \y in {3}
+        \node[draw=none, anchor=south west]at(\x*.75+3.25, \y-1.2){\r};
+\foreach \x [evaluate=\x as \r using int(\x+8)] in {0,1,2,3}
+    \foreach \y in {2}
+        \node[draw=none, anchor=south west]at(\x*.75+3.25, \y-.95){\r};
+\foreach \x [evaluate=\x as \r using int(\x+12)] in {0,1,2,3}
+    \foreach \y in {1}
+        \node[draw=none, anchor=south west]at(\x*.75+3.25, \y-.7){\r};
 
-\node[draw=none](image)at(4.5, -.5){$image$};
-\node[draw=none](flattened)at(7.25,-3){\textit{flattened image}};
-\node[draw=none](adjacency)at(12,-3){\textit{adjacency matrix}};
+\node[draw=none](image)at(4.5, -.5){\emph{image}};
+\node[draw=none](flattened)at(7.25,-3){\emph{flattened image}};
+\node[draw=none](adjacency)at(12,-3){\emph{adjacency matrix} $A$};
 
 %dots within grid
 \foreach \x in {1,2,3,4}
-	\foreach \y in {1,2,3,4}
-		\node[draw, dot]at(\x*.75+2.6,\y*.75-.4){};
+    \foreach \y in {1,2,3,4}
+        \node[draw, dot]at(\x*.75+2.6,\y*.75-.4){};
 
 %color fill
 \foreach \x/\y in {2/3.75, 1.25/3, 2/3, 2.75/3, 2/2.25} {\node[draw, minimum
-	size=.75cm, fill=green!30!black, fill opacity=.25]at(\x+2.118,\y-1.118){};}
+    size=.75cm, fill=green!30!black, fill opacity=.25]at(\x+2.118,\y-1.118){};}
 
 %circle in image
 \node[draw, circle, minimum size=2cm,thick](circle)at(4.13,1.86){};
@@ -483,8 +537,8 @@ Figure \ref{fig:adjacency} shows what the adjacency matrix looks like for a $4x4
 %flattened image
 \draw[step=.5, thick](6.999,-2.5)grid(7.5,5.5);
 \foreach \x in {7}
-	\foreach \y in {1,...,16}
-		\node[draw=none]at(\x+.25,\y*-.5+5.75){\y};
+    \foreach \y in {0,...,15}
+        \node[draw=none]at(\x+.25,\y*-.5+5.25){\y};
 
 \draw[->,thick](6.1, 1.5)--(6.9,1.5);
 
@@ -493,241 +547,212 @@ Figure \ref{fig:adjacency} shows what the adjacency matrix looks like for a $4x4
 %\draw[step=2,thick](7.999,-2.5)grid(16,5.5);
 
 %outside labels
-\foreach \x in {1,5,9,13} {\node[draw=none]at(\x*.5+7.75,5.8){\x};}
-\foreach \y in {1,5,9,13}{\node[draw=none]at(16.3,\y*-.5+5.8){\y};}
+\foreach \x in {0,4,8,12} {\node[draw=none]at(\x*.5+8.25,5.8){\x};}
+\foreach \y in {0,4,8,12}{\node[draw=none]at(16.3,\y*-.5+5.3){\y};}
 
 %shading of boxes
 \foreach \x/\y in {8.5/5.5, 9/5.5, 8.5/5, 9/5, 9.5/5,9/4.5,9.5/4.5,10/4.5,
-	9.5/4, 10/4, 10.5/5.5, 11/5,11.5/4.5, 12/4, 12.5/3.5,
-	13.5/2.5, 14/2, 14.5/1.5, 15/1, 15.5/.5,16/0, 10.5/3.5, 11/3.5, 11/2.5,
-	11.5/2.5,12/2.5, 11.5/2,12/2, 12.5/1.5, 13/1.5, 12.5/1, 13/1,
-	13.5/1,13/.5,13.5/.5,14/.5, 13.5/0,14/0, 14.5/-.5,15/-.5,14.5/-1,
-	15/-1,15.5/-1, 15/-1.5, 15.5/-1.5, 16/-1.5, 15.5/-2, 16/-2, 8.5/3.5,
-	9.5/2.5,10/2,10.5/1.5,11/1,11.5/.5,12/0, 12.5/-.5, 13/-1, 13.5/-1.5, 14/-2}
-	{\node[draw, minimum size=.5cm, fill=black, fill opacity=.25]
-	at(\x-.25,\y-.25){};}
+    9.5/4, 10/4, 10.5/5.5, 11/5,11.5/4.5, 12/4, 12.5/3.5,
+    13.5/2.5, 14/2, 14.5/1.5, 15/1, 15.5/.5,16/0, 10.5/3.5, 11/3.5, 11/2.5,
+    11.5/2.5,12/2.5, 11.5/2,12/2, 12.5/1.5, 13/1.5, 12.5/1, 13/1,
+    13.5/1,13/.5,13.5/.5,14/.5, 13.5/0,14/0, 14.5/-.5,15/-.5,14.5/-1,
+    15/-1,15.5/-1, 15/-1.5, 15.5/-1.5, 16/-1.5, 15.5/-2, 16/-2, 8.5/3.5,
+    9.5/2.5,10/2,10.5/1.5,11/1,11.5/.5,12/0, 12.5/-.5, 13/-1, 13.5/-1.5, 14/-2}
+    {\node[draw, minimum size=.5cm, fill=black, fill opacity=.25]
+    at(\x-.25,\y-.25){};}
 
 %green shaded boxes
 \foreach \x/\y in {9/3,11/3, 11.5/3, 10.5/3, 13/3} {\node
-	[draw, minimum size=.5cm, fill=shadecolor]
-	at(\x-.25,\y-.25){};}
+    [draw, minimum size=.5cm, fill=shadecolor]
+    at(\x-.25,\y-.25){};}
 
-\node[draw=none]at(8.75,2.75){2};
-\node[draw=none]at(10.25,2.75){5};
-\node[draw=none]at(10.75,2.75){6};
-\node[draw=none]at(11.25,2.75){7};
-\node[draw=none]at(12.75,2.75){10};
-
+\node[draw=none]at(8.75,2.75){1};
+\node[draw=none]at(10.25,2.75){4};
+\node[draw=none]at(10.75,2.75){5};
+\node[draw=none]at(11.25,2.75){6};
+\node[draw=none]at(12.75,2.75){9};
 \end{tikzpicture}
 
-\caption{The grid on the left represents a $4\times4$ (or $M \times N$) image with 16 pixels.
-At right is the corresponding $16 \times 16$ (or $(MN) \times (MN)$) adjacency matrix with all nonzero entries shaded.
-For example, in the $6^{th}$ row, entries 2, 5, 6, 7, and 10 are nonzero because those pixels are within radius $r$ of pixel 6 (here $r = 1.2$).}
-%For example, the $6^{th}$ row corresponds to the $6^{th}$ pixel.
-%Within that row, entries are nonzero if they correspond to pixels that are within radius $r$ of pixel 6 ($r = 1.2$ was used here).}
-\label{fig:adjacency}
+\caption{The grid on the left represents a $4\times4$ ($m \times n$) image with $16$ pixels.
+On the right is the corresponding $16 \times 16$ ($mn \times mn$) adjacency matrix with all nonzero entries shaded.
+For example, in row $5$, entries $1$, $4$, $5$, $6$, and $9$ are nonzero because those pixels are within radius $r=1.2$ of pixel $5$.}
+\label{fig:imgseg-adjacency-tikz}
 \end{figure}
 
-
-\subsection*{Computing the Adjacency Matrix}
-We will now write a function to compute the adjacency matrix for a given image.
-%The function will also accept constants \li{radius}, \li{sigma_I}, and \li{sigma_d} to use in \ref{eq:adjacency}.
-The function will accept a filename and constants \li{radius}, \li{sigma_I}, and \li{sigma_d}, and return the adjacency matrix and the diagonal of the corresponding degree matrix.
-
-The basic approach is straightforward.
-For each pixel in the image, compare it to every other pixel, use (\ref{eq:adjacency}) to calculate the weight of the edge between them, and fill in the weight in the adjacency matrix.
-This section will discuss how to implement this efficiently in Python.
-
-First, load an image and convert it to grayscale.
-The included function \li{getImage} helps handle color images.
-It accepts a filename and returns a 3-D representation of the image and a 2-D representation of the brightness values of the image.
-
-It will be useful to flatten the $M \times N$ image.
-This converts it into a 1-D array of pixels of length $MN$, essentially giving each pixel an index.
-We can use \li{img.flatten} to flatten the array \li{img}.
-\begin{lstlisting}
->>> A = np.array([[1,2],[3,4]])
->>> A.flatten()
-array([1,2,3,4])
-\end{lstlisting}
-
-Next, initialize empty adjacency and degree matrices to fill in.
-As in Figure \ref{fig:adjacency}, the adjacency matrix will be sparse, so initialize it as a sparse matrix \li{W}.
-Use the sparse matrix type \li{lil_matrix}, which is optimized for filling in a matrix one entry at a time.
-Since we only need to store the diagonal of the degree matrix, initialize this diagonal as a regular 1-dimensional NumPy array \li{D}.
-
-We now fill in \li{W} according to our definition in Equation \ref{eq:adjacency}.
-Each pixel in the image corresponds to one row in \li{W}.
-For each pixel:
-\begin{itemize}
-\item Find its neighbors (the pixels in the image that are within distance $r$ of it)
-\item Use \ref{eq:adjacency} to calculate the weights connecting the pixel to each of its neighbors
-\item Fill in these weights in \li{W}, leaving the rest of the values in the row as zeros. \footnote{Note that \li{W} will be a symmetric matrix. We could potentially speed up this algorithm by taking advantage of this fact.}
-\end{itemize}
-The sum of the entries of a row in \li{W} will be the corresponding entry in \li{D}.
-
-You may choose to use the provided helper function \li{getNeighbors} to find the neighbors of a given pixel.
-The function accepts the index of a pixel in the flattened image, along with a value for $r$ and the original image dimensions.
-It returns two flat arrays: \li{indices} and \li{distances}.
-The array \li{indices} contains the indices of the neighbor pixels within distance $r$ of the input pixel.
-The array \li{distances} contains the corresponding distances of those pixels from the input pixel.
-%According to (\ref{eq:adjacency}), the array \li{indices} contains exactly the indices of the nonzero entries of the current row of \li{W}.
-Using Figure \ref{fig:adjacency} as an example, with the inputs 6, 1.2, 4, and 4 the outputs would be \li{indices = array([2,5,6,7,10])} and \li{distances = array([1,1,0,1,1])}.
-Try running the function with different inputs to build intuition about what it does.
-
-Finally, convert \li{W} to the sparse matrix type \li{csc_matrix}, which is faster for computations. Then return \li{W} and \li{D}.
-
-\begin{problem}
-Write the function \li{adjacency} described in this section.
-Accept an image a filename and constants \li{radius}, \li{sigma_I}, and \li{sigma_d}.
-Return the corresponding sparse adjacency matrix \li{W} and the diagonal of the degree matrix \li{D}.
-Use (\ref{eq:adjacency}) to compute the weights in the adjacency matrix.
-For speed, try to compute an entire row of \li{W} at once, instead of filling in \li{W} entry by entry.
-
-
-%Notice that for each pixel you can save time by only checking the pixels $r$ rows and columns away.
-%For that you'll have to handle the pixels on the edges and corners of the image carefully.
-%I gave them new helper code, which abstracts away the edge cases.
-\label{prob:adjacency_dream}
-\end{problem}
-
-\subsection*{Minimizing the `Cut'}
-As stated earlier, the goal is to split the image into two segments, while minimizing the weight of the edges that are `cut' in the corresponding graph.
-Let $L$ be the Laplacian of the adjacency matrix defined in \ref{eq:adjacency} and let $D$ be the degree matrix.
-Shi and Malik proved that using the second smallest eigenvalue of $D^{-1/2}LD^{-1/2}$, we can minimize the `cut' .
-Both $D$ and $L$ will be symmetric matrices, so all eigenvalues of $D^{-1/2}LD^{-1/2}$ will be real, therefore the second smallest one is well-defined.
-(Note that $D^{-1/2}$ refers not to matrix, but element-wise, exponentiation.)
-
-The eigenvector associated to the second smallest eigenvalue is the key to segmenting the image.
-This eigenvector will have $MN$ entries.
-Shi and Malik proved that the indices of its \emph{positive} entries are the indices of the pixels in the flattened image which belong in one segment.
-Likewise, the indices of its \emph{negative} entries are the indices of the pixels which belong in the other segment.
-
-To compute the segments, reshape this eigenvector as an $M \times N$ array, and set the positive entries to True and the negative entries to False.
-We can multiply this True-False mask entry-wise by the image.
-This zeros out the pixels in the image corresponding to the \li{False} entries in the mask, without affecting the pixels corresponding to \li{True} entries.
-We can negate the mask using the tilde operator, which lets us compute the other segment of the image.
-Finally we return the two segments.
-
-\begin{comment}
-Here is the definition of a function that will segment an image.
-\begin{lstlisting}
-1. def segment(img):
-\end{lstlisting}
-
-Use the function \li{adjacency} from Problem \ref{prob:adjacency_dream} to compute the adjacency matrix and the diagonal of the degree matrices of the image.
-\begin{lstlisting}
-2.     W, D = adjacency(img)
-\end{lstlisting}
-
-Next we create sparse matrices corresponding to $D$ and $D^{-1/2}$ in Shi and Malik's algorithm. Remember that the sparse matrix type \li{csc_matrix} is best for computations.
-\begin{lstlisting}
-3.     Dsq = # calculate the square root of D
-4.     D_matrix = spar.spdiags(D, 0, D.shape[1], D.shape[1], format = 'csc')
-5.     Dsq_matrix = # create a sparse matrix with diagonal Dsq
-\end{lstlisting}
-Now it is simple to compute $D^{-1/2}LD^{-1/2}$. We call this matrix \li{P}.
-\begin{lstlisting}
-6.     L = # compute the Laplacian
-7.     P = # compute D^{-1/2}*L*D^{-1/2} as in Shi and Malik's algorithm
-\end{lstlisting}
-According to Shi and Malik, we need the eigenvector corresponding to the second smallest eigenvalue of \li{P}. We compute this with the \li{eigs()} method of the \li{scipy.sparse.linalg} module. We set the parameter \li{which='SR'} in the function call in order to compute the eigenvalues with Smallest Real part and their corresponding eigenvectors. The parameter \li{k} in the function call can be used to specify how many eigenvalues the method computes.
-\begin{lstlisting}
-8.     e = # compute the two smallest eigenvalues of P and their eigenvectors
-9.     eigvec = # eigenvector of the second smallest eigenvalue
-\end{lstlisting}
-
-Next we create a mask that is \li{True} wherever \li{eigvec} is positive and reshape it to be the size of \li{img}.
-\begin{lstlisting}
-10.    mask = # create mask
-\end{lstlisting}
-
-\begin{lstlisting}
-11.    pos = # compute positive segment
-12.    neg = # compute negative segment
-13.    return pos, neg
-\end{lstlisting}
-
-\end{comment}
-
-\begin{problem} Write the function \li{segment} to segment an image.
-The function should accept an image filename and return both of the segments.
-You should call the code you wrote in Problem \ref{prob:adjacency_dream}.
-Use sparse matrices where possible.
-
-
-Test on the image \li{dream.pdf}.
-Your segments should look like the segments in Figure \ref{fig:dream_solution} (the original image is on the left).
-
-Hints:
+Since there are $mn$ total pixels, the adjacency matrix $A$ of $G$ with entries $w_{ij}$ is $mn\times mn$.
+With a relatively small radius $r$, $A$ is relatively sparse, and should therefore be constructed and stored as a sparse matrix.
+The degree matrix $D$ is diagonal, so it can be stored as a regular 1-dimensional NumPy array.
+The procedure for constructing these matrices can be summarized in just a few steps.
 \begin{enumerate}
-\item After defining $D^{-1/2}$, convert $D$ and $D^{-1/2}$ into sparse matrices using \li{scipy.sparse.spdiags}.
-\item Since are now dealing with sparse instead of dense matrices, you shouldn't use your solution to Problem \ref{prob:laplacian} to calculate the Laplacian.
-
-\item Multiply sparse matrices with \li{A.dot(B)}.
-
-\item Use \li{scipy.sparse.eigsh} to calculate the eigenvector. This is a sparse eigenvalue solver optimized for symmetric matrices.
-Set the keyword \li{which = "SM"} to return the smallest eigenvalues.
-
-\item The provided function \li{displayPosNeg} can be used to plot your images.
-
+    \item Initialize $A$ as a sparse $mn\times mn$ matrix and $D$ as a vector with $mn$ entries.
+    \item For each vertex $i$ ($i=0,1,\ldots,mn-1$),
+    \begin{enumerate}
+        \item Find the set of all vertices $J_i$ such that $\|X(i) - X(j)\| < r$ for each $j\in J_i$.
+        For example, in Figure \ref{fig:imgseg-adjacency-tikz} $i=5$ and $J_i = \{1,4,5,6,9\}$.
+        \label{step:imgseg-neighborhood}
+        \item Calculate the weights $w_{ij}$ for each $j\in J_i$ according to (\ref{eq:imgseg-edge-weight}) and store them in $A$.
+        \item Set the $i$th element of $D$ to be the sum of the weights, $d_i = \sum_{j\in J_i}w_{ij}$.
+    \end{enumerate}
 \end{enumerate}
 
+The most difficult part to implement efficiently is step \ref{step:imgseg-neighborhood}, computing the neighborhood $J_i$ of the current pixel $i$.
+However, the computation only requires knowing the current index $i$, the radius $r$, and the height and width $m$ and $n$ of the original image.
+The following function takes advantage of this fact and returns (as NumPy arrays) both $J_i$ and the distances $\|X(i) - X(j)\|$ for each $j\in J_i$.
+
+% get_neighbors() helper function.
+\begin{lstlisting}
+def get_neighbors(index, radius, height, width):
+    """Calculate the flattened indices of the pixels that are within the given
+    distance of a central pixel, and their distances from the central pixel.
+
+    Parameters:
+        index (int): The index of a central pixel in a flattened image array
+            with original shape (radius, height).
+        radius (float): Radius of the neighborhood around the central pixel.
+        height (int): The height of the original image in pixels.
+        width (int): The width of the original image in pixels.
+
+    Returns:
+        (1-D ndarray): the indices of the pixels that are within the specified
+            radius of the central pixel, with respect to the flattened image.
+        (1-D ndarray): the euclidean distances from the neighborhood pixels to
+            the central pixel.
+    """
+    # Calculate the original 2-D coordinates of the central pixel.
+    row, col = index // width, index % width
+
+    # Get a grid of possible candidates that are close to the central pixel.
+    r = int(radius)
+    x = np.arange(max(col - r, 0), min(col + r + 1, width))
+    y = np.arange(max(row - r, 0), min(row + r + 1, height))
+    X, Y = np.meshgrid(x, y)
+
+    # Determine which candidates are within the given radius of the pixel.
+    R = np.sqrt(((X - col)**2 + (Y - row)**2))
+    mask = R < radius
+    return (X[mask] + Y[mask]*width).astype(np.<<int>>), R[mask]
+\end{lstlisting}
+
+To see how this works, consider Figure \ref{fig:imgseg-adjacency-tikz} where the original image is $4\times 4$ and the goal is to compute the neighborhood of the pixel $i = 5$.
+
+\begin{lstlisting}
+# Compute the neighbors and corresponding distances from the figure.
+>>> neighbors_1, distances_1 = get_neighbors(5, 1.2, 4, 4)
+>>> print(neighbors_1, distances_1, sep='\n')
+[1 4 5 6 9]
+[ 1.  1.  0.  1.  1.]
+
+# Increasing the radius from 1.2 to 1.5 results in more neighbors.
+>>> neighbors_2, distances_2 = get_neighbors(5, 1.5, 4, 4)
+>>> print(neighbors_2, distances_2, sep='\n')
+[ 0  1  2  4  5  6  8  9 10]
+[ 1.41421356  1.          1.41421356  1.          0.          1.
+  1.41421356  1.          1.41421356]
+\end{lstlisting}
+
+\begin{problem}
+Write a method for the \li{ImageSegmenter} class that accepts floats $r$ defaulting to $5$, $\sigma_B^2$ defaulting to $.02$, and $\sigma_X^2$ defaulting to $3$.
+Compute the adjacency matrix $A$ and the degree matrix $D$ according to the weights specified in (\ref{eq:imgseg-edge-weight}).
+
+Initialize $A$ as a \li{scipy.sparse.lil_matrix}, which is optimized for incremental construction.
+Fill in the nonzero elements of $A$ one row at a time.
+Use \li{get_neighbors()} at each step to help compute the weights.
+\\(Hint: Try to compute and store an entire row of weights at a time.
+What does the command \li{A[5, np.array([1, 4, 5, 6, 9])] = weights} do?)
+
+Finally, convert $A$ to a \li{scipy.sparse.csc_matrix}, which is faster for computations.
+Then return $A$ and $D$.
+\label{prob:imgseg-compute-adjacency}
 \end{problem}
 
-\begin{figure}
-\centering
-    \centering
-    \begin{subfigure}{0.31\textwidth}
-        \includegraphics[width=\textwidth]{figures/RegDream.pdf}
-    \end{subfigure}
-    \hspace*{\fill}
-    \begin{subfigure}{0.31\textwidth}
-        \includegraphics[width=\textwidth]{figures/NegDream.pdf}
-    \end{subfigure}
-    \hspace*{\fill}
-    \begin{subfigure}{0.31\textwidth}
-        \includegraphics[width=\textwidth]{figures/PosDream.pdf}
-    \end{subfigure}
-\caption{Segments of \li{dream.pdf}}
-\label{fig:dream_solution}
-\end{figure}
+\subsection*{Segmenting the Graph} % ------------------------------------------
 
-\begin{comment} %Old stuff from middle of lab
-Here is the function definition, which includes some default values for the constants.
-\begin{lstlisting}
-1.	def adjacency(img, radius=5.0, sigma_I = .15, sigma_d = 1.7):
-\end{lstlisting}
-\begin{lstlisting}
-4.     W = spar.lil_matrix((flat_img.size, flat_img.size), dtype=float)
-5.     D = np.zeros((1, flat_img.size))
-\end{lstlisting}
+With an image represented as a graph $G$, the goal is to now split $G$ into two distinct connected components by removing edges from the existing graph.
+This is called \emph{cutting} $G$, and the set of edges that are removed is called the \emph{cut}.
+The cut with the least weight will best segment the image.
 
-Later, our function will iterate through the rows of the adjacency matrix, initializing one row at a time. Each row corresponds to a pixel of the original image. Thus, we begin by flattening the image (see Figure \ref{fig:adjacency}). We also store the dimensions of \li{img} for later.
-\begin{lstlisting}
-2.     flat_img = img.flatten()
-3.     height, width = img.shape
-\end{lstlisting}
+Let $D$ be the degree matrix and $L$ be the Laplacian matrix of $G$.
+Shi and Malik proved that the eigenvector corresponding to the second smallest\footnote{Both $D$ and $L$ are symmetric matrices, so all eigenvalues of $D^{-1/2}LD^{-1/2}$ are real, and therefore ``the second smallest one'' is well-defined.} eigenvalue of $D^{-1/2}LD^{-1/2}$ can be used to minimize the cut: the indices of its positive entries are the indices of the pixels in the flattened image which belong to one segment, and the indices of its negative entries are the indices of the pixels which belong to the other segment.
+In this context $D^{-1/2}$ refers to element-wise exponentiation, so the $(i,j)$th entry of $D^{-1/2}$ is $1/\sqrt{d_{ij}}$.
+
+Because $A$ is $mn\times mn$, the desired eigenvector has $mn$ entries.
+Reshaping the eigenvector to be $m \times n$ allows it to align with the original image.
+Use the reshaped eigenvector to create a boolean mask that indexes one of the segments.
+That is, construct a $m\times n$ array where the entries belonging to one segment are \li{True} and the other entries are \li{False}.
 
 \begin{lstlisting}
-6.     for pixel in xrange(flat_img.size):
-7.         indices, distances = getNeighbors(pixel, radius, height, width)
-8.         weights = # weights[j] should be W[pixel, indices[j]]
-9.         W[pixel, indices] = weights
-10.        D[0,pixel] = weights.sum()
-\end{lstlisting}
-\end{comment}
+>>> x = np.arange(-5,5).reshape((5,2)).T
+>>> print(x)
+[[-5 -3 -1  1  3]
+ [-4 -2  0  2  4]]
 
-\begin{comment}
+# Construct a boolean mask of x describing which entries of x are positive.
+>>> mask = x > 0
+>>> print(mask)
+<<[[False False False  True  True]
+ [False False False  True  True]]>>
+
+# Use the mask to zero out all of the nonpositive entries of x.
+>>> x * mask
+array([[0, 0, 0, 1, 3],
+       [0, 0, 0, 2, 4]])
+\end{lstlisting}
+
+\begin{problem}
+Write a method for the \li{ImageSegmenter} class that accepts an adjacency matrix $A$ as a \li{scipy.sparse.csc_matrix} and a degree matrix $D$ as a 1-D NumPy array.
+Construct an $m\times n$ boolean mask describing the segments of the image.
+\begin{enumerate}
+    \item Compute the Laplacian $L$ with \li{scipy.sparse.csgraph.laplacian()} or by converting $D$ to a sparse diagonal matrix and computing $L = D - A$ (do not use your function from Problem \ref{prob:imgseg-laplacian} unless it works correctly and efficiently for sparse matrices).
+
+    \item Construct $D^{-1/2}$ as a sparse diagonal matrix using $D$ and \li{scipy.sparse.diags()}, then compute $D^{-1/2}LD^{-1/2}$.
+    Use \li{@} or the \li{dot()} method of the sparse matrix for the matrix multiplication, \textbf{not} \li{np.dot()}.
+
+    \item Use \li{scipy.spase.linalg.eigsh()} to compute the eigenvector corresponding to the second-smallest eigenvalue of $D^{-1/2} L D^{-1/2}$.
+    Set the keyword arguments \li{which="SM"} and \li{k=2} to compute only the two smallest eigenvalues and their eigenvectors.
+
+    \item Reshape the eigenvector as a $m\times n$ matrix and use this matrix to construct the desired boolean mask.
+    Return the mask.
+\end{enumerate}
+\label{prob:imgseg-compute-mask}
+\end{problem}
+
+Multiplying the boolean mask component-wise by the original image array produces the \emph{positive segment}, a copy of the original image where the entries that aren't in the segment are set to $0$.
+Computing the \emph{negative segment} requires inverting the boolean mask, then multiplying the inverted mask with the original image array.
+Finally, if the original image is a $m \times n \times 3$ color image, the mask must be stacked into a $m \times n \times 3$ array to facilitate entry-wise multiplication.
+
 \begin{lstlisting}
-11.    W = W.tocsc()
-12.    return W, D
+>>> mask = np.arange(-5,5).reshape((5,2)).T > 0
+>>> print(mask)
+<<[[False False False  True  True]
+ [False False False  True  True]]>>
+
+# The mask can be negated with the tilde operator ~.
+>>> print(~mask)
+<<[[ True  True  True False False]
+ [ True  True  True False False]]>>
+
+# Stack a mask into a 3-D array with np.dstack().
+>>> print(mask.shape, np.dstack((mask, mask, mask)).shape)
+(2, 5) (2, 5, 3)
 \end{lstlisting}
-\end{comment}
 
-\begin{comment}
-\section*{Appendix: helper code for Problem \ref{prob:adjacency_dream}}
-Here is the function \li{getNeighbors} which you can use to compute the adjacency matrix of an image, as in Problem \ref{prob:adjacency_dream}.
+\begin{problem}
+Write a method for the \li{ImageSegmenter} class that accepts floats $r$, $\sigma_B^2$, and $\sigma_X^2$, with the same defaults as in Problem \ref{prob:imgseg-compute-adjacency}.
+Call your methods from Problems \ref{prob:imgseg-compute-adjacency} and \ref{prob:imgseg-compute-mask} to obtain the segmentation mask.
+Plot the original image, the positive segment, and the negative segment side-by-side in subplots.
+Your method should work for grayscale or color images.
 
-\lstinputlisting[style=fromfile]{getNeighbors.py}
+Use \texttt{dream.png} as a test file and compare your results to Figure \ref{fig:imgseg-segmentation-example}.
+\end{problem}
+
+\begin{comment} % TODO
+
+\newpage
+
+\section*{Additional Material} % ==============================================
+
+\subsection*{Products of Adjacency Matrices} % --------------------------------
+
+\subsection*{Other Methods for Image Segmentation} % --------------------------
+
 \end{comment}

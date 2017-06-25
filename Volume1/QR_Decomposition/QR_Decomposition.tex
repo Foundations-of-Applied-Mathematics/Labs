@@ -1,21 +1,19 @@
 \lab{The QR Decomposition}{The QR Decomposition}
 \label{lab:QRdecomp}
-\def\lvl#1{\multicolumn{1}{|c}{#1}} % Left  Vertical Line in array cell.
-\def\rvl#1{\multicolumn{1}{c|}{#1}} % Right Vertical Line in array cell.
 \objective{The QR decomposition is a fundamentally important matrix factorization.
 It is straightforward to implement, is numerically stable, and provides the basis of several important algorithms.
 In this lab, we explore several ways to produce the QR decomposition and implement a few immediate applications.
-\\ \indent We restrict our discussion to real matrices.
-However, the results and algorithms presented here can be extended to complex matrices by replacing ``transpose'' with ``hermitian conjugate'' and ``symmetric matrix'' with ``hermitian matrix.''
+% \\ \indent We restrict our discussion to real matrices.
+% However, the results and algorithms presented here can be extended to complex matrices by replacing ``transpose'' with ``hermitian conjugate'' and ``symmetric matrix'' with ``hermitian matrix.''
 }
 
 The QR decomposition of a matrix $A$ is a factorization $A=QR$, where $Q$ is  has orthonormal columns and $R$ is upper triangular.
 Every $m \times n$ matrix $A$ of rank $n \le m$ has a QR decomposition, with two main forms.
 %
 \begin{itemize}
-    \item \textbf{Reduced QR}: $Q$ is $m \times n$, $R$ is $n \times n$, and the columns of $Q$ $\{\q_j\}_{j=1}^n$ form an orthonormal basis for the column space of $A$.
+    \item \textbf{Reduced QR}: $Q$ is $m \times n$, $R$ is $n \times n$, and the columns $\{\q_j\}_{j=1}^n$ of $Q$ form an orthonormal basis for the column space of $A$.
     \item \textbf{Full QR}: $Q$ is $m \times m$ and $R$ is $m \times n$.
-    In this case, the columns of $Q$ $\{\q_j\}_{j=1}^m$ form an orthonormal basis for all of $\mathbb{F}^m$, and the last $m - n$ rows of $R$ only contain zeros.
+    In this case, the columns $\{\q_j\}_{j=1}^m$ of $Q$ form an orthonormal basis for all of $\mathbb{F}^m$, and the last $m - n$ rows of $R$ only contain zeros.
     If $m = n$, this is the same as the reduced factorization.
 \end{itemize}
 We distinguish between these two forms by writing $\widehat{Q}$ and $\widehat{R}$ for the reduced decomposition and $Q$ and $R$ for the full decomposition.
@@ -66,13 +64,13 @@ Define
 &&
 \q_{k} = \frac{\x_k - \p_{k-1}}{\|\x_k - \p_{k-1}\|},\quad k=2,\ \ldots,\ n,
 \\ \\
-\p_0 = \0,\ \text{and}
+\p_0 = \0,\quad \text{and}
 &&
 \p_{k-1} = \sum_{j=1}^{k-1} \langle \q_j, \x_k\rangle \q_j,\quad k=2,\ \ldots,\ n.
 \end{align*}
 
 Each $\p_{k-1}$ is the projection of $\x_k$ onto the span of $\{\q_j\}_{j=1}^{k-1}$, so $\q_k' = \x_k - \p_{k-1}$ is the residual vector of the projection.
-Thus $\q_k'$ is orthogonal to each of the $\{\q_j\}_{j=1}^{k-1}$.
+Thus $\q_k'$ is orthogonal to each of the vectors in $\{\q_j\}_{j=1}^{k-1}$.
 Therefore, normalizing each $\q_k'$ produces an orthonormal set $\{\q_j\}_{j=1}^n$.
 
 To construct the reduced QR decomposition, let $\widehat{Q}$ be the matrix with columns $\{\q_j\}_{j=1}^n$, and let $\widehat{R}$ be the upper triangular matrix with the following entries:
@@ -103,7 +101,7 @@ Proceed by making each of $\{\x_j\}_{j=3}^n$ orthogonal to $\q_2$:
 \[\x_k = \x_k - \langle \q_2,\x_{k} \rangle \q_2,\quad k=3,\ldots,n.\]
 Since each of these new vectors is a linear combination of vectors orthogonal to $\q_1$, they are orthogonal to $\q_1$ as well.
 Continuing this process results in the desired orthonormal set $\{\q_j\}_{j=1}^n$.
-The entire modified Gram-Schmidt algorithm is described below in Algorithm \ref{Alg:modified-Gram-Schmidt}.
+The entire modified Gram-Schmidt algorithm is described below. % in Algorithm \ref{Alg:modified-Gram-Schmidt}.
 
 \begin{algorithm}[H]
 \begin{algorithmic}[1]
@@ -139,7 +137,7 @@ Use Algorithm \ref{Alg:modified-Gram-Schmidt} to compute the reduced QR decompos
 Consider the following tips for implementing the algorithm.
 \begin{itemize}
 
-\item In Python, the operation \li{a = a + b} can also be written as \li{a += b}.
+% \item In Python, the operation \li{a = a + b} can also be written as \li{a += b}.
 
 \item Use \li{scipy.linalg.norm()} to compute the norm of the vector in step \ref{step:mgs-normalize}.
 
@@ -149,7 +147,7 @@ Consider the following tips for implementing the algorithm.
 
 To test your function, generate test cases with NumPy's \li{np.random} module.
 Verify that $R$ is upper triangular, $Q$ is orthonormal, and $QR = A$.
-You may also want to compare your results to SciPy's QR factorization algorithm.
+You may also want to compare your results to SciPy's QR factorization routine, \li{scpiy.linalg.qr()}.
 
 \begin{lstlisting}
 >>> import numpy as np
@@ -158,16 +156,16 @@ You may also want to compare your results to SciPy's QR factorization algorithm.
 # Generate a random matrix and get its reduced QR decomposition via SciPy.
 >>> A = np.random.random((6,4))
 >>> Q,R = la.qr(A, mode="economic") # Use mode="economic" for reduced QR.
->>> print A.shape, Q.shape, R.shape
+>>> print(A.shape, Q.shape, R.shape)
 (6,4) (6,4) (4,4)
 
 # Verify that R is upper triangular, Q is orthonormal, and QR = A.
 >>> np.allclose(np.triu(R), R)
-True
->>> np.allclose(np.dot(Q.T, Q), np.identity(4))
-True
->>> np.allclose(np.dot(Q, R), A)
-True
+<<True>>
+>>> np.allclose(Q.T @ Q, np.identity(4))
+<<True>>
+>>> np.allclose(Q @ R, A)
+<<True>>
 \end{lstlisting}
 \label{prob:qr-via-mgs}
 \end{problem}
@@ -182,16 +180,21 @@ Let $A$ be $n \times n$.
 Then $Q$ and $R$ are both $n \times n$ as well.%
 \footnote{An $n \times n$ orthonormal matrix is sometimes called \emph{unitary} in other texts.}
 Since $Q$ is orthonormal and $R$ is upper-triangular,
-\begin{align*} \det(Q) = \pm 1 && \det(R) = \prod_{i=1}^n r_{i,i} \end{align*}
-Then since $\det(AB) = \det(A)\det(B)$, we have the following:
-\[\abs{\det(A)} = \abs{\det(QR)} = \abs{\det(Q)\det(R)} = \abs{\prod_{k=1}^n r_{kk}}\]
+\[\det(Q) = \pm 1 \qquad\text{and}\qquad \det(R) = \prod_{i=1}^n r_{i,i}.\]
+Then since $\det(AB) = \det(A)\det(B)$,
+\begin{equation}
+\label{eq:qr-determinant}
+\abs{\det(A)} = \abs{\det(QR)} = \abs{\det(Q)\det(R)} = \abs{\det(Q)}\abs{\det(R)} = \abs{\prod_{i=1}^n r_{i,i}}.
+\end{equation}
 
 \begin{problem} % Use the QR decomposition to calculate |det(A)|.
-Write a function that accepts an invertible $n \times n$ matrix $A$.
-Use the QR decomposition of $A$ to calculate $\abs{\det(A)}$.
-
+Write a function that accepts an invertible matrix $A$.
+Use the QR decomposition of $A$ and (\ref{eq:qr-determinant}) to calculate $\abs{\det(A)}$.
 You may use your QR decomposition algorithm from Problem \ref{prob:qr-via-mgs} or SciPy's QR routine.
 Can you implement this function in a single line?
+\\(Hint: \li{np.diag()} and \li{np.prod()} may be useful.)
+
+Check your answer against \li{la.det()}, which calculates the determinant.
 \end{problem}
 
 \subsection*{Linear Systems} % ------------------------------------------------
@@ -202,7 +205,7 @@ However, the QR decomposition avoids the potential numerical issues that come wi
 Since $Q$ is orthonormal, $Q^{-1}= Q\trp$.
 Therefore, solving $A\x = \b$ is equivalent to solving the system $R\x = Q\trp\b$.
 Since $R$ is upper-triangular, $R\x = Q\trp\b$ can be solved quickly with back substitution.%
-\footnote{See Problem 3 of the Linear Systems lab for a refresher on back substitution.}
+\footnote{See Problem 3 of the Linear Systems lab for details on back substitution.}
 
 \begin{problem} % Use the QR decomposition to solve Ax = b quickly.
 Write a function that accepts an invertible $n \times n$ matrix $A$ and a vector $\b$ of length $n$.
@@ -290,7 +293,7 @@ Since $H_{\v}\trp H_{\v} = I$, Householder transformations are orthonormal.
     % \node[draw=none](vandx)at(4.0,1.5){$\x -
     % \left \langle \dfrac{\v}{\|\v\|}, \x \right \rangle \dfrac{\v}{\|\v\|}$};
 \end{tikzpicture}
-\caption{The vector $\v$ defines the orthogonal complement $\v^\perp$.
+\caption{The vector $\v$ defines the orthogonal complement $\v^\perp$, which in this case is a line.
 Applying the Householder transformation $H_{\mathbf{v}}$ to $\x$ reflects $\x$ across $\v^\perp$.}
 \label{fig:Householder_reflector}
 \end{figure}
@@ -418,15 +421,15 @@ Use \li{np.outer()} instead of \li{np.dot()} to handle this correctly.
 
 \end{itemize}
 
-As with Problem \ref{prob:qr-via-mgs}, use NumPy and SciPy to generate test cases and validate your function.
+Use NumPy and SciPy to generate test cases and validate your function.
 
 \begin{lstlisting}
 >>> A = np.random.random((5, 3))
 >>> Q,R = la.qr(A)                  # Get the full QR decomposition.
->>> print A.shape, Q.shape, R.shape
+>>> print(A.shape, Q.shape, R.shape)
 (5,3) (5,5) (5,3)
->>> np.allclose(Q.dot(R), A)
-True
+>>> np.allclose(Q @ R, A)
+<<True>>
 \end{lstlisting}
 \label{prob:qr-via-hessenberg}
 \end{problem}
@@ -554,9 +557,9 @@ Note how similar it is to Algorithm \ref{Alg:QR-via-Householder}.
 
 \begin{problem} % Reduce a matrix to upper Hessenberg form.
 Write a function that accepts a nonsingular $n \times n$ matrix $A$.
-Use Algorithm \ref{Alg:Upper-Hessenberg-Form} to compute its upper Hessenberg form, upper Hessenberg $H$ and orthogonal $Q$ satisfying $A = QHQ\trp$.
+Use Algorithm \ref{Alg:Upper-Hessenberg-Form} to compute the upper Hessenberg $H$ and orthogonal $Q$ satisfying $A = QHQ\trp$.
 
-Test your function and compare your results to \li{scipy.linalg.hessenberg()}.
+Compare your results to \li{scipy.linalg.hessenberg()}.
 
 \begin{lstlisting}
 # Generate a random matrix and get its upper Hessenberg form via SciPy.
@@ -565,18 +568,12 @@ Test your function and compare your results to \li{scipy.linalg.hessenberg()}.
 
 # Verify that H has all zeros below the first subdiagonal and QHQ^T = A.
 >>> np.allclose(np.triu(H, -1), H)
-True
->>> np.allclose(np.dot(np.dot(Q, H), Q.T), A)
-True
+<<True>>
+>>> np.allclose(Q @ H @ Q.T, A)
+<<True>>
 \end{lstlisting}
 \label{prob:hessenberg-via-householder}
 \end{problem}
-
-\begin{info}
-When $A$ is symmetric, its upper Hessenberg form is a tridiagonal matrix.
-This is because the $Q_k$'s zero out everything below the first subdiagonal of $A$ and the $Q_k\trp$'s zero out everything to the right of the first superdiagonal.
-Tridiagonal matrices make computations fast, so the computing the Hessenberg form of a symmetric matrix is very useful.
-\end{info}
 
 \newpage
 
@@ -636,7 +633,7 @@ sign = lambda x: 1 if np.real(x) >= 0 else -1
 The LU decomposition can be improved by employing Gaussian elimination with partial pivoting, where the rows of $A$ are strategically permuted at each iteration.
 The QR factorization can be similarly improved by permuting the columns of $A$ at each iteration.
 The result is the factorization $AP = QR$, where $P$ is a permutation matrix that encodes the column swaps.
-SciPy's \li{scipy.linalg.qr()} can compute the pivoted QR decomposition.
+To compute the pivoted QR decomposition with \li{scipy.linalg.qr()}, set the keyword \li{pivoting} to \li{True}.
 
 \begin{lstlisting}
 # Get the decomposition AP = QR for a random matrix A.
@@ -645,8 +642,8 @@ SciPy's \li{scipy.linalg.qr()} can compute the pivoted QR decomposition.
 
 # P is returned as a 1-D array that encodes column ordering,
 # so A can be reconstructed with fancy indexing.
->>> np.allclose(Q.dot(R), A[:,P])
-True
+>>> np.allclose(Q @ R, A[:,P])
+<<True>>
 \end{lstlisting}
 
 \begin{comment}
@@ -662,16 +659,16 @@ Consider the following example.
 >>> R  = np.triu(np.random.normal(size=(500,500)))
 
 # Calculate A = QR, noting that Q and R are the EXACT QR decomposition of A.
->>> A = np.dot(Q,R)
+>>> A = Q @ R
 
 # Use SciPy to rediscover the QR decomposition of A.
 >>> Q1, R1 = la.qr(A)
 
 # Compare the true Q and R to the computed Q1 and R1.
->>> print la.norm(Q1-Q, <<ord>>=np.inf) / la.norm(Q, <<ord>>=np.inf)
+>>> print(la.norm(Q1-Q, <<ord>>=np.inf) / la.norm(Q, <<ord>>=np.inf))
 1.21169651649
 
->>> print la.norm(R1-R, <<ord>>=np.inf) / la.norm(R, <<ord>>=np.inf)
+>>> print(la.norm(R1-R, <<ord>>=np.inf) / la.norm(R, <<ord>>=np.inf))
 1.72312747194
 \end{lstlisting}
 
@@ -681,7 +678,7 @@ These errors in $Q_1$ and $R_1$ are called \emph{forward errors}.
 Even so, miraculously, the product $Q_1 R_1$ is very close $A$.
 
 \begin{lstlisting}
->>> A1 = Q1.dot(R1)
+>>> A1 = Q1 @ R1
 >>> la.norm(A1 - A, <<ord>>=np.inf) / la.norm(A, <<ord>>=np.inf)
 3.353843164496928e-15
 \end{lstlisting}
@@ -893,3 +890,9 @@ Algorithm \ref{Alg:QR-of-Hessenberg-via-Givens} details this process.
 \caption{}
 \label{Alg:QR-of-Hessenberg-via-Givens}
 \end{algorithm}
+
+\begin{info} % Hessenberg of Symmetric -> Tridiagonal.
+When $A$ is symmetric, its upper Hessenberg form is a \emph{tridiagonal} matrix, meaning its only nonzero entries are on the main diagonal, the first subdiagonal, and the first superdiagonal.
+This is because the $Q_k$'s zero out everything below the first subdiagonal of $A$ and the $Q_k\trp$'s zero out everything to the right of the first superdiagonal.
+Tridiagonal matrices make computations fast, so computing the Hessenberg form of a symmetric matrix is very useful.
+\end{info}

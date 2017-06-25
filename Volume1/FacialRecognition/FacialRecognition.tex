@@ -1,191 +1,366 @@
-\lab{Facial Recognition using Eigenfaces}{Facial Recognition using Eigenfaces}
+\lab{Facial Recognition}{Facial Recognition}
 \label{lab:FacialRecognition}
 
-\objective{Use the singular value decomposition to implement a simple facial recognition system.}
+\objective{
+A \emph{facial recognition} algorithm attempts to match a person's portrait to a database of many portraits.
+Facial recognition is becoming increasingly important in security, law enforcement, artificial intelligence, and other areas.
+Though humans can easily match pictures to people, computers are beginning to surpass humans at facial recognition.
+In this lab, we implement a basic facial recognition system that relies on eigenvectors and the SVD to efficiently determine the difference between faces.
+}
 
-Suppose we have a large database containing images of human faces.
-We would like to identify people by comparing their pictures to those in the database.
-This task is called \emph{facial recognition}.
+\section*{Preparing an Image Database} % ======================================
 
-One way to automate the comparison process is know as the \emph{eigenfaces} method.
-As the name suggests, this method uses eigenvectors of matrices related to the collection of face images.
-The method essentially projects face images to a low-dimensional subspace, in a way that preserves their distinguishing characteristics.
-Comparing the images in fewer dimensions is faster and allows us to store the images using less data.
+The \texttt{faces94} face image dataset\footnote{See \url{http://cswww.essex.ac.uk/mv/allfaces/faces94.html}.} contains several photographs of 153 people, organized into folders by person.
+To perform facial recognition on this dataset, select one image per person and convert these images into a database.
+For this particular facial recognition algorithm, the entire database can be stored in just a few NumPy arrays.
 
-The idea of projecting to fewer dimensions is not unique to the eigenfaces method.
-This method is an example of \emph{principal component analysis}, where data is compared based on its principal components in a lower-dimensional vector space.
-Principal component analysis can be applied to many computing problems besides facial recognition.
-% TODO: list 2-3 other applications
-
-\begin{comment}
-Facial recognition is important in law enforcement, as well as other situations.
-For example, facial recognition can be combined with video surveillance to identify when a person is not authorized to be in a location.
-
-Humans can easily compare two face images and determine whether they belong to the same person, but automating this process is more challenging.
-One technique for automated facial recognition uses \emph{eigenfaces}.
-\end{comment}
-
-\section*{Load the Data} % ====================================================
-\begin{comment}
-Eigenfaces are an efficient way to store and query a database of face images.
-As the name suggests, this method uses eigenvectors of matrices related to the collection of face images.
-Essentially, the method of eigenfaces projects face images to a lower-dimensional subspace in a way that preserves their distinguishing characteristics.
-In the lower-dimensional subspace, comparing face images is much faster.
-\end{comment}
-
-The first step is to obtain a dataset of face images.
-Recall that a digital image may be stored as an $m \times n$ array of pixels.
-In this lab, we will store the images as $mn$-vectors by concatenating the rows of the $m \times n$ arrays.
-
-\begin{problem}
-\label{prob:getTrainingFaces}
-In this lab we will use the \li{faces94} face image dataset found at \url{http://cswww.essex.ac.uk/mv/allfaces/faces94.html}
-This problem will make sure that you can load and display the images from the dataset.
-\begin{enumerate}
-\item Download the \li{faces94} dataset from the link above and extract the files.
-You should now have a directory named ``faces94" which contains photographs of 153 people, organized into folders by person.
-
-\item The function \li{getFaces()} is given in the appendix. %or spec file?
-It constructs a set of face images by selecting exactly one face image for each person in the directory.
-It should return an array whose columns are flattened face images.
-Feel free to modify the given code.
-You may have to replace the parameter \li{\"./faces94\"} with the location of the directory \li{faces94} on your machine.
-
-Test this function to make sure it runs without errors.
-Check that the return value \li{F} is a $36000 \times 153$ array.
-The columns of this array are 153 flattened face images of 153 different people.
-
-\item Use \li{plt.imshow()} to display one of the faces.
-The original image dimensions are $200 \times 180$.
-You may find it useful to write a helper function that accepts a flattened image and displays it.
-
-\end{enumerate}
-\end{problem}
-
-
-\section*{Shift By the Mean} % ================================================
-
-The facial recognition algorithm is more robust if we first \emph{shift by the mean}. When we shift a set of data by the mean, the distinguishing features are exaggerated. Therefore, in the context of facial recognition, shifting by the mean accentuates the unique features of the face.
-Suppose we have a collection of $k$ face images represented as vectors $\f_1, \f_2, \ldots, \f_k$ of length $mn$.
-Define the \emph{mean face} ${\boldsymbol \mu}$ to be the average of the $\f_i$:
+Digital images are stored on computers as arrays of pixels.
+Therefore, an $m \times n$ image can be stored in memory as an $m\times n$ matrix or, equivalently, as an $mn$-vector by concatenating the rows of the matrix.
+Then a collection of $k$ images can be stored as a single $mn\times k$ matrix $F$, where each column of $F$ represents a single image.
+That is, if
 \[
-{\boldsymbol \mu} = \frac{1}{k}\sum_{i=1}^k \f_i.
+F = \left[\begin{array}{c|c|c|c}
+\arrayrulecolor{lightgray}
+& & & \\
+\f_1 & \f_2 & \cdots & \f_k
+\\
+& & &
+\end{array}\right],
 \]
-\begin{figure}
-\includegraphics[width=0.3\textwidth]{figures/meanFace.pdf}
-\caption{The mean face.}
-\label{facialRecognition:meanFace}
-\end{figure}
+then each $\f_i$ is a $mn$-vector representing a single image.
 
-\begin{problem}
-\label{prob:meanFace}
-\leavevmode
+The following function obtains one image for each person in the \texttt{faces94} dataset and converts the collection of images into an $mn \times k$ matrix $F$ described above.
 
-The facial recognition method you will write in this lab will be structured as a class.
-An outline of the \li{FacialRec} class is provided in the appendix. %or maybe in the spec file?
-You will write the methods of the class.
+\begin{lstlisting}
+import numpy as np
+from os import walk
+from scipy.misc import imread
 
-When initialized, the \li{FacialRec} object first loads the face images using \li{getFaces} and stores the result.
-The next step is to compute the mean face.
-\begin{enumerate}
-\item In your class definition, implement the method \li{FacialRec.initMeanImage()}.
-Compute the mean face and store it as \li{self.mu}.
-This can be done in one line of code using NumPy.
+def get_faces(path="./faces94"):
+    # Traverse the directory and get one image per subdirectory.
+    faces = []
+    for (dirpath, dirnames, filenames) in walk(path):
+        for fname in filenames:
+            if fname[-3:]=="jpg":       # Only get jpg images.
+                # Load the image, convert it to grayscale,
+                # and flatten it into a vector.
+                faces.append(np.ravel(imread(dirpath+"/"+fname, flatten=True)))
+                break
+    # Put all the face vectors column-wise into a matrix.
+    return np.transpose(faces)
+\end{lstlisting}
 
-\item Display the mean face.
-Your result should match Figure \ref{facialRecognition:meanFace}.
-\end{enumerate}
+\begin{problem} % show_face() function.
+Write a function that accepts an image as a flattened $mn$-vector, along with its original dimensions $m$ and $n$.
+Use \li{np.reshape()} to convert the flattened image into its original $m\times n$ shape and display the result with \li{plt.imshow()}.
+\\ (Hint: use \li{cmap='gray'} in \li{plt.imshow()} to display images in grayscale.)
+
+Unzip the \texttt{faces94.zip} archive and use \li{get_faces()} to construct $F$.
+Each \texttt{faces94} image is $200 \times 180$, and there are $153$ people in the dataset, so $F$ should be $36000 \times 153$.
+Use your function to display one of the images stored in $F$.
+\label{prob:visualize-faces}
 \end{problem}
 
-\begin{figure}
-\begin{subfigure}[b]{0.3\textwidth}
-\includegraphics[width=\textwidth]{figures/differenceFace0.pdf}
-\end{subfigure}
-\begin{subfigure}[b]{0.3\textwidth}
-\includegraphics[width=\textwidth]{figures/differenceFace1.pdf}
-\end{subfigure}
-\begin{subfigure}[b]{0.3\textwidth}
-\includegraphics[width=\textwidth]{figures/differenceFace2.pdf}
-\end{subfigure}
-\caption{Three mean-shifted faces from the dataset.}
-\label{facialRecognition:differenceFaces}
-\end{figure}
-For each $i = 1,\ldots, k$, define $\bar{\f}_i := \f_i - {\boldsymbol \mu}$.
-The mean-shifted face vector $\bar{\f}_i$ is the deviation of the $i$-th face from the mean, and thus captures the unique features of the face.
-Now form the $mn \times k$ matrix $\bar{F}$ whose columns are given by the mean-shifted face vectors, i.e.
+\section*{The Eigenfaces Method} % ============================================
+
+With the image database $F$, we could construct a simple facial recognition system with the following strategy.
+Let $\g$ be an $mn$-vector representing an unknown face that is not part of the database $F$.
+Then the $\f_i$ that minimizes $\|\g - \f_i\|_2$ is the matching face.
+Unfortunately, computing $\|\g - \f_i\|_2$ for each $i$ is very computationally expensive, especially if the images are high-resolution and/or the database contains a large number of images.
+The \emph{eigenfaces method} is a way to reduce the computational cost of finding the closest matching face by focusing on only the most important features of each face.
+Because the method ignores less significant facial features, it is also usually more accurate than the na\"ive method.
+
+The first step of the algorithm is to shift the images by the \emph{mean face}.
+Shifting a set of data by the mean exaggerates the distinguishing features of each entry.
+In the context of facial recognition, shifting by the mean accentuates the unique features of each face.
+For the images vectors stored in $F$, the mean face $\boldsymbol{\mu}$ is the defined to be the element-wise average of the $\f_i$.
 \[
-\bar{F} = \begin{bmatrix}
+\boldsymbol{\mu} = \frac{1}{k}\sum_{i=1}^k \f_i
+\]
+Hence, the $i$th mean-shifted face vector $\bar{\f}_i$ is given by
+\[
+\bar{\f}_i = \f_i - \boldsymbol{\mu}.
+\]
+Next, define $\bar{F}$ as the $mn \times k$ matrix whose columns are given by the mean-shifted face vectors:
+\[
+\bar{F} = \left[\begin{array}{c|c|c|c}
+\arrayrulecolor{lightgray}
+& & & \\
 \bar{\f}_1 & \bar{\f}_2 & \cdots & \bar{\f}_k
-\end{bmatrix}.
+\\
+& & &
+\end{array}\right].
 \]
-\begin{problem}
-\leavevmode
-\begin{enumerate}
-\item In your class definition, implement the method \li{FacialRec.initDifferences()}.
-Compute $\bar{F}$ and store it as \li{self.Fbar}.
-This can be done in one line using array broadcasting.
-\item
-Display one of the mean-shifted faces.
-The output should be similar to the faces in Figure \ref{facialRecognition:differenceFaces}.
-\end{enumerate}
+
+\begin{figure}[H] % Mean face + shifted faces.
+\captionsetup[subfigure]{justification=centering}
+\centering
+\begin{subfigure}{.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/meanFace.png}
+    \caption{The mean face.}
+    \label{fig:facerec-meanface}
+\end{subfigure}
+%
+\begin{subfigure}{.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/originalFace0.png}
+    \caption{An original face.}
+    \label{fig:facerec-original}
+\end{subfigure}
+%
+\begin{subfigure}{.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/differenceFace0.png}
+    \caption{A mean-shifted face.}
+    \label{fig:facerec-shifted}
+\end{subfigure}
+\caption{}
+\end{figure}
+
+\begin{problem} % Shift by the mean.
+\label{prob:meanFace}
+Write a class called \li{FacialRec} whose constructor accepts a path to a directory of images.
+In the constructor, use \li{get_faces()} to construct $F$, then compute the mean face $\boldsymbol\mu$ and the shifted faces $\bar{F}$.
+Store each array as an attribute.
+\\(Hint: Both $\boldsymbol\mu$ and $\bar{F}$ can be computed in a single line of code by using NumPy functions and/or array broadcasting.)
+
+Use your function from Problem \ref{prob:visualize-faces} to visualize the mean face, and compare it to Figure \ref{fig:facerec-meanface}.
+Also display an original face and its corresponding mean-shifted face.
+Compare your results with Figures \ref{fig:facerec-original} and \ref{fig:facerec-shifted}.
 \end{problem}
 
+To increase computational efficiency and minimize storage, the face vectors can be represented with fewer values by projecting $\bar{F}$ onto a lower-dimensional subspace.
+Let $s$ be a natural number such that $s < r$, where $r$ is the rank of $\bar{F}$.
+By projecting $\bar{F}$ onto an $s$-dimensional subspace, each face can be stored with only $s$ values.
 
-\section*{Project to a Subspace} % ============================================
+Specifically, let $U \Sigma V\hrm$ be the compact SVD of $\bar{F}$ with rank $r$, which can also be represented by
+ \[
+\bar{F}= \sum_{i=1}^r \sigma_i\u_i\v_i\hrm.
+\]
+The first $r$ columns of $U$ form a basis for the range of $\bar{F}$.
+Recall that the Schmidt, Mirsky, Eckart-Young Theorem states that the matrix
+\[
+\bar{F}_s = \sum_{i=1}^s \sigma_i\u_i\v_i\hrm
+\]
+is the best rank-$s$ approximation of $\bar{F}$ for each $s < r$.
+This means that $\| \bar{F} - \bar{F_s} \|$ is minimized against all other $\| \bar{F} - B \|$ where $B$ has rank $s$.
+As a consequence of this theorem, the first $s$ columns of $U$ form a basis that provides the ``best'' $s$-dimensional subspace for approximating $\bar{F}$.
 
-Now suppose we are given a new face vector $\g$.
-We first shift $\g$ by the mean of the dataset, giving us $\bar{\g} = \g - {\boldsymbol \mu}$.
-The closest match to $\bar{\g}$ is the vector $\bar{\f}_i$ that minimizes $\|\bar{\g}-\bar{\f}_i\|_2$.
-If there are $k$ images in the dataset, we find this match by comparing $\bar{\g}$ to every element of $\{\bar{\f}_1, \ldots \bar{\f}_k\}$.
+The $s$ basis vectors $\u_1, \ldots, \u_s$ are are commonly called the \emph{eigenfaces} because they are eigenvectors of $\bar{F}\bar{F}\trp$ and because they resemble face images.
+Each original face image can be efficiently represented in terms of these eigenfaces.
+See Figure \ref{fig:facerec-eigenfaces} for visualizations of the some of the eigenfaces for the \texttt{facesd94} data set.
 
-However, comparing the original face images pixel by pixel is computationally expensive and inefficient.
-The vectors $\bar{\f}_i$ and $\bar{\g}$ are length $mn$, which in our case equals 36000 and in practice may be many times larger.
-Computing the difference between face vectors of this length is time consuming, especially when the dataset is very large.
-It also requires us to use $mn$ values to store each face, which is an inefficient use of space.
-In addition, pixel by pixel comparison is not very robust to small changes in individual pixels.
+\begin{figure}[H] % Eigenfaces.
+\centering
+\begin{subfigure}{.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/eigenface0.png}
+\end{subfigure}
+%
+\begin{subfigure}{.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/eigenface49.png}
+\end{subfigure}
+%
+\begin{subfigure}{.32\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/eigenface99.png}
+\end{subfigure}
+\caption{The first, 50th, and 100th eigenfaces.}
+\label{fig:facerec-eigenfaces}
+\end{figure}
 
-Instead, in order to store and compare our face vectors, we would like to represent each one with fewer than $mn$ values.
-We can do this by projecting to a subspace.
-Mathematically, we want to choose $s$, $s \ll mn$, and project the face vectors to an $s$-dimensional subspace of the original $mn$-dimensional space of images.
-We can then use just $s$ values to store each face in terms of the basis vectors of the new subspace.
+In general, the lower eigenfaces provide a more general information of a face and higher-ordered eigenfaces provide the details necessary to distinguish particular faces.%
+\footnote{Neil Muller, Lourenco Magaia, and B. M. Herbst. \textit{Singular Value Decomposition, Eigenfaces, and 3D Reconstructions}. SIAM Review. 2004. 46:3, 518-545.}
+These eigenfaces will be used to construct the face images in the dataset.
+The more eigenfaces used, the more detailed the resulting image will be.
 
-The ``best" subspace to project to is the one that is closest in the least squares sense (i.e., such that the sum of the squared errors between $\{\bar{\f}_1, \ldots \bar{\f}_k\}$ and their projections is minimized).
-Let $U \Sigma V^T$ be an SVD of $\bar{F}$, with $\u_i$ the columns of $U$.
-As we will prove below, the $s$-dimensional subspace that minimizes the squared error is the span of $\u_1, \ldots, \u_s$.
-Note that $\u_1, \ldots, \u_s$ is an orthonormal basis for this subspace.
+Next, let $U_s$ be the matrix with the first $s$ eigenfaces as columns.
+Since the eigenfaces $\{\u_i\}_{i=1}^s$ form an orthonormal set, $U_s$ is an orthonormal matrix (independent of $s$) and hence $U_s\trp U_s = I$.
+The matrix $P_s = U_sU_s\trp$ projects vectors in $\mathbb{R}^{mn}$ to the subspace spanned by the orthonormal basis $\{\u_i\}_{i=1}^s$, and the change of basis matrix $U_s\trp$ puts the projection in terms of the basis of eigenfaces.
+Thus the projection $\widehat{\f}_i$ of $\bar{\f}_i$ in terms of the basis of eigenfaces is given by
+%
+\begin{equation}
+\widehat{\f}_i = U_s\trp P_s\bar{\f}_i = U_s\trp U_s U_s\trp \bar{\f}_i = U_s\trp\bar{\f}_i.
+\label{eq:facialrec-projection}
+\end{equation}
+%
+Note carefully that though the shifted image $\bar{\f_i}$ has $mn$ entries, the projection $\widehat{\f}_i$ has only $s$ entries since $U_s$ is $mn\times s$.
+Likewise, the matrix $\widehat{F}$ that has the projections $\widehat{\f}_i$ as columns is $s \times k$, and
+\begin{equation}
+\widehat{F} = U_s\trp F.
+\label{eq:facialrec-projectall}
+\end{equation}
 
-The projection matrix is $P_s = U_s U_s^T$ where $U_s = [ \u_1\; \ldots \; \u_s]$.
-%The matrix for the projection is $P_s = U_s U_s^T$ where $U_s$ is the first $s$ columns of $U$.
-This matrix projects the original face vectors into the optimal $s$-dimensional subspace.
+\begin{problem} % Compute U, implement project().
+In the constructor of \li{FacialRec}, calculate the compact SVD of $\bar{F}$ and save the matrix $U$ as an attribute.
+Compare the computed eigenfaces (the columns of $U$) to Figure \ref{fig:facerec-eigenfaces}.
 
-\begin{comment} % OLD VERSION
-\section*{Project to a Subspace} % ============================================
-Now suppose we have a new face vector $\g$.
-The closest face image to $\g$ should be the vector $\bar{\f}_i$ that minimizes $\|\bar{\g}-\bar{\f}_i\|_2$, where $\bar{\g} = \g - {\boldsymbol \mu}$.
-Unfortunately, computing $\|\bar{\g}-\bar{\f}_i\|_2$ for each $i$ is computationally intractable when the length $mn$ of the vectors is large.
-Since a low-resolution photo may easily have $100\times 100 = 10,000$ pixels, in practice $mn$ is very large indeed.
+Also write a method that accepts a vector of length $mn$ or an $mn\times l$ matrix, as well as an integer $s$.
+Construct $U_s$ by taking the first $s$ columns of $U$, then use (\ref{eq:facialrec-projection}) or (\ref{eq:facialrec-projectall}) to calculate the projection of the input vector or matrix onto the span of the first $s$ eigenfaces.
+\\(Hint: this method should be implemented with a single line of code.)
+\label{prob:facialrec-project}
+\end{problem}
 
-Here is the trick: instead of computing in the $mn$-dimensional space of all possible images, we will compute in a lower-dimensional subspace.
-We could start by using the subspace spanned by the vectors $\bar{\f}_1, \ldots \bar{\f}_k$, which is at most $k$-dimensional.
-Unfortunately, in practice $k$ is still too large for this subspace to be computationally efficient.
-%We need to project our problem into some subspace of the span of $\bar{\f}_1, \ldots \bar{\f}_k$.
+Reducing the mean-shifted face image $\bar{\f}_i$ to the lower-dimensional projection $\widehat{\f}_i$ drastically reduces the computational cost of the facial recognition algorithm, but this efficiency gain comes at a price.
+A projection image only approximates the corresponding original image, but as long as $s$ isn't too small, the approximation is usually good enough for the algorithm to work well.
+Before completing the facial recognition system, we reconstruct some of these projections to visualize the amount of information lost.
 
-Therefore, we want to project to a subspace of $\bar{\f}_1, \ldots \bar{\f}_k$ in a way that retains as much information about the $\bar{\f_i}$ as possible.
-Mathematically, we want to find the $s$-dimensional subspace of $\text{span}\{\bar{\f}_1, \ldots \bar{\f}_k\}$ that is closest to the $\bar{\f_i}$ in the least-squares sense.
-In a minute, we will prove that the SVD of $\bar{F}$ (whose columns are $\bar{\f}_1, \ldots \bar{\f}_k$) solves this problem.
-But first, let us summarize how the solution works.
+From (\ref{eq:facialrec-projection}), since $U_s\trp$ projects $\bar{\f}_i$ and performs a change of basis to get $\widehat{\f}_i$, its transpose $U_s$ puts $\widehat{\f}_i$ back into the original basis with as little error as possible.
+That is,
+\[
+U_s \widehat{\f}_i \approx \bar{\f}_i = \f_i - \boldsymbol{\mu},
+\]
+so that we have the approximation
+\begin{equation}
+\widetilde{\f}_i = U_s \widehat{\f}_i + \boldsymbol{\mu} \approx \f_i.
+\label{eq:facialrec-reconstruct}
+\end{equation}
+This $\widetilde{\f}_i$ is called the \emph{reconstruction} of $\f_i$.
 
-Let $U \Sigma V^T$ be an SVD of $\bar{F}$ with $\u_i$ the columns of $U$.
-Then the ``best'' $s$-dimensional subspace for approximating $\text{span}\{\bar{\f}_1, \ldots \bar{\f}_k\}$ is the span of $\u_1, \ldots, \u_s$.
-The matrix for this projection is $P_s = U_s U_s^T$ where $U_s = [ \u_1\; \ldots \; \u_s]$.
+\begin{figure}[H]
+\begin{subfigure}{0.32\textwidth}
+    \includegraphics[width=\textwidth]{figures/rebuiltThirtySecond.png}
+    \caption{A reconstruction with $s=5$.}
+\end{subfigure}
+\begin{subfigure}{0.32\textwidth}
+    \includegraphics[width=\textwidth]{figures/rebuiltEighth.png}
+    \caption{A reconstruction with $s=19$.}
+\end{subfigure}
+\begin{subfigure}{0.32\textwidth}
+    \includegraphics[width=\textwidth]{figures/rebuiltHalf.png}
+    \caption{A reconstruction with $s=75$.}
+\end{subfigure}
+\caption{An image rebuilt with various numbers of eigenfaces. The image is already recognizable when it is reconstructed with only 19 eigenfaces---less than an eighth of the 153 eigenfaces! Note the similarities between this method and regular image compression via the truncated SVD.}
+\label{fig:rebuiltImage}
+\end{figure}
 
-Because the vectors $\u_i$ are eigenvectors of $\bar{F}\bar{F}^T$, we call them \emph{eigenfaces}.
-Therefore, the best $s$-dimensional subspace for solving the facial recognition problem is exactly the span of the first $s$ eigenfaces.
-\end{comment}
+\begin{problem}
+Instantiate a \li{FacialRec} object that draws from the \texttt{faces94} dataset.
+Select one of the shifted images $\bar{\f}_i$.
+For at least 4 values of $s$, use your method from Problem \ref{prob:facialrec-project} to compute the corresponding $s$-projection $\widehat{\f}_i$, then use (\ref{eq:facialrec-reconstruct}) to compute the reconstruction $\widetilde{\f}_i$.
+Display the various reconstructions and the original image.
+Compare your results to Figure \ref{fig:rebuiltImage}
+\end{problem}
 
+\section*{Matching Faces} % ===================================================
+
+Let $\g$ be a vector representing an unknown face that is not part of the database.
+We determine which image in the database is most like $\g$ by comparing $\widehat{\g}$ to each of the $\widehat{\f}_i$.
+Fist, shift $\g$ by the mean to obtain $\bar{\g}$, then project $\bar{\g}$ using a given number of eigenfaces.
+\begin{equation}
+    \widehat{\g} = U_s\trp\bar{\g} = U_s\trp(\g - \boldsymbol{\mu})
+    \label{eq:facialrec-unknownface}
+\end{equation}
+
+Next, determine which $\widehat{\f}_i$ is closest to $\widehat{\g}$.
+Since the columns of $U_s$ are an orthonormal basis, the computation in this basis yields the same result as computing in the standard Euclidean basis would.
+Then setting
+\begin{equation}
+j = \mathop{{\text{argmin}}\vphantom{\sim}}\limits_{\displaystyle _{i}} \|\widehat{\f}_i - \widehat{\g}\|_2, % This makes i below the argmin
+\label{eq:facialrec-findnearest}
+\end{equation}
+we have that the $j$th face image $\f_j$ is the best match for $\g$.
+Again, since $\widehat{\f}_i$ and $\widehat{\g}_i$ only have $s$ entries, the computation in (\ref{eq:facialrec-findnearest}) is much cheaper than comparing the raw $\f_i$ to $\g$.
+
+\begin{problem} % Find nearest.
+Write a method for the \li{FacialRec} class that accepts an image vector $\g$ and an integer $s$.
+Use your method from Problem \ref{prob:facialrec-project} to compute $\widehat{F}$ and $\widehat{\g}$ for the given $s$, then use (\ref{eq:facialrec-findnearest}) to determine the best matching face in the database.
+Return the index of the matching face.
+\\(Hint: \li{scipy.linalg.norm()} and \li{np.argmin()} may be useful.)
+\label{prob:facialrec-nearest}
+\end{problem}
+
+\begin{info}
+This facial recognition system works by solving a \emph{nearest neighbor search}, since the goal is to find the $\f_i$ that is ``nearest'' to the input image $\g$.
+Nearest neighbor searches can be performed more efficiently with the use of a \emph{$k$-d tree}, a binary search tree for storing vectors.
+The system could also be called a \emph{$k$-neighbors classifier} with $k=1$.
+% In this context, a $k$-neighbors classifier searches for the $k$ faces that are closest to $\g$ and use these ``neighboring'' faces to decide how to classify $\g$.
+\end{info}
+
+\begin{problem}
+Write a method for the \li{FacialRec} class that accepts an flat image vector $\g$, an integer $s$, and the original dimensions of $\g$.
+Use your method from Problem \ref{prob:facialrec-nearest} to find the index $j$ of the best matching face, then display the original face $\g$ alongside the best match $\f_j$.
+
+The following generator yields random faces from \texttt{faces94} that can be used as test cases.
+%
+\begin{lstlisting}
+def sample_faces(num_faces, path="./faces94"):
+    # Get the list of possible images.
+    files = []
+    for (dirpath, dirnames, filenames) in walk(path):
+        for fname in filenames:
+            if fname[-3:]=="jpg":       # Only get jpg images.
+                files.append(dirpath+"/"+fname)
+
+    # Get a subset of the image names and yield the images one at a time.
+    test_files = np.random.choice(files, num_faces, replace=False)
+    for fname in test_files:
+        yield np.ravel(imread(fname, flatten=True))
+\end{lstlisting}
+%
+The \li{yield} keyword is like a \li{return} statement, but the next time the generator is called, it will resume immediately after the last \li{yield} statement.%
+\footnote{See the Python Essentials lab on Profiling for more on generators.}
+
+Use \li{sample_faces()} to get at least 5 random faces from \texttt{faces94}, and match each random face to the database with $s=38$.
+Iterate through the random faces with the following syntax.
+%
+\begin{lstlisting}
+for test_image in sample_faces(5):
+    # 'test_image' is a now flattened face vector.
+\end{lstlisting}
+\label{prob:facialrec-match}
+\end{problem}
+
+Although there are other approaches to facial recognition that utilize more complex techniques, the method of eigenfaces remains a wonderfully simple and effective solution.
+
+\newpage
+
+\section*{Additional Material} % ==============================================
+
+\subsection*{Improvements on the Facial Recognition System with Eigenfaces} % -
+
+The \li{FacialRec} class does its job well, but it could be improved in several ways.
+Here are a few ideas.
+\begin{itemize}
+    \item The most computationally intensive part of the algorithm is computing $\widehat{F}$.
+    Instead of recomputing $\widehat{F}$ every time the method from Problem \ref{prob:facialrec-nearest} is called, store $\widehat{F}$ and $s$ as attributes the first time the method is called.
+    In subsequent calls, only recompute $\widehat{F}$ if the user specifies a different value for $s$.
+
+    \item Load a \li{scipy.spatial.KDTree} object with $\widehat{F}$ and use its \li{query()} method to compute (\ref{eq:facialrec-findnearest}).
+    Building a $k$d-tree is expensive, so be sure to only build a new tree when necessary (i.e., the user specifies a new value for $s$).
+
+    \item Include an error tolerance $\epsilon$ in the method for Problem \ref{prob:facialrec-nearest}.
+    If $\|\f_j - \g\| > \epsilon$, print a message or raise an exception to indicate that there is no suitable match for $\g$ in the database.
+    In this case, add $\g$ to the database for future reference.
+
+    \item Generalize the system by turning it into a $k$-neighbors classifier.
+    In the constructor, add several faces per person to the database (this requires modifying \li{get_faces()}).
+    Assign each individual a unique ID so that the system knows which faces correspond to the same person.
+    Modify the method from Problem \ref{prob:facialrec-nearest} so that it also accepts an integer $k$, then use \li{scipy.spatial.KDTree} to find the $k$ nearest images to $\g$.
+    Choose the ID that belongs to the most nearest neighbors, then return an index that corresponds to an individual with that ID.
+
+    In other words, choose the $k$ faces $\f_i$ that give the smallest values of $\|\f_i - \widehat{\g}\|_2$.
+    These faces then get to vote on which person $\g$ belongs to.
+
+    \item Improve the user interface of the class by modifying the method from Problem \ref{prob:facialrec-match} so that it accepts a file name to read from instead of an array.
+    A few lines of code from \li{get_faces()} or \li{sample_faces()} might be helpful for this.
+\end{itemize}
+
+\subsection*{Other Methods for Facial Recognition} % --------------------------
+
+The method of facial recognition presented here is more formally called \emph{principal component analysis (PCA) using eigenfaces}.
+Several other machine learning and optimization techniques, such as linear discriminant analysis (LDA), elastic matching, dynamic link matching, and Hidden Markov Models (HMMs) have also been applied to the facial recognition problem.
+Other techniques focus on getting better information about the faces in the first place, the most prevalent being 3-dimensional recognition and thermal imaging.
+See \url{https://en.wikipedia.org/wiki/Facial_recognition_system} for a good survey of different approaches to the facial recognition problem.
+
+\begin{comment}
+% This proof is not needed, the Schmidt-Eckart-Young-Mirsky Theorem is sufficient to show that the first s columns of U in SVD provides the best basis for the s-dimensional subspace.
 \subsection*{The Proof: SVD as a Least Squares Solution} % --------------------
+
 \begin{theorem}
-Let $\f_1, \ldots, \f_k$ be vectors on $\mathbb{R}^{mn}$, and let $\bar{F} = [\bar{f}_1 \; \ldots \; \bar{f}_k]$. Suppose $U\Sigma V^T$ is an SVD for $\bar{F}$. Then the $s$-dimensional subspace that solves the least squares problem for $\f_1, \ldots, \f_k$ is the span of the first $s$ columns of $U$. If $U_s$ is the first $s$ columns of $U$, then the matrix $U_sU_s^T$ is the projection onto this subspace.
+Let $\f_1, \ldots, \f_k$ be vectors in $\mathbb{R}^{mn}$, and let $\bar{F} = [\bar{f}_1 \; \ldots \; \bar{f}_k]$. Suppose $U\Sigma V\trp$ is the SVD for $\bar{F}$. Then the $s$-dimensional subspace that solves the least squares problem for $\f_1, \ldots, \f_k$ is the span of the first $s$ columns of $U$. If $U_s$ is the first $s$ columns of $U$, then the matrix $U_sU_s\trp$ is the projection onto this subspace.
 \end{theorem}
 \begin{proof}
 We seek a rank-$s$ projection matrix $P_s$ so that $\sum_{i=1}^k \|P_s\bar{\f}_i - \bar{\f}_i\|_2^2$ is minimized---i.e.,
@@ -197,261 +372,18 @@ Written mathematically,
  & =  \inf_{\text{rank}(P_s)=s} \| P_s\bar{F}-\bar{F}\|_F.
  \end{align*}
 
-Now let $U \Sigma V^T$ be an SVD of $\bar{F}$ with $\u_i$ the columns of $U$, $\v_i$ the columns of $V$, and $\sigma_i$ the singular values of $\bar{F}$.
-If $P_s = \sum_{i=1}^s \u_i \u_i^T$, then
+Now let $U \Sigma V\trp$ be an SVD of $\bar{F}$ with $\u_i$ the columns of $U$, $\v_i$ the columns of $V$, and $\sigma_i$ the singular values of $\bar{F}$.
+If $P_s = \sum_{i=1}^s \u_i \u_i\trp$, then
 \begin{align*}
-P_s\bar{F} &=  \left( \sum_{i=1}^s \u_i \u_i^T \right)\left(  \sum_{j=1}^k \sigma_j \u_i \v_i^T \right)
-= \sum_{i=1}^s\sum_{j=1}^k \sigma_j \u_i\u_i^T\u_j\v_j^T\\
-&=  \sum_{i=1}^s\sum_{j=1}^k \sigma_j \u_i\delta_{ij}\v_j^T
-= \sum_{i=1}^s \sigma_i \u_i\v_i^T.
+P_s\bar{F} &=  \left( \sum_{i=1}^s \u_i \u_i\trp \right)\left(  \sum_{j=1}^k \sigma_j \u_i \v_i\trp \right)
+= \sum_{i=1}^s\sum_{j=1}^k \sigma_j \u_i\u_i\trp\u_j\v_j\trp\\
+&=  \sum_{i=1}^s\sum_{j=1}^k \sigma_j \u_i\delta_{ij}\v_j\trp
+= \sum_{i=1}^s \sigma_i \u_i\v_i\trp.
 \end{align*}
 
-In fact, the Schmidt-Eckart-Young-Mirsky Theorem from Lab \ref{lab:SVD} tells us that $X = \sum_{i=1}^s \sigma_i \u_i\v_i^T$ is exactly the rank-$s$ matrix that minimizes $\|X - \bar{F}\|_F$.
-Since $P_s \bar{F}$ will always have rank $s$ or less, the projection $P_s =  \sum_{i=1}^s \u_i \u_i^T$ is the one we seek.
-If we let $U_s = [ \u_1\; \ldots \; \u_s]$, then we may write $P_s = U_sU_s^T$. Notice that $P_s$ is projection onto the subspace spanned by the columns of $U_s$.
+In fact, the Schmidt-Eckart-Young-Mirsky Theorem tells us that $X = \sum_{i=1}^s \sigma_i \u_i\v_i\trp$ is exactly the rank-$s$ matrix that minimizes $\|X - \bar{F}\|_F$.
+Since $P_s \bar{F}$ will always have rank $s$ or less, the projection $P_s =  \sum_{i=1}^s \u_i \u_i\trp$ is the one we seek.
+If we let $U_s = [ \u_1\; \ldots \; \u_s]$, then we may write $P_s = U_sU_s\trp$. Notice that $P_s$ is projection onto the subspace spanned by the columns of $U_s$.
 \end{proof}
 
-The $s$ basis vectors $\u_1, \ldots, \u_s$ are eigenvectors of $\bar{F}\bar{F}^T$.
-They also resemble face images.
-Hence, they are commonly called the ``eigenfaces."
-
-\begin{problem}
-\label{prob:svd}
-\leavevmode
-\begin{enumerate}
-\item In your class definition, implement the method \li{FacialRec.initEigenfaces()}.
-
-Compute the SVD (\li{scipy.linalg.svd()} is a good implementation to use) and store the array \li{U} containing the eigenfaces as its columns.
-Because we will only use the first few columns of \li{U}, specify the keyword parameter \li{full_matrices=False} to compute only the compact SVD.
-\item Plot the first eigenface (i.e. the first column of \li{U}).
-It should resemble the first eigenface shown in Figure \ref{facialRecognition:eigenfaces}.
-\end{enumerate}
-\end{problem}
-
-\section*{Change Basis} % =====================================================
-
-The projection matrix $P_s = U_s U_s^T$ projects a face vector into the $s$-dimensional subspace spanned by the eigenfaces, but still keeps it as a vector in $\mathbb{R}^{mn}$.
-The change-of-basis matrix $U_s^T$ both projects the face vector and and changes the basis.
-The resulting vector has length $s$ and represents the face in terms of eigenfaces.
-
-To represent any face vector in terms of the first $s$ eigenfaces, multiply by $U_s^T$.
-To change back to a full length-$mn$ projection, multiply again by $U_s$.
-
-\begin{comment}
-It does us no good to project all our vectors into an $s$-dimensional space if we still store them as vectors in $\mathbb{R}^{nm}$.
-Instead, we must store our face vectors in terms of the columns of $U_s$.
-This way, each vector is a length-$s$ array in NumPy, instead of a length-$mn$ array.
-
-The change-of-basis matrix is $U_s^T$, so $U_s^TP_s = U_s^TU_sU_s^T = U_s^T$.
-Thus we can project into the subspace and change basis by multiplying by $U_s^T$.
-To change back to the full $mn$-vector, multiply by $U_s$.
 \end{comment}
-
-\begin{figure}
-\begin{subfigure}[b]{0.3\textwidth}
-\includegraphics[width=\textwidth]{figures/eigenface0.pdf}
-\end{subfigure}
-\begin{subfigure}[b]{0.3\textwidth}
-\includegraphics[width=\textwidth]{figures/eigenface1.pdf}
-\end{subfigure}
-\begin{subfigure}[b]{0.3\textwidth}
-\includegraphics[width=\textwidth]{figures/eigenface2.pdf}
-\end{subfigure}
-\caption{The top three eigenfaces.}
-\label{facialRecognition:eigenfaces}
-\end{figure}
-
-\begin{problem}
-\label{prob:top_n}
-\leavevmode
-\begin{enumerate}
-\item Implement the method  \li{FacialRec.project()} in your class definition.
-This should accept a flattened image or an array with flattened images as its columns.
-It should also accept a value for $s$.
-The function should project the image or images into the appropriate $s$-dimensional subspace and change basis, then return the result.
-\item Let \li{face} be the first mean-shifted face (the first column of \li{facialRec.Fbar}). Do the following:
-\begin{enumerate}
-\item Project \li{face} so that it is represented in terms of the first 19 eigenfaces.
-\item Change basis again back to the standard basis on $\mathbb{R}^{mn}$.
-\item Add back the mean face \li{facialRec.mu}.
-\item Plot the resulting image.
-\end{enumerate}
-Your image should match Figure \ref{fig:19_efaces}.
-\end{enumerate}
-\end{problem}
-
-
-\begin{figure}
-\begin{subfigure}[b]{0.3\textwidth}
-    \includegraphics[width=\textwidth]{figures/rebuiltThirtySecond.pdf}
-    \caption{5 eigenfaces, about 1/32 of the total.}
-    \label{fig:5_efaces}
-\end{subfigure}
-\begin{subfigure}[b]{0.3\textwidth}
-    \includegraphics[width=\textwidth]{figures/rebuiltSixteenth.pdf}
-    \caption{9 eigenfaces, or 1/16 of the total.}
-    \label{fig:9_efaces}
-\end{subfigure}
-\begin{subfigure}[b]{0.3\textwidth}
-    \includegraphics[width=\textwidth]{figures/rebuiltEighth.pdf}
-    \caption{19 eigenfaces, about 1/8 of the total.}
-    \label{fig:19_efaces}
-\end{subfigure}
-\begin{subfigure}[b]{0.3\textwidth}
-    \includegraphics[width=\textwidth]{figures/rebuiltFourth.pdf}
-    \caption{38 eigenfaces, about 1/4 of the total.}
-    \label{fig:38_efaces}
-\end{subfigure}
-\begin{subfigure}[b]{0.3\textwidth}
-    \includegraphics[width=\textwidth]{figures/rebuiltHalf.pdf}
-    \caption{75 eigenfaces, about 1/2 of the total.}
-    \label{fig:75_efaces}
-\end{subfigure}
-\begin{subfigure}[b]{0.3\textwidth}
-    \includegraphics[width=\textwidth]{figures/rebuiltAll.pdf}
-    \caption{All 153 of the eigenfaces.}
-    \label{fig:all_efaces}
-\end{subfigure}
-\caption{Image rebuilt with various numbers of eigenfaces. The image is somewhat recognizable when it is reconstructed with only 1/8 of the eigenfaces.}
-\label{fig:rebuiltImage}
-\end{figure}
-
-\begin{comment}
-Of course, moving to a lower-dimensional subspace by using only the top $n$ eigenfaces introduces some error, in the sense that we cannot perfectly
-reconstruct the face images from their coordinate vectors.
-However, this error is tolerable, provided $n$ is not \emph{too} small.
-Note that we can approximately reconstruct $\bar{f}_i$ from the coordinate vector $\hat{f}_i$ by
-\[
-\bar{f}_i \approx U_n\hat{f}_i.
-\]
-See Figure \ref{facialRecognition:rebuiltImage} for examples of reconstructed face images giving different numbers of eigenfaces.
-\end{comment}
-
-\section*{Match Faces} % ======================================================
-
-Finally, we are ready to identify which mean-shifted image $\bar{\f}_i$ is closest to an input image, $\bar{\g}$.
-We begin by projecting all vectors to some $s$-dimensional subspace and writing them in terms of the basis vectors, which are the eigenfaces.
-This is done by multiplying by the change-of-basis matrix:
-\[
-\widehat{\f}_i = U_s^T(\f_i-{\boldsymbol \mu}) \qquad \widehat{\g} = U_s^T(\g-{\boldsymbol \mu}).
-\]
-
-Next, we compute which $\widehat{\f}_i$ is closest to $\widehat{\g}$.
-Since the columns of $U_s$ are an orthonormal basis, we get the same result doing the computation in this basis as we would in the standard Euclidean basis.
-Define
-\[
-i^* = \text{argmin}_i \|\widehat{\f}_i - \widehat{\g}\|_2.
-\]
-Then the $i^*$-th face image is the best match for $\g$.
-
-\begin{problem}
-\label{prob:nearest}
-\leavevmode
-\begin{enumerate}
-\item
-Implement the method \li{FacialRec.findNearest()} as follows.
-\begin{lstlisting}
-def findNearest(self, image, s=38):
-    Fhat = # Project Fbar, producing a matrix whose columns are the f-hat defined above
-    ghat = # Shift 'image' by the mean and project, producing g-hat as defined above
-    # for both Fhat and ghat, use your project function from the previous problem
-
-    # Return the index that minimizes ||fhat_i - ghat||_2.
-\end{lstlisting}
-The functions \li{np.linalg.norm()} and \li{np.argmin()} will be useful for the last line. When using \li{np.linalg.norm}, make sure you indicate the correct axis.
-
-\item Test your facial recognition system on faces selected randomly from the \li{faces94} dataset.
-The function \li{sampleFaces(n_tests, path)} at the end of this lab will build an array of \li{n_tests} random faces from the \li{faces94} dataset.
-
-Plot the random face beside the face returned by your facial recognition code to see if your system is accurately recognizing faces.
-%The function \li{show2()} at the end of this lab will plot two face vectors side-by-side.
-
-\end{enumerate}
-\end{problem}
-
-By this point, you have created a basic facial recognition system.
-We can extend the system to detect when a face doesn't match anything currently in the dataset, and then add this new face.
-We can also make the system more robust by including multiple pictures of the same face with different expressions and lighting conditions.
-
-Although there are other approaches to facial recognition that utilize more complex techniques, the method of eigenfaces remains
-a wonderfully simple and effective solution, illustrating another application of the singular value decomposition.
-
-\section*{Appendix: Helper Code} % ============================================
-
-This section contains some functions to help you implement the facial recognition class outlined in the problems of this lab.
-
-\begin{lstlisting}
-import numpy as np
-from scipy import linalg as la
-from os import walk
-from scipy.ndimage import imread
-from matplotlib import pyplot as plt
-from random import sample
-
-def getFaces(path="./faces94"):
-    """Traverse the directory specified by 'path' and return an array containing
-    one column vector per subdirectory.
-
-    For the faces94 dataset, this gives an array with just one column for each
-    face in the dataset. Each column corresponds to a flattened grayscale image.
-    """
-
-    # Traverse the directory and get one image per subdirectory.
-    faces = []
-    for (dirpath, dirnames, filenames) in walk(path):
-        for f in filenames:
-            if f[-3:]=="jpg": # only get jpg images
-                # load image, convert to grayscale, flatten into vector
-                face = imread(dirpath+"/"+f).mean(axis=2).ravel()
-                faces.append(face)
-                break
-
-    # put all the face vectors column-wise into a matrix.
-    F = np.array(faces).T
-    return F
-
-
-def sampleFaces(n_tests,path = "./faces94"):
-    """Return an array containing a sample of n_tests images contained
-    in the path as flattened images in the columns of the output.
-    """
-    files = []
-    for (dirpath, dirnames, filenames) in walk(path):
-        for f in filenames:
-            if f[-3:]=="jpg": # only get jpg images
-                files.append(dirpath+"/"+f)
-
-    #Get a sample of the images
-    test_files = sample(files, n_tests)
-    #Flatten and average the pixel values
-    images = np.array([imread(f).mean(axis=2).ravel() for f in test_files]).T
-    return images
-
-\end{lstlisting}
-
-The following is the outline of the Facial Recognition class.
-
-\begin{lstlisting}
-class FacialRec:
-    ##########Members##########
-    #   F, mu, Fbar, and U
-    ###########################
-    def __init__(self,path):
-        self.initFaces(path)
-        self.initMeanImage()
-        self.initDifferences()
-        self.initEigenfaces()
-
-    def initFaces(self, path):
-        self.F = getFaces(path)
-    def initMeanImage(self):
-        pass
-    def initDifferences(self):
-        pass
-    def initEigenfaces(self):
-        pass
-    def project(self, A, s=38):
-        pass
-    def findNearest(self, image, s=38):
-        pass
-\end{lstlisting}

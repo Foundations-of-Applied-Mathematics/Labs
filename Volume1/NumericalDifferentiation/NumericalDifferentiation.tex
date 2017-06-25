@@ -1,37 +1,37 @@
 \lab{Numerical Differentiation}{Numerical Differentiation}
 \label{lab:NumericalDerivatives}
-\objective{Understand and implement finite difference approximations of the derivative in single and multiple dimensions. Evaluate the accuracy of these approximations.}
-
+\objective{The derivative is exceptionally useful in many applications, but we often do not know the original function or the derivative may be too difficult to compute. In these situations, finite difference quotients are beneficial to use to approximate the derivative. In this lab, we will implement several methods for approximating the derivative of a function numerically. Additionally, we will explore the accuracy of these approximations with respect to: the number of points used, the value of h and the number of dimensions. }
+%
 \section*{Derivative Approximations in One Dimension} % =======================
-
+%
 The derivative of a function $f$ at a point $x_0$ is
-
+%
 \begin{equation}
 \label{eqn:deriv}
 f'(x_0) = \lim_{h\rightarrow 0} \frac{f(x_0 + h)-f(x_0)}{h}.
 \end{equation}
 %
 In this lab, we will investigate one way a computer can calculate $f'(x_0)$.
-
+%
 \subsection*{Forward Difference Quotient} % -----------------------------------
-
+%
 Suppose that in Equation \eqref{eqn:deriv}, instead of taking a limit, we just pick a small value for $h$.
-Then we would expect $f'(x_0)$ to be close to the quantity
+$f'(x_0)$ is expected to be close to the quantity
 %
 \begin{equation}\label{equ:forward_diff}
 \frac{f(x_0 + h)-f(x_0)}{h}.
 \end{equation}
 %
 This quotient is called the \emph{first order forward difference approximation} of the derivative.
-Because $f'(x_0)$ is the limit of such quotients, we expect that when $h$ is small, this quotient is close to $f'(x_0)$.
-We can use Taylor's formula to find just how close.
-
-By Taylor's formula,
+Using the points $x_0$ and $x_0-h$ in place of $x_0+h$ and $x_0$ respectively is called the \emph{first order backwards difference quotient}.
+%
+Because $f'(x_0)$ is the limit of such quotients, this quotient is close to $f'(x_0)$ when $h$ is small.
+Taylor's formula shows just how close it is. By Taylor's formula,
 \[
-f(x_0+h) = f(x_0) + f'(x_0)h + R_2(h),
+f(x_0+h) = f(x_0) + f'(x_0)h + R_2(h)
 \]
-where $R_2(h) = \left( \int_0^1 (1-t) f''(x_0+th) dt \right) h^2$.
-(This is called the \emph{integral form} of the remainder for Taylor's Theorem; see Volume 1 Chapter 6). When we solve this equation for $f'(x_0)$, we get
+where $R_2(h) = \left( \int_0^1 (1-t) f''(x_0+th) dt \right) h^2$
+(this is the integral form of the remainder for Taylor's Theorem; see Volume 1 Chapter 6). When we solve this equation for $f'(x_0)$, we get
 %
 \begin{equation}\label{equ:forward_diff_with_remainder}
 f'(x_0) = \frac{f(x_0+h)-f(x_0)}{h} - \frac{R_2(h)}{h}.
@@ -45,150 +45,118 @@ If we assume $f''$ is continuous, then for any $\delta$, set $M = \sup_{x \in (x
 \[
 \left | \frac{R_2(h)}{h} \right | \leq |h|\int_0^1 M dt = M|h|  {\in}  O(h).
 \]
-Therefore, the error in using \eqref{equ:forward_diff} to approximate $f'(x_0)$ grows like $h$.
-
-\subsection*{Centered Difference Quotient} % ----------------------------------
-
-In fact, we can approximate $f'(x_0)$ to the second order with another difference quotient, called the \emph{centered difference quotient}.  We begin by trying to find the \emph{backward difference quotient}.
-Evaluate Taylor's formula at $x_0-h$ to derive
+Similarly, the backward quotient is also in $O(h)$.
 %
-\begin{equation}\label{equ:backwards_diff_with_remainder}
-f'(x_0) = \frac{f(x_0)-f(x_0-h)}{h} + \frac{R_2(-h)}{h}.
+The \emph{second order forward difference quotient}, which uses three points $(x, x+h$, and $x+2h)$ instead of two, is given by:
+%
+\begin{equation}
+f'(x_0)\approx\frac{-3f(x_0)+4f(x_0+h)-f(x_0+2h)}{2h}.
+\end{equation}
+And the \emph{second order backwards difference quotient}:
+\begin{equation}
+f'(x_0)\approx\frac{3f(x_0)-4f(x_0-h)+f(x_0-2h)}{2h}.
 \end{equation}
 %
-The first term on the right hand side of \eqref{equ:backwards_diff_with_remainder} is called the \emph{backward difference quotient.}
-This quotient also approximates $f'(x_0)$ to first order, so it is not the quotient we are looking for.
-When we add \eqref{equ:forward_diff_with_remainder} and \eqref{equ:backwards_diff_with_remainder} and solve for $f'(x_0)$ (by dividing by 2), we get
+\subsection*{Centered Difference Quotient}
 %
-\begin{equation}\label{equ:centered_diff}
-f'(x_0) = \frac{\frac{1}{2}f(x_0+h) - \frac{1}{2}f(x_0-h)}{h} + \frac{R_2(-h) - R_2(h)}{2h}
+A finite difference quotient that is in $ O(h^2)$, and consequently has a smaller error when $|h|<1$, is called the \emph{centered difference quotient}. It is defined for the second and fourth order respectively as:
+\begin{equation}
+f'(x_0)\approx\frac{f(x_0+h)-f(x_0-h)}{2h}
 \end{equation}
-%
-The \emph{centered difference quotient} is the first term of the right hand side of \eqref{equ:centered_diff}.
-Let us investigate the remainder term to see how accurate this approximation is.
-Recall from the proof of Taylor's theorem that $R_k = \frac{f^{(k)}(x_0)}{k!}h^k + R_{k+1}$. Therefore,
-%
-\begin{align*}
-\frac{R_2(-h) - R_2(h)}{2h} &= \frac{1}{2h}\left(\frac{f''(x_0)}{2}h^2 + R_{3}(-h) - \frac{f''(x_0)}{2}h^2 - R_{3}(h) \right)\\
-&= \frac{1}{2h} ( R_3(-h)-R_3(h))\\
-&= \frac{1}{2h}\left(  \left( \int_0^1 \frac{(1-t)^2}{2} f'''(x_0+th) dt \right) h^3  -  \left(\int_0^1 \frac{(1-t)^2}{2} f'''(x_0-th) dt \right) h^3  \right)\\
-&= \left(  \int_0^1 \frac{(1-t)^2}{4}( f'''(x_0+th)-f'''(x_0-th)) \right)h^2\\
-&{\in}   O(h^2)
-\end{align*}
-%
-once we restrict $h$ to some $\delta$-neighborhood of 0.
-So the error in using the centered difference quotient to approximate $f'(x_0)$ grows like $h^2$, which is smaller than $h$ when $|h|<1$.
+\begin{equation}
+f'(x_0)\approx\frac{f(x_0-2h)-8f(x_0-h)+8f(x_0+h)-f(x_0+2h)}{12h}.
+\end{equation}
+For a derivation of the second order centered difference quotient, please refer to the additional materials section.
 
+\begin{problem}
+In separate functions implement the
+\begin{enumerate}
+\item first order forward difference quotient,
+\item second order backward difference quotient,
+\item second order centered difference quotient, and the
+\item fourth order centered difference quotient.
+\end{enumerate}
+Each function should accept a callable function $f$, an array of points, and a float representing $h$ that defaults to $10^{-5}$.
+Return an array of the difference quotients.
+
+To test your function, you can define a polynomial and calculate its derivative analytically.
+Then pass your array of points into the analytically computed derivative and into your functions and verify that the returned arrays are close to one another.
+\end{problem}
 \subsection*{Accuracy of Approximations} % ------------------------------------
 
-Let us discuss what step size $h$ we should plug into the difference quotients to get the best approximation to $f'(x_0)$.
-Since $f'$ is defined as a limit as $h \rightarrow 0$, you may think that it is best to choose $h$ as small as possible, but this is not the case.
-In fact, dividing by very small numbers causes errors in floating point arithmetic.
-This means that as we decrease $|h|$, the error between $f'(x_0)$ and the difference quotient will first decrease, but then increase when $|h|$ gets too small because of floating point arithmetic.
-
-Here is an example with the function $f(x) = e^x$. A quick way to write $f$ as a function in Python is with the \li{lambda} keyword.
-
-\begin{lstlisting}
->>> import numpy as np
->>> from matplotlib import pyplot as plt
->>> f = lambda x: np.exp(x)
-\end{lstlisting}
-
-In general, the line \li{f = lambda <params> : <expression>} is equivalent to defining a function \li{f} that accepts the parameters \li{params} and returns \li{expression}.
-
-Next we fix a step size \li{h} and define an approximation to the derivative of \li{f} using the \emph{centered difference quotient}.
-
-\begin{lstlisting}
->>> h = 1e-1
->>> Df_app = lambda x: .5*(f(x+h)-f(x-h))/h
-\end{lstlisting}
-
-Finally, we check the accuracy of this approximation at $x_0=1$ by computing the difference between \li{Df_app(1)} and the actual derivative evaluated at 1.
-
-\begin{lstlisting}
-# Since f(x) = e^x, the derivative of f(x) is f(x)
->>> np.abs( f(1)-Df_app(1) )
-0.0045327354883726301
-\end{lstlisting}
-
-We note that our functions \li{f} and \li{Df_app} behave as expected when they are passed a NumPy array.
-
-\begin{lstlisting}
->>> h = np.array([1e-1, 1e-3, 1e-5, 1e-7, 1e-9, 1e-11])
->>> np.abs( f(1)-Df_app(1) )
-array([  4.53273549e-03,   4.53046679e-07,   5.85869131e-11,
-         5.85873572e-11,   6.60275079e-09,   1.04294937e-05])
-\end{lstlisting}
-
-These results are summarized in Table \ref{table:approx_errors}.
-
-\begin{table}
-\begin{center}
-\begin{tabular}{|c|c|c|c|c|c|c|}
-    \hline
-    $h$     & 1e-1 & 1e-3 & 1e-5  & 1e-7  & 1e-9 & 1e-11 \\ \hline
-    Error   & 5e-3 & 5e-7 & 6e-11 & 6e-11 & 7e-9 & 1e-5  \\ \hline
-\end{tabular}
-\caption{This table shows that it is best not to choose $h$ too small when you approximate derivatives with difference quotients.
-Here, ``Error'' equals the absolute value of $f'(1)-f_{app}(1)$ where $f(x) = e^x$ and $f_{app}$ is the centered difference approximation to $f'$.}
-\label{table:approx_errors}
-\end{center}
-\end{table}
-
-Thus, the optimal value of $h$ is one that is small, but not too small. A good choice is \li{h = 1e-5}.
+It is important to pick an appropriate step size $h$ when approximating a derivative by finite difference quotients.
+The step size should be small but not too small, as dividing by very small numbers causes errors in floating point arithmetic.
+This means that as we decrease $|h|$, the error $|f'(x_0)-\tilde{f}(x_0)|$ (where $\tilde{f}$ is the numerical approximation) will first decrease but then will increase as $|h|$ gets too small.
 
 \begin{problem}
-Write a function that accepts as input a callable function object \li{f}, an array of points \li{pts}, and
-a keyword argument \li{h} that defaults to \li{1e-5}.
-Return an array of the \emph{centered difference quotients} of \li{f} at each point in \li{pts} with the specified value of \li{h}.
+For the function $f(x) = (\sin(x)+1)^x$, calculate and plot the errors of the
+\begin{enumerate}
+\item second order backward difference quotient,
+\item second order centered difference quotient, and the
+\item fourth order centered difference quotient
+\end{enumerate}
+using your functions from Problem 1 to get the numerical approximations.
+Do this for at least 6 evenly-spaced values of $h \in [10^{-8}, 1]$.
+Use a \li{loglog()} plot, include a legend and put a dot on the graph for each value of $h$.
+Your function should accept a float value where the derivative is being approximated at.
+
+Hints: Define $f$ and analytically compute its derivative.
+For each value of $h$, calculate and plot $|f'(x_0)-\tilde{f}(x_0)|$.
+Consider using the NumPy function \li{logspace()} to define your $h$-values.
+To include a point on your graph, put \li{'-o'} as an argument in your \li{loglog()} function call.
+
+Evaluated at $x_0 = 1$, the plot of just the fourth order centered difference quotient should resemble Figure \ref{fig:errors}. You should notice a bend in each of the graphs, where the $h$-value is getting too small.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{error_plot.png}
+\caption{The plotted errors of fourth order centered difference quotient for the function $f(x) = (\sin(x)+1)^x$ evaluated at $x=1$.}
+\label{fig:errors}
+\end{figure}
+
 \end{problem}
 
-\begin{problem}
-Write a function that accepts as input a callable function object \li{f}, the derivative \li{df} of the function \li{f}, an array of points \li{pts}, and
-a keyword argument \li{h} that defaults to \li{1e-5}.  Return an array of the errors for the \emph{centered difference quotients} at each point in \li{pts} with the specified value of \li{h}.
-\end{problem}
+\begin{warn}
+Mathematically, choosing smaller h values results in smaller errors.
+On a computer however, values of h that are too small result in imprecise computations due to \emph{catastrophic cancellation}, which we will discuss in Conditioning and Stability. Consequently, the optimal value of $h$ is one that is small but not too small, such as $10^{-5}$.
+\end{warn}
+
+Although the centered difference quotient gives a more accurate approximation of the derivative, there are some functions that do not behave well under centered difference quotients.
+Additionally, information on both sides of the point $x_0$ may not be available.
+In these cases, one must use the forward or backward difference quotient to approximate the derivative.
 
 \begin{problem}
-Use the \emph{centered difference quotient} to approximate the derivative of $f(x) = (\sin(x)+1)^x$ at $x = \frac{\pi}{3}, \frac{\pi}{4},$ and $\frac{\pi}{6}$.  Calculate the error of the approximations.
-\end{problem}
-
-You may wonder if the forward or backward difference quotients are ever used, since the centered difference quotient is a more accurate approximation of the derivative.
-In fact, there are some functions that in practice do not behave well under centered difference quotients.
-In these cases, one must use the forward or backward difference quotient.
-
-Finally, we remark that forward, backward, and centered difference quotients can be used to approximate higher-order derivatives of $f$.
-However, taking derivatives is an \emph{unstable} operation.
-This means that taking a derivative can amplify the arithmetic error in your computation.
-For this reason, difference quotients are not generally used  to approximate derivatives higher than second order.
-
-\begin{problem}
-The radar stations A and B, separated by the distance a = 500 m, track the plane C by recording the angles $\alpha$ and $\beta$ at one-second intervals (See figure \ref{plane} ).
-Three successive readings are give in table \ref{angles}.
-Use centered difference quotients to calculate the speed v of the plane at t = 10 s.
-The coordinates of the plane can be shown to be
+The radar stations A and B, separated by the distance a = 500 km, track a plane C by recording the angles $\alpha$ and $\beta$ at one-second intervals (See figure \ref{plane}).
+Successive readings for $\alpha$ and $\beta$ at integer times $t \in [7, 14]$ are given in the textfile \texttt{plane.txt}.
+The first column contains the integer values of t, the second contains the float values of $\alpha$ in degrees and the third contains the float values $\beta$ in degrees.
+Use finite difference quotients to calculate the velocity of the plane for each value of $t$ in the file.
+The coordinates of the plane are
 \begin{equation}
 x = a \frac{\tan(\beta)}{\tan(\beta)-\tan(\alpha)}
 \end{equation}
 
 \begin{equation}
- y = a \frac{\tan(\beta)\tan(\alpha)}{\tan(\beta)-\tan(\alpha)}
+ y = a \frac{\tan(\beta)\tan(\alpha)}{\tan(\beta)-\tan(\alpha)}.
 \end{equation}
 
+Use these functions to find the coordinates of the plane at each point in time and plot the trajectory (note that NumPy trigometric functions only accept angles in radians).  Then approximate $x'(t)$ and $y'(t)$ at each point (using the forward difference quotient on $t = 7$, the backward on $t=14$ and the centered on all other points). Plot the values of the velocity $\sqrt{x'(t)^2+y'(t)^2}$ at each point in time and then return them in an array.
+
+The trajectory of the plane will be constantly increasing. And the values of the speed will vary between $.265$ and $.285$ km/sec which is approximately equivalent to $592-637$ mph.
 
 (Kiusalaas, Jaan. Numerical Methods in Engineering with Python 3)
 \end{problem}
 
 \begin{figure}
-\includegraphics[width=.5\textwidth]{figures/plane_diagram.pdf}
+\includegraphics[width=.5\textwidth]{figures/plane_diagram.png}
 \caption{Radar stations in relation to plane}
 \label{plane}
 \end{figure}
 
-\begin{figure}
-\includegraphics[width=.5\textwidth]{figures/angles_table.pdf}
-\caption{Angles $\alpha$ and $\beta$ at one-second intervals}
-\label{angles}
-\end{figure}
+\begin{info}
+Finite difference quotients can be used to approximate higher-order derivatives of $f$.
+However, taking derivatives is an unstable operation which can amplify the arithmetic error in your computation.
+For this reason, difference quotients are not generally used to approximate derivatives higher than second order.
+\end{info}
 
 \section*{Derivative Approximations in Multiple Dimensions} % =================
 
@@ -223,15 +191,23 @@ Similarly, the centered difference approximation is
 
 \begin{problem}
 \leavevmode
-Write a function that accepts
+Return the approximate Jacobian matrix of a function at a specific point using the centered difference quotient.
+Your function should accept:
 \begin{enumerate}
-\item a function handle \li{f},
-\item an integer \li{n} that is the dimension of the domain of \li{f},
-\item an integer \li{m} that is the dimension of the range of \li{f},
-\item an \li{1 x n}-dimensional NumPy array \li{pt} representing a point in $\mathbb{R}^n$, and
-\item a keyword argument \li{h} that defaults to \li{1e-5}.
+\item a callable function $f$,
+\item an integer $n$ that is the dimension of the domain of $f$,
+\item an integer $m$ that is the dimension of the range of $f$,
+\item an (1 x n)-dimensional NumPy array \li{pt} representing a point in $\mathbb{R}^n$, and
+\item a keyword argument $h$ that defaults to $10^{-5}$.
 \end{enumerate}
-Return the approximate Jacobian matrix of \li{f} at \li{pt} using the centered difference quotient.
+
+You can test your function with the following code:
+\begin{lstlisting}
+>>> f = lambda x: np.array([x[0]**2+x[1]**2, np.sin(x[0])+np.exp(x[1])])
+>>> pt = np.array([1., -1.])
+>>> jacobian(f, 2, 2, pt, 1e-5)
+array([[2.,-2.],[0.54030231, 0.36787944]])
+\end{lstlisting}
 \end{problem}
 \begin{problem}
 \item Let $f: \mathbb{R}^2 \to \mathbb{R}^2$ be defined by
@@ -245,8 +221,8 @@ e^{x} \sin(y) + y^3 \\
 \end{equation*}
 %
 Find the error between your Jacobian function and the analytically computed derivative on the square $[-1,1] \times [-1,1]$ using ten thousand grid points (100 per side).
-You may apply your Jacobian function to the points one at a time using a double \li{for} loop.  Once you get the error matrix for a given point, calculate the Frobenius norm of this matrix (\li{la.norm} defaults to the Frobenius norm).  This norm will be your total error for that point.
-What is the maximum error of your Jacobian function over all points in the square?
+You may apply your Jacobian function to the points one at a time using a double \li{for} loop.  Once you get the error matrix for a given point, calculate the Frobenius norm of this matrix (\li{la.norm()} defaults to the Frobenius norm).  This norm will be your total error for that point.
+Return the maximum error of your Jacobian function over all points in the square.
 
 Hint: The following code defines the function
 $f(x,y) = \left[\begin{array}{c} x^2 \\ x+y \end{array}\right]$.
@@ -256,6 +232,40 @@ $f(x,y) = \left[\begin{array}{c} x^2 \\ x+y \end{array}\right]$.
 >>> f = lambda x: np.array([x[0]**2, x[0]+x[1]])
 \end{lstlisting}
 \end{problem}
+
+\section*{Additional Material} % ==============================================
+
+\subsection*{Derivations} % ---------------------------------------------------
+
+$f'(x_0)$ can be approximated to the second order with another difference quotient, called the centered difference quotient.  We begin by trying to find the backward difference quotient.
+Evaluate Taylor's formula at $x_0-h$ to derive
+%
+\begin{equation}\label{equ:backwards_diff_with_remainder}
+f'(x_0) = \frac{f(x_0)-f(x_0-h)}{h} + \frac{R_2(-h)}{h}.
+\end{equation}
+%
+The first term on the right hand side of \eqref{equ:backwards_diff_with_remainder} is called the \emph{backward difference quotient.}
+This quotient also approximates $f'(x_0)$ to the first order.
+When we add \eqref{equ:forward_diff_with_remainder} and \eqref{equ:backwards_diff_with_remainder} and solve for $f'(x_0)$, we get
+%
+\begin{equation}\label{equ:centered_diff}
+f'(x_0) = \frac{\frac{1}{2}f(x_0+h) - \frac{1}{2}f(x_0-h)}{h} + \frac{R_2(-h) - R_2(h)}{2h}
+\end{equation}
+%
+The \emph{centered difference quotient} is the first term of the right hand side of \eqref{equ:centered_diff}.
+Let us investigate the remainder term to see how accurate this approximation is.
+Recall from the proof of Taylor's theorem that $R_k = \frac{f^{(k)}(x_0)}{k!}h^k + R_{k+1}$. Therefore,
+%
+\begin{align*}
+\frac{R_2(-h) - R_2(h)}{2h} &= \frac{1}{2h}\left(\frac{f''(x_0)}{2!}h^2 + R_{3}(-h) - \frac{f''(x_0)}{2!}h^2 - R_{3}(h) \right)\\
+&= \frac{1}{2h} ( R_3(-h)-R_3(h))\\
+&= \frac{1}{2h}\left(  \left( \int_0^1 \frac{(1-t)^2}{2} f'''(x_0+th) dt \right) h^3  -  \left(\int_0^1 \frac{(1-t)^2}{2} f'''(x_0-th) dt \right) h^3  \right)\\
+&= \left(  \int_0^1 \frac{(1-t)^2}{4}( f'''(x_0+th)-f'''(x_0-th)) \right)h^2\\
+&{\in}   O(h^2)
+\end{align*}
+%
+once we restrict $h$ to some $\delta$-neighborhood of 0.
+So the error in using the centered difference quotient is smaller than using the forward and backward difference quotients when $|h|<1$.
 
 % =============================================================================
 % OLD IMAGE FILTER MATERIAL (might work well in Fourier 2 lab?) ===============
@@ -476,5 +486,3 @@ Here, the 1's in $B$ were mapped to ``white'' and the 0's were mapped to ``black
 Write a function that accepts an image as input and applies the Sobel filter to the image.  Test your function on \li{cameraman.jpg}.  Hint: If you want to find the average of a matrix \li{A}, use the function \li{A.mean()}.
 \end{problem}
 \end{comment}
-
-

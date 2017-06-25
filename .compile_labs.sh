@@ -2,7 +2,7 @@
 # Compile the main tex files and ensure that there are no errors.
 
 USAGE="usage: ./compile_labs.sh [LaTeX compiler, defaults to pdflatex]"
-MAX_TIME=15
+MAX_TIME=30
 FILES=(PythonEssentials Volume1 Volume2 Volume3 Volume4)
 SUCCESS=true
 LOG="_compilelog.errlog"
@@ -29,15 +29,12 @@ fi
 # Check that the compile command exists.
 command -v $COMPILER > /dev/null 2>&1 || { echo "This script requires $COMPILER but it's not installed. Aborting."; exit 1; }
 
-# Check for large files.
-python travis_pre.py
-
 # Create a directory to deposit the labs in.
 if [ ! -e "$OUTDIR" ]; then
     mkdir $OUTDIR
 fi
 
-# Compile each tex file twice in 20 seconds or less each time.
+# Compile each tex file twice in 30 seconds or less each time.
 for FILE in ${FILES[@]}
 do
     LOGFILE=$FILE$LOG
@@ -57,7 +54,7 @@ do
     echo "success"
 done
 
-./.clean.sh
+bash ./.clean.sh
 
 # If any of the compilations failed, print the end of each compile log.
 if [ "$SUCCESS" = false ]; then

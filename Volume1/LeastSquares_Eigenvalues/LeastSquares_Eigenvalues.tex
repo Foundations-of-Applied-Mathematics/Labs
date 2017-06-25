@@ -1,23 +1,25 @@
 \lab{Least Squares and Computing Eigenvalues}{Least Squares and Computing Eigenvalues}
 \label{lab:qr-applications}
 \objective{Because of its numerical stability and convenient structure, the QR decomposition is the basis of many important and practical algorithms.
-In this lab, we introduce linear least squares problems, tools in Python for computing least squares solutions, and two fundamental eigenvalue algorithms.
-\\ \indent As in the previous lab, we restrict ourselves to real matrices and therefore use the transpose in place of the Hermitian conjugate.}
+In this lab, we introduce linear least squares problems, tools in Python for computing least squares solutions, and two fundamental algorithms for computing eigenvalue.
+The QR decomposition makes solving several of these problems quick and numerically stable.
+% \\ \indent As in the previous lab, we restrict ourselves to real matrices and therefore use the transpose in place of the Hermitian conjugate.
+}
 
 \section*{Least Squares} % ====================================================
 
 A linear system $A\x = \b$ is \emph{overdetermined} if it has more equations than unknowns.
 In this situation, there is no true solution, and $\x$ can only be approximated.
 
-The \emph{least squares solution} of $A\x = \b$, denoted as $\widehat{\x}$, is the ``closest'' vector to a solution, meaning it minimizes the quantity $\|A\widehat{\x} - \b\|_2$.
+The \emph{least squares solution} of $A\x = \b$, denoted $\widehat{\x}$, is the ``closest'' vector to a solution, meaning it minimizes the quantity $\|A\widehat{\x} - \b\|_2$.
 % \footnote{The choice of the 2-norm is significant.}
-In other words, $\widehat{\x}$ is the vector such that $A\widehat{\x}$ is projection of $\b$ onto the range of $A$, and can be calculated by solving the \emph{normal equation}:%
-\footnote{See Volume I Chapter 3 for a formal derivation of the normal equation.}
+In other words, $\widehat{\x}$ is the vector such that $A\widehat{\x}$ is the projection of $\b$ onto the range of $A$, and can be calculated by solving the \emph{normal equations}:%
+\footnote{See Chapter 3 of Volume I for a formal derivation of the normal equations.}
 \[A\trp A\widehat{\x} = A\trp \b\]
 
-If $A$ is full rank, which it usually is in applications, its QR decomposition provides an efficient way to solve the normal equation.
+If $A$ is full rank (which it usually is in applications) its QR decomposition provides an efficient way to solve the normal equations.
 Let $A = \widehat{Q}\widehat{R}$ be the reduced QR decomposition of $A$, so $\widehat{Q}$ is $m \times n$ with orthonormal columns and $\widehat{R}$ is $n \times n$, invertible, and upper triangular.
-Since $\widehat{Q}\trp \widehat{Q} = I$, and since $\widehat{R}\trp$ is invertible, the normal equation can be reduced as follows (we omit the hats on $\widehat{Q}$ and $\widehat{R}$ for clarity):
+Since $\widehat{Q}\trp \widehat{Q} = I$, and since $\widehat{R}\trp$ is invertible, the normal equations can be reduced as follows (we omit the hats on $\widehat{Q}$ and $\widehat{R}$ for clarity):
 %
 \begin{align}
 \nonumber
@@ -37,9 +39,9 @@ Since $\widehat{R}$ is upper triangular, this equation can be solved quickly wit
 
 \begin{problem} % Solve the normal equations with QR.
 Write a function that accepts an $m \times n$ matrix $A$ of rank $n$ and a vector $\b$ of length $n$.
-Use the QR decomposition and Equation \ref{eq:normal-equation-via-qr} to solve the normal equation corresponding to $A\x = \b$.
+Use the QR decomposition and (\ref{eq:normal-equation-via-qr}) to solve the normal equations corresponding to $A\x = \b$.
 
-You may use either SciPy's QR routine or one of your own routines from the previous lab.
+You may use either SciPy's QR routine or one of your own QR routines.
 In addition, you may use \li{la.solve_triangular()}, SciPy's optimized routine for solving triangular systems.
 
 \label{prob:lstsq-via-qr}
@@ -71,13 +73,13 @@ x_m & 1
 Note that $A$ has full column rank as long as not all of the $x_k$ values are the same.
 
 Because this system has two unknowns, it is guaranteed to have a solution if it has two or fewer equations.
-However, if there are more that two data points, the system is overdetermined if any set of three points are not collinear.
+However, if there are more than two data points, the system is overdetermined if any set of three points is not collinear.
 We therefore seek a least squares solution, which in this case means finding the slope $\widehat{a}$ and $y$-intercept $\widehat{b}$ such that the line $y = \widehat{a}x+\widehat{b}$ best fits the data.
 
 Figure \ref{fig:line-fit-example} is a typical example of this idea where $\widehat{a} \approx \frac{1}{2}$ and $\widehat{b} \approx -3$.
 
 \begin{figure}[H] % Linear regression example (without code).
-    \includegraphics[width=.59\textwidth]{figures/line_fit_example.pdf}
+    \includegraphics[width=.7\textwidth]{figures/line_fit_example.pdf}
     \caption{}
     \label{fig:line-fit-example}
 \end{figure}
@@ -91,8 +93,8 @@ To avoid large numerical computations, the year measurements start at 0 instead 
 Find the least squares line that relates the year to the housing price index (i.e., let year be the $x$-axis and index the $y$-axis).
 
 \begin{enumerate}
-    \item Construct the matrix $A$ and the vector $\b$ described by Equation \ref{eq:linear-least-squares}.\\
-    (Hint: the functions \li{np.vstack()}, \li{np.column_stack()}, and/or \li{np.ones()} may be helpful.)
+    \item Construct the matrix $A$ and the vector $\b$ described by (\ref{eq:linear-least-squares}).\\
+    (Hint: \li{np.vstack()}, \li{np.column_stack()}, and/or \li{np.ones()} may be helpful.)
     \item Use your function from Problem \ref{prob:lstsq-via-qr} to find the least squares solution.
     \item Plot the data points as a scatter plot.
     \item Plot the least squares line with the scatter plot.\\
@@ -120,7 +122,7 @@ For example, the following code produces Figure \ref{fig:line-fit-example}.
 >>> a, b, rvalue, pvalue, stderr = linregress(x, y)
 
 >>> plt.plot(x, y, 'k*', label="Data Points")
->>> plt.plot(x, a*x + b, 'b-', lw=2, label="Least Squares Fit")
+>>> plt.plot(x, a*x + b, label="Least Squares Fit")
 >>> plt.legend(loc="upper left")
 >>> plt.show()
 \end{lstlisting}
@@ -163,22 +165,22 @@ If $m > n+1$ this system is overdetermined, requiring a least squares solution.
 
 \subsubsection*{Working with Polynomials in NumPy} % - - - - - - - - - - - - -
 
-The $m \times (n+1)$ matrix $A$ of Equation \ref{eq:polynomial-least-squares} is called a \emph{Vandermonde matrix}.%
+The $m \times (n+1)$ matrix $A$ of (\ref{eq:polynomial-least-squares}) is called a \emph{Vandermonde matrix}.%
 \footnote{Vandermonde matrices have many special properties and are useful for many applications, including polynomial interpolation and discrete Fourier analysis.}
 % a matrix with entries $a_{ij} = x_i^{n-j+1}$.
 NumPy's \li{np.vander()} is a convenient tool for quickly constructing a Vandermonde matrix, given the values $\{x_k\}_{k=1}^m$ and the number of desired columns.
 
 \begin{lstlisting}
 >>> print(np.vander([2, 3, 5], 2))
-[[2 1]
- [3 1]
- [5 1]]
+[[2 1]                              # [[2**1, 2**0]
+ [3 1]                              #  [3**1, 3**0]
+ [5 1]]                             #  [5**1, 5**0]]
 
 >>> print(np.vander([2, 3, 5, 4], 3))
-[[ 4  2  1]
- [ 9  3  1]
- [25  5  1]
- [16  4  1]]
+[[ 4  2  1]                         # [[2**2, 2**1, 2**0]
+ [ 9  3  1]                         #  [3**2, 3**1, 3**0]
+ [25  5  1]                         #  [5**2, 5**1, 5**0]
+ [16  4  1]]                        #  [4**2, 4**1, 4**0]
 \end{lstlisting}
 
 NumPy also has powerful tools for working efficiently with polynomials.
@@ -187,21 +189,21 @@ Instances of this class are callable like a function.%
 \footnote{Class instances can be made callable by implementing the \li{__call__()} magic method.}
 The constructor accepts the polynomial's coefficients, from largest degree to smallest.
 
-Table \ref{table:numpy-poly1d} lists the attributes and methods of the \li{np.poly1d} class.
-See \url{http://docs.scipy.org/doc/numpy/reference/routines.polynomials.html} for a list of NumPy's polynomial routines.
+Table \ref{table:numpy-poly1d} lists some attributes and methods of the \li{np.poly1d} class.
+% For more on NumPy's polynomial routines, see \url{http://docs.scipy.org/doc/numpy/reference/routines.polynomials.html}.
 
 \begin{table}[H]
 \begin{tabular}{r|l}
     Attribute & Description \\
     \hline
-    coeffs & The $n+1$ coefficients, from greatest degree to least. \\
-    order & The polynomial degree ($n$). \\
-    roots & The $n-1$ roots. \\
+    \li{coeffs} & The $n+1$ coefficients, from greatest degree to least. \\
+    \li{order} & The polynomial degree ($n$). \\
+    \li{roots} & The $n-1$ roots. \\
     \\
     Method & Returns \\
     \hline
-    deriv() & The coefficients of the polynomial after being differentiated. \\
-    integ() & The coefficients of the polynomial after being integrated (with $c_0 = 0$).
+    \li{deriv()} & The coefficients of the polynomial after being differentiated. \\
+    \li{integ()} & The coefficients of the polynomial after being integrated (with $c_0 = 0$).
 \end{tabular}
 \caption{Attributes and methods of the \li{np.poly1d} class.}
 \label{table:numpy-poly1d}
@@ -217,27 +219,26 @@ See \url{http://docs.scipy.org/doc/numpy/reference/routines.polynomials.html} fo
 # Evaluate f(x) for several values of x in a single function call.
 >>> f([1, 2, 3, 4])
 array([0, 0, 2, 6])
-
-# Evaluate f(x) at 1, 2, 3, and 4 without creating f(x) explicitly.
->>> np.polyval([1, -3, 2], [1, 2, 3, 4])
-array([0, 0, 2, 6])
 \end{lstlisting}
+% # Evaluate f(x) at 1, 2, 3, and 4 without creating f(x) explicitly.
+% >>> np.polyval([1, -3, 2], [1, 2, 3, 4])
+% array([0, 0, 2, 6])
 
 \begin{problem} % Polynomial fitting.
 The data in \texttt{housing.npy} is nonlinear, and might be better fit by a polynomial than a line.
 
-Write a function that uses Equation \ref{eq:polynomial-least-squares} to calculate the polynomials of degree $3$, $6$, $9$, and $12$ that best fit the data.
+Write a function that uses (\ref{eq:polynomial-least-squares}) to calculate the polynomials of degree $3$, $6$, $9$, and $12$ that best fit the data.
 Plot the original data points and each least squares polynomial together in individual subplots.
-\\(Hint: define a separate, more refined domain with \li{np.linspace()} and use this domain to smoothly plot the polynomials.)
+\\(Hint: define a separate, refined domain with \li{np.linspace()} and use this domain to smoothly plot the polynomials.)
 
-Instead of using Problem \ref{prob:lstsq-via-qr} to solve the normal equation, you may use \li{scipy.linalg.lstsq()}, demonstrated below.
+Instead of using Problem \ref{prob:lstsq-via-qr} to solve the normal equations, you may use SciPy's least squares routine, \li{scipy.linalg.lstsq()}.
 
 \begin{lstlisting}
 >>> from scipy import linalg as la
 
 # Define A and b appropriately.
 
-# Solve the normal equation using SciPy's least squares routine.
+# Solve the normal equations using SciPy's least squares routine.
 # The least squares solution is the first of four return values.
 >>> x = la.lstsq(A, b)[0]
 \end{lstlisting}
@@ -283,19 +284,19 @@ The general equation of a circle with radius $r$ and center $(c_1, c_2)$ is as f
 \end{equation}
 
 The circle is uniquely determined  by $r$, $c_1$, and $c_2$, so these are the parameters that should be solved for in a least squares formulation of the problem.
-However, Equation \ref{eq:standard-circle} is not linear in any of these variables.
+However, (\ref{eq:standard-circle}) is not linear in any of these variables.
 %
 \begin{align}
 \nonumber (x - c_1)^2 + (y - c_2)^2 &= r^2 \\
 \nonumber x^2 - 2c_1 x + c_1^2 + y^2 - 2c_2y + c_2^2 &= r^2 \\
-x^2 + y^2 & = 2c_1 x + 2c_2 y + \textcolor{red}{r^2 - c_1^2 - c_2^2}
+x^2 + y^2 & = 2c_1 x + 2c_2 y + r^2 - c_1^2 - c_2^2
 \label{eq:circle-expanded}
 \end{align}
 
 The quadratic terms $x^2$ and $y^2$ are acceptable because the points $\{(x_k, y_k)\}_{k=1}^m$ are given.
 To eliminate the nonlinear terms in the unknown parameters $r$, $c_1$, and $c_2$, define a new variable $c_3 = r^2 - c_1^2 - c_2^2$.
-Then for each point $(x_k, y_k)$, Equation \ref{eq:circle-expanded} becomes the following:
-\[2c_1x_k + 2c_2y_k + \textcolor{red}{c_3} = x_k^2 + y_k^2\]
+Then for each point $(x_k, y_k)$, (\ref{eq:circle-expanded}) becomes the following:
+\[2c_1x_k + 2c_2y_k + c_3 = x_k^2 + y_k^2\]
 These $m$ equations are linear in $c_1$, $c_2$, and $c_3$, and can be written as a linear system.
 
 \begin{equation}
@@ -318,19 +319,22 @@ x_m^2 + y_m^2
 
 After solving for the least squares solution, $r$ can be recovered with the relation $r = \sqrt{c_1^2 + c_2^2 + c_3}$.
 Finally, plotting a circle is best done with polar coordinates.
-Using the same variables as before, the circle can be represented in polar equations with the following equations:
-\begin{align*}
-x = r\cos(\theta) + c_1 && y = r\sin(\theta) + c_2,
-\end{align*}
-where $\theta \in [0, 2\pi]$.
+Using the same variables as before, the circle can be represented in polar coordinates.
+\begin{equation}
+x = r\cos(\theta) + c_1, \qquad
+y = r\sin(\theta) + c_2, \qquad
+\theta\in [0,2\pi]
+\label{eq:circle-polar-rep}
+\end{equation}
+To plot the circle, solve the least squares system for $c_1$, $c_2$, and $r$, define an array for $\theta$, then use (\ref{eq:circle-polar-rep}) to calculate the coordinates of the points the circle.
 
 \begin{lstlisting}
 # Load some data and construct the matrix A and the vector b.
 >>> xk, yk = np.load("circle.npy").T
->>> A = np.column_stack((2*x, 2*y, np.ones_like(x)))
+>>> A = np.column_stack((2*xk, 2*yk, np.ones_like(xk)))
 >>> b = xk**2 + yk**2
 
-# Calculate the least squares solution and calculate the radius.
+# Calculate the least squares solution and solve for the radius.
 >>> c1, c2, c3 = la.lstsq(A, b)[0]
 >>> r = np.sqrt(c1**2 + c2**2 + c3)
 
@@ -338,13 +342,13 @@ where $\theta \in [0, 2\pi]$.
 >>> theta = np.linspace(0, 2*np.pi, 200)
 >>> x = r*np.cos(theta) + c1
 >>> y = r*np.sin(theta) + c2
->>> plt.plot(x, y, '-', lw=2)
->>> plt.plot(xk, yk, 'k*')
+>>> plt.plot(x, y)                  # Plot the circle.
+>>> plt.plot(xk, yk, 'k*')          # Plot the data points.
 >>> plt.axis("equal")
 \end{lstlisting}
 
 \begin{figure}[H]
-    \includegraphics[width=.55\textwidth]{figures/circle_fit_example.pdf}
+    \includegraphics[width=.7\textwidth]{figures/circle_fit_example.pdf}
 \end{figure}
 
 \begin{problem}
@@ -359,8 +363,7 @@ def plot_ellipse(a, b, c, d, e):
     cos_t, sin_t = np.cos(theta), np.sin(theta)
     A = a*(cos_t**2) + c*cos_t*sin_t + e*(sin_t**2)
     B = b*cos_t + d*sin_t
-    r = (-B + np.sqrt(B**2 + 4*A))/(2*A)
-
+    r = (-B + np.sqrt(B**2 + 4*A)) / (2*A)
     plt.plot(r*cos_t, r*sin_t, lw=2)
     plt.gca().set_aspect("equal", "datalim")
 \end{lstlisting}
@@ -417,12 +420,11 @@ First, not all square matrices $A$ have a dominant eigenvalue.
 However, the Perron-Frobenius theorem guarantees that if all entries of $A$ are positive, then $A$ has a dominant eigenvalue.
 Second, there is no way to choose an $\x_0$ that is guaranteed to have a nonzero projection onto the span of the eigenvectors corresponding to $\lambda$, though a random $\x_0$ will almost surely satisfy this condition.
 Even with these assumptions, a rigorous proof that the power method converges is most convenient with tools from spectral calculus.
-See Chapter ?? of the Volume I text for details. % TODO: which chapter?
+% See Chapter ?? of the Volume I text for details. % TODO: which chapter?
 
 \begin{problem} % Implement the power method.
 Write a function that accepts an $n \times n$ matrix $A$, a maximum number of iterations $N$, and a stopping tolerance \li{tol}.
 Use Algorithm \ref{Alg:power-method} to compute the dominant eigenvalue of $A$ and a corresponding eigenvector.
-
 Continue the loop in step \ref{step:power-method-stopping-criterion} until either $\|\x_{k+1} - \x_k\|$ is less than the tolerance \li{tol}, or until iterating the maximum number of times $N$.
 
 Test your function on square matrices with all positive entries, verifying that $A\x = \lambda\x$.
@@ -441,14 +443,14 @@ Use SciPy's eigenvalue solver, \li{scipy.linalg.eig()}, to compute all of the ei
 >>> lamb, x = eigs[loc], vecs[:,loc]
 
 # Verify that Ax = lambda x.
->>> np.allclose(A.dot(x), lamb*x)
-True
+>>> np.allclose(A @ x, lamb * x)
+<<True>>
 \end{lstlisting}
 \end{problem}
 
 \subsection*{The QR Algorithm} % ----------------------------------------------
 
-An obvious shortcoming of the power method is that it only computes the largest eigenvalue and a corresponding eigenvector.
+An obvious shortcoming of the power method is that it only computes one eigenvalue and eigenvector.
 The QR algorithm, on the other hand, attempts to find all eigenvalues of $A$.
 
 Let $A_0 = A$, and for arbitrary $k$ let $Q_kR_k = A_k$ be the QR decomposition of $A_k$.
@@ -459,6 +461,7 @@ This recursive definition establishes an important relation between the $A_k$.
 Thus $A_k$ is orthonormally similar to $A_{k+1}$, and similar matrices have the same eigenvalues.
 % Furthermore, since each of the $Q_k$ are orthonormal, the computation is numerically stable.
 The series of matrices $\{A_k\}_{k=0}^\infty$ converges to the following block matrix.
+
 \[
 S =
 \left[\begin{array}{cccc}
@@ -467,11 +470,23 @@ S_1    & *      & \cdots & *      \\
 \vdots & \ddots & \ddots & *      \\
 \0     & \cdots &     \0 & S_m
 \end{array}\right]
+\qquad
+\text{for example,}\ S =
+\left[\begin{array}{ccccc}
+\arrayrulecolor{lightgray}
+s_1 & *       & *       & \cdots & *      \\
+0   & s_{2,1} & s_{2,2} & \cdots & *      \\
+    & s_{2,3} & s_{2,4} & \cdots & *      \\
+    &         &         & \ddots & \vdots \\
+    &         &         &        & s_m    \\
+\end{array}\right]
 \]
-
 Each $S_i$ is either a $1\times1$ or $2\times2$ matrix.%
 \footnote{If all of the $S_i$ are $1\times1$ matrices, then the upper triangular $S$ is called the \emph{Schur form} of $A$.
 If some of the $S_i$ are $2\times2$ matrices, then $S$ is called the \emph{real Schur form} of $A$.}
+In the example above on the right, since the first subdiagonal entry is zero, $S_1$ is the $1\times 1$ matrix with a single entry, $s_1$.
+But as $s_{2,3}$ is not zero, $S_2$ is $2\times 2$.
+
 Since $S$ is block upper triangular, its eigenvalues are the eigenvalues of its diagonal $S_i$ blocks.
 Then because $A$ is similar to each $A_k$, those eigenvalues of $S$ are the eigenvalues of $A$.
 
@@ -481,7 +496,6 @@ Then because $A$ is similar to each $A_k$, those eigenvalues of $S$ are the eige
 When $A$ has real entries but complex eigenvalues, $2 \times 2$ $S_i$ blocks appear in $S$.
 Finding eigenvalues of a $2 \times 2$ matrix is equivalent to finding the roots of a 2nd degree polynomial, which has a closed form solution via the quadratic equation.
 This implies that complex eigenvalues come in conjugate pairs.
-%
 \begin{align}
 % \nonumber S_i=\left[\begin{array}{cc}a&b\\c&d\end{array}\right] \\
 \nonumber \det(S_i - \lambda I) =
@@ -490,7 +504,7 @@ a - \lambda & b           \\
 c           & d - \lambda
 \end{array}\right|
 &= (a - \lambda)(d - \lambda) - bc \\
-&= \lambda^2 - ad\lambda + (ad - bc) \label{eq:qr-algorithm-roots}
+&= \lambda^2 - (a+d)\lambda + (ad - bc) \label{eq:qr-algorithm-roots}
 \end{align}
 
 \subsubsection*{Hessenberg Preconditioning} % - - - - - - - - - - - - - - - - -
@@ -507,7 +521,7 @@ With preconditioning in mind, the entire QR algorithm is as follows.
 
 \begin{algorithm}[H] % The Power Method
 \begin{algorithmic}[1]
-\Procedure{QR Algorithm}{$A$}
+\Procedure{QR Algorithm}{$A$, $N$}
     \State $m, n \gets \shape{A}$
     \State $S \gets \text{hessenberg}(A)$ \label{step:qr-alg-hessenberg}
         \Comment{Put $A$ in upper Hessenberg form.}
@@ -522,7 +536,7 @@ With preconditioning in mind, the entire QR algorithm is as follows.
     \State $i \gets 0$
     \While{$i < n$}
         \If{$S_i$ is $1 \times 1$} \label{step:qr-alg-S_i-1x1-or-2x2}
-            \State Append $S_i$ to \texttt{eigs}
+            \State Append the only entry $s_i$ of $S_i$ to \texttt{eigs}
         \ElsIf{$S_i$ is $2 \times 2$}
             \State Calculate the eigenvalues of $S_i$
                 \label{step:qr-alg-S_i-eigs}
@@ -545,19 +559,20 @@ Use Algorithm \ref{Alg:qr-algorithm} to implement the QR algorithm with Hessenbe
 
 Consider the following implementation details.
 \begin{itemize}
-    \item Use \li{scipy.linalg.hessenberg()} to reduce $A$ to upper Hessenberg form in step \ref{step:qr-alg-hessenberg}, or use your own Hessenberg function from the previous lab.
+    \item Use \li{scipy.linalg.hessenberg()} or your own Hessenburg algorithm to reduce $A$ to upper Hessenberg form in step \ref{step:qr-alg-hessenberg}.
     \item The loop in step \ref{step:qr-alg-niters} should run for $N$ total iterations.
-    \item Use \li{scipy.linalg.qr()} to compute the QR decomposition of $S$ in step \ref{step:qr-alg-qr-S}, or use your own QR factorization routine from the previous lab (since $S$ is upper Hessenberg, Givens rotations are the most efficient way to produce $Q$ and $R$).
-    \item Assume that $S_i$ is $1 \times 1$ in step \ref{step:qr-alg-S_i-1x1-or-2x2} if one of two criteria hold:
-    \begin{enumerate}
+    \item Use \li{scipy.linalg.qr()} or one of your own QR factorization routines to compute the QR decomposition of $S$ in step \ref{step:qr-alg-qr-S}.
+    Note that since $S$ is in upper Hessenberg form, Givens rotations are the most efficient way to produce $Q$ and $R$.
+    \item Assume that $S_i$ is $1 \times 1$ in step \ref{step:qr-alg-S_i-1x1-or-2x2} if one of two following criteria hold:
+    \begin{itemize}
         \item $S_i$ is the last diagonal entry of $S$.
         \item The absolute value of element below the $i$th main diagonal entry of $S$ (the lower left element of the $2\times 2$ block) is less than \li{tol}.
-    \end{enumerate}
-    \item If $S_i$ is $2 \times 2$, use the quadratic formula and Equation \ref{eq:qr-algorithm-roots} to compute its eigenvalues.
+    \end{itemize}
+    \item If $S_i$ is $2 \times 2$, use the quadratic formula and (\ref{eq:qr-algorithm-roots}) to compute its eigenvalues.
     Use the function \li{cmath.sqrt()} to correctly compute the square root of a negative number.
 \end{itemize}
 
-Test your function on small random symmetric matrices, comparing your results to \li{scipy.linalg.eig()}.
+Test your function on small random symmetric matrices, comparing your results to SciPy's \li{scipy.linalg.eig()}.
 To construct a random symmetric matrix, note that $A + A\trp$ is always symmetric.
 % How many iterations are necessary?
 % How small does \li{tol} have to be?
@@ -570,7 +585,7 @@ Most modern computer packages instead use the \emph{implicit QR algorithm}, an i
 
 For large matrices, there are other iterative methods besides the power method and the QR algorithm for efficiently computing eigenvalues.
 They include the Arnoldi iteration, the Jacobi method, the Rayleigh quotient method, and others.
-We will return to this subject after studying spectral calculus and Krylov subspaces.
+% We will return to this subject after studying spectral calculus and Krylov subspaces.
 \end{info}
 
 \begin{comment} % TODO: WLS, other norms?, QR alg improvements
@@ -584,10 +599,10 @@ A \emph{weighted 2-norm} $\|\cdot\|_W$ is defined by the nonsingular matrix $W$ 
 \[\|\x\|_W = \|W\x\|_2 = \sqrt{\x\trp W\trp W\x}\]
 Typically $W$ is chosen to be a diagonal matrix, in which case the product $W\trp W$ is also diagonal.
 Given the overdetermined system $A\x = \b$, the problem of choosing $\widehat\x$ to minimize $\|A\widehat\x - \b\|_W$ is called a \emph{weighted least squares} problem.
-This problem has a slightly different normal equation.
+This problem has a slightly different set of normal equations.
 \[A\trp W\trp W A \widehat{\x} = A\trp W\trp W \b\]
 
-Letting $C = W A$ and $\z = W \b$, this equation reduces to the usual normal equation.
+Letting $C = W A$ and $\z = W \b$, this equation reduces to the usual normal equations.
 \[C\trp C \widehat{\x} = C\trp \z\]
 
 Left multiplying $A$ by the diagonal matrix $W$ multiplies the rows of $A$ by the diagonal entries of $W$.
@@ -628,7 +643,7 @@ See Figure \ref{fig:lstsq-many-norms} for an illustration of this.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\textwidth]{figures/ellipsefit.pdf}
+    \includegraphics[width=.7\textwidth]{figures/ellipsefit.pdf}
     % TODO: where did this picture come from? CVXOPT?
     \label{fig:lstsq-many-norms}
 \end{figure}

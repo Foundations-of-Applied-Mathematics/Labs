@@ -9,29 +9,39 @@ In this lab, we implement three popular iterative methods for solving large syst
 
 % Though finding an exact solution is either very time intensive or unstable, iterative methods give a sufficiently close approximations and take much less time.
 
-% TODO talk about LU-decomposition a bit and why we don't want to use it in this case.
-
-\section*{Iterative Methods} % ================================================
-
-The general idea behind any iterative method is to make an initial guess at the solution to a problem, apply a few easy computations to better approximate the solution, use that approximation as the new initial guess, and repeat until done.
-Throughout this lab, we use the notation $\x^{(k)}$ to denote the $k$th approximation for the solution vector $\x$ and $x^{(k)}_i$ to denote the $i^{th}$ component of $\x^{(k)}$.
-With this notation, every iterative method can be summarized as
-\begin{equation}\x^{(k+1)} = f(\x^{(k)}),\label{eq:iter-summary}\end{equation}
-where $f$ is some function used to approximate the true solution $\x$.
-
-In the best case, the iteration converges to the true solution ($\x^{(k)}\rightarrow\x$).
-In the worst case, the iteration continues forever without approaching the solution.
-Iterative methods therefore require carefully chosen \emph{stopping criteria} to prevent iterating forever.
-The general approach is to continue until the difference between two consecutive approximations is sufficiently small, and to iterate no more than a specific number of times.
-More precisely, choose a very small $\epsilon > 0$ and an integer $N\in\mathbb{N}$, and update the approximation using Equation \ref{eq:iter-summary} until either
+Iterative methods are often useful to solve large systems of equations.
+In this lab, let $\x^{(k)}$ denote the $k$-th iteration of the iterative method for solving the problem $A\x=\b$ for $\x$.
+Furthermore, let $x_{i}$ be the $i$-th component of $\x$ so that $x_{i}^{(k)}$ is the $i$-th component of $\x$ in the $k$-th iteration.
+Choose a very small $\epsilon > 0$ and an integer $N\in\mathbb{N}$, and continue iterating until either
 \begin{equation} % Stopping Criteria.
 \|\x^{(k-1)}-\x^{(k)}\| < \epsilon
 \qquad \text{or} \qquad
 k > N.
 \label{stopping-criteria}
 \end{equation}
+% THIS SECTION WAS TAKEN OUT AS IT IS NOW TALKED ABOUT IN THE NEWTONS METHOD LAB
+%\section*{Iterative Methods} % ================================================
 
-The choices for $\epsilon$ and $N$ are significant: a ``large'' $\epsilon$ (such as $10^{-6}$) produces a less accurate result than a ``small'' $\epsilon$ (such $10^{-16}$), but demands less computations; a small $N$ (10) also potentially lowers accuracy, but detects and halts non-convergent iterations sooner than with a large $N$ (10,000).
+%The general idea behind any iterative method is to make an initial guess at the solution to a problem, apply a few easy computations to better approximate the solution, use that approximation as the new initial guess, and repeat until done.
+%Throughout this lab, we use the notation $\x^{(k)}$ to denote the $k$th approximation for the solution vector $\x$ and $x^{(k)}_i$ to denote the $i^{th}$ component of $\x^{(k)}$.
+%With this notation, every iterative method can be summarized as
+%\begin{equation}\x^{(k+1)} = f(\x^{(k)}),\label{eq:iter-summary}\end{equation}
+%where $f$ is some function used to approximate the true solution $\x$.
+
+%In the best case, the iteration converges to the true solution ($\x^{(k)}\rightarrow\x$).
+%In the worst case, the iteration continues forever without approaching the solution.
+%Iterative methods therefore require carefully chosen \emph{stopping criteria} to prevent iterating forever.
+%The general approach is to continue until the difference between two consecutive approximations is sufficiently small, and to iterate no more than a specific number of times.
+%More precisely, choose a very small $\epsilon > 0$ and an integer $N\in\mathbb{N}$, and update the approximation using Equation \ref{eq:iter-summary} until either
+%\begin{equation} % Stopping Criteria.
+%\|\x^{(k-1)}-\x^{(k)}\| < \epsilon
+%\qquad \text{or} \qquad
+%k > N.
+%\label{stopping-criteria}
+%\end{equation}
+
+%The choices for $\epsilon$ and $N$ are significant: a ``large'' $\epsilon$ (such as $10^{-6}$) produces a less accurate result than a ``small'' $\epsilon$ (such $10^{-16}$), but demands less computations; a small $N$ (10) also potentially lowers accuracy, but detects and halts non-convergent iterations sooner than with a large $N$ (10,000).
+
 
 \section*{The Jacobi Method} % ================================================
 
@@ -75,7 +85,7 @@ x^{(2)}_3 & = & \frac{1}{3} ( -1 - x^{(1)}_2)       & = & \frac{1}{3} (-1 - 1)  
 \end{array}
 \end{align*}
 
-The process is repeated until at least one of the two stopping criteria in Equation \ref{stopping-criteria} is met.
+The process is repeated until at least one of the two stopping criteria in (\ref{stopping-criteria}) is met.
 For this particular problem, convergence to 8 decimal places ($\epsilon = 10^{-8}$) is reached in 29 iterations.
 
 \begin{center}
@@ -141,7 +151,7 @@ Now using $\x^{(k)}$ as the variables on the right side of the equation to produ
 \label{eq:jacobi-method}
 \end{align}
 
-There is a potential problem with Equation \ref{eq:jacobi-method}: calculating a matrix inverse is the cardinal sin of numerical linear algebra, yet the equation contains $D^{-1}$.
+There is a potential problem with (\ref{eq:jacobi-method}): calculating a matrix inverse is the cardinal sin of numerical linear algebra, yet the equation contains $D^{-1}$.
 However, since $D$ is a diagonal matrix, $D^{-1}$ is also diagonal, and is easy to compute.
 \[
 D^{-1} =
@@ -152,14 +162,13 @@ D^{-1} =
     0                & 0                & \ldots & \frac{1}{a_{nn}}
 \end{array}\right]
 \]
-
 Because of this, the Jacobi method requires that $A$ have nonzero diagonal entries.
 
 The diagonal $D$ can be represented by the 1-dimensional array $\mathbf{d}$ of the diagonal entries. %(instead of as a 2-dimensional array).
 Then the matrix multiplication $D\x$ is equivalent to the component-wise vector multiplication $\mathbf{d}*\x = \x*\mathbf{d}$.
 Likewise, the matrix multiplication $D^{-1}\x$ is equivalent to the component-wise ``vector division'' $\x/\mathbf{d}$.
 
-% TODO: this isn't super useful, but we do need to demonstrate "vector division".
+\begin{comment}% This didn't seem super useful so I took it out.
 \begin{lstlisting}
 >>> import numpy as np
 
@@ -169,6 +178,7 @@ Likewise, the matrix multiplication $D^{-1}\x$ is equivalent to the component-wi
 >>> np.allclose(D.dot(x), d*x)
 True
 \end{lstlisting}
+\end{comment}
 
 \begin{comment} % Jacobi algorithm box. Probably unnecessary.
 \begin{algorithm}[H]
@@ -196,7 +206,7 @@ True
 
 \begin{problem} % Implement the Jacobi Method.
 Write a function that accepts a matrix $A$, a vector $\b$, a convergence tolerance $\epsilon$, and a maximum number of iterations $N$.
-Implement the Jacobi method using Equation \ref{eq:jacobi-method}, returning the approximate solution to the equation $A\x = \b$.
+Implement the Jacobi method using (\ref{eq:jacobi-method}), returning the approximate solution to the equation $A\x = \b$.
 
 Run the iteration until $\|\mathbf{x}^{(k-1)} - \mathbf{x}^{(k)}\|_{\infty} < \epsilon$, and only iterate at most $N$ times.
 Avoid using \li{la.inv()} to calculate $D^{-1}$, but use \li{la.norm()} to calculate the vector $\infty$-norm $\|\x\|_\infty = \sup{|x_i|}$.
@@ -217,12 +227,10 @@ To test your function, use the following function to generate an $n\times n$ mat
 \begin{lstlisting}
 def diag_dom(n, num_entries=None):
     """Generate a strictly diagonally dominant nxn matrix.
-
     Inputs:
-        n (int): the dimension of the system.
-        num_entries (int): the number of nonzero values
+        n (int): The dimension of the system.
+        num_entries (int): The number of nonzero values.
             Defaults to n^(3/2)-n.
-
     Returns:
         A ((n,n) ndarray): An nxn strictly diagonally dominant matrix.
     """
@@ -232,9 +240,9 @@ def diag_dom(n, num_entries=None):
     rows = np.random.choice(np.arange(0,n), size=num_entries)
     cols = np.random.choice(np.arange(0,n), size=num_entries)
     data = np.random.randint(-4, 4, size=num_entries)
-    for i in xrange(num_entries):
+    for i in range(num_entries):
         A[rows[i], cols[i]] = data[i]
-    for i in xrange(n):
+    for i in range(n):
         A[i,i] = np.<<sum>>(np.<<abs>>(A[i])) + 1
     return A
 \end{lstlisting}
@@ -252,7 +260,7 @@ If the iteration is non-convergent, the successive approximations will have incr
 
 Most iterative methods only converge under certain conditions.
 For the Jacobi method, convergence mostly depends on the nature of the matrix $A$.
-If the entries $a_{ij}$ of $A$ satisfy the property \[|a_{ii}| > \sum_{j \neq i} |a_{ij}|\ \text{for all}\ i = 1,2,\hdots,n,\] then $A$ is called \emph{strictly diagonally dominant} (for example, \li{diag_dom()} in Problem \ref{prob:jacobi} generates a strictly diagonally dominant $n\times n$ matrix).
+If the entries $a_{ij}$ of $A$ satisfy the property \[|a_{ii}| > \sum_{j \neq i} |a_{ij}|\ \text{for all}\ i = 1,2,\hdots,n\] then $A$ is called \emph{strictly diagonally dominant} (for example, \li{diag_dom()} in Problem \ref{prob:jacobi} generates a strictly diagonally dominant $n\times n$ matrix).
 If this is the case, then the Jacobi method always converges, regardless of the initial guess $\x_0$.%
 \footnote{Although this seems like a strong requirement, most real-world linear systems can be represented by strictly diagonally dominant matrices.
 }
@@ -268,7 +276,7 @@ Modify your Jacobi method function in the following ways:
 \begin{enumerate}
     \item Add a keyword argument called \li{plot}, defaulting to \li{False}.
     \item Keep track of the absolute error $\|A\mathbf{x}^{(k)} - \mathbf{b}\|_{\infty}$ of the approximation for each value of $k$.
-    \item If \li{plot} is \li{True}, produce a lin-log plot the error against iteration count (use \li{plt.semilogy()} instead of \li{plt.plot()}).
+    \item If \li{plot} is \li{True}, produce a lin-log plot of the error against iteration count (use \li{plt.semilogy()} instead of \li{plt.plot()}).
     Return the approximate solution $\x$ even if \li{plot} is \li{True}.
 \end{enumerate}
 If the iteration converges, your plot should resemble the following figure.
@@ -301,17 +309,12 @@ As with the Jacobi method, solve for $x_1$ in the first equation, $x_2$ in the s
     x_3 & = & \frac{1}{3}(-1 - x_2)
 \end{array}
 \end{align*}
-
 Use $\x^{(0)}$ to compute $x^{(1)}_1$ in the first equation.
 \[x^{(1)}_1 = \frac{1}{2}(3 + x^{(0)}_3) = \frac{1}{2}(3 + 0) = \frac{3}{2}\]
-
 Now, however, use the updated value of $x^{(1)}_1$ in the calculation of $x^{(1)}_2$.
 \[x^{(1)}_2 = \frac{1}{3}(3 + x^{(1)}_1 - 2x^{(0)}_3) = \frac{1}{3}(3 + \frac{3}{2} - 0) = \frac{3}{2}\]
-
 Likewise, use the updated values of $x^{(1)}_1$ and $x^{(1)}_2$ to calculate $x^{(1)}_3$.
-
 \[x^{(1)}_3 = \frac{1}{3}(-1 - x^{(1)}_2) = \frac{1}{3}(-1 - \frac{3}{2}) = -\frac{5}{6}\]
-
 This process of using calculated information immediately is called \emph{forward substitution}, and causes the algorithm to (generally) converge much faster.
 
 \begin{center}
@@ -358,12 +361,11 @@ This gives a simplification.
 &= x^{(k)}_i + \frac{1}{a_{ii}}\left( b_i - A_i\trp\x^{(k)}\right)
 \label{eq:gauss_seidel}
 \end{align}
-
 One sweep through all the entries of $\x$ completes one iteration.
 
 \begin{problem} % Implement Gauss-Seidel.
 Write a function that accepts a matrix $A$, a vector $\b$, a convergence tolerance $\epsilon$, a maximum number of iterations $N$, and a keyword argument \li{plot} that defaults to \li{False}.
-Implement the Gauss-Seidel method using Equation \ref{eq:gauss_seidel}, returning the approximate solution to the equation $A\x = \b$.
+Implement the Gauss-Seidel method using (\ref{eq:gauss_seidel}), returning the approximate solution to the equation $A\x = \b$.
 
 Use the same stopping criterion as in Problem \ref{prob:jacobi}.
 Also keep track of the absolute errors of the iteration, as in Problem \ref{prob:plot-iterative-convergence}.
@@ -380,6 +382,7 @@ Additionally, since NumPy arrays are mutable, the past iteration must be stored 
 >>> x1[3] = 1000                    # Modify the "copy" in place.
 >>> np.allclose(x0, x1)             # But x0 was also changed!
 True
+
 # Instead, make a copy of x0 when creating x1.
 >>> x0 = np.copy(x1)                # Make a copy.
 >>> x1[3] = -1000
@@ -394,13 +397,13 @@ False
 
 \subsection*{Convergence} % ---------------------------------------------------
 
-Whether or not the Gauss-Seidel converges or not also depends on the nature of $A$.
+Whether or not the Gauss-Seidel method converges depends on the nature of $A$.
 If all of the eigenvalues of $A$ are positive, $A$ is called \emph{positive definite}.
 If $A$ is positive definite \emph{or} if it is strictly diagonally dominant, then the Gauss-Seidel method converges regardless of the initial guess $\x^{(0)}$.
 
 \begin{problem} % Sparse implementation of Gauss Seidel.
 The Gauss-Seidel method is faster than the standard system solver used by \li{la.solve()} if the system is sufficiently large and sufficiently sparse.
-For each vale of $n=5,\ 6,\ \ldots,\ 11$, generate a random $2^n \times 2^n$ matrix $A$ using \li{diag_dom()} and a random $2^n$ vector $\b$.
+For each value of $n=5,\ 6,\ \ldots,\ 11$, generate a random $2^n \times 2^n$ matrix $A$ using \li{diag_dom()} and a random $2^n$ vector $\b$.
 Time how long it takes to solve $A\x = \b$ using your Gauss-Seidel function from Problem \ref{prob:gauss_seidel}, and how long it takes to solve using \li{la.solve()}.
 
 Plot the times against the system size.
@@ -463,19 +466,22 @@ matrix([[0],
 Since the \li{coo_matrix} type allows for fast sparse matrix type conversion, it is usually worth the time and memory to convert to the sparse matrix type that corresponds with the operations you are performing.
 \end{comment}
 
-% TODO: include plotting convergence?
 \begin{problem} % Gauss-Seidel with Sparse matrices.
-Write a new function that accepts a \textbf{sparse} matrix $A$, a vector $\b$, a convergence tolerance $\epsilon$, and a maximum number of iterations $N$ (plotting the convergence is not required for this problem).
-Implement the Gauss-Seidel method using Equation \ref{eq:gauss_seidel}, returning the approximate solution to the equation $A\x = \b$.
+Write a new function that accepts a sparse matrix $A$, a vector $\b$, a convergence tolerance $\epsilon$, and a maximum number of iterations $N$ (plotting the convergence is not required for this problem).
+Implement the Gauss-Seidel method using (\ref{eq:gauss_seidel}), returning the approximate solution to the equation $A\x = \b$.
 Use the usual stopping criterion.
 
 The Gauss-Seidel method requires extracting the rows $A_i$ from the matrix $A$ and computing $A_i\trp\x$.
 There are many ways to do this that cause some fairly serious runtime issues, so we provide the code for this specific portion of the algorithm.
 
 \begin{lstlisting}
-# Slice the i-th row of A and dot product the vector x.
+# Get the indices of where the i-th row of A starts and ends if the
+# nonzero entries of A were flattened.
 rowstart = A.indptr[i]
 rowend = A.indptr[i+1]
+
+# Dot only the nonzero elements of the i-th row of A with the
+# corresponding elements of x.
 Aix = np.dot(A.data[rowstart:rowend], x[A.indices[rowstart:rowend]])
 \end{lstlisting}
 
@@ -491,150 +497,163 @@ from scipy import sparse
 
 \subsection*{Successive Over-Relaxation (SOR)} % ------------------------------
 
-Some systems meet the requirements for convergence with the Gauss-Seidel method, but that do not converge very quickly.
+Some systems meet the requirements for convergence with the Gauss-Seidel method, but do not converge very quickly.
 A slightly altered version of the Gauss-Seidel method, called \emph{Successive Over-Relaxation}, can result in faster convergence.
 This is achieved by introducing a \emph{relaxation factor}, $\omega$.
-The iterative equation for Gauss-Seidel, Equation \ref{eq:gauss-seidel-full} becomes the following.
+The iterative equation for Gauss-Seidel, (\ref{eq:gauss-seidel-full}) becomes the following.
 \[x^{(k+1)}_i = (1-\omega)x^{(k)}_i + \frac{\omega}{a_{ii}} \left(b_i - \sum_{j < i}a_{ij}x^{(k)}_j - \sum_{j > i}a_{ij}x^{(k)}_j \right)\]
-
 Simplifying the equation results in the following.
 \begin{equation}
 x^{(k+1)}_i = x^{(k)}_i + \frac{\omega}{a_{ii}}\left( b_i - A_i\trp\x^{(k)}\right)
 \label{eq:sor}
 \end{equation}
-
 Note that when $\omega = 1$, Successive Over-Relaxation reduces to Gauss-Seidel.
 
-\begin{problem}
-Write a function that accepts a \emph{sparse} matrix $A$, a vector $\b$, a convergence tolerance $\epsilon$, and a maximum number of iterations $N$.
-Implement Successive Over-Relaxation using Equation \ref{eq:sor}, returning the approximate solution to the equation $A\x = \b$.
+\begin{problem} % SOR
+Write a function that accepts a sparse matrix $A$, a vector $\b$, a relaxation factor $\omega$, a convergence tolerance $\epsilon$, and a maximum number of iterations $N$.
+Implement Successive Over-Relaxation using (\ref{eq:sor}), returning the approximate solution to the equation $A\x = \b$.
 Use the usual stopping criterion.
-\\(Hint: this requires changing only one line of code from the sparse Gauss-Seidel function.)
+\\ (Hint: this requires changing only one line of code from the sparse Gauss-Seidel function.)
 \label{prob:sor}
 \end{problem}
 
-\section*{Finite Difference Method} % =========================================
+\section*{A Finite Difference Method} % =======================================
 
 \emph{Laplace's equation} is an important partial differential equation that arises often in both pure and applied mathematics.
 In two dimensions, the equation has the following form.
 \begin{equation}
-\frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} = f(x,y)
+\frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} = 0
 \label{eq:laplaces-equation}
 \end{equation}
 
 Laplace's equation can be used to model heat flow.
-Consider a square metal plate where the top and bottom sides are fixed at $0^\circ$ Celsius and the left and right sides are fixed at $100^\circ$ Celsius.
+Consider a square metal plate where the top and bottom borders are fixed at $0^\circ$ Celsius and the left and right sides are fixed at $100^\circ$ Celsius.
 Given these boundary conditions, we want to describe how heat diffuses through the rest of the plate.
-If $f(x,y)=0$, then the solution to Laplace's equation describes the plate when it is in a \emph{steady state}, meaning that the heat at a given part of the plate no longer changes with time.
+The solution to Laplace's equation describes the plate when it is in a \emph{steady state}, meaning that the heat at a given part of the plate no longer changes with time.
 
-It is possible to solve Equation \ref{eq:laplaces-equation} analytically when $f(x,y) = 0$.
-Instead, however, we use a \emph{finite difference method} to solve the problem numerically.
-To begin, we impose a discrete, square grid on the plate (see Figure \ref{fig:itersolve-finite-difference-grid}).
-Denote the points on the grid by $u_{i,j}$.
-Then the interior points of the grid can be numerically approximated as follows:
-\begin{equation}
-\frac{\partial^2 u_{i,j}}{\partial x^2}+ \frac{\partial^2 u_{i,j}}{\partial y^2}
-\approx
-\frac{1}{h^2}\left(-4u_{i,j} + u_{i+1,j} + u_{i-1,j} + u_{i,j+1} +  u_{i,j-1}\right),
+It is possible to solve (\ref{eq:laplaces-equation}) analytically.
+However, the problem can also be solved numerically using a \emph{finite difference method}.
+To begin, we impose a discrete, square grid on the plate with uniform spacing.
+% (see Figure \ref{fig:itersolve-finite-difference-grid}).
+Denote the points on the grid by $(x_i,y_j)$ and the value of $u$ at these points (the heat) as $u(x_i,y_j) = U_{i,j}$.
+% Then the interior points of the grid can be numerically approximated as follows.
+Using the centered difference quotient for second derivatives,%
+% \footnote{Refer to the Differentiation lab for further discussion of the centered difference quotient.}
+%
+\begin{align}
+\nonumber 0 &= \frac{\partial^2 u}{\partial x^2}+ \frac{\partial^2 u}{\partial y^2}\\
+\nonumber &\approx \frac{U_{i+1,j}-2U_{i,j}+U_{i-1,j}}{h^2} + \frac{U_{i,j+1}-2U_{i,j}+U_{i,j-1}}{h^2}\\
+&= \frac{1}{h^2}\left(-4U_{i,j} + U_{i+1,j} + U_{i-1,j} + U_{i,j+1} +  U_{i,j-1}\right),
 \label{eq:laplace-finite-diff}
-\end{equation}
-where $h$ is the distance between $u_{i,j}$ and $u_{i+1,j}$ (and between $u_{i,j}$ and $u_{i,j+1}$).%
-\footnote{The derivation of Equation \ref{eq:laplace-finite-diff} will be studied in the lab on numerical differentiation.}
-
+\end{align}
+where $h = x_{i+1} - x_i = y_{j+1} - y_j$ is the distance between the grid points in either direction.
+%
 \begin{figure}[H]
-    \includegraphics[width=\linewidth]{figures/Grid.pdf}
-    \caption{On the left, an example of a $6\times 6$ grid where the red dots are hot boundary zones and the blue dots are cold boundary zones.
+    \includegraphics[width=.7\textwidth]{figures/Grid.pdf}
+    \caption{On the left, an example of a $6\times 6$ grid ($n=4$) where the red dots are hot boundary zones and the blue dots are cold boundary zones.
     On the right, the green dots are the neighbors of the interior black dot that are used to approximate the heat at the black dot.}
     \label{fig:itersolve-finite-difference-grid}
 \end{figure}
-
+%
 This problem can be formulated as a linear system.
 Suppose the grid has exactly $(n+2)\times (n+2)$ entries.
-Then the interior of the grid is $n\times n$, and can be flattened into an $n^2\times 1$ vector $\u$.
+Then the interior of the grid (where $u(x,y)$ is unknown) is $n\times n$, and can be flattened into an $n^2\times 1$ vector $\u$.
 The entire first row goes first, then the second row, proceeding to the $n^{th}$ row.
-\[\u = \left[u_{1,1},\ u_{1,2},\ \cdots,\ u_{1,n},\ u_{2,1},\ u_{2,2},\ \cdots,\ u_{2,n}\, \ldots,\ u_{n,n}\right]\trp\]
-From Equations \ref{eq:laplaces-equation} and \ref{eq:laplace-finite-diff} with $f(x,y) = 0$, we have the following for an interior point $u_{i,j}$:
+\[\u = \left[U_{1,1},\ U_{1,2},\ \cdots,\ U_{1,n},\ U_{2,1},\ U_{2,2},\ \cdots,\ U_{2,n}\, \ldots,\ U_{n,n}\right]\trp\]
+From (\ref{eq:laplace-finite-diff}), we have the following for an interior point $U_{i,j}$.
 \begin{equation}
--4u_{i,j} + u_{i+1,j} + u_{i-1,j} + u_{i,j+1} +  u_{i,j-1} = 0.
+-4U_{i,j} + U_{i+1,j} + U_{i-1,j} + U_{i,j+1} +  U_{i,j-1} = 0
 \label{eq:hot-plate}
 \end{equation}
-If any of the neighbors to $u_{i,j}$ is a boundary point on the grid, its value is already determined.
-For example, for $u_{3,1}$, the neighbor $u_{3,0} = 100$, so
-\[-4u_{3,1} + u_{4,1} + u_{2,1} + u_{3,2} = -100.\]
-The constants on the right side of the equation become the $n^2\times 1$ vector $\b$.
+If any of the neighbors to $U_{i,j}$ is a boundary point on the grid, its value is already determined by the boundary conditions.
+For example, for $U_{3,1}$, the neighbor $U_{3,0} = 100$, so
+\[-4U_{3,1} + U_{2,1} + U_{3,2} + U_{4,1} = -100.\]
+The constants on the right side of (\ref{eq:hot-plate}) become the $n^2\times 1$ vector $\b$.
+All nonzero entries of $\b$ correspond to interior points that touch the left or right boundaries.
 
-For example, writing Equation \ref{eq:hot-plate} for the $9$ interior points of the grid in Figure \ref{fig:itersolve-finite-difference-grid} result the a $9 \times 9$ system, $A\u = \b$.
+For example, writing (\ref{eq:hot-plate}) for the $16$ interior points of the grid in Figure \ref{fig:itersolve-finite-difference-grid} results in the following $16 \times 16$ system $A\u = \b$.
+Note the block structure (empty blocks are all zeros).
+\footnotesize
 \begin{align*}
-\left[\begin{array}{ccccccccc}
--4 & 1  &  0 &  1 &  0 &  0 &  0 &  0 & 0 \\
- 1 & -4 &  1 &  0 &  1 &  0 &  0 &  0 & 0 \\
- 0 & 1  & -4 &  0 &  0 &  1 &  0 &  0 & 0 \\
- 1 & 0  &  0 & -4 &  1 &  0 &  1 &  0 & 0 \\
- 0 & 1  &  0 &  1 & -4 &  1 &  0 &  1 & 0 \\
- 0 & 0  &  1 &  0 &  1 & -4 &  0 &  0 & 0 \\
- 0 & 0  &  0 &  1 &  0 &  0 & -4 &  1 & 0 \\
- 0 & 0  &  0 &  0 &  1 &  0 &  1 & -4 & 1 \\
- 0 & 0  &  0 &  0 &  0 &  1 &  0 &  1 & -4 \\
+\left[\begin{array}{cccc|cccc|cccc|cccc}
+\arrayrulecolor{lightgray}
+-4 & 1 & 0 & 0 & 1 & 0 & 0 & 0 &   &   &   &   &   &   &   &  \\
+1 & -4 & 1 & 0 & 0 & 1 & 0 & 0 &   &   &   &   &   &   &   &  \\
+0 & 1 & -4 & 0 & 0 & 0 & 1 & 0 &   &   &   &   &   &   &   &  \\
+0 & 0 & 1 & -4 & 0 & 0 & 0 & 1 &   &   &   &   &   &   &   &  \\ \hline
+1 & 0 & 0 & 0 & -4 & 1 & 0 & 0 & 1 & 0 & 0 & 0 &   &   &   &  \\
+0 & 1 & 0 & 0 & 1 & -4 & 1 & 0 & 0 & 1 & 0 & 0 &   &   &   &  \\
+0 & 0 & 1 & 0 & 0 & 1 & -4 & 1 & 0 & 0 & 1 & 0 &   &   &   &  \\
+0 & 0 & 0 & 1 & 0 & 0 & 1 & -4 & 0 & 0 & 0 & 1 &   &   &   &  \\ \hline
+  &   &   &   & 1 & 0 & 0 & 0 & -4 & 1 & 0 & 0 & 1 & 0 & 0 & 0\\
+  &   &   &   & 0 & 1 & 0 & 0 & 1 & -4 & 1 & 0 & 0 & 1 & 0 & 0\\
+  &   &   &   & 0 & 0 & 1 & 0 & 0 & 1 & -4 & 1 & 0 & 0 & 1 & 0\\
+  &   &   &   & 0 & 0 & 0 & 1 & 0 & 0 & 1 & -4 & 0 & 0 & 0 & 1\\ \hline
+  &   &   &   &   &   &   &   & 1 & 0 & 0 & 0 & -4 & 1 & 0 & 0\\
+  &   &   &   &   &   &   &   & 0 & 1 & 0 & 0 & 1 & -4 & 1 & 0\\
+  &   &   &   &   &   &   &   & 0 & 0 & 1 & 0 & 0 & 1 & -4 & 1\\
+  &   &   &   &   &   &   &   & 0 & 0 & 0 & 1 & 0 & 0 & 1 & -4
 \end{array}\right]
 \left[\begin{array}{c}
-u_{1,1} \\ u_{1,2} \\ u_{1,3} \\
-u_{2,1} \\ u_{2,2} \\ u_{2,3} \\
-u_{3,1} \\ u_{3,2} \\ u_{3,3}
+U_{1,1} \\ U_{1,2} \\ U_{1,3} \\ U_{1,4}\\
+U_{2,1} \\ U_{2,2} \\ U_{2,3} \\ U_{2,4}\\
+U_{3,1} \\ U_{3,2} \\ U_{3,3} \\ U_{3,4}\\
+U_{4,1} \\ U_{4,2} \\ U_{4,3} \\ U_{4,4}
 \end{array}\right]
 =
 \left[\begin{array}{c}
--100 \\ 0 \\ -100 \\
--100 \\ 0 \\ -100 \\
--100 \\ 0 \\ -100
+\arrayrulecolor{lightgray}
+-100 \\ 0 \\ 0 \\ -100 \\ \hline
+-100 \\ 0 \\ 0 \\ -100 \\ \hline
+-100 \\ 0 \\ 0 \\ -100 \\ \hline
+-100 \\ 0 \\ 0 \\ -100
 \end{array}\right]
 \end{align*}
-More generally, for any positive integer $n$, the corresponding system $A \u = \b$ can be expressed as follows.
+\normalsize
+More concisely, for any positive integer $n$, the matrix $A$ can be written as
 \begin{align*}
 A = \left[\begin{array}{ccccc}
-B_1 & I &      &        & \\
-I & B_2 &  I   &        & \\
+B & I &      &        & \\
+I & B &  I   &        & \\
   & I & \ddots & \ddots & \\
   &   & \ddots & \ddots & I \\
-  &   &        &    I   & B_n
+  &   &        &    I   & B
 \end{array}\right],
 \quad
-B_i = \begin{bmatrix}
--4 &  1 &      &        & \\
- 1 & -4 &  1   &        & \\
-   &  1 & \ddots & \ddots & \\
-   &    & \ddots & \ddots & 1 \\
+\text{where}\ B = \left[\begin{array}{ccccc}
+-4 &  1 &        &        &    \\
+ 1 & -4 &  1     &        &    \\
+   &  1 & \ddots & \ddots &    \\
+   &    & \ddots & \ddots & 1  \\
    &    &        &    1   & -4
-\end{bmatrix},
+\end{array}\right]
+\ \text{is}\ n\times n.
 \end{align*}
-where each $B_i$ is $n\times n$.
-All nonzero entries of $\b$ correspond to interior points that touch the left or right boundaries (since the top and bottom boundaries are held constant at $0$).
+% Each $B$ is $n\times n$ and A is consequently $n^2 \times n^2$.
 
 \begin{problem}
-Write a function that accepts an integer $n$ for the number of interior grid points.
-Return the corresponding sparse matrix $A$ and NumPy array $b$.\\
-(Hint: Consider using \li{scipy.sparse.block_diag} and the \li{setdiag()} method of scipy sparse matrices for dynamically creating the matrix $A$.)
+Write a function that accepts an integer $n$, a relaxation factor $\omega$, a convergence tolerance $\epsilon$ that defaults to $10^{-8}$, a maximum number of iterations $N$ that defaults to $100$, and a bool \li{plot} that defaults to \li{False}.
+Generate and solve the corresponding system $A\u = \b$ using Problem \ref{prob:sor}.
+\\ (Hint: see Problem 5 of Linear Systems. Also, \li{np.tile()} may be useful for constructing $\b$.)
+
+If \li{plot=True}, visualize the solution $\u$ with a heatmap using \li{plt.pcolormesh()} (the colormap \li{"seismic"} is a good choice in this case).
+This shows the distribution of heat over the hot plate after it has reached its steady state.
+Note that the $\u$ must be reshaped as an $n\times n$ array to properly visualize the result.
 \label{prob:finite-difference-setup}
 \end{problem}
 
 \begin{problem}
-To demonstrate how convergence is affected by the value of $\omega$ in SOR, time your function from Problem \ref{prob:sor} with $\omega = 1,\ 1.05,\ 1.1,\ \dots , 1.9, 1.95$ using the $A$ and $\b$ generated by problem \ref{prob:finite-difference-setup} with $n = 20$.
+To demonstrate how convergence is affected by the value of the relaxation factor $\omega$ in SOR, time your function from Problem \ref{prob:finite-difference-setup} with $\omega = 1,\ 1.05,\ 1.1,\ \dots , 1.9, 1.95$ and $n = 20$.
 Plot the times as a function of $\omega$.
-% Remember that $\omega = 1$ corresponds to the Gauss-Seidel method.
-% How does Gauss-Seidel compare to SOR with the optimal $\omega$?
 
 Note that the matrix $A$ is not strictly diagonally dominant.
 However, $A$ is positive definite, so the algorithm will converge.
-Unfortunately, convergence for these kinds of systems usually require more iterations than for strictly diagonally dominant systems.
-Therefore, set \li{tol=1e-2} and \li{maxiters = 1000} on the SOR function.
-\end{problem}
+Unfortunately, convergence for these kinds of systems usually requires more iterations than for strictly diagonally dominant systems.
+Therefore, set \li{tol=1e-2} and \li{N = 1000}.
 
-\begin{problem}
-Write a function that accepts an integer $n$.
-Use Problem \ref{prob:finite-difference-setup} to generate the corresponding system $A\u = \b$, then solve the system using SciPy's sparse system solver, \li{scipy.sparse.linalg.spsolve()} (\li{spla.spsolve()} from the previous lab).
-Visualize the solution using a heatmap using \li{np.meshgrid()} and \li{plt.pcolormesh()}
-(\li{"seismic"} is a good color map in this case).
-This shows the distribution of heat over the hot plate after it has reached its steady state.
-Note that the solution vector $\u$ must be reshaped to properly visualize the result.
+Recall that $\omega = 1$ corresponds to the Gauss-Seidel method.
+Choosing a more optimal relaxation factor saves a large number of iterations.
+This could translate to saving days or weeks of computation time while solving extremely large linear systems on a supercomputer.
 \end{problem}
 
 \begin{comment}
@@ -706,7 +725,7 @@ This step should take only \emph{one line} and should be based entirely on array
 Continue updating the interior entries of $U$ until they stop changing significantly.
 The entire procedure is summarized in Algorithm \ref{alg:jacobi}.
 
-(Hint: The slice \li{U[:-2,1:-1]} references the upper neighbors of the interior points of $U$ and \li{U[1:-1,2:]} references the right neighbors. How can you reference the lower and left neighbors?)
+Hint: The slice \li{U[:-2,1:-1]} references the upper neighbors of the interior points of $U$ and \li{U[1:-1,2:]} references the right neighbors. How can you reference the lower and left neighbors?
 
 Use the following code to visualize your results.
 %% This does 3D visualization, but it's easier (and better) as a heat map.
