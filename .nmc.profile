@@ -22,44 +22,7 @@ collection-latex 1
 collection-latexextra 1
 collection-latexrecommended 1
 collection-mathscience 1
-#
-# Ignored collections
-collection-context 0
-collection-fontutils 0
-collection-formatsextra 0
-collection-games 0
-collection-genericextra 0
-collection-genericrecommended 0
-collection-htmlxml 0
-collection-humanities 0
-collection-langafrican 0
-collection-langarabic 0
-collection-langcjk 0
-collection-langcyrillic 0
-collection-langczechslovak 0
-collection-langenglish 0
-collection-langeuropean 0
-collection-langfrench 0
-collection-langgerman 0
-collection-langgreek 0
-collection-langindic 0
-collection-langitalian 0
-collection-langother 0
-collection-langpolish 0
-collection-langportuguese 0
-collection-langspanish 0
-collection-luatex 0
-collection-mathextra 0
-collection-metapost 0
-collection-music 0
-collection-omega 0
-collection-pictures 0
-collection-plainextra 0
-collection-pstricks 0
-collection-publishers 0
-collection-texworks 0
-collection-xetex 0
-#
+
 # Options
 option_adjustrepo 1
 option_doc 0

@@ -1,322 +1,375 @@
 \lab{Newton's Method}{Newton's Method}
 \label{lab:NewtonsMethod}
-\objective{Newton's method finds the roots of functions; that is, it finds $\bar{x}$ such that $f(\bar{x}) = 0$.
-This method can be used in optimization to determine where the maxima and minima occur. In this lab, we use Newton's method to find zeros of a function. We also explore where an initial point converges based on basins of attraction.}
+\objective{Newton's method, the classical method for finding the roots of a function, is one of the most important algorithms of all time.
+In this lab, we implement Newton's method in arbitrary dimensions and use it to solve a few interesting problems.
+We also explore in some detail the convergence (or lack of convergence) of the method under various circumstances.}
 
-\section*{Newton's Method} % ==================================================
+\section*{Iterative Methods} % ================================================
 
-Newton's method begins with an initial guess $x_0$.
-Successive approximations of a root are found with the recursive sequence
-\[
-x_{n+1} = x_n - \frac{f(x_n)}{f'(x_n)}.
-\]
-In other words, Newton's method approximates the root of a function by finding the x-intercept of the tangent line at $(x_n, f(x_n))$ (see Figure \ref{fig:newton}).
+An \emph{iterative method} is an algorithm that must be applied repeatedly to obtain a result.
+The general idea behind any iterative method is to make an initial guess at the solution to a problem, apply a few easy computations to better approximate the solution, use that approximation as the new initial guess, and repeat until done.
+More precisely, let $F$ be some function used to approximate the solution to a problem.
+Starting with an initial guess of $x_0$, compute
+\begin{equation}x_{k+1} = F(x_k)\label{eq:iter-summary}\end{equation}
+for successive values of $k$ to generate a sequence $\{x_k\}_{k=0}^\infty$ that hopefully converges to the true solution.
+If the terms of the sequence are vectors, they are denoted by $\x_k$.
 
-The sequence $\{x_n\}$ will converge to the zero $\overline{x}$ of $f$ if
+In the best case, the iteration converges to the true solution $x$, written $\lim_{k\rightarrow\infty} x_k = x$ or $x_k\rightarrow x$.
+In the worst case, the iteration continues forever without approaching the solution.
+In practice, iterative methods require carefully chosen \emph{stopping criteria} to guarantee that the algorithm terminates at some point.
+The general approach is to continue iterating until the difference between two consecutive approximations is sufficiently small, and to iterate no more than a specific number of times.
+That is, choose a very small $\epsilon > 0$ and an integer $N\in\mathbb{N}$, and update the approximation using (\ref{eq:iter-summary}) until either
+\begin{equation} % Stopping Criteria.
+|x_k - x_{k-1}| < \epsilon
+\qquad \text{or} \qquad
+k > N.
+\label{stopping-criteria}
+\end{equation}
+
+The choices for $\epsilon$ and $N$ are significant: a ``large'' $\epsilon$ (such as $10^{-6}$) produces a less accurate result than a ``small'' $\epsilon$ (such $10^{-16}$), but demands less computations; a small $N$ (10) also potentially lowers accuracy, but detects and halts nonconvergent iterations sooner than a large $N$ (10,000).
+In code, $\epsilon$ and $N$ are often named \li{tol} and \li{maxiters}, respectively (or similar).
+
+While there are many ways to structure the code for an iterative method, probably the cleanest way is to combine a \li{for} loop with a \li{break} statement.
+As a very simple example, let $F(x) = \frac{x}{2}$.
+This method converges to $x = 0$ independent of starting point.
+
+\begin{lstlisting}
+>>> F = lambda x: x / 2
+>>> x0, tol, maxiters = 10, 1e-9, 8
+>>> for k in range(maxiters):           # Iterate at most N times.
+...     print(x0, end='  ')
+...     x1 = F(x0)                      # Compute the next iteration.
+...     if abs(x1 - x0) < tol:          # Check for convergence.
+...         break                       # Upon convergence, stop iterating.
+...     x0 = x1                         # Otherwise, continue iterating.
+...
+<<10  5.0  2.5  1.25  0.625  0.3125  0.15625  0.078125>>
+\end{lstlisting}
+
+In this example, the algorithm terminates after $N=8$ iterations (the maximum number of allowed iterations) because the tolerance condition $|x_k - x_{k-1}| < 10^{-9}$ is not met fast enough.
+If $N$ had been larger (say $40$), the iteration would have quit early due to the tolerance condition.
+
+\section*{Newton's Method in One Dimension} % =================================
+
+\emph{Newton's method} is an iterative method for finding the roots of a function.
+That is, if $f:\mathbb{R}\rightarrow\mathbb{R}$, the method attempts to find a $\bar{x}$ such that $f(\bar{x}) = 0$.
+Beginning with an initial guess $x_0$, calculate successive approximations for $\bar{x}$ with the recursive sequence
+\begin{equation}
+x_{k+1} = x_k - \frac{f(x_k)}{f'(x_k)}.
+\label{eq:newton-1d-def}
+\end{equation}
+
+The sequence converges to the zero $\bar{x}$ of $f$ if three conditions hold:
 \begin{enumerate}
 \item $f$ and $f'$ exist and are continuous,
-\item $f'(\overline{x})\neq0$, and
-\item $x_0$ is ``sufficiently close'' to $\overline{x}$.
+\item $f'(\bar{x})\neq0$, and
+\item $x_0$ is ``sufficiently close'' to $\bar{x}$.
 \end{enumerate}
-When all three conditions hold, Newton's method converges quadratically. In applications, the first two conditions usually hold. However, if $\overline{x}$ and $x_0$ are not ``sufficiently close'', Newton's method may converge very slowly, or it may not converge at all.
+In applications, the first two conditions usually hold.
+If $\bar{x}$ and $x_0$ are not ``sufficiently close,'' Newton's method may converge very slowly, or it may not converge at all.
+However, when all three conditions hold, Newton's method converges quadratically, meaning that the maximum error is squared at every iteration.
+This is very quick convergence, making Newton's method as powerful as it is simple.
 
-\begin{figure}[h]
-\label{fig:newton}
+\begin{figure}[h] % Iterations of Newton's method.
 \centering
 \includegraphics[width=.7\textwidth]{figures/newton_iters.pdf}
-\caption{An illustration of how two iterations of Newton's method works with initial starting point $x_0$. Newton's method takes the tangent line (red) at the point $(x_n, f(x_n))$ and defines $x_{n+1}$ to be the $x$-intercept of that line.}
+\caption{
+Newton's method approximates the root of a function (blue) by choosing as the next approximation the $x$-intercept of the tangent line (red) that goes through the point $(x_k, f(x_k))$.
+In this example, $f(x) = e^x - 2$, which has a root at $\bar{x} = \log(2)$.
+Setting $x_0 = 2$ and using (\ref{eq:newton-1d-def}) to iterate, we have $x_1 = x_0 - \frac{f(x_0)}{f'(x_0)} = 2 - \frac{e^2 - 2}{e^2} \approx 1.2707$.
+Similarly, $x_2 \approx 0.8320$, $x_3 \approx .7024$, and $x_4 \approx 0.6932$.
+After only a few iterations, the root $\log(2)\approx 0.6931$ is already computed to several digits of accuracy.}
+\label{fig:newton}
 \end{figure}
 
-Newton's method is powerful because given the three conditions above, it converges quickly.
-In these cases, the sequence $\{x_n\}$ converges to the actual root quadratically, meaning that the maximum error is squared at every iteration.
-
-Let us do an example with $f(x) = x^2-1$.
-We define $f(x)$ and $f'(x)$ in Python as follows.
-\begin{lstlisting}
->>> import numpy as np
->>> f = lambda x : x**2 - 1
->>> Df = lambda x : 2*x
-\end{lstlisting}
-Now we set $x_0 = 1.5$ and iterate.
-\begin{lstlisting}
->>> xold = 1.5
->>> xnew = xold - f(xold)/Df(xold)
->>> xnew
-1.0833333333333333
-\end{lstlisting}
-We can repeat this as many times as we desire.
-\begin{lstlisting}
->>> xold = xnew
->>> xnew = xold - f(xold)/Df(xold)
->>> xnew
-1.0032051282051282
-\end{lstlisting}
-We have already computed the root 1 to two digits of accuracy.
-
-
 \begin{problem}
-\label{prob:newton_arr}
-Implement Newton's method with a function that accepts the following parameters: a function $f$, an initial x-value, the derivative of $f$, the maximum number of iterations for Newton's method to perform that defaults to 15, and a tolerance that defaults to $10^{-5}$.
-The algorithm terminates when the difference between successive approximations is less than the tolerance or the maximum number of iterations has been reached. Return a tuple containing the last x-value computed, a Boolean telling whether or not Newton's method converged, and the number of iterations completed.
+\label{prob:newton-basic}
+Write a function that accepts a function $f$, an initial guess $x_0$, the derivative $f'$, a stopping tolerance defaulting to $10^{-5}$, and a maximum number of iterations defaulting to $15$.
+Use Newton's method as described in (\ref{eq:newton-1d-def}) to compute a root $\bar{x}$ of $f$.
+Terminate the algorithm when $|x_k - x_{k-1}|$ is less than the stopping tolerance or after iterating the maximum number of allowed times.
+Return the last computed approximation to $\bar{x}$, a boolean value indicating whether or not the algorithm converged, and the number of iterations completed.
+
+Test your function against functions like $f(x) = e^x - 2$ (see Figure \ref{fig:newton}) or $f(x) = x^4 - 3$.
+Check that the computed root $\bar{x}$ satisfies $f(\bar{x}) \approx 0$.
+Also consider comparing your function to \li{scipy.optimize.newton()}, which accepts similar arguments.
 \end{problem}
 
 \begin{info}
-\leavevmode
 Newton's method can be used to find zeros of functions that are hard to solve for analytically.
-Note that the function $f(x) = \frac{sin(x)}{x}-x$ is not continuous on any interval containing 0, but can be made continuous by defining $f(0)=1$. Newton's method can be used to compute the zero of this function.
+For example, the function $f(x) = \frac{\sin(x)}{x}-x$ is not continuous on any interval containing 0, but it can be made continuous by defining $f(0)=1$.
+Newton's method can then be used to compute the roots of this function.
 \end{info}
 
-\begin{comment}
-% old problem 2
-\begin{problem}
-\begin{enumerate}
-\label{prob:functions}
-\item Newton's method can be used to find zeros of functions that are hard to solve for analytically.
-Plot $f(x) = \frac{sin(x)}{x}-x$ on $[-4, 4]$.
-Note that this function can be made continuous on this domain by defining $f(0)=1$.
-Use your function \li{newtons_method()} to compute the zero of this function to seven digits of accuracy.
-\item Run \li{newtons_method()} on $f(x)=x^{1/3}$ with $x_0=.01$.
-What happens and why?
-Hint: The command \li{x**(1/3)} will not work when \li{x} is negative.
-Here is one way to define the function $f(x)=x^{1/3}$ in NumPy.
-\begin{lstlisting}
-f = lambda x: np.sign(x)*np.power(np.abs(x), 1./3)
-\end{lstlisting}
-\end{enumerate}
-\end{problem}
-\end{comment}
-
-\begin{problem}
-Suppose that an amount of $P_1$ dollars is put into an account at the beginning of years $1, 2,..., N_1$ and that the account accumulates interest at a fractional rate $r$ (for example, $r = .05$ corresponds to $5\%$ interest).
-Suppose also that, at the beginning of years $N_1 + 1, N_1 + 2, ..., N_1 + N_2$, an amount of $P_2$ dollars is withdrawn from the account and that the account balance is exactly zero after the withdrawal at year $N_1 + N_2$.
-Then the variables satisfy the equation
+\begin{problem} % Application to interest rates.
+\label{prob:newton-interest}
+Suppose that an amount of $P_1$ dollars is put into an account at the beginning of years $1, 2,..., N_1$ and that the account accumulates interest at a fractional rate $r$ (so $r = .05$ corresponds to $5\%$ interest).
+In addition, at the beginning of years $N_1 + 1, N_1 + 2, ..., N_1 + N_2$, an amount of $P_2$ dollars is withdrawn from the account and that the account balance is exactly zero after the withdrawal at year $N_1 + N_2$.
+Then the variables satisfy
 \[
 P_1[(1+r)^{N_1} - 1] = P_2[1-(1+r)^{-N_2}].
 \]
-If $N_1 =30, N_2 =20, P_1 =2000$, and $P_2 =8000$, use Newton's method to
-determine $r$.
-(From Atkinson Page 118).
+
+Write a function that, given $N_1$, $N_2$, $P_1$, and $P_2$, uses Newton's method to determine $r$.
+For the initial guess, use $r_0 = 0.1$.
+\\(Hint: Construct $f(r)$ such that when $f(r)=0$, the equation is satisfied.
+Also compute $f'(r)$.)
+
+To test your function, if $N_1 =30, N_2 =20, P_1 =2000$, and $P_2 =8000$, then $r\approx 0.03878$.
+(From Atkinson, page 118). % TODO: better citation.
 \end{problem}
 
-\begin{comment}
-\begin{problem}
-Extend your Newton's method even further so that it will work on systems of equations.
-Suppose that $F: \mathbb{R}^n \rightarrow \mathbb{R}^n $.
-The relevant equation is
-\[
-x_{i+1} = x_i - J^{-1}F(x_i)
-\]
-Note that you should not calculate the inverse Jacobian.
-\li{scipy.linalg.solve(A,b)} gives you the solution $x$ to the equation $Ax=b$.
-Use this fact to calculate $J^{-1}F$ from $J$ and $F$.
-You should be able to make this function work whether or not the user inputs a Jacobian.
-This also means that you will have to use your own \li{jacobian()} function.
-\end{problem}
-\end{comment}
+\subsection*{Backtracking} % --------------------------------------------------
 
-\section*{Backtracking}
-There are times when Newton's method may not converge due to the fact that the step from $x_n$ to $x_{n+1}$ was too large and the zero was stepped over completely. % This was seen in Problem \ref{prob:functions} when using $x_0 = .01$ to find the zero of $f(x)=x^{1/3}$. In that example, Newton's method did not converge since it stepped over the zero of the function, produced $x_1 = -.02$ and each iteration got increasingly more negative.
-To combat this problem of overstepping, backtracking is a useful tool.  Backtracking is simply taking a fraction of the full step from $x_n$ to $x_{n+1}$.  Define Newton's method with the recursive sequence
-\[
-x_{n+1} = x_n - \alpha\frac{f(x_n)}{f'(x_n)}.
-\]
-Note that setting $\alpha = 1$ results in the same Newton's method used up to this point in the lab.  Backtracking uses $\alpha < 1$ in the above sequence and takes a fraction of the step at each iteration.
+Newton's method may not converge for a variety of reasons.
+One potential problem occurs when the step from $x_k$ to $x_{k+1}$ is so large that the root is stepped over completely.
+\emph{Backtracking} is a strategy that combats the problem of overstepping by moving only a fraction of the full step from $x_k$ to $x_{k+1}$.
+This suggests a slight modification to (\ref{eq:newton-1d-def}).
+\begin{equation}
+x_{k+1} = x_k - \alpha\frac{f(x_k)}{f'(x_k)},\qquad\alpha\in(0,1]
+\label{eq:newton-backtracking-1d}
+\end{equation}
+Note that setting $\alpha = 1$ results in the exact same method defined in (\ref{eq:newton-1d-def}), but for $\alpha \in (0,1)$, only a fraction of the step is taken at each iteration.
 
-\begin{problem}
-Modify your function from Problem \ref{prob:newton_arr} so that it accepts a parameter $\alpha$ that defaults to $1$ to allow backtracking.
-Run the function on $f(x)=x^{1/3}$ with $x_0=.01$ using the default value for $\alpha$.
-What happens and why?
-Hint: The command \li{x**(1/3)} will not work when \li{x} is negative.
-Here is one way to define the function $f(x)=x^{1/3}$ in NumPy.
+\begin{problem} % Implement backtracking.
+Modify your function from Problem \ref{prob:newton-basic} so that it accepts a parameter $\alpha$ that defaults to $1$.
+Incorporate (\ref{eq:newton-backtracking-1d}) to allow for backtracking.
+
+To test your modified function, consider $f(x)=x^{1/3}$.
+The command \li{x**(1/3.)} fails when \li{x} is negative, so the function can be defined with NumPy as follows.
 \begin{lstlisting}
-f = lambda x: np.sign(x)*np.power(np.abs(x), 1./3)
+import numpy as np
+f = lambda x: np.sign(x) * np.power(np.<<abs>>(x), 1./3)
 \end{lstlisting}
-Now find an $\alpha < 1$ so that running the function on $f(x)=x^{1/3}$ with $x_0=.01$ converges.
-Return the same results as in Problem \ref{prob:newton_arr}; that is, return a tuple containing the last x-value computed, a Boolean telling whether or not Newton's method converged, and the number of iterations completed.
+With $x_0=.01$ and $\alpha=1$, the iteration should \textbf{not} converge.
+However, setting $\alpha=.4$, the iteration should converge to a root that is close to $0$.
+\label{prob:newton-1d-backtracking}
 \end{problem}
 
-\begin{comment}
-% old problem 4
-\begin{problem}
-\begin{enumerate}
-\item Modify your \li{newtons_method()} function so that it accepts a parameter $\alpha$ that defaults to $1$ to allow backtracking.
-\item Find an $\alpha < 1$ so that running \li{newtons_method()} on $f(x)=x^{1/3}$ with $x_0=.01$ converges.
-(See Problem \ref{prob:functions}).
-Return the results of \li{newtons_method()}.
-\end{enumerate}
-\end{problem}
-\end{comment}
+The backtracking constant $\alpha$ is significant, as it can result in faster convergence or convergence to a different root (see Figure \ref{fig:newton-backtracking-multi-result}).
+However, it is not immediately obvious how to choose an optimal value for $\alpha$.
 
-\clearpage
-
-\begin{figure}
+\begin{figure}[H]
 \centering
-\includegraphics[width=.8\textwidth]{figures/backtracking.pdf}
-\caption{Starting at the same initial value results in convergence to two different solutions.  The blue line converges to $(0,-1)$ (with $\alpha = 1$) in 5 iterations of Newton's method while the red line converges to $(3.75,.25)$ with $\alpha < 1$ in $15$ iterations .}
-\label{fig:contour_plot}
+\includegraphics[width=.7\textwidth]{figures/backtracking.pdf}
+\caption{Starting at the same initial value but using different backtracking constants can result in convergence to two different solutions.
+The blue line converges to $\tilde{\x} = (0,-1)$ with $\alpha = 1$ in 5 iterations of Newton's method while the orange line converges to $\hat{\x} = (3.75,.25)$ with $\alpha = 0.4$ in $15$ iterations.
+Note that the points in this example are $2$-dimensional, which is discussed in the next section.}
+\label{fig:newton-backtracking-multi-result}
 \end{figure}
 
-\section*{Newton's Method: Vector Version}
+\begin{problem} % Searching for a good backtracking constant.
+\label{prob:newton-backtracking-search}
+Write a function that accepts the same arguments as your function from Problem \ref{prob:newton-1d-backtracking} except for $\alpha$.
+Use Newton's method to find a root of $f$ using various values of $\alpha$ in the interval $(0,1]$.
+Plot the values of $\alpha$ against the number of iterations performed by Newton's method.
+Return a value for $\alpha$ that results in the lowest number of iterations.
 
-Newton's method can be generalized from the single-variable case to multi-dimensional problems. We can solve the equation $f(\mathbf{\bar{x}})=\mathbf{0}$ for $\mathbf{\bar{x}}$, where $f=(f_1,f_2,\dots,f_n)$ is a vector of functions and $\mathbf{\bar{x}}=(\bar{x}_1, \bar{x}_2,\dots,\bar{x}_n)\in\mathbb{R}^n$. The recursive sequence for the vector version of Newton's method is defined as 
-\[
-\mathbf{x}_{n+1} = \mathbf{x}_n - \alpha{Df(\mathbf{x}_n)}^{-1}{f(\mathbf{x}_n)}.
-\]
-Like the one-dimensional method, the vector version of Newton's method terminates when the difference between successive approximations is less than a predetermined tolerance $\epsilon$; that is, \\$||\mathbf{x}_{n+1}-\mathbf{x}_n||<\epsilon$, or the maximum number of iterations is reached.
-\begin{problem}
-\begin{enumerate}
-
-\item Create a function that performs Newton's method on vectors in $\mathbb{R}^2$ and accepts the following parameters: a function $f$, an initial guess $\mathbf{x_0}$, the derivative function of $f$, a maximum number of iterations that defaults to 15, a tolerance that defaults to $10^{-5}$, and a backtracking factor $\alpha$ that defaults to 1. Return a tuple of lists containing the values of each component at each iteration.
-\item Bioremediation involves the use of bacteria to consume toxic wastes.
-At a steady state, the bacterial density $x$ and the nutrient concentration $y$ satisfy the system of nonlinear equations
-\[
-\gamma xy - x(1 + y) = 0,
-\]
-\[
- -xy + (\delta - y)(1 + y) = 0,
-\]
-where $\gamma$ and $\delta$ are parameters that depend on various physical features of the system.
-For this problem, assume the typical values $\gamma = 5$ and $\delta = 1$, for which the system has solutions at $(x, y) = (0, 1), (0, -1)$, and $(3.75, .25)$.
-Solve the system using Newton's method and Newton's method with backtracking.
-Find an initial point where using $\alpha = 1$ converges to either $(0, 1)$ or $(0, -1)$ and using $\alpha < 1$ converges to $(3.75, .25).$
-Plot the tracks used to find the solution (see Figure \ref{fig:contour_plot}).
-Hint: use starting values within the rectangle
-\[
-{(x, y) : -.25 \leqslant x \leqslant 0, 0 \leqslant y \leqslant .25}
-\]
-
-and $\alpha\leq.75$.
-
-(Adapted from problem 5.19 of M. T. Heath, Scientific Computing, an Introductory Survey, 2nd edition, McGraw Hill, 2002 and the Notes of Homer Walker).
-\end{enumerate}
+A good test case for this problem is the function $f(x) = x^{1/3}$ discussed in Problem \ref{prob:newton-1d-backtracking}.
+In this case, your plot should show that the optimal value for $\alpha$ is actually closer to $.3$ than to $.4$.
+% resemble the following figure.
+% \begin{figure}[H]
+% \includegraphics[width=.7\textwidth]{figures/alpha_iters.pdf}
+% \end{figure}
 \end{problem}
 
-\section*{Basins of Attraction: Newton Fractals} % ============================
+\section*{Newton's Method in Higher Dimensions} % =============================
 
-When $f(x)$ has many roots, the root that Newton's method converges to depends on the initial guess $x_0$.
+Newton's method can be generalized to work on functions with a multivariate domain and range.
+Let $f:\mathbb{R}^n\rightarrow\mathbb{R}^n$ be given by $f(\x)=[f_1(\x)\ f_2(\x)\ \ldots\ f_k(\x)]\trp$, with $f_i:\mathbb{R}^n\to\mathbb{R}$ for each $i$.
+The derivative $Df:\mathbb{R}^n\rightarrow\mathbb{R}^{n\times n}$ is the $n\times n$ Jacobian matrix of $f$.
+\[
+Df =
+\left[\begin{array}{ccc}
+\frac{\partial f_1}{\partial x_1} & \cdots & \frac{\partial f_1}{\partial x_n} \\
+\vdots & \ddots & \vdots \\
+\frac{\partial f_n}{\partial x_1} & \cdots & \frac{\partial f_n}{\partial x_n} \\
+\end{array}\right]
+\]
+
+In this setting, Newton's method seeks a vector $\bar{\x}$ such that $f(\bar{\x}) = \0$, the vector of $n$ zeros.
+With backtracking incorporated, (\ref{eq:newton-backtracking-1d}) becomes the following.
+\begin{equation}
+\x_{k+1} = \x_k - \alpha{Df(\x_k)}^{-1}{f(\x_k)}.
+\label{eq:newton-nd}
+\end{equation}
+Note that if $n = 1$, (\ref{eq:newton-nd}) is exactly (\ref{eq:newton-backtracking-1d}) because in that case, $Df(x)^{-1} = 1/f'(x)$.
+
+This vector version of Newton's method terminates when the maximum number of iterations is reached or the difference between successive approximations is less than a predetermined tolerance $\epsilon$ with respect to a vector norm, that is, $||\x_k - \x_{k-1}|| < \epsilon$.
+
+\begin{problem} % Newton's method in n dimensions.
+Modify your function from Problems \ref{prob:newton-basic} and \ref{prob:newton-1d-backtracking} so that it can compute a root of a function $f:\mathbb{R}^n\rightarrow\mathbb{R}^n$ for any $n\in\mathbb{N}$.
+Take the following tips into consideration.
+\begin{itemize}
+\item If $n > 1$, $f$ should be a function that accepts a 1-D NumPy array with $n$ entries and returns another NumPy array with $n$ entries.
+Similarly, $Df$ should be a function that accepts a 1-D array with $n$ entries and returns a $n\times n$ array.
+In other words, $f$ and $Df$ are callable functions, but $f(\x)$ is a vector and $Df(\x)$ is a matrix.
+
+\item \li{np.isscalar()} may be useful for determining whether or not $n > 1$.
+
+\item Instead of computing $Df(\x_k)^{-1}$ directly at each step, solve the system $Df(\x_k)\y_k = f(\x_k)$ and set $\x_{k+1} = \x_k - \alpha\y_k$.
+Always avoid taking matrix inverses when possible.
+
+\item The stopping criterion now requires using a norm function instead of \li{abs()}.
+\end{itemize}
+
+After your modifications, carefully verify that your function still works in the case that $n=1$, and that your functions from Problems \ref{prob:newton-interest} and \ref{prob:newton-backtracking-search} also still work correctly.
+In addition, your function from Problem \ref{prob:newton-backtracking-search} should also work for any $n \in N$.
+\label{prob:newton-nd-implementation}
+\end{problem}
+
+\begin{problem}
+Bioremediation involves the use of bacteria to consume toxic wastes.
+At a steady state, the bacterial density $x$ and the nutrient concentration $y$ satisfy the system of nonlinear equations
+\begin{align*}
+\gamma xy - x(1 + y) &= 0 \\
+-xy + (\delta - y)(1 + y) &= 0,
+\end{align*}
+where $\gamma$ and $\delta$ are parameters that depend on various physical features of the system.
+
+For this problem, assume the typical values $\gamma = 5$ and $\delta = 1$, for which the system has solutions at $(x, y) = (0, 1), (0, -1)$, and $(3.75, .25)$.
+Write a function that finds an initial point $\x_0 = (x_0,y_0)$ such that Newton's method converges to either $(0, 1)$ or $(0, -1)$ with $\alpha = 1$, and to $(3.75, .25)$ with $\alpha = 0.55$.
+As soon as a valid $\x_0$ is found, return it (stop searching).
+\\(Hint: search within the rectangle $[-\frac{1}{4},0]\times[0,\frac{1}{4}]$.)
+
+(Adapted from problem 5.19 of M. T. Heath, Scientific Computing, an Introductory Survey, 2nd edition, McGraw Hill, 2002 and the Notes of Homer Walker). % TODO: a better citation.
+\end{problem}
+
+\subsection*{Basins of Attraction} % ------------------------------------------
+
+When a function $f$ has many roots, the root that Newton's method converges to depends on the initial guess $x_0$.
 For example, the function $f(x)=x^2-1$ has roots at $-1$ and $1$.
-If $x_0<0$, then Newton's method converges to -1; if $x_0>0$ then it converges to 1 (see Figure \ref{fig:basins1}).
-We call the regions $(-\infty, 0)$ and $(0, \infty)$ \emph{basins of attraction}.
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[scale=0.5]{figures/basins1.pdf}
-    \caption{The plot of $f(x) = x^2 -1$ along with some values for $x_0$.
-    When Newton's method (with $\alpha=1$) is initialized with a blue value for $x_0$ it converges to -1; when it is initialized with a red value it converges to 1.}
-    \label{fig:basins1}
-\end{figure}
+If $x_0<0$, then Newton's method converges to $-1$; if $x_0 > 0$ then it converges to $1$ (see Figure \ref{fig:basins-quadratic}).
+The regions $(-\infty, 0)$ and $(0, \infty)$ are called the \emph{basins of attraction} of $f$.
+Starting in one basin of attraction leads to finding one root, while starting in another basin yields a different root.
 
 When $f$ is a polynomial of degree greater than 2, the basins of attraction are much more interesting.
-For example, if $f(x) = x^3-x$, the basins are depicted in Figure \ref{fig:fractal_1d}.
+For example, the basis of attraction for $f(x) = x^3-x$ are shown in Figure \ref{fig:basins-cubic}.
+The basin for the root at the origin is connected, but the other two basins are disconnected and share a kind of symmetry.
 
-We can extend these examples to the complex plane.
-Newton's method works in arbitrary Banach spaces with slightly stronger hypotheses (see Chapter 7 of Volume 1), and in particular it holds over $\mathbb{C}$.
-
-Let us plot the basins of attraction for $f(x) = x^3-1$ on the domain $\{a+bi \mid (a, b) \in [-1.5, 1.5] \times [-1.5, 1.5] \}$ in the complex plane.
-We begin by creating a $700 \times 700$ grid of points in this domain.
-We create the real and imaginary parts of the points separately, and then use \li{np.meshgrid()} to turn them into a single grid of complex numbers.
-
-\begin{figure}[h]
+\begin{figure}[H] % 1-D basins of attraction.
+\centering
+\begin{subfigure}{.48\textwidth}
     \centering
-    \includegraphics[scale=0.5]{figures/fractal1d.pdf}
-    \caption{The plot of $f(x) = x^3 -x$ along with some values for $x_0$. With $\alpha=1$,
-    blue values converge to $-1$, red converge to 0, and green converge to 1.}
-    \label{fig:fractal_1d}
+    \includegraphics[width=\textwidth]{figures/basins_quadratic.pdf}
+    \caption{Basins of attraction for $f(x) = x^2 -1$.}
+    % With $\alpha=1$, blue values for $x_0$ converge to -1 and orange values converge to 1.}
+    \label{fig:basins-quadratic}
+\end{subfigure}
+\quad
+\begin{subfigure}{.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/basins_cubic.pdf}
+    \caption{Basins of attraction for $f(x) = x^3 -x$.}
+        % With $\alpha=1$, blue values converge to $-1$, orange converge to 0, and green converge to 1.}
+    \label{fig:basins-cubic}
+\end{subfigure}
+\caption{Basins of attraction with $\alpha=1$.
+Since choosing a different value for $\alpha$ can change which root Newton's method converges to, the basins of attraction may change for other values of $\alpha$.}
 \end{figure}
 
-\begin{lstlisting}
->>> xreal = np.linspace(-1.5, 1.5, 700)
->>> ximag = np.linspace(-1.5, 1.5, 700)
->>> Xreal, Ximag = np.meshgrid(xreal, ximag)
->>> Xold = Xreal+1j*Ximag
-\end{lstlisting}
+It can be shown that Newton's method converges in any Banach space with only slightly stronger hypotheses than those discussed previously. % \footnote{See Chapter 7 of Volume 1 for details.}
+In particular, Newton's method can be performed over the complex plane $\mathbb{C}$ to find imaginary roots of functions.
+Plotting the basins of attraction over $\mathbb{C}$ yields some interesting results.
 
-Recall that \li{1j} is the complex number $i$ in NumPy.
-The array \li{Xold} contains $700^2$ complex points evenly spaced in the domain.
-
-We may now perform Newton's method on the points in \li{Xold}.
+The roots of $f(x) = x^3 - 1$ are $1$, and $-\frac{1}{2} \pm \frac{\sqrt{3}}{2}i$.
+To plot the basins of attraction for $f(x) = x^3-1$ on the square complex domain $X = \{a+bi \mid a \in [-\frac{3}{2},\frac{3}{2}], b \in [-\frac{3}{2},\frac{3}{2}]\}$,
+create an initial grid of complex points in this domain using \li{np.meshgrid()}.
+% Create the real and imaginary parts of the points separately, and then use \li{np.meshgrid()} to turn them into a single grid of complex numbers.
 
 \begin{lstlisting}
->>> f = lambda x : x**3-1
->>> Df = lambda x : 3*x**2
->>> Xnew = Xold - f(Xold)/Df(Xold)
+>>> x_real = np.linspace(-1.5, 1.5, 500)    # Real parts.
+>>> x_imag = np.linspace(-1.5, 1.5, 500)    # Imaginary parts.
+>>> X_real, X_imag = np.meshgrid(x_real, x_imag)
+>>> X_0 = X_real + 1j*X_imag                # Combine real and imaginary parts.
 \end{lstlisting}
 
-After iterating the desired number of times, we have an array \li{Xnew} whose entries are various roots of $x^3-1$.
-
-Finally, we plot the array \li{Xnew}. The result is similar to Figure \ref{fig:fractal_hw}.
+The grid $X_0$ is a $500\times500$ array of complex values to use as initial points for Newton's method.
+Array broadcasting makes it easy to compute an iteration of Newton's method at every grid point.
 
 \begin{lstlisting}
->>> plt.pcolormesh(Xreal, Ximag, Xnew)
+>>> f = lambda x: x**3 - 1
+>>> Df = lambda x: 3*x**2
+>>> X_1 = X_0 - f(X_0)/Df(X_0)
 \end{lstlisting}
 
+After enough iterations, the $(i,j)$th element of the grid $X_k$ corresponds to the root of $f$ that results from using the $(i,j)$th element of $X_0$ as the initial point.
+For example, with $f(x) = x^3 - 1$, each entry of $X_k$ should be close to $1$, $-\frac{1}{2} + \frac{\sqrt{3}}{2}i$, or $-\frac{1}{2} - \frac{\sqrt{3}}{2}i$.
+Each entry of $X_k$ can then be assigned a value indicating which root it corresponds to.
+Some results of this process are displayed below.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{.49\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/fractal_hw.png}
+    \caption{Basins of attraction for $f(x) = x^3-1$.}
+    \label{fig:fractal_hw}
+\end{subfigure}
+\begin{subfigure}{.49\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/fractal_ex.png}
+    \caption{Basins of attraction for $f(x) = x^3-x$.}
+    \label{fig:fractal_ex}
+\end{subfigure}
+\caption{}
+\label{fig:newton-basins}
+\end{figure}
+
+\begin{info} % Newton fractals
 Notice that in some portions of Figure \ref{fig:fractal_hw}, whenever red and blue try to come together, a patch of green appears in between.
 This behavior repeats on an infinitely small scale, producing a fractal.
-Because it arises from Newton's method, this fractal is called a \emph{Newton fractal}.
+Because it arises from Newton's method, this kind of fractal is called a \emph{Newton fractal}.
 
-Newton fractals tell us that the long-term behavior of the Newton method is extremely sensitive to the initial guess $x_0$.
+Newton fractals show that the long-term behavior of Newton's method is \textbf{extremely} sensitive to the initial guess $x_0$.
 Changing $x_0$ by a small amount can change the output of Newton's method in a seemingly random way.
-This is an example of \emph{chaos}.
+This phenomenon is called \emph{chaos} in mathematics.
+\end{info}
 
-\begin{figure}[H]
-\begin{center}
-\begin{subfigure}[b]{.49\textwidth}
-\centering
-\includegraphics[width=\textwidth]{figures/fractal_hw.png}
-\end{subfigure}
-\begin{subfigure}[b]{.49\textwidth}
-\centering
-\includegraphics[width=\textwidth]{figures/fractal_hw_zoom.png}
-\end{subfigure}
-\caption{ Basins of attraction for $x^3-1$ in the complex plane.
-The picture on the right is a close-up of a basin of the function.}
-\label{fig:fractal_hw}
-\end{center}
-\end{figure}
+\begin{problem} % Plot the basins of attraction.
+Write a function that accepts a function $f:\mathbb{C}\rightarrow\mathbb{C}$, its derivative $f':\mathbb{C}\rightarrow\mathbb{C}$, an array \li{roots} of the roots of $f$, bounds $[r_{\text{min}},r_{\text{max}},i_{\text{min}},i_{\text{max}}]$ for the domain of the plot, an integer \li{res} that determines the resolution of the plot, and number of iterations \li{iters} to run the iteration.
+Compute and plot the basins of attraction of $f$ in the complex plane over the specified domain in the following steps.
+\begin{enumerate}
+\item Construct a \li{res}$\times$\li{res} grid $X_0$ over the domain $\{a+bi \mid a \in [r_{\text{min}},r_{\text{max}}], b \in [i_{\text{min}},i_{\text{max}}]\}$.
 
-\begin{problem}
-Implement a method that plots the basins of attraction of a function in the complex plane. This method should take in a function $f$; the derivative of $f$; an array of the zeros of $f$; scalars \li{xmin, xmax}, \li{ymin, ymax} that define the domain for the plot; a scalar that determines the resolution of the plot that defaults to 1000; a maximum number of iterations; and a colormap to use in the plot that defaults to \li{brg}.
+\item Run Newton's method (without backtracking) on $X_0$ \li{iters} times, obtaining the \li{res}$\times$\li{res} array $X_{k}$.
+To avoid the additional computation of checking for convergence at each step, do not use your function from Problem \ref{prob:newton-nd-implementation}.
 
-When the function \li{plt.pcolormesh()} is called on a complex array, it evaluates only on the real part of the complex numbers.
-This means that if two roots of \li{f} have the same real part, their basins will be the same color if you plot directly using \li{plt.pcolormesh()}.
+\item $X_k$ cannot be directly visualized directly because its values are complex.
+Solve this issue by creating another \li{res}$\times$\li{res} array $Y$.
+To compute the $(i,j)$th entry $Y_{i,j}$, determine which root of $f$ is closest to the $(i,j)$th entry of $X_k$.
+Set $Y_{i,j}$ to the index of this root in the array \li{roots}.
+If there are $R$ distinct roots, each $Y_{i,j}$ should be one of $0,1,\ldots,R-1$.
+\\(Hint: \li{np.argmin()} may be useful.)
 
-One way to fix this problem is to compute \li{Xnew} as usual.
-Then iterate through the entries of \li{Xnew} and identify to which root each entry is closest using the input \li{roots}.
-Finally, create a new array whose entries are integers corresponding to the indices of these roots.
-Plot the array of integers to view the basins of attraction.
+\item Use \li{plt.pcolormesh()} to visualize the basins.
+Recall that this function accepts three array arguments: the $x$-coordinates (in this case, the real components of the initial grid), the $y$-coordinates (the imaginary components of the grid), and an array indicating color values ($Y$).
+Set \li{cmap="brg"} to get the same color scheme as in Figure \ref{fig:newton-basins}.
+\end{enumerate}
 
-Test your function on the examples $f(x) = x^3-1$ above and $f(x)=x^3-x$ below. The resulting plots should look like Figure \ref{fig:fractal_hw} and Figure \ref{fig:fractal_ex}, respectively.
-\\Hint: The roots of $f(x) = x^3-x$ are $0$, $1$, and $-1$. The roots of $f(x) = x^3-1$ are the third roots of unity: $1$, $-\frac{1}{2} + \frac{\sqrt{3}}{2}i$, and $-\frac{1}{2} - \frac{\sqrt{3}}{2}i$. Use the same domain for both plots: $[-1.5, 1.5] \times [-1.5, 1.5]$.
+Test your function using $f(x) = x^3-1$ and $f(x)=x^3-x$.
+The resulting plots should resemble Figures \ref{fig:fractal_hw} and \ref{fig:fractal_ex}, respectively.
 \end{problem}
-\clearpage
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=.7\textwidth]{figures/fractal_ex.png}
-\caption{ Basins of attraction for $x^3-x$ in the complex plane.}
-\label{fig:fractal_ex}
-\end{figure}
+\begin{comment} % No Additional Material for now.
 
-% Old problem that is now integrated as a test case for Problem 5.
-\begin{comment}
-\begin{problem}
+\newpage
 
-Run \li{plot_basins()} on the function $f(x) = x^3-1$ on the domain $\{a+bi \mid (a, b) \in [-1.5, 1.5] \times [-1.5, 1.5] \}$.
-The resulting plot should look like Figure \ref{fig:fractal_hw}.
-\\ (Hint: the roots of $f(x) = x^3-1$ are the third roots of unity: $1$, $-\frac{1}{2} + \frac{\sqrt{3}}{2}i$, and $-\frac{1}{2} - \frac{\sqrt{3}}{2}i$.)
-\end{problem}
-\end{comment}
+\section*{Additional Material} % ==============================================
 
-% The remainder of the material has nothing to do with this lab, except that it mentions fractals.
-\begin{comment}
-Another well-studied fractal in the complex plane is the Mandelbrot set.
-It is defined as the points $c \in \mathbb{C}$ for which the sequence
-\[z_n = z_{n-1}^2 + c\]
-is bounded.
+\subsection*{Newton's Method for Optimization} % ------------------------------
 
-\begin{problem}
-Generate another grid of complex numbers on $[-1.5,.5]\times[-i,i]$.
-Consider the recurrence relation $x_n = x_{n-1}^2 + c$.
-Run this iteration 30 times with a resolution of $200 \times 200$ and display the plot.
-\end{problem}
+\subsection*{Other Algorithms Based on Newton's Method} % ---------------------
+
+% \subsection*{Fractals} % ----------------------------------------------------
+
+% % Totally irrelevant.
+% Another well-studied fractal in the complex plane is the Mandelbrot set.
+% It is defined as the points $c \in \mathbb{C}$ for which the sequence
+% \[z_k = z_{k-1}^2 + c\]
+% is bounded.
+
+\subsection*{Visualizing Complex Functions} % ---------------------------------
+
+Plot the result of \li{np.angle()} on $X_k$ as an alternative to the index assignment.
+
 \end{comment}

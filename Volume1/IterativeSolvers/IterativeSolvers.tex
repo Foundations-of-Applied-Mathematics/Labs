@@ -10,38 +10,16 @@ In this lab, we implement three popular iterative methods for solving large syst
 % Though finding an exact solution is either very time intensive or unstable, iterative methods give a sufficiently close approximations and take much less time.
 
 Iterative methods are often useful to solve large systems of equations.
-In this lab, let $\x^{(k)}$ denote the $k$-th iteration of the iterative method for solving the problem $A\x=\b$ for $\x$.
-Furthermore, let $x_{i}$ be the $i$-th component of $\x$ so that $x_{i}^{(k)}$ is the $i$-th component of $\x$ in the $k$-th iteration.
-Choose a very small $\epsilon > 0$ and an integer $N\in\mathbb{N}$, and continue iterating until either
+In this lab, let $\x^{(k)}$ denote the $k$th iteration of the iterative method for solving the problem $A\x=\b$ for $\x$.
+Furthermore, let $x_{i}$ be the $i$th component of $\x$ so that $x_{i}^{(k)}$ is the $i$th component of $\x$ in the $k$th iteration.
+Like other iterative methods, there are two stopping parameters: a very small $\epsilon > 0$ and an integer $N\in\mathbb{N}$.
+Iterations continue until either
 \begin{equation} % Stopping Criteria.
 \|\x^{(k-1)}-\x^{(k)}\| < \epsilon
 \qquad \text{or} \qquad
 k > N.
 \label{stopping-criteria}
 \end{equation}
-% THIS SECTION WAS TAKEN OUT AS IT IS NOW TALKED ABOUT IN THE NEWTONS METHOD LAB
-%\section*{Iterative Methods} % ================================================
-
-%The general idea behind any iterative method is to make an initial guess at the solution to a problem, apply a few easy computations to better approximate the solution, use that approximation as the new initial guess, and repeat until done.
-%Throughout this lab, we use the notation $\x^{(k)}$ to denote the $k$th approximation for the solution vector $\x$ and $x^{(k)}_i$ to denote the $i^{th}$ component of $\x^{(k)}$.
-%With this notation, every iterative method can be summarized as
-%\begin{equation}\x^{(k+1)} = f(\x^{(k)}),\label{eq:iter-summary}\end{equation}
-%where $f$ is some function used to approximate the true solution $\x$.
-
-%In the best case, the iteration converges to the true solution ($\x^{(k)}\rightarrow\x$).
-%In the worst case, the iteration continues forever without approaching the solution.
-%Iterative methods therefore require carefully chosen \emph{stopping criteria} to prevent iterating forever.
-%The general approach is to continue until the difference between two consecutive approximations is sufficiently small, and to iterate no more than a specific number of times.
-%More precisely, choose a very small $\epsilon > 0$ and an integer $N\in\mathbb{N}$, and update the approximation using Equation \ref{eq:iter-summary} until either
-%\begin{equation} % Stopping Criteria.
-%\|\x^{(k-1)}-\x^{(k)}\| < \epsilon
-%\qquad \text{or} \qquad
-%k > N.
-%\label{stopping-criteria}
-%\end{equation}
-
-%The choices for $\epsilon$ and $N$ are significant: a ``large'' $\epsilon$ (such as $10^{-6}$) produces a less accurate result than a ``small'' $\epsilon$ (such $10^{-16}$), but demands less computations; a small $N$ (10) also potentially lowers accuracy, but detects and halts non-convergent iterations sooner than with a large $N$ (10,000).
-
 
 \section*{The Jacobi Method} % ================================================
 
@@ -49,7 +27,7 @@ The \emph{Jacobi Method} is a simple but powerful method used for solving certai
 The main idea is simple: solve for each variable in terms of the others, then use the previous values to update each approximation.
 As a (very small) example, consider the following $3 \times 3$ system.
 \begin{align*}
-\begin{array}{ccccccc}
+\begin{array}{ccccccr}
   2x_1 &   &      & - & x_3  & = & 3  \\
   -x_1 & + & 3x_2 & + & 2x_3 & = & 3  \\
        & + & x_2  & + & 3x_3 & = & -1 \\
@@ -66,16 +44,16 @@ Solving the first equation for $x_1$, the second for $x_2$, and the third for $x
 \end{align*}
 
 Now begin with an initial guess $\x^{(0)} = [x^{(0)}_1, x^{(0)}_2, x^{(0)}_3]\trp = [0,0,0]\trp$.
-To compute the first approximation $\x^{(1)}$, use the entries of $\x^{(0)}$ as the variables on the right side of the previous equation.
+To compute the first approximation $\x^{(1)}$, use the entries of $\x^{(0)}$ as the variables on the right side of the previous equations.
 \begin{align*}
-\begin{array}{ccccccc}
+\begin{array}{ccccccr}
     x^{(1)}_1 & = & \frac{1}{2}(3 + x^{(0)}_3) & = & \frac{1}{2} (3 + 0) & = & \frac{3}{2} \\
     x^{(1)}_2 & = & \frac{1}{3}(3 + x^{(0)}_1 - 2x^{(0)}_3) & = & \frac{1}{3} (3 + 0 - 0) & = & 1 \\
     x^{(1)}_3 & = & \frac{1}{3}(-1 - x^{(0)}_2) & = & \frac{1}{3} (-1 - 0) & = & -\frac{1}{3} \\
 \end{array}
 \end{align*}
 
-So $\mathbf{x}^{(1)} = [\frac{3}{2}, 1, -\frac{1}{3}]\trp$.
+Thus $\mathbf{x}^{(1)} = [\frac{3}{2}, 1, -\frac{1}{3}]\trp$.
 Computing $\mathbf{x}^{(2)}$ is similar.
 \begin{align*}
 \begin{array}{ccccccc}
@@ -135,7 +113,7 @@ First, decompose $A$ into its diagonal entries, its entries below the diagonal, 
 \end{array}
 \end{align*}
 
-With this decomposition, we solve for $\x$ in the following way.
+With this decomposition, $\x$ can be expressed in the following way.
 \begin{align*}
 A\x &= \b\\
 (D + L + U)\x &= \b\\
@@ -176,7 +154,7 @@ Likewise, the matrix multiplication $D^{-1}\x$ is equivalent to the component-wi
 >>> d = np.diag(D)                  # Extract the diagonal as a 1-D array.
 >>> x = np.random.random(2)
 >>> np.allclose(D.dot(x), d*x)
-True
+<<True>>
 \end{lstlisting}
 \end{comment}
 
@@ -205,34 +183,35 @@ True
 \end{comment}
 
 \begin{problem} % Implement the Jacobi Method.
-Write a function that accepts a matrix $A$, a vector $\b$, a convergence tolerance $\epsilon$, and a maximum number of iterations $N$.
+Write a function that accepts a matrix $A$, a vector $\b$, a convergence tolerance \li{tol}, and a maximum number of iterations \li{maxiters}.
 Implement the Jacobi method using (\ref{eq:jacobi-method}), returning the approximate solution to the equation $A\x = \b$.
 
-Run the iteration until $\|\mathbf{x}^{(k-1)} - \mathbf{x}^{(k)}\|_{\infty} < \epsilon$, and only iterate at most $N$ times.
+Run the iteration until $\|\mathbf{x}^{(k-1)} - \mathbf{x}^{(k)}\|_{\infty} <$ \li{tol}, and only iterate at most \li{maxiters} times.
 Avoid using \li{la.inv()} to calculate $D^{-1}$, but use \li{la.norm()} to calculate the vector $\infty$-norm $\|\x\|_\infty = \sup{|x_i|}$.
 
-\begin{lstlisting}
->>> from scipy import linalg as la
-
->>> x = np.random.random(10)
->>> la.norm(x, <<ord>>=np.inf)          # Use la.norm() for ||x||.
-0.74623726404168045
->>> np.<<max>>(np.<<abs>>(x))               # Use pure NumPy for ||x||.
-0.74623726404168045
-\end{lstlisting}
+% \begin{lstlisting}
+% >>> from scipy import linalg as la
+%
+% >>> x = np.random.random(10)
+% >>> la.norm(x, <<ord>>=np.inf)          # Use la.norm() for ||x||.
+% 0.74623726404168045
+% >>> np.<<max>>(np.<<abs>>(x))               # The equivalent in NumPy for ||x||.
+% 0.74623726404168045
+% \end{lstlisting}
 
 Your function should be robust enough to accept systems of any size.
-To test your function, use the following function to generate an $n\times n$ matrix $A$ for which the Jacobi method is guaranteed to converge.
+To test your function, generate a random $\b$ with \li{np.random.random()} and use the following function to generate an $n\times n$ matrix $A$ for which the Jacobi method is guaranteed to converge.
+Run the iteration, then check that $A\x^{(k)}$ and $\b$ are close using \li{np.allclose()}.
 
 \begin{lstlisting}
 def diag_dom(n, num_entries=None):
-    """Generate a strictly diagonally dominant nxn matrix.
-    Inputs:
+    """Generate a strictly diagonally dominant (n, n) matrix.
+    Parameters:
         n (int): The dimension of the system.
         num_entries (int): The number of nonzero values.
             Defaults to n^(3/2)-n.
     Returns:
-        A ((n,n) ndarray): An nxn strictly diagonally dominant matrix.
+        A ((n,n) ndarray): A (n, n) strictly diagonally dominant matrix.
     """
     if num_entries is None:
         num_entries = int(n**1.5) - n
@@ -247,9 +226,6 @@ def diag_dom(n, num_entries=None):
     return A
 \end{lstlisting}
 
-Generate a random $\b$ with \li{np.random.random()}.
-Run the iteration, then check that $A\x^{(k)}$ and $\b$ are close using \li{np.allclose()}.
-
 Also test your function on random $n \times n$ matrices.
 If the iteration is non-convergent, the successive approximations will have increasingly large entries.
 
@@ -260,11 +236,13 @@ If the iteration is non-convergent, the successive approximations will have incr
 
 Most iterative methods only converge under certain conditions.
 For the Jacobi method, convergence mostly depends on the nature of the matrix $A$.
-If the entries $a_{ij}$ of $A$ satisfy the property \[|a_{ii}| > \sum_{j \neq i} |a_{ij}|\ \text{for all}\ i = 1,2,\hdots,n\] then $A$ is called \emph{strictly diagonally dominant} (for example, \li{diag_dom()} in Problem \ref{prob:jacobi} generates a strictly diagonally dominant $n\times n$ matrix).
-If this is the case, then the Jacobi method always converges, regardless of the initial guess $\x_0$.%
-\footnote{Although this seems like a strong requirement, most real-world linear systems can be represented by strictly diagonally dominant matrices.
-}
-Other iterative methods, such as Newton's method, depend mostly on the initial guess.
+If the entries $a_{ij}$ of $A$ satisfy the property
+\[
+|a_{ii}| > \sum_{j \neq i} |a_{ij}|\quad \text{for all}\quad i = 1,2,\ldots,n,
+\]
+then $A$ is called \emph{strictly diagonally dominant} (\li{diag_dom()} in Problem \ref{prob:jacobi} generates a strictly diagonally dominant $n\times n$ matrix).
+If this is the case,\footnote{Although this seems like a strong requirement, most real-world linear systems can be represented by strictly diagonally dominant matrices.} then the Jacobi method always converges, regardless of the initial guess $\x_0$.
+This is a very different convergence result than many other iterative methods such as Newton's method where convergence is highly sensitive to the initial guess.
 
 There are a few ways to determine whether or not an iterative method is converging.
 For example, since the approximation $\x^{(k)}$ should satisfy $A\x^{(k)} \approx \b$, the normed difference $\|A\x^{(k)} - \b\|_\infty$ should be small.
@@ -272,12 +250,12 @@ This value is called the \emph{absolute error} of the approximation.
 If the iterative method converges, the absolute error should decrease to $\epsilon$.
 
 \begin{problem}
-Modify your Jacobi method function in the following ways:
+Modify your Jacobi method function in the following ways.
 \begin{enumerate}
     \item Add a keyword argument called \li{plot}, defaulting to \li{False}.
-    \item Keep track of the absolute error $\|A\mathbf{x}^{(k)} - \mathbf{b}\|_{\infty}$ of the approximation for each value of $k$.
-    \item If \li{plot} is \li{True}, produce a lin-log plot of the error against iteration count (use \li{plt.semilogy()} instead of \li{plt.plot()}).
-    Return the approximate solution $\x$ even if \li{plot} is \li{True}.
+    \item Keep track of the absolute error $\|A\mathbf{x}^{(k)} - \mathbf{b}\|_{\infty}$ of the approximation at each iteration.
+    \item If \li{plot} is {True}, produce a lin-log plot (use \li{plt.semilogy()}) of the error against iteration count.
+    Remember to still return the approximate solution $\x$.
 \end{enumerate}
 If the iteration converges, your plot should resemble the following figure.
 
@@ -290,11 +268,11 @@ If the iteration converges, your plot should resemble the following figure.
 
 \section*{The Gauss-Seidel Method} % ==========================================
 
-The Gauss-Seidel method is essentially a slight modification of the Jacobi method.
+The \emph{Gauss-Seidel method} is essentially a slight modification of the Jacobi method.
 The main difference is that in Gauss-Seidel, new information is used immediately.
-Consider the same system as in the previous section.
+As an example, consider again the system from the previous section.
 \begin{align*}
-\begin{array}{ccccccc}
+\begin{array}{ccccccr}
   2x_1 &   &      & - & x_3  & = & 3  \\
   -x_1 & + & 3x_2 & + & 2x_3 & = & 3  \\
        & + & x_2  & + & 3x_3 & = & -1 \\
@@ -309,7 +287,7 @@ As with the Jacobi method, solve for $x_1$ in the first equation, $x_2$ in the s
     x_3 & = & \frac{1}{3}(-1 - x_2)
 \end{array}
 \end{align*}
-Use $\x^{(0)}$ to compute $x^{(1)}_1$ in the first equation.
+Use $\x^{(0)}$ to compute $x^{(1)}_1$ in the first equation as before.
 \[x^{(1)}_1 = \frac{1}{2}(3 + x^{(0)}_3) = \frac{1}{2}(3 + 0) = \frac{3}{2}\]
 Now, however, use the updated value of $x^{(1)}_1$ in the calculation of $x^{(1)}_2$.
 \[x^{(1)}_2 = \frac{1}{3}(3 + x^{(1)}_1 - 2x^{(0)}_3) = \frac{1}{3}(3 + \frac{3}{2} - 0) = \frac{3}{2}\]
@@ -333,7 +311,7 @@ This process of using calculated information immediately is called \emph{forward
       $x^{(12)}$ & 1 & 2 & -1 \\
 \end{tabular}
 \end{center}
-Notice that Gauss-Seidel converged in less than half as many iterations.
+Notice that Gauss-Seidel converges in less than half as many iterations as Jacobi does for this system.
 
 \subsection*{Implementation} % ------------------------------------------------
 
@@ -355,7 +333,7 @@ x^{(k+1)}_i = \frac{1}{a_{ii}} \left (b_i - \sum_{j < i}a_{ij}x^{(k)}_j - \sum_{
 
 Let $A_i$ be the $i$th row of $A$.
 The two sums closely resemble the regular vector product of $A_i$ and $\x^{(k)}$ without the $i^{\text{th}}$ term $a_{ii}x^{(k)}_i$.
-This gives a simplification.
+This suggests the following simplification.
 \begin{align}
 \nonumber x^{(k+1)}_i &= \frac{1}{a_{ii}} \left(b_i - A_i\trp\x^{(k)} + a_{ii}x^{(k)}_i \right)\\
 &= x^{(k)}_i + \frac{1}{a_{ii}}\left( b_i - A_i\trp\x^{(k)}\right)
@@ -364,7 +342,7 @@ This gives a simplification.
 One sweep through all the entries of $\x$ completes one iteration.
 
 \begin{problem} % Implement Gauss-Seidel.
-Write a function that accepts a matrix $A$, a vector $\b$, a convergence tolerance $\epsilon$, a maximum number of iterations $N$, and a keyword argument \li{plot} that defaults to \li{False}.
+Write a function that accepts a matrix $A$, a vector $\b$, a convergence tolerance \li{tol}, a maximum number of iterations \li{maxiters}, and a keyword argument \li{plot} that defaults to \li{False}.
 Implement the Gauss-Seidel method using (\ref{eq:gauss_seidel}), returning the approximate solution to the equation $A\x = \b$.
 
 Use the same stopping criterion as in Problem \ref{prob:jacobi}.
@@ -372,7 +350,7 @@ Also keep track of the absolute errors of the iteration, as in Problem \ref{prob
 If \li{plot} is \li{True}, plot the error against iteration count.
 Use \li{diag_dom()} to generate test cases.
 
-\begin{warn}
+\begin{warn} % Arrays are mutable!
 Since the Gauss-Seidel algorithm operates on the approximation vector in place (modifying it one entry at a time), the previous approximation $\x^{(k-1)}$ must be stored at the beginning of the $k$th iteration in order to calculate $\|\x^{(k-1)} - \x^{(k)}\|_\infty$.
 Additionally, since NumPy arrays are mutable, the past iteration must be stored as a \textbf{copy}.
 
@@ -381,13 +359,13 @@ Additionally, since NumPy arrays are mutable, the past iteration must be stored 
 >>> x1 = x0                         # Attempt to make a copy.
 >>> x1[3] = 1000                    # Modify the "copy" in place.
 >>> np.allclose(x0, x1)             # But x0 was also changed!
-True
+<<True>>
 
 # Instead, make a copy of x0 when creating x1.
 >>> x0 = np.copy(x1)                # Make a copy.
 >>> x1[3] = -1000
 >>> np.allclose(x0, x1)
-False
+<<False>>
 \end{lstlisting}
 % It is good practice in most iterative methods to record a copy of $\x^{(k-1)}$ at the beginning of the $k$th iteration.
 \end{warn}
@@ -401,73 +379,24 @@ Whether or not the Gauss-Seidel method converges depends on the nature of $A$.
 If all of the eigenvalues of $A$ are positive, $A$ is called \emph{positive definite}.
 If $A$ is positive definite \emph{or} if it is strictly diagonally dominant, then the Gauss-Seidel method converges regardless of the initial guess $\x^{(0)}$.
 
+\begin{comment} % This problem does not give good results.
 \begin{problem} % Sparse implementation of Gauss Seidel.
-The Gauss-Seidel method is faster than the standard system solver used by \li{la.solve()} if the system is sufficiently large and sufficiently sparse.
-For each value of $n=5,\ 6,\ \ldots,\ 11$, generate a random $2^n \times 2^n$ matrix $A$ using \li{diag_dom()} and a random $2^n$ vector $\b$.
+The Gauss-Seidel method is faster than the standard system solver used by SciPy's \li{la.solve()} if the system is sufficiently large and sufficiently sparse.
+For $n=5,6,\ldots,11$, generate a random $2^n \times 2^n$ matrix $A$ using \li{diag_dom()} and a random $2^n$ vector $\b$.
 Time how long it takes to solve $A\x = \b$ using your Gauss-Seidel function from Problem \ref{prob:gauss_seidel}, and how long it takes to solve using \li{la.solve()}.
-
-Plot the times against the system size.
-Use log scales if appropriate.
+Make a log-log plot of the times against the system size.
 \end{problem}
+\end{comment}
 
 \section*{Solving Sparse Systems Iteratively} % ===============================
 
 Iterative solvers are best suited for solving very large sparse systems.
 However, using the Gauss-Seidel method on sparse matrices requires translating code from NumPy to \li{scipy.sparse}.
-The algorithm is the same, but there are some functions that are named differently between these two packages.
-
-\begin{comment}
-The following is a quick example of how the different types of sparse matrices
-can be used to optimize performance.
-
-\begin{lstlisting}
-# Initialize the matrix using a coo_matrix.
->>> rows = np.array([0,1,2,3,0,2])
->>> cols = np.array([0,1,2,3,1,0])
->>> values = np.array([3,5,4,1,2,1])
->>> A = spar.coo_matrix((values, (rows,cols)), shape=(4,4))
-
-# To visualize the matrix, use .todense(). Keep in mind doing
-#   operations on this dense matrix forfeits all sparse-related
-#   optimizations.
->>> print A.todense()
-matrix([[3, 2, 0, 0],
-        [0, 5, 0, 0],
-        [1, 0, 4, 0],
-        [0, 0, 0, 1]])
-
-# perform matrix multiplicaton after converting to a csr_matrix.
->>> Acsr = A.tocsr()
->>> x = np.array([1,0,-1,2])
->>> b = Acsr.dot(x)
-array([3,0,-3,2])
-
-# access rows of a csr_matrix. The syntax for slicing a csr_matrix
-#  (and csc_matrix) is identical to slicing NumPy arrays. For row slicing,
-#  use a csr_matrix. For column slicing, use a csc_matrix.
->>> Acsr[0,:].todense()
-matrix([[3, 2, 0, 0]])
-
->>> Acsc = A.tocsc()
->>> Acsc[:,2].todense()
-matrix([[0],
-        [0],
-        [4],
-        [0]])
-
-# access individual elements of the matrix after converting to a dok_matrix.
->>> Adok = A.todok()
->>> print Adok[2,0]
-1
->>> print Adok[1,1]
-5
-\end{lstlisting}
-
-Since the \li{coo_matrix} type allows for fast sparse matrix type conversion, it is usually worth the time and memory to convert to the sparse matrix type that corresponds with the operations you are performing.
-\end{comment}
+The algorithm is the same, but there are some functions that are named differently between these two packages.%
+\footnote{See the lab on Linear Systems for a review of \li{scipy.sparse} matrices and syntax.}
 
 \begin{problem} % Gauss-Seidel with Sparse matrices.
-Write a new function that accepts a sparse matrix $A$, a vector $\b$, a convergence tolerance $\epsilon$, and a maximum number of iterations $N$ (plotting the convergence is not required for this problem).
+Write a new function that accepts a \textbf{sparse} matrix $A$, a vector $\b$, a convergence tolerance \li{tol}, and a maximum number of iterations \li{maxiters} (plotting the convergence is not required for this problem).
 Implement the Gauss-Seidel method using (\ref{eq:gauss_seidel}), returning the approximate solution to the equation $A\x = \b$.
 Use the usual stopping criterion.
 
@@ -480,39 +409,43 @@ There are many ways to do this that cause some fairly serious runtime issues, so
 rowstart = A.indptr[i]
 rowend = A.indptr[i+1]
 
-# Dot only the nonzero elements of the i-th row of A with the
+# Multiply only the nonzero elements of the i-th row of A with the
 # corresponding elements of x.
-Aix = np.dot(A.data[rowstart:rowend], x[A.indices[rowstart:rowend]])
+Aix = A.data[rowstart:rowend] @ x[A.indices[rowstart:rowend]]
 \end{lstlisting}
 
 To test your function, cast the result of \li{diag_dom()} as a sparse matrix.
 
 \begin{lstlisting}
-from scipy import sparse
+>>> from scipy import sparse
 
 >>> A = sparse.csr_matrix(diag_dom(50000))
 >>> b = np.random.random(50000)
 \end{lstlisting}
 \end{problem}
 
-\subsection*{Successive Over-Relaxation (SOR)} % ------------------------------
+\subsection*{Successive Over-Relaxation} % ------------------------------------
 
-Some systems meet the requirements for convergence with the Gauss-Seidel method, but do not converge very quickly.
-A slightly altered version of the Gauss-Seidel method, called \emph{Successive Over-Relaxation}, can result in faster convergence.
-This is achieved by introducing a \emph{relaxation factor}, $\omega$.
-The iterative equation for Gauss-Seidel, (\ref{eq:gauss-seidel-full}) becomes the following.
-\[x^{(k+1)}_i = (1-\omega)x^{(k)}_i + \frac{\omega}{a_{ii}} \left(b_i - \sum_{j < i}a_{ij}x^{(k)}_j - \sum_{j > i}a_{ij}x^{(k)}_j \right)\]
+There are many systems that meet the requirements for convergence with the Gauss-Seidel method, but for which convergence is still relatively slow.
+A slightly altered version of the Gauss-Seidel method, called \emph{Successive Over-Relaxation} (SOR), can result in faster convergence.
+This is achieved by introducing a \emph{relaxation factor} $\omega \ge 1$ and modifying (\ref{eq:gauss-seidel-full}) in the following way.
+
+\[
+x^{(k+1)}_i = (1-\omega)x^{(k)}_i + \frac{\omega}{a_{ii}} \left(b_i - \sum_{j < i}a_{ij}x^{(k)}_j - \sum_{j > i}a_{ij}x^{(k)}_j \right)
+\]
 Simplifying the equation results in the following.
 \begin{equation}
 x^{(k+1)}_i = x^{(k)}_i + \frac{\omega}{a_{ii}}\left( b_i - A_i\trp\x^{(k)}\right)
 \label{eq:sor}
 \end{equation}
-Note that when $\omega = 1$, Successive Over-Relaxation reduces to Gauss-Seidel.
+Note that when $\omega = 1$, SOR reduces to Gauss-Seidel.
+The relaxation factor $\omega$ weights the new iteration between the current best approximation and the next approximation in a way that can sometimes dramatically improve convergence.
 
 \begin{problem} % SOR
-Write a function that accepts a sparse matrix $A$, a vector $\b$, a relaxation factor $\omega$, a convergence tolerance $\epsilon$, and a maximum number of iterations $N$.
-Implement Successive Over-Relaxation using (\ref{eq:sor}), returning the approximate solution to the equation $A\x = \b$.
+Write a function that accepts a sparse matrix $A$, a vector $\b$, a relaxation factor $\omega$, a convergence tolerance \li{tol}, and a maximum number of iterations \li{maxiters}.
+Implement SOR using (\ref{eq:sor}), compute the approximate solution to the equation $A\x = \b$.
 Use the usual stopping criterion.
+Return the approximate solution $\x$ as well as the number of iterations computed.
 \\ (Hint: this requires changing only one line of code from the sparse Gauss-Seidel function.)
 \label{prob:sor}
 \end{problem}
@@ -536,9 +469,7 @@ However, the problem can also be solved numerically using a \emph{finite differe
 To begin, we impose a discrete, square grid on the plate with uniform spacing.
 % (see Figure \ref{fig:itersolve-finite-difference-grid}).
 Denote the points on the grid by $(x_i,y_j)$ and the value of $u$ at these points (the heat) as $u(x_i,y_j) = U_{i,j}$.
-% Then the interior points of the grid can be numerically approximated as follows.
-Using the centered difference quotient for second derivatives,%
-% \footnote{Refer to the Differentiation lab for further discussion of the centered difference quotient.}
+Using the centered difference quotient for second derivatives to approximate the partial derivatives,
 %
 \begin{align}
 \nonumber 0 &= \frac{\partial^2 u}{\partial x^2}+ \frac{\partial^2 u}{\partial y^2}\\
@@ -548,7 +479,7 @@ Using the centered difference quotient for second derivatives,%
 \end{align}
 where $h = x_{i+1} - x_i = y_{j+1} - y_j$ is the distance between the grid points in either direction.
 %
-\begin{figure}[H]
+\begin{figure}
     \includegraphics[width=.7\textwidth]{figures/Grid.pdf}
     \caption{On the left, an example of a $6\times 6$ grid ($n=4$) where the red dots are hot boundary zones and the blue dots are cold boundary zones.
     On the right, the green dots are the neighbors of the interior black dot that are used to approximate the heat at the black dot.}
@@ -566,12 +497,15 @@ From (\ref{eq:laplace-finite-diff}), we have the following for an interior point
 \label{eq:hot-plate}
 \end{equation}
 If any of the neighbors to $U_{i,j}$ is a boundary point on the grid, its value is already determined by the boundary conditions.
-For example, for $U_{3,1}$, the neighbor $U_{3,0} = 100$, so
-\[-4U_{3,1} + U_{2,1} + U_{3,2} + U_{4,1} = -100.\]
+For example, the neighbor $U_{3,0}$ of the gridpoint for $U_{3,1}$ is fixed at $U_{3,0} = 100$.
+In this case, (\ref{eq:hot-plate}) becomes
+\[
+-4U_{3,1} + U_{2,1} + U_{3,2} + U_{4,1} = -100.
+\]
 The constants on the right side of (\ref{eq:hot-plate}) become the $n^2\times 1$ vector $\b$.
 All nonzero entries of $\b$ correspond to interior points that touch the left or right boundaries.
 
-For example, writing (\ref{eq:hot-plate}) for the $16$ interior points of the grid in Figure \ref{fig:itersolve-finite-difference-grid} results in the following $16 \times 16$ system $A\u = \b$.
+As an example, writing (\ref{eq:hot-plate}) for the $16$ interior points of the grid in Figure \ref{fig:itersolve-finite-difference-grid} results in the following $16 \times 16$ system $A\u = \b$.
 Note the block structure (empty blocks are all zeros).
 \footnotesize
 \begin{align*}
@@ -632,24 +566,27 @@ I & B &  I   &        & \\
 % Each $B$ is $n\times n$ and A is consequently $n^2 \times n^2$.
 
 \begin{problem}
-Write a function that accepts an integer $n$, a relaxation factor $\omega$, a convergence tolerance $\epsilon$ that defaults to $10^{-8}$, a maximum number of iterations $N$ that defaults to $100$, and a bool \li{plot} that defaults to \li{False}.
+Write a function that accepts an integer $n$, a relaxation factor $\omega$, a convergence tolerance \li{tol} that defaults to $10^{-8}$, a maximum number of iterations \li{maxiters} that defaults to $100$, and a bool \li{plot} that defaults to \li{False}.
 Generate and solve the corresponding system $A\u = \b$ using Problem \ref{prob:sor}.
-\\ (Hint: see Problem 5 of Linear Systems. Also, \li{np.tile()} may be useful for constructing $\b$.)
+Also return the number of iterations computed.
+\\ (Hint: see Problem \ref{prob:sparse-construction} of the Linear Systems lab for the construction of $A$.
+Also, \li{np.tile()} may be useful for constructing $\b$.)
 
-If \li{plot=True}, visualize the solution $\u$ with a heatmap using \li{plt.pcolormesh()} (the colormap \li{"seismic"} is a good choice in this case).
+If \li{plot=True}, visualize the solution $\u$ with a heatmap using \li{plt.pcolormesh()} (the colormap \li{"coolwarm"} is a good choice in this case).
 This shows the distribution of heat over the hot plate after it has reached its steady state.
 Note that the $\u$ must be reshaped as an $n\times n$ array to properly visualize the result.
 \label{prob:finite-difference-setup}
 \end{problem}
 
 \begin{problem}
-To demonstrate how convergence is affected by the value of the relaxation factor $\omega$ in SOR, time your function from Problem \ref{prob:finite-difference-setup} with $\omega = 1,\ 1.05,\ 1.1,\ \dots , 1.9, 1.95$ and $n = 20$.
-Plot the times as a function of $\omega$.
+To demonstrate how convergence is affected by the value of the relaxation factor $\omega$ in SOR, run your function from Problem \ref{prob:finite-difference-setup} with $\omega = 1,\ 1.05,\ 1.1,\ \dots , 1.9, 1.95$ and $n = 20$.
+Plot the number of computed iterations as a function of $\omega$.
+Return the value of $\omega$ that results in the least number of iterations.
 
-Note that the matrix $A$ is not strictly diagonally dominant.
+Note that the matrix $A$ from Problem \ref{prob:finite-difference-setup} is not strictly diagonally dominant.
 However, $A$ is positive definite, so the algorithm will converge.
 Unfortunately, convergence for these kinds of systems usually requires more iterations than for strictly diagonally dominant systems.
-Therefore, set \li{tol=1e-2} and \li{N = 1000}.
+Therefore, set \li{tol=1e-2} and \li{maxiters=1000}.
 
 Recall that $\omega = 1$ corresponds to the Gauss-Seidel method.
 Choosing a more optimal relaxation factor saves a large number of iterations.
@@ -670,7 +607,7 @@ U = x.reshape((n,n))
 x,y = np.linspace(0,10,n), np.linspace(0,10,n)
 X,Y = np.meshgrid(x,y)
 
-plt.pcolormesh(X,Y,U,cmap='RdBu_r')
+plt.pcolormesh(X,Y,U,cmap='coolwarm')
 plt.show()
 \end{lstlisting}
 \end{comment}
