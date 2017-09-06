@@ -74,7 +74,7 @@ Since in this setting the energy of the pendulum is conserved, the equilibrium p
 \subsection*{The Control System}
 We consider a gift suspended above a rickshaw by a (massless) rod of length $l$. 
 The rickshaw and its suspended gift will have masses $M$ and $m$ respectively, $M > m$.  
-Let $\theta $ represent the angle between the gift and its unstable equilibrium, with counterclockwise orientation. 
+Let $\theta $ represent the angle between the gift and its unstable equilibrium, with clockwise orientation. 
 Let $v_1$ and $v_2$ represent the velocities of the rickshaw and the gift, and $F$ the force exerted on the rickshaw. 
 The rickshaw will be restricted to traveling along a straight line (the $x$-axis). 
 
@@ -89,7 +89,7 @@ Since the position of the rickshaw and the present are $(x(t),0)$ and $(x-l\sin 
 	\begin{split}
 	T &= \frac{1}{2}Mv_1^2 +  \frac{1}{2}mv_2^2,\\
 	&= \frac{1}{2}M\dot{x}^2 +  \frac{1}{2}m((\dot{x} - l\dot{\theta}\cos \theta)^2 + (- l\dot{\theta}\sin \theta)^2),\\
-	&= \dot{x}^2 + l^2\dot{\theta}^2-2l\dot{x}\dot{\theta}\cos \theta.
+	&= \frac{1}{2}(M+m)\dot{x}^2 +\frac{1}{2}m l^2\dot{\theta}^2-ml\dot{x}\dot{\theta}\cos \theta.
 	\end{split}
 \end{align}
 % The potential energy $U$ is composed of two parts: the first is the gravitational potential energy of the bob/present on the pendulum, and is given by $(mg)(l\cos \theta)$.
@@ -97,7 +97,7 @@ Since the position of the rickshaw and the present are $(x(t),0)$ and $(x-l\sin 
 % Recalling that whenever a force field $\mathbf{F}$ has the form $\mathbf{F} = \nabla \phi(\mathbf{x})$, where $\phi(\mathbf{x})$ is a scalar field, the potential energy derived from that force is $ -\phi(\mathbf{x})$.
 The total potential energy is 
 \begin{align*}
-U &= mgl\cos \theta - Fx.
+U &= mgl\cos \theta.
 \end{align*}
 
 \begin{figure}
@@ -112,14 +112,16 @@ U &= mgl\cos \theta - Fx.
 % \begin{align}
 % 	J[x,\theta] = \int_{t_0}^{t_1} \frac{1}{2}Mv_1^2 +  \frac{1}{2}mv_2^2 - mgl\cos \theta + Fx,
 % \end{align}
-Since the path $(x,\theta)$ of the rickshaw and the present satisfy the Euler-Lagrange differential equations 
+The path $(x,\theta)$ of the rickshaw and the present satisfy the Euler-Lagrange differential equations, but the problem involves a nonconservative force $F$ acting in the $x$ direction.
+By way of D'Alambert's Principle, our normal Euler-Lagrange equations now include the nonconservative force $F$ on the right side of the equation:
+
 \begin{align}
 	\begin{split}
-\frac{\partial L}{\partial x} - \frac{d}{dt} \frac{\partial L}{\partial \dot{x}} &= 0,\\
-\frac{\partial L}{\partial \theta} - \frac{d}{dt} \frac{\partial L}{\partial \dot{\theta}} &= 0,
+\frac{\partial L}{\partial x} - \frac{d}{dt} \frac{\partial L}{\partial \dot{x}} &= F,\\
+\frac{\partial L}{\partial \theta} - \frac{d}{dt} \frac{\partial L}{\partial \dot{\theta}} &= 0.
 	\end{split}\label{inverted_pendulum:langrange_eqns}
 \end{align}
-after expanding \eqref{inverted_pendulum:langrange_eqns} we see that $x(t)$ and $\theta(t)$ satisfy
+After expanding \eqref{inverted_pendulum:langrange_eqns} we see that $x(t)$ and $\theta(t)$ satisfy
 \begin{align}
 	\begin{split}
 		F &= (M + m)\ddot{x} - ml\ddot{\theta} \cos \theta + ml \dot{\theta}^2 \sin \theta,\\
@@ -159,7 +161,7 @@ x_2 \\
 \end{bmatrix}' &= 
 \begin{bmatrix}
 0 & 1 & 0 & 0\\
-0 & 0 & \frac{mG}{M} & 0 \\
+0 & 0 & \frac{mg}{M} & 0 \\
 0 & 0 & 0 & 1 \\
 0 & 0 & \frac{g}{Ml}(M+m) & 0
 \end{bmatrix}
@@ -179,6 +181,25 @@ x_2 \\
 which can be written more concisely as 
 \[z' = Az + Bu.\]
 
+
+\subsection*{The infinite time horizon LQR problem}
+We consider the cost function
+\begin{align}
+\begin{split}
+J[z] &= \int_0^{\infty} (q_1x_1^2 + q_2x_2^2  + q_3\theta_1^2 + q_4\theta_2^2 + ru^2)\, dt\\
+&= \int_0^{\infty} z^TQz + u^TRu \, dt
+\end{split} \label{inverted_pendulum:LQR}
+\end{align}
+where $q_1, q_2, q_3, q_4$, and $r$ are nonnegative weights, and 
+\[
+Q = 
+\begin{bmatrix}
+q_1 & 0 & 0 & 0 \\
+0 & q_2 & 0 & 0\\
+0 & 0 & q_3 & 0 \\
+0 & 0 & 0 & q_4
+\end{bmatrix}, R = \begin{bmatrix} r \end{bmatrix}.
+\]
 
 \begin{problem}
 Write a function that returns the matrices $A, B, Q$, and $R$ given above. Let $g = 9.8\text{ m}/\text{s}^2$.	
@@ -208,25 +229,6 @@ def linearized_init(M, m, l, q1, q2, q3, q4, r):
 \end{lstlisting}
 \end{problem}
 
-
-\subsection*{The infinite time horizon LQR problem}
-We consider the cost function
-\begin{align}
-\begin{split}
-J[z] &= \int_0^{\infty} (q_1x_1^2 + q_2x_2^2  + q_3\theta_1^2 + q_4\theta_2^2 + ru^2)\, dt\\
-&= \int_0^{\infty} z^TQz + u^TRu \, dt
-\end{split} \label{inverted_pendulum:LQR}
-\end{align}
-where $q_1, q_2, q_3, q_4$, and $r$ are nonnegative weights, and 
-\[
-Q = 
-\begin{bmatrix}
-q_1 & 0 & 0 & 0 \\
-0 & q_2 & 0 & 0\\
-0 & 0 & q_3 & 0 \\
-0 & 0 & 0 & q_4
-\end{bmatrix}, R = \begin{bmatrix} r \end{bmatrix}.
-\]
 The optimal control problem \eqref{inverted_pendulum:LQR} is an example of a Linear Quadratic Regulator (LQR), and is known to have an optimal control $\tilde{u}$ described by a linear state feedback law:
 \begin{align*}
 \tilde{u} &= -R^{-1}B^TP\tilde{z}.
@@ -249,11 +251,12 @@ Write the following function to find the matrix $P$.
 Use \li{scipy.optimize.root}. 
 Since \li{root} takes in a vector and not a matrix, you will have to reshape the matrix $P$ before passing it in and after getting your result, using \li{np.reshape(16)} and \li{np.reshape((4,4))}.
 \begin{lstlisting}
-def find_P(A,B,Q,R):
+def find_P(A, B, Q, R):
 	'''
 	Parameters:
 	----------
-	A, B, Q : ndarrays of shape (4,4)
+	A, Q 	: ndarrays of shape (4,4)
+	B		: ndarray of shape (4,1)
 	R		: ndarray of shape (1,1)
 	
 	Returns
@@ -269,12 +272,12 @@ Using the values
 M, m = 23., 5.
 l = 4.
 q1, q2, q3, q4 = 1., 1., 1., 1.
-r = 5.
+r = 10.
 \end{lstlisting}
 compute the eigenvalues of $A - BR^{-1}B^TP$.
 Are any of the eigenvalues positive? 
 Consider differential equation \eqref{inverted_pendulum:optimal_state} governing the optimal state $\tilde{z}$. 
-Using this value of $P$, will we necessarily have $\dot{\tilde{z}} \to 0$?
+Using this value of $P$, will we necessarily have $\tilde{z} \to 0$?
 \end{problem}
 
 
@@ -285,23 +288,25 @@ To find this $P$, use the function \li{solve_continuous_are} from \li{scipy.lina
 This function is designed to solve the continuous algebraic Riccati equation. 
 
 \begin{problem}
-	Write the following function that implements the LQR solution described earlier.  For the IVP solver, you can use your own or you may use the function \li{ode} from \li{scipy.integrate}.
+	Write the following function that implements the LQR solution described earlier.  For the IVP solver, you can use your own or you may use the function \li{odeint} from \li{scipy.integrate}.
 \begin{lstlisting}
-def rickshaw(tv,X0,A, B, Q, R_inv, P):
+def rickshaw(tv, X0, A, B, Q, R, P):
 	'''
 	Parameters:
 	----------
-	tv : ndarray of time values, with shape (n+1,)
-	X0 : 
-	A, B, Q	: ndarrays of shape (4,4)
-	R_inv	: ndarray of shape (1,1), inverse of R
-	P		: ndarray of shape (4,4)
+	tv 	: ndarray of time values, with shape (n+1,)
+	X0 	: Initial conditions on state variables
+	A, Q: ndarrays of shape (4,4)
+	B	: ndarray of shape (4,1)
+	R	: ndarray of shape (1,1)
+	P	: ndarray of shape (4,4)
 	
 	Returns
 	-------
 	Z : ndarray of shape (n+1,4), the state vector at each time
-	U : ndarray of shape (n,), the control values
+	U : ndarray of shape (n+1,), the control values
 	'''
+	pass
 \end{lstlisting}
 \label{prob:inverted_pendulum3}
 \end{problem}
@@ -313,10 +318,12 @@ M, m = 23., 5.
 l = 4.
 q1, q2, q3, q4 = 1., 1., 1., 1.
 r = 10.
-tf = 15
+tf = None
 X0 = np.array([-1, -1, .1, -.2])
 \end{lstlisting}
-Use both \li{scipy.optimize.root} and \li{solve_continuous_are} to find the matrix $P$. Compare your results. The results are plotted in Figure \ref{fig:inverted_pendulum:4}.
+Find the matrix P using the \li{scipy.optimize.root} method with \li{tf=6} as well as the \li{solve_continuous_are} method with \li{tf=60}.
+Plot the solutions $\tilde{z}$ and $\tilde{u}$. 
+Compare your results as shown in Figure \ref{fig:inverted_pendulum:4}.
 % and \ref{fig:inverted_pendulum:prob4_stable} respectively.
 \label{prob:inverted_pendulum:4}
 \end{problem}
@@ -339,7 +346,7 @@ Use both \li{scipy.optimize.root} and \li{solve_continuous_are} to find the matr
 \end{figure}
 
 
-
+\begin{comment}
 \begin{problem}
 Consider the following inputs: 
 \begin{lstlisting}
@@ -350,29 +357,6 @@ r = 10.
 tf = 60
 X0 = np.array([-1, -1, .1, -.2])
 \end{lstlisting}
-Vary the entries of \li{X0} responsible for $\theta(0)$ and $\dot{\theta}(0)$ to determine the sensitivity of the control $u$ to the initial conditions.  What initial conditions lead to a reasonable, physical control $u$?
+Vary the entries of \li{X0} responsible for $\theta(0)$ and $\dot{\theta}(0)$ to determine the sensitivity of the control $u$ to the initial conditions.  What initial conditions lead to a reasonable, physical control $u$? (Plot several solutions with various values of $\theta(0)$ and $\dot{\theta}(0)$.)
 \end{problem}
-
-%
-% \begin{figure}
-% \centering
-% \includegraphics[width=7cm]{prob4_unstable.pdf}
-% \caption{The solution of Problem \ref{prob:inverted_pendulum:4} when $P$ is found using \li{scipy.optimize.root}.
-% }
-% \label{fig:inverted_pendulum:prob4_unstable}
-% \end{figure}
-%
-%
-%
-% \begin{figure}
-% \centering
-% \includegraphics[width=7cm]{prob4_stable.pdf}
-% \caption{The solution of Problem \ref{prob:inverted_pendulum:4} when $P$ is found using \li{solve_continuous_are}.
-% }
-% \label{fig:inverted_pendulum:prob4_stable}
-% \end{figure}
-%
-%
-
-
-
+\end{comment}

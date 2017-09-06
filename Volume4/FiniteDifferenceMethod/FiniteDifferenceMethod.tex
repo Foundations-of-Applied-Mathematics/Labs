@@ -1,60 +1,174 @@
 \lab{The Finite Difference Method}{The Finite Difference Method}
 \label{lab:finitedifference2}
 
-Suppose we have a function $u(x)$, defined on an interval $[a,b]$.
-Let $a = x_{-1}, x_0, x_1, \ldots x_{n-1}$ be a grid of evenly spaced points, with $x_i = a + (i+1)h$, $h = (b-a)/n$.
-From a Taylor expansion of $u(x)$, we obtain the approximation
-\[u''(x) = \frac{u(x+h) - 2u(x) + u(x-h)}{h^2}, \]
-with error $E(h) = \mathcal{O}(h^2)$.
-Thus
-\[u''(x) = \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{h^2}, \quad i = 0, \ldots, n-2.\]
-This can be written in matrix form as
-\begin{align}
-\frac{1}{h^2}
-\begin{bmatrix}
--2 & 1 & \\
-1 & -2 & 1  \\
-& &\ddots & \\
- & 1 & -2 & 1 \\
- & & 1 & -2
-\end{bmatrix}
-\begin{bmatrix}
-u(x_0) \\ u(x_1)\\ \vdots  \\ u(x_{n-3}) \\ u(x_{n-2})
-\end{bmatrix} +
-\begin{bmatrix}
-u(x_{-1})/h^2 \\ 0 \\ \vdots  \\ 0 \\ u(x_{n-1})/h^2
-\end{bmatrix} =
-\begin{bmatrix}
-u''(x_0) \\ u''(x_1)\\ \vdots  \\ u''(x_{n-3}) \\ u''(x_{n-2})
-\end{bmatrix}\label{finitedifference2:upp}
-\end{align}
+A \textbf{finite difference} for a function $f(x)$ is an expression of the form $f(x+s)-f(x+t)$.
+Finite differences can give a good approximation of derivatives.
 
-Similarly, since  $u'(x) = (u(x+h) - u(x-h))/(2h)$ with error $E(h) = \mathcal{O}(h^2)$, we have the approximation
+Suppose we have a function $u(x)$, defined on an interval $[a,b]$.
+Let $a = x_{-1}, x_0, x_1, \ldots x_{n-1}=b$ be a grid of $n+1$ evenly spaced points, with $x_i = a + (i+1)h$, $h = (b-a)/n$.
+
+You are used to seeing the derivative $u'(x)$ which can be written as
+\begin{align*}
+u'(x)=\lim_{h\to\infty}\frac{u(x+h)-u(x)}{h}=\lim_{h\to\infty}\frac{u(x+h)-u(x-h)}{2h}.
+ \end{align*} 
+Since we are interested in the derivative at certain fixed points $x_i$, we can consider the approximation of $u'(x)$ using finite differences.
+We first write the Taylor polynomial expansion of $u(x+h)$ and $u(x-h)$ centered at $x$. This gives
+
+\begin{align}
+u(x+h)=u(x)+u'(x)h+\frac{1}{2}u''(x)h^2+\frac{1}{6}u'''(x)h^3+\mathcal{O}(h^4)\label{plus}\\
+u(x-h)=u(x)-u'(x)h+\frac{1}{2}u''(x)h^2-\frac{1}{6}u'''(x)h^3+\mathcal{O}(h^4)\label{minus}
+\end{align}
+Subtracting \eqref{minus} from \eqref{plus} and rearranging gives
+\begin{align*}
+u'(x)=\frac{u(x+h)-u(x-h)}{2h}+\mathcal{O}(h^2).
+\end{align*}
+From the Taylor expansion, this term has error $E(h)=\mathcal{O}(h^2)$.
+In terms of our grid points $\{x_i\}$, we can rewrite $u'(x)$ as $u'(x_i)$ and
+\begin{align*}
+u'(x_i)=\frac{u(x_i+h)-u(x_i-h)}{2h}=\frac{u(x_{i+1})-u(x_{i-1})}{2h}.
+\end{align*}
+We won't worry about the derivative at the endpoints, $u'(x_{-1})$ and $u'(x_{n-1})$.
+This allows us to write the set of points $\{u'(x_i)\}$ as the solution to a system of equations
+
 \begin{align}
 \frac{1}{2h}
+\begin{array}{c}
+\begin{bmatrix}
+-1 &0 & 1 & \\
+& -1 & 0 & 1  \\
+& & \ddots&\ddots & \\
+& & -1 & 0 & 1 \\
+& & & -1 & 0 & 1
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times(n+1)}}
+\end{array}\cdot
+\begin{array}{c}
+\begin{bmatrix}
+u(x_{-1}) \\ u(x_0)\\ \vdots  \\ u(x_{n-2}) \\ u(x_{n-1})
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n+1)\times1}}
+\end{array}=
+\begin{array}{c}
+\begin{bmatrix}
+u'(x_0) \\ u'(x_1)\\ \vdots  \\ u'(x_{n-3}) \\ u'(x_{n-2})
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times1}}
+\end{array}.
+\label{finitedifference2:up}
+\end{align}
+
+\noindent This can be rewritten with an $(N-1)\times(N-1)$ tridiagonal matrix on the left.
+\begin{align}
+\frac{1}{2h}
+\begin{array}{c}
 \begin{bmatrix}
 0 & 1 & \\
 -1 & 0 & 1  \\
 & &\ddots & \\
  & -1 & 0 & 1 \\
  & & -1 & 0
-\end{bmatrix}
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times(n-1)}}
+\end{array}\cdot
+\begin{array}{c}
 \begin{bmatrix}
 u(x_0) \\ u(x_1)\\ \vdots  \\ u(x_{n-3}) \\ u(x_{n-2})
-\end{bmatrix} +
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times1}}
+\end{array} +
+\begin{array}{c}
 \begin{bmatrix}
 -u(x_{-1})/(2h) \\ 0 \\ \vdots  \\ 0 \\ u(x_{n-1})/(2h)
-\end{bmatrix} =
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times1}}
+\end{array} =
+\begin{array}{c}
 \begin{bmatrix}
 u'(x_0) \\ u'(x_1)\\ \vdots  \\ u'(x_{n-3}) \\ u'(x_{n-2})
-\end{bmatrix}\label{finitedifference2:up}
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times1}}
+\end{array}.
+\label{finitedifference2:u}
+\end{align}
+
+\noindent Next we will consider the matrix representation for $u''(x)$.
+If we let
+\[u'(x)=\frac{u(x+\frac{h}{2})-u(x-\frac{h}{2})}{h}\]
+then
+\[u''(x)=\frac{u'(x+\frac{h}{2})-u'(x-\frac{h}{2})}{h}=\frac{\frac{u((x+\frac{h}{2})+\frac{h}{2})-u((x+\frac{h}{2})-\frac{h}{2})}{h}-\frac{u((x-\frac{h}{2})+\frac{h}{2})-u((x-\frac{h}{2})-\frac{h}{2})}{h}}{h}\]
+\[= \frac{u(x+h) - 2u(x) + u(x-h)}{h^2}, \]
+with error $E(h) = \mathcal{O}(h^3)$.
+Youcan achieve the same result by again consider the Taylor polynomial expansion and adding \eqref{plus} and \eqref{minus} and rearranging.
+Thus
+\[u''(x_i) =\frac{u(x_i+h) - 2u(x_i) + u(x_i-h)}{h^2}= \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{h^2}, \quad i = 0, \ldots, n-2.\]
+Again ignoring the second derivative at the endpoints, this can be written in matrix form as
+\begin{align}
+\frac{1}{h^2}
+\begin{array}{c}
+\begin{bmatrix}
+1 & -2 & 1 & \\
+& 1 & -2 & 1  \\
+& &\ddots &\ddots & \\
+& & 1 & -2 & 1 \\
+& & & 1 & -2 & 1
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times(n+1)}}
+\end{array}\cdot
+\begin{array}{c}
+\begin{bmatrix}
+u(x_{-1}) \\ u(x_0)\\ \vdots  \\ u(x_{n-2}) \\ u(x_{n-1})
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n+1)\times1}}
+\end{array}
+ =
+ \begin{array}{c}
+\begin{bmatrix}
+u''(x_0) \\ u''(x_1)\\ \vdots  \\ u''(x_{n-3}) \\ u''(x_{n-2})
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times1}}
+\label{finitedifference2:uppp}
+\end{array}.
+\end{align}
+
+\noindent This can also be written as an $(N-1)\times(N-1)$ tridiagonal matrix on the left.
+\begin{align}
+\frac{1}{h^2}
+\begin{array}{c}
+\begin{bmatrix}
+-2 & 1 & \\
+1 & -2 & 1  \\
+& &\ddots & \\
+ & 1 & -2 & 1 \\
+ & & 1 & -2
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times(n-1)}}
+\end{array}\cdot
+\begin{array}{c}
+\begin{bmatrix}
+u(x_0) \\ u(x_1)\\ \vdots  \\ u(x_{n-3}) \\ u(x_{n-2})
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times1}}
+\end{array} + 
+\begin{array}{c}
+\begin{bmatrix}
+u(x_{-1})/h^2 \\ 0 \\ \vdots  \\ 0 \\ u(x_{n-1})/h^2
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times1}}
+ \end{array} =
+ \begin{array}{c}
+\begin{bmatrix}
+u''(x_0) \\ u''(x_1)\\ \vdots  \\ u''(x_{n-3}) \\ u''(x_{n-2})
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(n-1)\times1}}
+\label{finitedifference2:upp}
+\end{array}
 \end{align}
 
 \begin{problem}
-	Let $u(x) = \sin((x+\pi)^2-1)$. Use \eqref{finitedifference2:upp} and \eqref{finitedifference2:up} to approximate $\frac{1}{2}u'' - u'$ at the grid points. \label{prob:finitedifference2:prob1}
+	Let $u(x) = \sin((x+\pi)^2-1)$. Use \eqref{finitedifference2:up} - \eqref{finitedifference2:upp} to approximate $\frac{1}{2}u'' - u'$ at the grid points where $a=0$, $b=1$, and $n=10$. \label{prob:finitedifference2:prob1}
 \end{problem}
 
-Suppose that instead of knowing the function $u(x)$, we know that $\frac{1}{2}u'' - u = f$, where the function $f(x)$ is given.
+Suppose that instead of knowing the function $u(x)$, we know that $\frac{1}{2}u'' - u' = f$, where the function $f(x)$ is given.
 How do we solve for $u$ at the grid points?
 
 \section*{Finite Difference Methods}
@@ -66,19 +180,19 @@ Consider the following differential equation:
 \begin{align}
 	\begin{split}
 	&{ } \epsilon u''(x)-u(x)'= f(x), \quad x \in (0,1), \\
-	&{ } u(0) = 1, \quad u(1) = 3.
+	&{ } u(0) = \alpha, \quad u(1) = \beta.
 	\end{split} \label{eqn:singular_perturbed_BVP}
 \end{align}
-Equation \eqref{eqn:singular_perturbed_BVP} can be written $D u = f,$ where $D = \epsilon \frac{d^2}{dx^2} - \frac{d}{dx}$ is a differential operator defined on the infinite-dimensional space of functions that are twice continuously differentiable on $[0,1]$ and satisfy $u(0) = 1$, $u(1) = 3$.
+Equation \eqref{eqn:singular_perturbed_BVP} can be written $D u = f,$ where $D = \epsilon \frac{d^2}{dx^2} - \frac{d}{dx}$ is a differential operator defined on the infinite-dimensional space of functions that are twice continuously differentiable on $[0,1]$ and satisfy $u(0) = \alpha$, $u(1) = \beta$.
 
-We look for an approximate solution $\{U_i\}_{i=-1}^{N-1}$ on an evenly spaced grid of $N$ subintervals, $a = x_{-1}, x_0, \ldots, x_{N-1} = b$ with $h = x_{i+1}-x_i$ for each $i$.
+We look for an approximate solution $\{U_i\}_{i=-1}^{N-1}$, where \[U_i=u(x_i)\] on an evenly spaced grid of $N$ subintervals, $a = x_{-1}, x_0, \ldots, x_{N-1} = b$ with $h = x_{i+1}-x_i$ for each $i$.
 Our finite difference method will replace the differential operator $D = \epsilon \frac{d^2}{dx^2} - \frac{d}{dx}$, defined on an infinite-dimensional space of functions, with difference operators defined on a finite vector space (the space of grid functions $\{U_i\}_{i=-1}^{N-1}$).
 To do this, we replace derivative terms in the differential equation with appropriate difference expressions.
 
 Recalling that
 \begin{align*}
-	\frac{d^2}{dx^2} u(x) &= \frac{u(x+h)- 2u(x) + u(x-h)}{h^2} + \mathcal{O}(h^2),\\
-\frac{d}{dx} u(x) &= \frac{u(x+h)-u(x-h)}{2h} + \mathcal{O}(h^2).
+\frac{d^2}{dx^2} u(x_i) &= \frac{u(x_{i+1})- 2u(x_i) + u(x_{i-1})}{h^2} + \mathcal{O}(h^2),\\
+\frac{d}{dx} u(x_i) &= \frac{u(x_{i+1})-u(x_{i-1})}{2h} + \mathcal{O}(h^2).
 \end{align*}
 we define the finite difference operator $D_h$ by
 \begin{align}
@@ -88,28 +202,53 @@ Thus we discretize equation \eqref{eqn:singular_perturbed_BVP} using the equatio
 \begin{align*}
 	\frac{\epsilon}{h^2} (U_{i+1}- 2U_i + U_{i-1}) - \frac{1}{2h} \left(U_{i+1}-U_{i-1} \right)  &= f(x_i), \quad i = 0, \ldots, N-2,
 \end{align*}
-along with boundary conditions $U_{-1} = 1,$ $U_{N-1} = 3$.
+along with boundary conditions $U_{-1} = \alpha$, $U_{N-1} = \beta$.
 
 This gives $N+1$ equations and $N+1$ unknowns, and can be written in matrix form as
-\[ \frac{1}{h^2} \begin{bmatrix}h^2 & 0 &0&\hdots &0 \\ (\epsilon + h/2) &-2\epsilon & (\epsilon - h/2) &\hdots &0\\ \vdots &  & \ddots & &\vdots \\
+\[ \frac{1}{h^2}
+\begin{array}{c}
+\begin{bmatrix}h^2 & 0 &0&\hdots &0 \\ (\epsilon + h/2) &-2\epsilon & (\epsilon - h/2) &\hdots &0\\ \vdots &  & \ddots & &\vdots \\
 0 & \hdots & (\epsilon + h/2) &-2\epsilon & (\epsilon - h/2) \\ 0 & \hdots & & 0 & h^2
-\end{bmatrix} \cdot \begin{bmatrix}U_{-1}\\U_0\\ \vdots \\U_{N-2} \\U_{N-1}\end{bmatrix} = \begin{bmatrix}f(x_{-1})\\f(x_0)\\ \vdots \\ f(x_{N-2}) \\ f(x_{N-1}) \end{bmatrix}.
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(N+1)\times(N+1)}}
+\end{array}\cdot
+\begin{array}{c}
+\begin{bmatrix}U_{-1}\\U_0\\ \vdots \\U_{N-2} \\U_{N-1}\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(N+1)\times1}}
+\end{array}=
+\begin{array}{c}
+\begin{bmatrix}U_{-1}\\f(x_0)\\ \vdots \\ f(x_{N-2}) \\ U_{N-1} \end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(N+1)\times1}}
+\end{array}.
 \]
 We can further modify the system to obtain an $(N-1)\times (N-1)$ tridiagonal matrix on the left:
 \begin{align}
     \label{eqn:practical_fin_dif}
     \begin{split}
-\frac{1}{h^2} \begin{bmatrix}-2\epsilon & (\epsilon - h/2) &0&\hdots &0 \\ (\epsilon + h/2) &-2\epsilon & (\epsilon - h/2) &\hdots &0\\ \vdots &  & \ddots & &\vdots \\
+\frac{1}{h^2}
+\begin{array}{c}
+\begin{bmatrix}-2\epsilon & (\epsilon - h/2) &0&\hdots &0 \\ (\epsilon + h/2) &-2\epsilon & (\epsilon - h/2) &\hdots &0\\ \vdots &  & \ddots & &\vdots \\
 0 & \hdots & (\epsilon + h/2) &-2\epsilon & (\epsilon - h/2) \\ 0 & \hdots & & (\epsilon + h/2) &-2\epsilon
-\end{bmatrix} \cdot \begin{bmatrix}U_{0}\\U_1\\ \vdots \\U_{N-3} \\U_{N-2}\end{bmatrix}\\
- = \begin{bmatrix}f(x_0) -\alpha(\epsilon + h/2)/h^2 \\f(x_1)\\ \vdots \\ f(x_{N-3})\\ f(x_{N-2})-\beta(\epsilon - h/2)/h^2 \end{bmatrix}.
+\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(N-1)\times(N-1)}}
+\end{array}
+\cdot
+\begin{array}{c}
+\begin{bmatrix}U_{0}\\U_1\\ \vdots \\U_{N-3} \\U_{N-2}\end{bmatrix}\\
+{\scriptstyle\textcolor{red}{(N-1)\times1}}
+\end{array}\\
+ =
+ \begin{array}{c}
+ \begin{bmatrix}f(x_0) -U_{-1}(\epsilon + h/2)/h^2 \\f(x_1)\\ \vdots \\ f(x_{N-3})\\ f(x_{N-2})-U_{n-1}(\epsilon - h/2)/h^2 \end{bmatrix}\\
+ {\scriptstyle\textcolor{red}{(N-1)\times1}}
+ \end{array}.
     \end{split}
 \end{align}
 
 
 
 \begin{problem}
-Use equation \eqref{eqn:practical_fin_dif} to solve the singularly perturbed BVP \eqref{eqn:singular_perturbed_BVP} with $\epsilon = 1/10$, $f(x) = -1$.
+Use equation \eqref{eqn:practical_fin_dif} to solve the singularly perturbed BVP \eqref{eqn:singular_perturbed_BVP} with $\epsilon = 1/10$, $f(x) = -1$, $\alpha=1$, and $\beta=3$. Graph the solution.
 This BVP is called singularly perturbed because of the location of the parameter $\epsilon$.
 For $\epsilon = 0$ the ODE has a drastically different character - it then becomes first order, and can no longer support two boundary conditions.
     \label{prob:finitedifference2:prob1}
@@ -191,9 +330,12 @@ Thus on a log-log plot of $E(h)$ vs. $h$, these values should be on a straight l
 \begin{problem}
 Return to problem \ref{prob:finitedifference2:prob1}.   How many subintervals are needed to obtain 4 digits of accuracy?
 
-This is a question about the convergence of your solution.  The following code generates the log-log plot in Figure \ref{fig:finitedifference2}, and demonstrates second-order convergence for our finite difference approximation of \eqref{eqn:singular_perturbed_BVP}. Use this code to determine what $h$ (and hence what $N$) is needed for the error to be less than $10^{-4}$.
+This is a question about the convergence of your solution.
+The following code generates the log-log plot in Figure \ref{fig:finitedifference2}, and demonstrates second-order convergence for our finite difference approximation of \eqref{eqn:singular_perturbed_BVP}.
+Use this code to determine what $h$ (and hence what $N$) is needed for the error to be less than $10^{-4}$.
+You don't need to return the value of $h$, but make sure you understand by looking at the plot.
 
-\textsc{note}: The function \li{bvp} is not provided; you need to use your code from problem \ref{prob:finitedifference2:prob1} to define it.  Make sure your function is compatible with the code below.  It must take 5 parameters as input and return both the solution and the grid.
+\textsc{note}: The function \li{bvp} is not provided; you need to use your code from problem \ref{prob:finitedifference2:prob1} to define it.  Make sure your function is compatible with the code below.  It must take 5 parameters as input and return the solution.
 
 	% If $\alpha = 1$,  $\beta = 3$, and $f(x) = -1$, there is an exact solution:
 	% \[y(x) = \alpha + x+ (\beta - \alpha -1)\frac{e^{x/\epsilon -1}}{e^{1/\epsilon -1}}\]
@@ -209,9 +351,9 @@ h, max_error = (1.-0)/N[:-1], np.ones(num_approx-1)
 # Best numerical solution, used to approximate the true solution.
 # bvp returns the grid, and the grid function, approximating the solution
 # with N subintervals of equal length.
-mesh_best, num_sol_best = bvp(lambda x:-1, epsilon=.1, alpha=1, beta=3, N=N[-1])
+num_sol_best = bvp(lambda x:-1, epsilon=.1, alpha=1, beta=3, N=N[-1])
 for j in range(len(N)-1):
-    mesh, num_sol = bvp(lambda x:-1, epsilon=.1, alpha=1, beta=3, N=N[j])
+    num_sol = bvp(lambda x:-1, epsilon=.1, alpha=1, beta=3, N=N[j])
     max_error[j] = np.max(np.abs( num_sol- num_sol_best[::2**(num_approx-j-1)] ) )
 plt.loglog(h,max_error,'.-r',label="$E(h)$")
 plt.loglog(h,h**(2.),'-k',label="$h^{\, 2}$")
@@ -224,7 +366,7 @@ print "The order of the finite difference approximation is about ", ( (np.log(ma
 
 
 \begin{problem}
-Extend your finite difference code to the case of a general second order linear BVP with Dirichlet conditions:
+Extend your finite difference code to the case of a general second order linear BVP with boundary conditions (These boundary conditions are sometimes called Dirichlet conditions):
 \begin{align*}
 	&{ } a_1(x)y'' +a_2(x)y'+ a_3(x) y = f(x), \quad x \in (a,b),\\
 	&{ } y(a) = \alpha, \quad y(b) = \beta.
@@ -286,4 +428,3 @@ for $\epsilon = 0.05, 0.02$.
 \caption{The solution to Problem \ref{prob:finitedifference2:prob5}.
 }
 \end{figure}
-

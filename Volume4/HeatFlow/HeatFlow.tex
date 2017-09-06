@@ -1,5 +1,5 @@
-\lab{Conservation laws and heat flow}{Conservation laws and heat flow}
-\label{lab:finitedifference1}
+\lab{Conservation laws and heat flow}{Heat Flow}
+\label{lab:HeatFlow}
 
 A conservation law is a balance law, and corresponds to an equation that describes how a quantity is balanced in some system throughout a given process.
 (Consider how this is related to conservation laws in physics.)
@@ -36,10 +36,11 @@ To this equation we add other equations, called constitutive relations, which ar
 For example, suppose we wish to describe the flow of heat.
 Since heat flows from warmer regions to colder regions, and the rate of heat flow depends on the difference in temperature between regions, we usually assume that the flux vector $\vec{J}$ is given by
 \[\vec{J}(x,t) = -\nu \nabla u(x,t),\]
-where $\nu$ is a diffusion constant.
+where $\nu$ is a diffusion constant and $\nabla$ is the gradient function.
 This constitutive relation is called Fick's law, and is the basic model for any diffusive process.
 Substituting into the conservation law we obtain
-\[u_t -\nu \triangle u(x,t) = g(\vec{x},t,u).\]
+\[u_t -\nu \Delta u(x,t) = g(\vec{x},t,u)\]
+where $\Delta$ is the Laplacian operator.
 The function $g$ represents heat sources/sinks within the region.
 
 \section*{Numerically modeling heat flow}
@@ -105,7 +106,7 @@ We can get this method started by using the initial condition given in our probl
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth]{heatexercise1b.pdf}
-\caption{The graph of $U^{10}$, the approximation to the solution $u(x,t=.4)$ for Problem \ref{prob:heat_exercise1}.}
+\caption{The graph of $U^{4}$, the approximation to the solution $u(x,t=.4)$ for Problem \ref{prob:heat_exercise1}.}
 \label{fig:heatexercise1b}
 \end{figure}
 
@@ -123,13 +124,13 @@ This would be the equivalent of replacing the first and last rows of the matrix 
 Consider the specific initial boundary value problem
 \begin{align}
 	\begin{split}
-	&{ } u_t = .05 u_{xx}, \quad x \in [0,1], \\
+	&{ } u_t = .05 u_{xx}, \quad x \in [0,1], \quad t \in [0,1]\\
 	&{ } u(0,t) = 0,\quad u(1,t) = 0,\\
 	&{ } u(x,0) = 2\max\{.2 - |x-.5|,0\}.
 	\end{split}
 \end{align}
-Approximate the solution $u(x,t)$ at time $t = .4$ be taking 6 subintervals in the $x$ dimension and 10 subintervals in time.
-The graphs for $U^0$ and $U^{10}$ are given in Figures \ref{fig:heatexercise1a} and \ref{fig:heatexercise1b}.
+Approximate the solution $u(x,t)$ at time $t = .4$ by taking 6 subintervals in the $x$ dimension and 10 subintervals in time.
+The graphs for $U^0$ and $U^{4}$ are given in Figures \ref{fig:heatexercise1a} and \ref{fig:heatexercise1b}.
 \end{problem}
 
 For the next problem, we need to show how Matplotlib can be used to create a 2D animation.
@@ -208,10 +209,10 @@ Implicit methods often have better stability properties than explicit methods.
 The Crank-Nicolson method, for example, is unconditionally stable and has order $\mathcal{O}(h^2 + k^2)$.
 To derive the Crank-Nicolson method, we use the following approximations:
 \begin{align*}
-	u_t(x_i,t_{j+1/2}) &= \frac{u_t(x_i,t_{j+1}) - u_t(x_i,t_j)}{k} + \mathcal{O}(k^2), \\
+	u_t(x_i,t_{j+1/2}) &= \frac{u(x_i,t_{j+1}) - u(x_i,t_j)}{k} + \mathcal{O}(k^2), \\
 	u_{xx}(x_i,t_{j+1/2}) &= \frac{u_{xx}(x_i,t_{j+1}) + u_{xx}(x_i,t_j)}{2} + \mathcal{O}(k^2).
 \end{align*}
-These approximations give the method
+The first equation is a Finite Difference approximation, and the second is a midpoint approximation. These approximations give the method
 \begin{align}
 	\begin{split}
 	\frac{U^{j+1}_i - U^j_i}{k} &= \frac{1}{2}\left( \frac{U^j_{i+1} - 2U^j_{i} + U^j_{i-1}}{h^2} + \frac{U^{j+1}_{i+1} - 2U^{j+1}_{i} + U^{j+1}_{i-1}}{h^2}  \right) ,\\
@@ -250,31 +251,31 @@ Thus on a log-log plot of $E(h)$ vs. $h,$ these values should be on a straight l
 \end{figure}
 
 % If dgtsv is ever included in SciPy, it would probably be better to use that here instead of a custom routine.
-When implementing the Crank-Nicolson method, you will need some way to solve a tridiagonal system.
-The following is a simple function that performs a tridiagonal solve.
-\li{a}, \li{b}, and \li{c} are assumed to contain the first subdiagonal, main diagonal, and first superdiagonal of the tridiagonal matrix.
-\li{x} is assumed to be the right hand side of the equation.
-This function overwrites \li{x} with the solution to the system.
-As has been shown in earlier labs, this function is better implemented in Cython, C, Fortran, or some other language with less overhead for array accesses and loops.
-\begin{lstlisting}
-def tridiag(a, b, c, x):
-    # Overrides c and x.
-    # The contents of x after computation will be the solution to the system.
-    size = x.size
-    temp = 0.
-    c[0] = c[0] / b[0]
-    x[0] = x[0] / b[0]
-    for n in range(size-2):
-        temp = 1. / (b[n+1] - a[n]*c[n])
-        c[n+1] *= temp
-        x[n+1] = (x[n+1] - a[n]*x[n]) * temp
-    x[size-1] = (x[size-1] - a[size-2]*x[size-2]) / (b[size-1] - a[size-2]*c[size-2])
-    for n in range(b.size-2, -1, -1):
-        x[n] = x[n] - c[n] * x[n+1]
-\end{lstlisting}
-
-To account for boundary conditions when using the Crank-Nicolson method, set the boundary points at the beginning of the iteration and leave them constant when applying $A$ like you did before.
-In the Tridiagonal solve, replace the first row of the matrix $B$ with the first row of the identity and the last row of the matrix $B$ with the last row of the identity.
+%When implementing the Crank-Nicolson method, you will need some way to solve a tridiagonal system.
+%The following is a simple function that performs a tridiagonal solve.
+%\li{a}, \li{b}, and \li{c} are assumed to contain the first subdiagonal, main diagonal, and first superdiagonal of the tridiagonal matrix.
+%\li{x} is assumed to be the right hand side of the equation.
+%This function overwrites \li{x} with the solution to the system.
+%As has been shown in earlier labs, this function is better implemented in Cython, C, Fortran, or some other language with less overhead for array accesses and loops.
+%\begin{lstlisting}
+%def tridiag(a, b, c, x):
+%    # Overrides c and x.
+%    # The contents of x after computation will be the solution to the system.
+%    size = x.size
+%    temp = 0.
+%    c[0] = c[0] / b[0]
+%    x[0] = x[0] / b[0]
+%    for n in range(size-2):
+%        temp = 1. / (b[n+1] - a[n]*c[n])
+%        c[n+1] *= temp
+%        x[n+1] = (x[n+1] - a[n]*x[n]) * temp
+%    x[size-1] = (x[size-1] - a[size-2]*x[size-2]) / (b[size-1] - a[size-2]*c[size-2])
+%    for n in range(b.size-2, -1, -1):
+%        x[n] = x[n] - c[n] * x[n+1]
+%\end{lstlisting}
+%
+%To account for boundary conditions when using the Crank-Nicolson method, set the boundary points at the beginning of the iteration and leave them constant when applying $A$ like you did before.
+%In the Tridiagonal solve, replace the first row of the matrix $B$ with the first row of the identity and the last row of the matrix $B$ with the last row of the identity.
 
 \begin{problem}
 \label{prob:heat_exercise3}

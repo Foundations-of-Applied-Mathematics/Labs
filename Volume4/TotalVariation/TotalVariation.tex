@@ -12,19 +12,20 @@
 % \end{enumerate}
 
 \section*{The Gradient Descent method}
-Consider an energy functional $E[u]$, defined over a collection of admissible functions $u:\Omega \subset \mathbb{R}^n \to \mathbb{R}$, with the form 
-\[E[u] = \int_{\Omega} L(x,u,\nabla u) \, dx\]
-where $L = L(x,y,w)$ is a function $\mathbb{R}^n \times \mathbb{R} \times \mathbb{R}^n \to \mathbb{R}$. 
+Consider an energy functional $J[u]$, defined over a collection of admissible functions $u:\Omega \subset \mathbb{R}^n \to \mathbb{R}$, with the form 
+\[J[u] = \int_{\Omega} L(x,u,\nabla u) \, dx\]
+where $L = L(x,u,\nabla u)$ is a function $\mathbb{R}^n \times \mathbb{R} \times \mathbb{R}^n \to \mathbb{R}$. 
 A standard result from the calculus of variations states that a minimizing function $u^*$ satisfies the Euler-Lagrange equation
 \begin{align}
-L_y - {\rm div}\,(L_w) &= 0.	\label{EL:multivar_domain}
+L_u-\sum_{i=1}^n\frac{\partial L_{u_{x_i}}}{\partial x_i}=L_u-\nabla\cdot L_{\nabla u}=L_u - {\rm div}\,(L_{\nabla u}) &= 0.	\label{EL:multivar_domain}
 \end{align}
+where $L_{\nabla u} = \nabla^\prime L = [L_{x_1},\hdots,L_{x_n}]^\intercal$.
 
 This equation is typically an elliptic PDE, possessing boundary conditions associated with  restrictions on the class of admissible functions $u$.
 To more easily compute $\eqref{EL:multivar_domain}$, we consider a related parabolic PDE,
 \begin{align}
 	\begin{split}
-	&{ } u_t = -(L_y - {\rm div}\, L_w), \quad t > 0,\\
+	&{ } u_t = -(L_y - {\rm div}\, L_{\nabla u}), \quad t > 0,\\
 	&{ } u(x,0) = u_0(x), \quad t = 0. 
 	\end{split} \label{grad_desc_pde}
 \end{align}
@@ -33,7 +34,7 @@ It is often easier to evolve an initial guess using \eqref{grad_desc_pde}, and s
 
 \begin{example}
 Consider the energy functional 
-\[ E[u] = \int_{\Omega} \|\nabla u\|^2 \, dx.\]
+\[ J[u] = \int_{\Omega} \|\nabla u\|^2 \, dx.\]
 % where the class of admissible functions $u$ satisfy appropriate Dirichlet conditions on $\partial \Omega$.
 The minimizing function $u^*$ satisfies the Euler-Lagrange equation
 \[-{\rm div}\, \nabla u	= - \triangle u = 0.\]
@@ -47,21 +48,21 @@ Since the backward heat equation is ill-posed, it would not be helpful in a sear
 Let us take the time to make \eqref{grad_desc_pde} more rigorous. 
 We recall that 
 \begin{align*}
-		\delta E(u;v) &= \left.\frac{d}{dt}E(u + tv)\right|_{t=0},\\
-		&= \int_{\Omega} (L_y(u) - {\rm div}\, L_w(u)) v\, dx,\\
-		&= \langle L_y(u) - {\rm div}\, L_w(u), v \rangle_{L^2(\Omega)},
+		\delta J(u;h) &= \left.\frac{d}{dt}J(u + \epsilon h)\right|_{\epsilon=0},\\
+		&= \int_{\Omega} (L_y(u) - {\rm div}\, L_{\nabla u}(u)) h\, dx,\\
+		&= \langle L_y(u) - {\rm div}\, L_{\nabla u}(u), h \rangle_{L^2(\Omega)},
 \end{align*}
-for each $u$ and each admissible perturbation $v$.
+for each $u$ and each admissible perturbation $h$.
 Then using the Cauchy-Schwarz inequality,
 \begin{align*}
-	|\delta E(u;v)| &\leq \|L_y(u) - {\rm div}\, L_w(u)\| \cdot \| v \|
+	|\delta J(u;h)| &\leq \|L_y(u) - {\rm div}\, L_{\nabla u}(u)\| \cdot \| h \|
 \end{align*}
-with equality iff $v =\alpha u$ for some $\alpha \in \mathbb{R}$. 
-This implies that the ``direction" 
-$v = L_y(u) - {\rm div}\, L_w(u)$ is the direction of steepest ascent and 
-maximizes $\delta E(u;v)$. 
+with equality iff $h =\alpha(L_y(u) - {\rm div}\, L_{\nabla u}(u))$ for some $\alpha \in \mathbb{R}$. 
+This implies that the ``direction''
+$h = L_y(u) - {\rm div}\, L_{\nabla u}(u)$ is the direction of steepest ascent and 
+maximizes $\delta J(u;h)$. 
 Similarly,
-\[v = -(L_y(u) - {\rm div}\, L_w(u))\]
+\[h = -(L_y(u) - {\rm div}\, L_{\nabla u}(u))\]
  points in the direction of steepest descent, and the flow described by \eqref{grad_desc_pde} tends to move toward a state of lesser energy. 
 
 
@@ -99,7 +100,7 @@ x0 = np.linspace(a,b,x_steps+1)
 \end{lstlisting}
 
 Most numerical schemes have a stability condition that must be satisfied. Our discretization requires that $\frac{\triangle t}{(\triangle x)^2} \leq \frac{1}{2}$.  
-We continue by checking that this condition is satisfied, and the straight line connecting the end points as initial data. 
+We continue by checking that this condition is satisfied, and use the straight line connecting the end points as initial data. 
 
 \begin{lstlisting}
 # Check a stability condition for this numerical method
@@ -140,6 +141,11 @@ print "Final time = ", iteration*delta_t
 \label{fig:tv_images:SA_image}
 \end{figure}
 
+\begin{problem}
+Using $20$ $x$ steps, $250$ time steps, and a final time of $.2$, plot the solution that minimizes \eqref{tv_images:SA_flow}.
+It should match figure \ref{fig:tv_images:SA_image}.
+
+\end{problem}
 
 \section*{Image Processing: Denoising}
 A greyscale image can be represented by a scalar-valued function $u:\Omega \to \mathbb{R}$, $\Omega \subset \mathbb{R}^2$. The following code reads an image into an array of floating point numbers, adds some noise, and saves the noisy image. 
@@ -168,7 +174,7 @@ A color image can be represented by three functions $u_1, u_2,$ and $u_3$. In th
 \subsection*{A simple approach to image processing}
 Here is a first attempt at denoising: given a noisy image $f$, we look for a denoised image $u$ minimizing the energy functional 
 \begin{align}
-E[u] = \int_{\Omega} L(x,u,\nabla u) \, dx, \label{tv_images:diffusion}
+J[u] = \int_{\Omega} L(x,u,\nabla u) \, dx, \label{tv_images:diffusion}
 \end{align}
 where
 \begin{align*}
@@ -205,7 +211,7 @@ Using $\triangle t = 1e{-3},$ $\lambda = 40,$ $\triangle x = 1,$ and $\triangle 
 
 Hint: Use the function \li{np.roll} to compute the spatial derivatives. For example, the second derivative can be approximated at interior grid points using 
 \begin{lstlisting}
-u_xx = np.roll(u,-1,axis=0) - 2*u + np.roll(z,1,axis=0)	
+u_xx = np.roll(u,-1,axis=1) - 2*u + np.roll(u,1,axis=1)	
 \end{lstlisting}
 \end{problem}
 
@@ -239,7 +245,7 @@ u_xx = np.roll(u,-1,axis=0) - 2*u + np.roll(z,1,axis=0)
 \begin{figure}
 \begin{minipage}[b]{.47\linewidth}
 \centering
-\includegraphics[width=\textwidth]{baloons_resized_bw.jpg}
+\includegraphics[width=\textwidth]{balloons_resized_bw.jpg}
 \caption*{Original image}
 \end{minipage}
 \hspace{0.5cm}
@@ -318,9 +324,9 @@ Using $\triangle t = 1e-3, \lambda = 1, \triangle x = 1,$ and $ \triangle y = 1$
 
 Hint: To compute the spatial derivatives, consider the following: 
 \begin{lstlisting}
-u_x = (np.roll(u,-1,axis=0) -  np.roll(z,1,axis=0))/2	
-u_xx = np.roll(u,-1,axis=0) - 2*u + np.roll(u,1,axis=0)	
-u_xy = (np.roll(u_x,-1,axis=1) - np.roll(u_x,1,axis=1))/2.
+u_x = (np.roll(u,-1,axis=1) -  np.roll(u,1,axis=1))/2	
+u_xx = np.roll(u,-1,axis=1) - 2*u + np.roll(u,1,axis=1)	
+u_xy = (np.roll(u_x,-1,axis=0) - np.roll(u_x,1,axis=0))/2.
 \end{lstlisting}
 \end{problem}
 
@@ -331,10 +337,3 @@ u_xy = (np.roll(u_x,-1,axis=1) - np.roll(u_x,1,axis=1))/2.
 % \caption{The solution of \eqref{tv_images:diffusion_flow}, found using a first order Euler step in time and centered differences in space.}
 % \label{fig:tv_image_denoised}
 % \end{figure}
-
-
-
-
-
-
-

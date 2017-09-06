@@ -1,10 +1,9 @@
 \lab{Markov Chains}{Markov Chains}
 \label{lab:Markov}
 \objective{
-A \emph{Markov chain} is a collection of states with specified probabilities for transitioning from one state to another.
+A Markov chain is a collection of states with specified probabilities for transitioning from one state to another.
 They are characterized by the fact that the future behavior of the system depends only on its current state.
-\\ \indent Markov chains have far ranging applications.
-In this lab, we learn to construct, analyze, and interact with Markov chains and apply a Markov chain to a natural language processing problem.}
+In this lab, we learn to construct, analyze, and interact with Markov chains, then apply a Markov chain to a natural language processing problem.}
 
 \section*{State Space Models} % ===============================================
 
@@ -14,8 +13,8 @@ Each space represents a state, and a player is said to be in a state if their pi
 In this case, the probability of moving from one space to another only depends on the player's current location; where the player was on a previous turn does not affect their current turn.
 
 Finite Markov chains have an associated \emph{transition matrix} that stores the information about the transitions between the states in the chain.
-The $(i,j)$th entry of the matrix gives the probability of moving from state $j$ to state $i$.
-Thus each of the columns of the transition matrix must sum to 1.
+The $(i,j)$th entry of the matrix gives the probability of moving \textbf{from state $j$ to state $i$}.
+Thus each of the columns of the transition matrix sum to $1$.
 
 \begin{info} % Generate random row stochastic transitino matrices.
 A transition matrix where the columns sum to 1 is called \emph{column stochastic} (or \emph{left stochastic}).
@@ -24,8 +23,8 @@ Both representations are common, but in this lab we exclusively use column stoch
 \end{info}
 
 Consider a very simple weather model where the probability of being hot or cold depends on the weather of the previous day.
-If the probability that tomorrow is hot given that today is hot is 0.7, and the probability that tomorrow is cold given that today is cold is 0.4, then by assigning hot to the $0^{th}$ row and column, and cold to the $1^{st}$ row and column, this Markov chain has the following transition matrix:
-%
+If the probability that tomorrow is hot given that today is hot is 0.7, and the probability that tomorrow is cold given that today is cold is 0.4, then by assigning hot to the $0$th row and column, and cold to the $1^{st}$ row and column, this Markov chain has the following transition matrix.
+
 \begin{align*}
 \begin{blockarray}{ccc}
 & \text{\textcolor{red}{hot today}} & \text{\textcolor{blue}{cold today}} \\
@@ -35,9 +34,8 @@ If the probability that tomorrow is hot given that today is hot is 0.7, and the 
 \end{block}\end{blockarray}
 \end{align*}
 
-If it is hot today, we examine the $0$th column of the matrix.
-There is a $70\%$ chance that tomorrow will be hot ($0$th row) and a $30\%$ chance that tomorrow will be cold ($1$st row).
-Conversely, if it is cold today, there is a $60\%$ chance that tomorrow will be hot and a $40\%$ chance that tomorrow will be cold.
+The $0$th column of the matrix says that if it is hot today, there is a $70\%$ chance that tomorrow will be hot ($0$th row) and a $30\%$ chance that tomorrow will be cold ($1$st row).
+The $1$st column says if it is cold today, then there is a $60\%$ chance of heat and a $40\%$ chance of cold tomorrow.
 
 Markov chains can be represented by a \emph{state diagram}, a type of directed graph.
 The nodes in the graph are the states, and the edges indicate the state transition probabilities.
@@ -181,10 +179,10 @@ If $A$ is an $n\times n$ transition matrix for a Markov chain and $\x$ is a stat
 % \[\sum_{i=1}^n\sum_{j=1}^n a_{ij}x_j
 % = \sum_{j=1}^n\left(x_j\left(\sum_{j=1}^n a_{ij}\right)\right)
 % = \sum_{j=1}^n x_j = 1.\]
-In fact, if $\x^{(k)}$ is the state distribution vector corresponding to a certain time $k$, then $\x^{(k+1)} = A\x^{(k)}$ contains the probabilities of being in each state after allowing the system to transition again.
-For the weather model, this means that if there is an $80\%$ chance that it will be hot 5 days from now, written $\x^{(5)} = [0.8,\ 0.2]\trp$, then since
+In fact, if $\x_k$ is the state distribution vector corresponding to a certain time $k$, then $\x_{k+1} = A\x_k$ contains the probabilities of being in each state after allowing the system to transition again.
+For the weather model, this means that if there is an $80\%$ chance that it will be hot 5 days from now, written $\x_{5} = [0.8,\ 0.2]\trp$, then since
 \[
-\x^{(6)} = A\x^{(5)} =
+\x_{6} = A\x_{5} =
 \left[\begin{array}{cc}
 0.7 & 0.6 \\
 0.3 & 0.4 \\
@@ -197,8 +195,8 @@ there is a $68\%$ chance that 6 days from now will be a hot day.
 
 \subsection*{Convergent Transition Matrices} % --------------------------------
 
-Given an initial state distribution vector $\x^{(0)}$, defining $\x^{(k+1)} = A\x^{(k)}$ yields the following significant relation.
-\[\x^{(k)} = A\x^{(k-1)} = A(A\x^{(k-2)}) = A(A(A\x^{(x-3)})) = \cdots = A^k\x^{(0)}\]
+Given an initial state distribution vector $\x_{0}$, defining $\x_{k+1} = A\x_k$ yields the following significant relation.
+\[\x_k = A\x_{k-1} = A(A\x_{k-2}) = A(A(A\x_{x-3})) = \cdots = A^k\x_{0}\]
 
 This indicates that the $(i,j)$th entry of $A^k$ is the probability of transition from state $j$ to state $i$ in $k$ steps.
 For the transition matrix of the 2-state weather model, something curious happens to $A^k$ for even small values of $k$.
@@ -226,9 +224,9 @@ As $k\rightarrow\infty$, the entries of $A^k$ converge, written as follows.
 \end{array}\right].
 \label{eq:markov-steady-transition}
 \end{equation}
-In addition, for any initial state distribution vector $\x^{(0)} = [a,\ b]\trp$, $a + b = 1$,
+In addition, for any initial state distribution vector $\x_{0} = [a,\ b]\trp$, $a + b = 1$,
 \[
-\lim_{k \rightarrow \infty} \x^{(k)} = \lim_{k \rightarrow \infty}A^k\x^{(0)}
+\lim_{k \rightarrow \infty} \x_k = \lim_{k \rightarrow \infty}A^k\x_{0}
 =
 \left[\begin{array}{ccc}
 2/3 & 2/3 \\
@@ -241,7 +239,7 @@ In addition, for any initial state distribution vector $\x^{(0)} = [a,\ b]\trp$,
 \left[\begin{array}{c}2/3\\1/3\end{array}\right].
 \]
 
-Thus as $k\rightarrow\infty$, $\x^{(k)} \rightarrow \x = [2/3,\ 1/3]\trp$, regardless of the initial state distribution $\x^{(0)}$.
+Thus as $k\rightarrow\infty$, $\x_k \rightarrow \x = [2/3,\ 1/3]\trp$, regardless of the initial state distribution $\x_{0}$.
 So according to this model, no matter the weather today, the probability that it is hot a week from now is approximately $66.67\%$.
 In fact, approximately 2 out of 3 days in the year should be hot.
 
@@ -269,7 +267,7 @@ Every Markov chain has at least one steady state distribution.
 If some power $A^k$ of $A$ has all positive (nonzero) entries, then the steady state distribution is unique.%
 \footnote{This is a consequence of the \emph{Perron-Frobenius theorem}, which is presented in conjunction with spectral calculus in Volume I.}
 In this case, $\lim_{k\rightarrow\infty}A^k$ is the matrix whose columns are all equal to the unique steady state distribution, as in (\ref{eq:markov-steady-transition}).
-Under these circumstances, the steady state distribution $\x$ can be found by iteratively calculating $\x^{(k+1)} = A\x^{(k)}$, as long as the initial vector $\x^{(0)}$ is a state distribution vector.
+Under these circumstances, the steady state distribution $\x$ can be found by iteratively calculating $\x_{k+1} = A\x_k$, as long as the initial vector $\x_{0}$ is a state distribution vector.
 
 \begin{warn}
 Though every Markov chain has at least one steady state distribution, the procedure described above fails if $A^k$ fails to converge.
@@ -293,7 +291,7 @@ Furthermore, the steady state distribution is not always unique; the transition 
 
 \begin{problem} % Use the power method (simple) to get the steady state.
 Write a function that accepts an $n\times n$ transition matrix $A$, a convergence tolerance $\epsilon$, and a maximum number of iterations $N$.
-Generate a random state distribution vector $\x^{(0)}$ and calculate $\x^{(k+1)} = A\x^{(k)}$ until $\|\mathbf{x}^{(k-1)} - \mathbf{x}^{(k)}\| < \epsilon$.
+Generate a random state distribution vector $\x_{0}$ and calculate $\x_{k+1} = A\x_k$ until $\|\x_{k-1} - \x_k\| < \epsilon$.
 If $k$ exceeds $N$, raise a \li{ValueError} to indicate that $A^k$ does not converge.
 Return the approximate steady state distribution $\x$ of $A$.
 
@@ -319,13 +317,13 @@ Finally, use your function to validate the results of Problems \ref{prob:small-m
 
 \begin{info}
 Problem \ref{prob:markov-power-method} is a special case of the \emph{power method}, an algorithm for calculating an eigenvector of a matrix corresponding to the eigenvalue of largest magnitude.
-The general version of the power method, together with a discussion of its convergence conditions, will be discussed in another lab.
+The general version of the power method, together with a discussion of its convergence conditions, is discussed in another lab.
 \end{info}
 
 \section*{Using Markov Chains to Simulate English} % ==========================
 % TODO: is it okay to make this reference?
-One of the original applications of Markov chains was to study natural languages.%
-\footnote{The term \emph{natural language} refers to a spoken language, like English or Russian. See \url{http://langvillea.people.cofc.edu/MCapps7.pdf} for some details on the early applications of Markov chains, including the study of natural languages.}
+One of the original applications of Markov chains was to study natural languages.
+% \footnote{The term \emph{natural language} refers to a spoken language, like English or Russian. See \url{http://langvillea.people.cofc.edu/MCapps7.pdf} for some details on the early applications of Markov chains, including the study of natural languages.}
 In the early $20$th century, Markov used his chains to model how Russian switched from vowels to consonants.
 By mid-century, they had been used as an attempt to model English.
 It turns out that Markov chains are, by themselves, insufficient to model very good English.
@@ -470,35 +468,12 @@ For example, your \li{SentenceGenerator} class should be able to create random s
 
 \begin{lstlisting}
 >>> yoda = SentenceGenerator("yoda.txt")
->>> for _ in xrange(25):
+>>> for _ in range(3):
 ... 	print(yoda.babble())
 ...
 <<Impossible to my size, do not!
 For eight hundred years old to enter the dark side of Congress there is.
-But beware of the Wookiees, I have.
-Fear leads to eat as well.
-But agree on this, we must, and find your weapon!
-Hear you fear of the Force.
-A Jedi must go.
-Fear is upon me by a fight.
-Never his ally in you.
-Or I mean you it appears to answer that strong.
-Hard to let go of a long time have I have.
-Obi-Wan, my choice is.
-Luke, when gone am I, the Force be with him.
-Told you are, no harm.
-Impossible to learn he is.
-Inform the Force, but the dark, path as is ready.
-Unexpected this move by Darth Vader.
-At an end this kind?
-A master and decisively we have.
-Much anger there are, no more, no less.
-What know you Count, this boy's future is.
-Heard from the Force.
-Will he begins?
-So certain, are worse.
-Death is time have the dark place we will be when sensing the way of
-    the Force.>>
+But beware of the Wookiees, I have.>>
 \end{lstlisting}
 
 \label{prob:markov-random-sentences-babble}
@@ -565,4 +540,3 @@ For example, \li{nltk.sent_tokenize()} reads a single string and splits it up in
 
 The \li{nltk} module is \textbf{not} part of the Python standard library.
 For instructions on downloading, installing, and using \li{nltk}, visit \url{http://www.nltk.org/}.
-

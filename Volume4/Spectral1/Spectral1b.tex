@@ -22,7 +22,12 @@ This general strategy is often called the method of mean weighted residuals (MWR
 The pseudospectral or collocation method is obtained from the MWR method by forcing the residual function $R(x,u_N)$ to equal zero at $N+1$ points in $[-1,1]$, called collocation points.
 When done correctly, the pseudospectral method gives high accuracy and converges rapidly.
 
-We will let the basis functions $\phi_i$ be the Chebyshev polynomials, and the collocation points will be the Gauss-Lobatto points, $x_i = \cos(\pi i /N)$, $ i = 0, \ldots, N$.
+We will let the basis functions $\phi_i$ be the Chebyshev polynomials, 
+
+\[T_0(x)=1\]
+\[T_1(x)=x\]
+\[T_{n+1}(x)=2xT_n(x)-T_{n-1}(x)\]
+and the collocation points will be the Gauss-Lobatto points, $x_i = \cos(\pi i /N)$, $ i = 0, \ldots, N$.
 The appropriate solution $u_N$ may be represented with two equivalent forms.
 First, $u_N$ can be described with the first $N+1$ coefficients  $\{a_i\}_{i=0}^N$ of its expansion in the Chebyshev polynomials.
 Since $u_N$ is a polynomial of order $N$, it may be uniquely described by its values at the collocation points, that is, the unknown values  $\{u_N(x_i)\}_{i=0}^N$.
@@ -101,7 +106,7 @@ def cheb(N):
 \begin{problem}
 Use the differentiation matrix to numerically approximate the derivative of $u(x) = e^{x}\cos(6x)$ on a grid of $N$ Chebychev points where $N=6, 8,$ and $10.$
 (Use the linear system $D U \approx U'$.)
-Then use barycentric interpolation to approximate $u'$ on a grid of 100 evenly spaced points.
+Then use barycentric interpolation (\li{scipy.interpolate.barycentric_interpolate}) to approximate $u'$ on a grid of 100 evenly spaced points.
 
 Graphically compare your approximation to the exact derivative.
 Note that this convergence would not be occurring if the collocation points were equally spaced.
@@ -125,6 +130,15 @@ This is done by replacing the first and last equations in \eqref{spectral1b:disc
 % \[\tilde{D}^2 \tilde{U} = \tilde{F},\]
 % where $\tilde{D} = D[1:N,1:N]$, $\tilde{U} = U[1:N]$, and $\tilde{F} = F[1:N]$.
 
+\begin{lstlisting}
+#The following code will force U[0] = U[N] = 0
+D, x = cheb(N)    #for some N
+D2 = np.dot(D, D)
+D2[0,:], D2[-1,:] = 0, 0
+D2[0,0], D2[-1,-1] = 1, 1
+F[0], F[-1] = 0, 0
+\end{lstlisting}
+
 
 \begin{problem}
 Use the pseudospectral method to solve the boundary value problem
@@ -132,6 +146,8 @@ Use the pseudospectral method to solve the boundary value problem
 &{ } u'' = e^{2x}, \quad x \in (-1,1), \\
 &{ } u(-1) = 0, \quad u(1) = 0.
 \end{align*}
+
+Use $N=8$ in the \li{cheb(N)} method and use barycentric interpolation to approximate $u$ on 100 evenly spaced points.
 Compare your numerical solution with the exact solution,
 \[
 u(x) = \frac{- \cosh(2) - \sinh(2)x + e^{2x}}{4}.
@@ -155,6 +171,8 @@ u(x) = \frac{- \cosh(2) - \sinh(2)x + e^{2x}}{4}.
 	&{ } u'' + u' = e^{3x}, \quad x \in (-1,1), \\
 	&{ } u(-1) = 2, \quad u(1) = -1.
 	\end{align*}
+	
+	Use $N=8$ in the \li{cheb(N)} method and use barycentric interpolation to approximate $u$ on 100 evenly spaced points.
 \end{problem}
 
 The previous exercise involved setting up and solving a linear system 
@@ -172,9 +190,25 @@ Use the pseudospectral method to solve the boundary value problem
 &{ } u(0) = 0, \quad u(1) = 1
 \end{align*}
 for several values of $\lambda$: $\lambda = 4, 8, 12$. 
+Begin by transforming this BVP onto the domain $-1<x<1$.
+Use $N=20$ in the \li{cheb(N)} method and use barycentric interpolation to approximate $u$ on 100 evenly spaced points.
+ 
+Below is sample code for implementing Newton's Method
+\begin{lstlisting}
+from scipy.optimize import root
 
-Begin by transforming this BVP onto the domain $-1<x<1$. 
-Also, recall that Newton's method requires an initial guess. 
+N = 20
+D, x = cheb(20)
+
+def F(U):
+	out = None	#Set up the equation you want the root of.
+	#Make sure to set the boundaries correctly
+	
+	return out	#Newtons Method will update U until the output is all 0's.
+
+guess = None    #Make your guess, same size as the cheb(N) output
+solution = root(F, guess).x 
+\end{lstlisting}
 \end{problem}
 
 
@@ -205,6 +239,25 @@ where $I$ is a vector of ones.
 \begin{problem}
 Find the function $y(x)$ that satisfies $y(-1) = 1$, $y(1) = 7$, and whose surface of revolution (about the $x$-axis) minimizes surface area.
 Compute the surface area, and plot the surface. \label{prob:pseudospectral1_revision:minimal_surface}
+Use $N=50$ in the \li{cheb(N)} method and use barycentric interpolation to approximate $u$ on 100 evenly spaced points.
+
+Below is sample code for creating the 3D wireframe figure.
+\begin{lstlisting}
+from mpl_toolkits.mplot3d import Axes3D
+
+barycentric = None	#This is the output of barycentric_interpolate() on 100 points
+
+lin = np.linspace(-1, 1, 100)
+theta = np.linspace(0,2*np.pi,401)
+X, T = np.meshgrid(lin, theta)
+Y, Z = barycentric*np.cos(T), barycentric*np.sin(T)
+
+fig = plt.figure()
+ax = fig.gca(projection="3d")
+ax.plot_wireframe(X, Y, Z, rstride=10, cstride=10)
+plt.show()
+\end{lstlisting}
+
 \end{problem}
 
 \begin{figure}
@@ -213,13 +266,6 @@ Compute the surface area, and plot the surface. \label{prob:pseudospectral1_revi
 \caption{The minimal surface corresponding to Problem  \ref{prob:pseudospectral1_revision:minimal_surface}.}
 \label{fig:pseudospectral1_revision:minimal_surface}
 \end{figure}
-
-
-
-
-
-
-
 
 \begin{comment}
 \section*{The Method of Weighted Residuals}
@@ -258,12 +304,3 @@ Then the equations \ref{eqn:Spectral1_weightedaverage} are given by
 Thus the pseudospectral method requires the residual of the approximate solution to be exactly zero at the collocation points.
 Alternatively, the approximate solution satisfies the differential equation exactly at the collocation points.
 \end{comment}
-
-
-
-
-
-
-
-
-

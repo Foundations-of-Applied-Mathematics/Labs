@@ -38,14 +38,14 @@
 \def\@makechapterhead#1{%
    {\parindent \z@ \raggedright \normalfont
     \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter     
+      \if@mainmatter
 %
 \noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
 \put(0,22.5){\setlength{\fboxsep}{0pt}%\fbox
 {\parbox[b][99pt][c]{300pt}{\raggedright\sffamily\Large%\bfseries%
 \@chapapp\space {\color{\@numcolor} \fontseries{t}\selectfont\thechapter}
         \vskip3pt\par\nobreak
-    \Huge \fontseries{l}\selectfont %\bfseries 
+    \Huge \fontseries{l}\selectfont %\bfseries
     #1\par}}}%%end of parbox and put
 \end{picture}}
  \fi
@@ -65,12 +65,12 @@
      \normalfont
     %_%_%_%_%add part background graphic...
  \ifnum \c@secnumdepth >-2\relax
-       \sffamily\huge\fontseries{l}\selectfont%\bfseries 
+       \sffamily\huge\fontseries{l}\selectfont%\bfseries
        \partname~\thepart
        \par
        \vskip 20\p@
      \fi
-     \sffamily\Huge\fontseries{l}\selectfont %\bfseries 
+     \sffamily\Huge\fontseries{l}\selectfont %\bfseries
      #2\par}%
     \@endpart}}
 \DeclareOption{opener-d}{%
@@ -80,7 +80,7 @@
 \def\@makechapterhead#1{%
    {\parindent \z@ \raggedright \normalfont
     \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter     
+      \if@mainmatter
 %
 \noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
 \put(0,11){\includegraphics[height=120pt]{macroa-1-gray}}
@@ -88,7 +88,7 @@
 {\parbox[b][99pt][c]{300pt}{\raggedright\sffamily\Large%\bfseries%
 \@chapapp\space {\color{\@numcolor} \fontseries{t}\selectfont \thechapter}
         \vskip3pt\par\nobreak
-    \Huge\fontseries{l}\selectfont %\bfseries 
+    \Huge\fontseries{l}\selectfont %\bfseries
     #1\par}}}%%end of parbox and put
 \end{picture}}
  \fi
@@ -113,7 +113,7 @@
 {\parbox[b][99pt][c]{300pt}{\parindent0pt\sffamily\Large\fontseries{l}\selectfont%\bfseries%
 \partname\space \fontseries{l}\selectfont \thepart
         \vskip3pt\par\nobreak
-    \Huge\fontseries{l}\selectfont %\bfseries 
+    \Huge\fontseries{l}\selectfont %\bfseries
     #2\par}}}%%end of parbox and put
 \end{picture}}
      \fi
@@ -127,7 +127,7 @@
 \def\@makechapterhead#1{%
    {\parindent \z@ \raggedright \normalfont
     \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter     
+      \if@mainmatter
 \noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
 \put(0,0) {\vbox to 99pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
     {\fontsize{100}{100}\selectfont {\color{\@numcolor} \fontseries{t}\selectfont \thechapter}} \par\vfill}}
@@ -135,7 +135,7 @@
 \put(115,0){\vbox to 99pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
 %\vfill\@chapapp\space \thechapter
 %        \vskip3pt\par\nobreak
-\fontseries{l}\selectfont    \Huge %\bfseries 
+\fontseries{l}\selectfont    \Huge %\bfseries
 #1\par\vfill}}%%end of parbox and put
 \end{picture}}
  \fi
@@ -163,9 +163,9 @@
 \end{picture}}
      \fi
     \@endpart}}
-    
-    
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \DeclareOption{opener-c}{%
 
 %_%_%_%_% new makechapterhead
@@ -174,7 +174,7 @@
 \def\@makechapterhead#1{%
    {\parindent \z@ \raggedright \normalfont
     \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter     
+      \if@mainmatter
 %% TJ edited 4 Mar 2017
 \noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
 \put(0,0) {\vbox to 99pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
@@ -183,7 +183,7 @@
 \put(115,0){\vbox to 99pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
 %\vfill\@chapapp\space \thechapter
 %        \vskip3pt\par\nobreak
-\fontseries{l}\selectfont    \Huge %\bfseries 
+\fontseries{l}\selectfont    \Huge %\bfseries
 #1\par\vfill}}%%end of parbox and put
 \end{picture}}
 %%% end TJ edit
@@ -214,8 +214,8 @@
 \end{picture}}
      \fi
     \@endpart}}
-%%%% End TJ edit  
-%    
+%%%% End TJ edit
+%
 \DeclareOption{opener-b}{%
 %_%_%_%_% new makechapterhead
 %_%_%_%_% type "B"
@@ -223,14 +223,14 @@
 \def\@makechapterhead#1{%
    {\parindent \z@ \raggedright \normalfont
     \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter     
+      \if@mainmatter
 %
 \noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
 \put(0,0){\includegraphics[width=114pt]{macroa2-gray}}
 \put(118,16){\vbox to 99pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
 \@chapapp\space {\color{\@numcolor} \fontseries{t}\selectfont\thechapter}
         \vskip3pt\par\vfill\nobreak
-    \Huge\fontseries{l}\selectfont %\bfseries 
+    \Huge\fontseries{l}\selectfont %\bfseries
     #1\par}}%%end of parbox and put
 \end{picture}}
  \fi
@@ -254,7 +254,7 @@
 \put(118,16){\vbox to 99pt{\parindent0pt\hsize247pt\sffamily\Large%\bfseries%
 \fontseries{l}\selectfont\partname\space\fontseries{l}\selectfont \thepart
         \vskip3pt\par\vfill\nobreak
-    \huge\fontseries{l}\selectfont %\bfseries 
+    \huge\fontseries{l}\selectfont %\bfseries
     #2\par}}%%end of parbox and put
 \end{picture}}
      \fi
@@ -267,14 +267,14 @@
 \def\@makechapterhead#1{%
    {\parindent \z@ \raggedright \normalfont
     \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter     
+      \if@mainmatter
 %
 \noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
 \put(0,-1){\includegraphics[height=102pt]{macroa-gray}}
 \put(118,0){\vbox to 100pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
 \@chapapp\space {\color{\@numcolor} \fontseries{t}\selectfont\thechapter}
         \vfill\par\nobreak
-    \Huge \fontseries{l}\selectfont %\bfseries 
+    \Huge \fontseries{l}\selectfont %\bfseries
     #1\par}}%%end of parbox and put
 \end{picture}}
  \fi
@@ -298,16 +298,17 @@
 \put(118,0){\vbox to 100pt{\parindent0pt\hsize247pt\sffamily\Large%\bfseries%
 \partname\space\fontseries{l}\selectfont \thepart
         \vfill\par\nobreak
-    \huge\fontseries{l}\selectfont %\bfseries 
+    \huge\fontseries{l}\selectfont %\bfseries
     #2\par}}%%end of parbox and put
 \end{picture}}
      \fi
     \@endpart}}
-    
+
 \DeclareOption{blue}{\renewcommand{\@numcolor}{blue}}
 \DeclareOption{red}{\renewcommand{\@numcolor}{red}}
 \DeclareOption{yellow}{\renewcommand{\@numcolor}{yellow}}
 \DeclareOption{green}{\renewcommand{\@numcolor}{green}}
+\DeclareOption{black}{\renewcommand{\@numcolor}{black}}
 
 \DeclareOption{a4paper}
    {\setlength\paperheight {297mm}%
@@ -491,7 +492,7 @@
   \global\let\and\relax
   }
 %%end \if@labsoption
- \else  
+ \else
   \newcommand\maketitle{\begin{titlepage}%
   \let\footnotesize\small
   \let\footnoterule\relax
@@ -636,7 +637,7 @@
     {\centering
      \interlinepenalty \@M
      \normalfont
-     \sffamily\Huge\fontseries{l}\selectfont %\bfseries 
+     \sffamily\Huge\fontseries{l}\selectfont %\bfseries
      #1\par}%
     \@endpart}
 \def\@endpart{\vfil\newpage
@@ -693,7 +694,7 @@
   {\parindent \z@ \raggedright
     \normalfont
     \interlinepenalty\@M\centering
-    \Huge \sffamily\fontseries{l}\selectfont%\bfseries 
+    \Huge \sffamily\fontseries{l}\selectfont%\bfseries
     #1\par\nobreak
     \vskip 40\p@
   }}
@@ -1133,9 +1134,9 @@
 \def\@thmcounterup#1{\noexpand\arabic{#1}}
 \def\@thmcountersep{.}
 \def\@begintheoremup#1#2{\trivlist
-   \item[\hskip \labelsep{\bfseries #1\ #2.}]\upshape} %TJ 2016/5/5 added . to match \newtheorem 
+   \item[\hskip \labelsep{\bfseries #1\ #2.}]\upshape} %TJ 2016/5/5 added . to match \newtheorem
 \def\@opargbegintheoremup#1#2#3{\trivlist
-      \item[\hskip \labelsep{\bfseries #1\ #2\ (#3).}]\upshape}%TJ 2016/5/5 added . 
+      \item[\hskip \labelsep{\bfseries #1\ #2\ (#3).}]\upshape}%TJ 2016/5/5 added .
 \def\@endtheoremup{\endtrivlist}
 
 
@@ -1253,7 +1254,7 @@
 }
 \else    \typeout{Warning: Unable to fix unknown version of \string\eqnarray.}
 \fi
- 
+
 \def\@tempb{}
 
 
@@ -1344,5 +1345,3 @@
 \endinput
 %%
 %% End of file `book.cls'.
-
-

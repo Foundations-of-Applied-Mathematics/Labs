@@ -119,7 +119,8 @@ F_{i-1/2}^n &= \frac{a}{\triangle t}\int_{0}^{t_{n+1}-t_n} \tilde{u}^n(x_{i-1/2}
 \end{align}
 
 \begin{figure}
-\includegraphics[width=\textwidth, trim = 20mm 65mm 20mm 65mm, clip]{LW_reconstruction.pdf}
+\includegraphics[width=\textwidth, trim = 20mm 65mm 20mm 65mm, clip]
+{LW_reconstruction.pdf}
 \caption{The piecewise linear reconstruction for the upwind and Lax-Wendroff methods.
 The solid lines represent the simplest reconstruction of the cell averages leading to the upwind method, and the dashed lines are those whose slope is obtained via the Lax-Wendroff method.
 Note that the LW method introduces a spurious maximum at $i+3/2$ (the cell edge between $U_{i+1}$ and $U_{i+2}$) and the minimum at $i-3/2$ will be unphysical exaggerated.
@@ -141,7 +142,7 @@ Notice that this PDE has periodic boundary conditions.
 Essentially we are evolving the signal around the unit circle.
 This allows us to evolve the signal much further to test our numerical methods, since we only have to discretize the interval $[0,1]$ instead of a much larger domain.
 To see how to implement the boundary conditions, consider a grid $0 = x_0< x_1< \ldots< x_{N-1}< x_N = 1$ of evenly spaced points.
-Since $x_N = x_0$, it is sufficient to track $x_0, \ldots , x_{N-1}$.
+Since $u(x)$ is periodic then $u(x_N) = u(x_0)$, so it is sufficient to track $x_0, \ldots , x_{N-1}$.
 
 \begin{lstlisting}
 import numpy as np
@@ -299,7 +300,8 @@ b  \mbox{ if } |b|<|a|  \mbox{ and } ab>0\\ 0  \mbox{ if } ab < 0 .\end{array}\r
 
 \begin{problem}
 Implement the Lax Wendroff method and use it to solve \eqref{eqn:fv_exercise}.
-Compare it to the upwind method for $N = 30, 60, 120$, and 240.
+For $N=30,60,120,240$, plot the analytic solution, the upwind solution, and the Lax-Wendroff solution.
+(You should have 4 separate plots, each with 3 graphs.)
 You should be able to tell that the Lax Wendroff method approximates the smooth portion of the signal much better, as it does not struggle with diffusion.
 Unfortunately, it has some difficulty with the discontinuous portion, where unphysical oscillations are seen.
 Recall that we saw something similar in the waves lab when there were discontinuous initial conditions.
@@ -309,8 +311,11 @@ Hint: Use equations \ref{eqn:finite_volume_improved_flux} and \ref{eqn:flux_form
 
 \begin{problem}
 Implement the Minmod method and use it to solve \eqref{eqn:fv_exercise}.
-Compare it to the upwind and Lax Wendroff methods for $N = 30, 60, 120$, and 240.
+For $N=30,60,120,240$, plot the anaytic solution, the upwind solution, the Lax-Wendroff solution, and the Minmod solution.
+(You should have 4 separate plots, each with 4 graphs.)
 Be sure to vectorize the minmod operation.
+
+Hint: Use equations \ref{eqn:finite_volume_improved_flux} and \ref{eqn:flux_form}.
 \end{problem}
 
 \begin{figure}
@@ -325,4 +330,4 @@ Here the advection coefficient is $a = 1.2$, and there are  $N = 100$ subinterva
 As you can imagine, using a linear approximation is not the only option.
 There are a host of high order finite volume methods that consider polynomial reconstructions of $\tilde{u}^n$ inside each cell.
 The key is then to use some nonlinear limiting technique that will ensure that when $\tilde{u}^n(x)$ is advocated that no new extrema are introduced.
-Choosing the correct limiter for the given application then becomes an art unto itself.
+Choosing the correct limiter for the given application then becomes an art unto itself. 

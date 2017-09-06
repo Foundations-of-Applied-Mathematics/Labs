@@ -6,16 +6,16 @@
 We look at a pseudospectral method with a Fourier basis, and numerically solve the advection equation using a pseudospectral discretization in space and a Runge-Kutta integration scheme in time.  }
 
 % \section{A Pseudospectral method for periodic functions}
-Let $f$ be a periodic function on $[0,2\pi]$. Let $x_1,\ldots,x_N$ be $N$ evenly spaced grid points on $[0,2\pi].$ Since $f$ is periodic on $[0,2\pi]$, we can ignore the grid point $x_0 = 0$. We will further assume that $N$ is even; similar formulas can be derived for $N$ odd. Let $h = 2\pi/N$; then $\{x_1,\ldots,x_N\} = \{h,2h,\ldots,2\pi-h,2\pi\}$.  
+Let $f$ be a periodic function on $[0,2\pi]$. Let $x_1,\ldots,x_N$ be $N$ evenly spaced grid points on $[0,2\pi].$ Since $f$ is periodic on $[0,2\pi]$, we can ignore the grid point $x_N = 2\pi$. We will further assume that $N$ is even; similar formulas can be derived for $N$ odd. Let $h = 2\pi/N$; then $\{x_0,\ldots,x_{N-1}\} = \{0,h,2h,\ldots,2\pi-h\}$.  
 
 The discrete Fourier transform (DFT) of $f$, denoted by $\hat{f}$ or $\mathcal{F}(f)$, is given by
 \[
-\hat{f}(k) = h \sum_{j=1}^N e^{-ikx_j}f(x_j) \quad \text{ where } k = -N/2+1, \ldots,0,1,\ldots, N/2.
+\hat{f}(k) = h \sum_{j=0}^{N-1} e^{-ikx_j}f(x_j) \quad \text{ where } k = -N/2+1, \ldots,0,1,\ldots, N/2.
 \]
 The inverse DFT is then given by
 \begin{align}
 \begin{split}
-f(x_j) &= \frac{1}{2\pi}\sum_{k=-N/2}^{N/2}\frac{e^{ikx_j}}{c_k}\hat{f}(k), \quad j = 1,\ldots, N,
+f(x_j) &= \frac{1}{2\pi}\sum_{k=-N/2}^{N/2}\frac{e^{ikx_j}}{c_k}\hat{f}(k), \quad j = 0,\ldots, N-1,
 % \\
 % &= \frac{1}{2\pi}\sum_{k=-N/2}^{N/2}\!\!{}^{'} e^{ikx_j}\hat{f}(k), \quad j = 1,\ldots, N, 
 \end{split}\label{inverse_dft}
@@ -31,7 +31,7 @@ p(x) = \frac{1}{2\pi}\sum_{k=-N/2}^{N/2} e^{ikx}\hat{f}(k). \label{interpolant}
 \end{align}
 The interpolant for $f'$ is then given by 
 \begin{align}
-p'(x) = ik \frac{1}{2\pi}\sum_{k=-N/2+1}^{N/2-1} e^{ikx}\hat{f}(k). \label{spectral2:deriv}
+p'(x) = \frac{1}{2\pi}\sum_{k=-N/2+1}^{N/2-1} ike^{ikx}\hat{f}(k). \label{spectral2:deriv}
 \end{align}
 
 
@@ -48,7 +48,8 @@ N=24
 x1 = (2.*np.pi/N)*np.arange(1,N+1)
 f = np.sin(x1)**2.*np.cos(x1) + np.exp(2.*np.sin(x1+1))
 
-
+# This array is reordered in Python to
+# accomodate the ordering inside the fft function in scipy.
 k = np.concatenate(( np.arange(0,N/2) ,
 					 np.array([0])	, # Because hat{f}'(k) at k = N/2 is zero.
 					 np.arange(-N/2+1,0,1)	))
@@ -84,7 +85,7 @@ plt.show()
 
 \begin{problem}
 Consider again the function $u(x) = \sin^2 (x) \cos(x) +e^{2\sin(x+1)}$.
-Create a function that approximates $\frac{1}{2}u''-u'$ on the Fourier grid points for a given $N$.	
+Create a function that approximates $\frac{1}{2}u''-u'$ on the Fourier grid points for $N=24$.	
 \end{problem}
 
 % \begin{lstlisting}
@@ -132,12 +133,12 @@ Recall that the advection equation is given by
 where $c$ is the speed of the wave (the wave travels to the right for $c > 0$).
 We will consider the solution of the advection equation on the circle; this essentially amounts to solving the advection equation on $[0,2\pi]$ and assuming periodic boundary conditions. 
 
-A common method for solving time-dependent PDEs is called the \textit{method of lines}. To apply the method of lines to our problem, we use our Fourier grid points in $[0,\pi]$: given an even $N$, let $h = 2\pi/N$, so that $\{x_1,\ldots,x_N\} = \{h,2h,\ldots,2\pi-h,2\pi\}$.  By using these grid points we obtain the collection of equations
+A common method for solving time-dependent PDEs is called the \textit{method of lines}. To apply the method of lines to our problem, we use our Fourier grid points in $[0,\pi]$: given an even $N$, let $h = 2\pi/N$, so that $\{x_0,\ldots,x_{N-1}\} = \{0,h,2h,\ldots,2\pi-h\}$.  By using these grid points we obtain the collection of equations
 \begin{align}
-&{ }u_t(x_j,t) + cu_x(x_j,t) = 0, \quad t >0, \quad j = 1, \ldots N. \label{spectral2:method_oflines}
+&{ }u_t(x_j,t) + cu_x(x_j,t) = 0, \quad t >0, \quad j = 0, \ldots N-1. \label{spectral2:method_oflines}
 \end{align}
 
-Let $U(t)$ be the vector valued function given by $U(t) = (u(x_j,t))_{j=1}^N$.
+Let $U(t)$ be the vector valued function given by $U(t) = (u(x_j,t))_{j=0}^{N-1}$.
 Let $\mathcal{F}(U)(t)$ denote the discrete Fourier transform of $u(x,t)$ (in space), so that 
 \[
 \mathcal{F}(U)(t) = (\hat{u}(k,t))_{k=-N/2+1}^{N/2}.
@@ -156,8 +157,28 @@ Similarly $\vec{c}$ could also be a vector, if the wave speed $c$ is allowed to 
 	\begin{align}
 		u_t +c(x) u_x = 0,
 	\end{align}
-	where $c(x) = .2 + \sin^2(x-1)$, and $u(x,t=0) = e^{-100(x-1)^2}.$  Plot your numerical solution from $t = 0$ to $t = 8$.  Note that the initial data is nearly zero near $x = 0$ and  $2 \pi$, and so we can use the pseudospectral method. \footnote{This problem is solved in \textit{Spectral Methods in MATLAB} using a leapfrog discretization in time. } 
+	where $c(x) = .2 + \sin^2(x-1)$, and $u(x,t=0) = e^{-100(x-1)^2}.$  Plot your numerical solution from $t = 0$ to $t = 8$ over 150 time steps and 100 $x$ steps.  Note that the initial data is nearly zero near $x = 0$ and  $2 \pi$, and so we can use the pseudospectral method. \footnote{This problem is solved in \textit{Spectral Methods in MATLAB} using a leapfrog discretization in time. } 
 	\label{spectral2:advection_equation}
+	Use the following code to help graph.
+\begin{lstlisting}
+t_steps = 150    # Time steps
+x_steps = 100     # x steps
+
+'''
+Your code here to set things up
+'''
+
+sol = # RK4 method. Should return a t_steps by x_steps array
+
+X,Y = np.meshgrid(x_domain, t_domain)
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+ax.plot_wireframe(X,Y,sol)
+plt.show()
+
+\end{lstlisting}
+
+
 \end{problem}
 
 
@@ -168,8 +189,3 @@ Similarly $\vec{c}$ could also be a vector, if the wave speed $c$ is allowed to 
 \caption{The solution of the variable speed advection equation; see Problem  \ref{spectral2:advection_equation}.}
 \label{fig:spectral:spectral2_advection}
 \end{figure}
-
-
-
-
-
