@@ -9,8 +9,8 @@ def find_t(f,a,b,alpha,beta,t0,t1,maxI):
     sol1 = 0
     i = 0
     while abs(sol1-beta) > 10**-8 and i < maxI:
-        sol0 = odeint(f,np.array([alpha,t0]), [a,b],atol=1e-10)[1,0]
-        sol1 = odeint(f,np.array([alpha,t1]), [a,b],atol=1e-10)[1,0]
+        sol0 = odeint(f, np.array([alpha,t0]), [a,b], atol=1e-10)[1,0]
+        sol1 = odeint(f, np.array([alpha,t1]), [a,b], atol=1e-10)[1,0]
         t2 =  t1 - (sol1 - beta)*(t1-t0)/(sol1-sol0)
         t0 = t1
         t1 = t2
@@ -19,14 +19,14 @@ def find_t(f,a,b,alpha,beta,t0,t1,maxI):
         print "t not found"
     return t2
 
-        
+
 def solveSecant(f,X,a,b,alpha,beta,t0,t1,maxI):
     t = find_t(f,a,b,alpha,beta,t0,t1,maxI)
     sol = odeint(f,np.array([alpha,t]), X,atol=1e-10)[:,0]
     return sol
 
 
-def ode(y,x): 
+def ode(y,x):
     return np.array([y[1], -4*y[0]-9*np.sin(x)])
 
 X = np.linspace(0,3*np.pi/4,100)

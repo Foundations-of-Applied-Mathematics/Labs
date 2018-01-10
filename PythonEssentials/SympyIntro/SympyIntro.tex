@@ -286,30 +286,29 @@ According to the SymPy documentation, using \li{sy.lambdify()} to do numerical e
 
 \begin{lstlisting}
 <g<In [1]:>g> import sympy as sy
-
 <g<In [2]:>g> import numpy as np
 
+# Define a symbol, an expression, and points to plug into the expression.
 <g<In [3]:>g> x = sy.symbols('x')
-
 <g<In [4]:>g> expr = sy.tanh(x)
-
-<g<In [5]:>g> pts = np.random.random(10000)
+<g<In [5]:>g> points = np.random.random(10000)
 
 # Time using evalf() on each of the random points.
-<g<In [6]:>g> %timeit [expr.subs(x, pt).evalf() for pt in pts]
-5.48 s +- 945 ms per loop (mean +- std. dev. of 7 runs, 1 loop each)
+<g<In [6]:>g> <p<%time>p> _ = [expr.subs(x, pt).evalf() for pt in points]
+<<CPU times: user 5.29 s, sys: 40.3 ms, total: 5.33 s
+Wall time: 5.36 s>>
 
 # Lambdify the expression and time using the resulting function.
 <g<In [7]:>g> f = sy.lambdify(x, expr)
-
-<g<In [8]:>g> %timeit [f(pt) for pt in pts]
-2.5 ms +- 40.1 mms per loop (mean +- std. dev. of 7 runs, 100 loops each)
+<g<In [8]:>g> <p<%time>p> _ = [f(pt) for pt in points]
+<<CPU times: user 5.39 ms, sys: 648 micros, total: 6.04 ms
+Wall time: 7.75 ms>>      # About 1000 times faster than evalf().
 
 # Lambdify the expression with NumPy and repeat the experiment.
 <g<In [9]:>g> f = sy.lambdify(x, expr, "numpy")
-
-<g<In [10]:>g> %timeit f(pts)
-98 mms +- 6.5 mms per loop (mean +- std. dev. of 7 runs, 10000 loops each)
+<g<In [10]:>g> <p<%time>p> _ = f(points)
+<<CPU times: user 381 micros, sys: 63 micros, total: 444 micros
+Wall time: 282 micros>>   # About 10 times faster than regular lambdify.
 \end{lstlisting}
 \end{info}
 

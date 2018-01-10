@@ -35,13 +35,19 @@ After plotting these solutions (see Figure \ref{ivp:int_curves}), it becomes obv
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{example.pdf}
+\includegraphics[width=\textwidth]{example2.pdf}
 \caption{Several solutions of \eqref{ivp:example}, using Numpy's IVP solver \li{dopri5}. }
 \label{ivp:int_curves}
 \end{figure}
 
 
 \section*{Numerical Methods}
+Many Python integration functions are like black boxes.
+You plug in some functions and initial conditions, and the methods return some numbers.
+Numerical methods are used in these black box methods to return those values.
+We will consider several different methods and their uses.
+
+\subsection*{Euler's Method}
 Numerical methods for solving initial value problems require us to approximate the solution on a set of grid points $a = x_0< x_1<\hdots< x_n = b$ in our interval.  
 For simplicity we will assume that each of the $n$ subintervals $[x_{i-1},x_i]$ has equal length $h = (b-a)/n$. $h$ is called the \textit{step size}. 
 We then look for values $y_0, y_1, \hdots, y_n$ that approximate the solution at the grid points.
@@ -95,9 +101,62 @@ While implicit methods require an equation to be solved at each time step, they 
 	\end{split}\label{ivp:prob1}
 \end{align}
 is given by $y(x) = -2+2x + 2e^x.$
-Use Euler's method to numerically approximate the solution with step sizes $h = 0.4, 0.2$, and $0.1.$ 
-Check that your results match Figure \ref{ivp:euler}.
+Use Euler's method to numerically approximate the solution with step sizes $h = 0.2, 0.1$, and $0.05.$ 
+Implement the following code to initialize variables and compute all $y$ values.
+
+\begin{lstlisting}
+def initialize_all(a,b,y0,h):
+    """Given an initial and final time a and b, with y(a)=y0, and step size h,
+    return several things.
+    
+    X: an aray from a to b with n elements, where n is the number of steps from a to b.
+    Y: an empty array of size (n, y.size), Y[0]=y0.
+    h: the step size.
+    n: the number of steps to be taken.
+    
+    """
+    n = int((b-a)/h+1)
+    X = np.linspace(a, b, n)
+    if isinstance(y0, np.ndarray):
+        Y = np.empty((n, y0.size))
+    else:
+        Y = np.empty(n)
+    Y[0] = y0
+    return X, Y, h, int(n)
+
+def euler(f,X,Y,h,n):
+    """Use the Euler method to compute an approximate solution
+    to the ODE y' = f(t, y) over X.
+
+    Y[0] = y0
+    f is assumed to accept two arguments.
+    The first is a constant giving the value of t.
+    The second is a one-dimensional numpy array of the same size as y.
+
+    This function returns an array Y of shape (n,) if
+    y is a constant or an array of size 1.
+    It returns an array of shape (n, y.size) otherwise.
+    In either case, Y[i] is the approximate value of y at
+    the i'th value of X.
+    """
+    
+    return None
+\end{lstlisting}
+
+Graph the results and check that your results match Figure \ref{ivp:euler}.
 \end{problem}
+
+\subsection*{Midpoint Method}
+
+The midpoint method is very similar to Euler's method.
+For small $h$ we use the approximation
+\begin{align*}
+y(x_{i+1}) &\approx  y(x_{i}) + h f(x_{i}+\frac{h}{2},y(x_{i})+\frac{h}{2} f(x_{i},y(x_{i}))).
+\end{align*}
+Notice that in this approximation, we first evaluate $\hat y_i = y_i+\frac{h}{2}f(x_i, y_i)$ giving us a half step approximation.
+Then we evaluate $f$ at $\hat x_i = x_i+h/2$ and this new approximate $\hat y_i$
+
+\subsection*{Runge-Kutta Method}
 
 So how do we come up with numerical methods with higher order accuracy? 
 Using Taylor's theorem (as we did for Euler's method) to create higher-order one-step methods would lead to numerically approximating derivatives of $f(t,y)$ - not very desirable.
@@ -186,18 +245,23 @@ import matplotlib.pyplot as plt
 a, b, ya = 0., 2., 0.
 
 def ode_f(x,y):
-	return np.array([y -2*x + 4.])
+	return np.array([y - 2*x + 4.])
 	
 best_grid = 320					#  number of subintervals in most refined grid
+h = 2./best_grid
+X, Y, h, n = initialize_all(a, b, ya, h)
 # Requires an implementation of the euler method
-best_val = euler(ode_f,ya,a,b,best_grid)[-1]  
+best_val = euler(ode_f, X, Y, h, n)[-1]  
 
-smaller_grids = [10,20,40,80]  # number of subintervals in smaller grids
+smaller_grids = [10, 20, 40, 80]  # number of subintervals in smaller grids
 h = [2./N for N in smaller_grids]
-Euler_sol = [euler(ode_f,ya,a,b,N)[-1] for N in smaller_grids]
-Euler_error = [abs(( val - best_val)/best_val ) for val in Euler_sol]
+
+Euler_sol = [euler(ode_f, initialize_all(a, b, ya, h[i])[0],
+			initialize_all(a, b, ya, h[i])[1], h[i], N+1)[-1]
+			for i, N in enumerate(smaller_grids)]
+Euler_error = [abs((val - best_val)/best_val) for val in Euler_sol]
 	
-plt.loglog(h, Euler_error, '-b', label="Euler method"	  , linewidth=2.)
+plt.loglog(h, Euler_error, '-b', label="Euler method", linewidth=2.)
 plt.show()
 
 \end{lstlisting}
@@ -318,8 +382,7 @@ Use the RK4 method to solve for the damped free harmonic oscillator satisfying
 y'(0) = -1.
 \end{align*}
 For $\gamma = 1/2,$ and $\gamma = 1$, simultaneously plot your numerical approximations of $y$.  
-Find $y(20)$ accurate to four significant digits, by checking that the relative error is less than $5\times 10^{-5}$.  
-How many subintervals do you need?
+Print $y(20)$ accurate to four significant digits, by checking that the relative error is less than $5\times 10^{-5}$.
 \end{problem}
 
 \section*{Forced harmonic oscillators without damping}
@@ -352,7 +415,7 @@ y'(0) = -1.
 	\end{split}
 	\label{ivp:damped_forced_oscillator}
 \end{align}
-For the following values of $\gamma$ and $\omega,$ plot your numerical approximations of $y$ and find $y(40)$ accurate to four significant digits: $(\gamma, \omega) = (0.5, 1.5),$ $(0.1, 1.1),$ and $(0, 1).$
+For the following values of $\gamma$ and $\omega,$ plot your numerical approximations of $y$ and print $y(40)$ accurate to four significant digits: $(\gamma, \omega) = (0.5, 1.5),$ $(0.1, 1.1),$ and $(0, 1).$
 \end{problem}
 
 

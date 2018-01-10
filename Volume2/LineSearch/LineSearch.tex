@@ -1,261 +1,289 @@
-\lab{Line Search Methods}{Line Search Methods}
+\lab{One-Dimensional Optimization}{One-Dimensional Optimization}
 \label{lab:1-dOpt}
+
 \objective{
-Many high-dimensional optimization algorithms rely on one-dimensional optimization methods.
-In this lab, we implement four \emph{line search} algorithms for optimizing scalar-valued functions defined on $\mathbb{R}$.
-We will generalize some of these approaches to high-dimensional optimization problems in subsequent labs.
-% In some sense, they represent the simplest nontrivial case in general optimization, as there is only one parameter to optimize.
-% Even so, many sophisticated optimization algorithms rely crucially on the effectiveness and efficiency of line searches, since higher-dimensional problems are often broken down into one-dimensional optimizations.
-% There are many different one-dimensional optimization methods, and their effectiveness depends very much on the nature of the optimization problem.
-% Although the line search procedure is often only a subroutine of the optimization algorithm at hand, understanding the basics of the line search is necessary for understanding the robustness of the entire algorithm.
-% For some functions, we can use techniques from calculus to analytically obtain this minimizer.
-% However, in practical applications, this is often impossible, especially when
-% we need a system that works for a wide class of functions.
+One-dimensional optimization methods find numerical approximations of the minima of functions that are unimodal on a specified domain (they only have one local minimizer on the domain). 
+They do so by evaluating the function (or its derivatives) at carefully selected points on the domain.
+In this lab, we will dicuss a few common one-dimensional optimization methods, each of which has varying degrees of effectiveness and speed.
+We will then discuss how to use line searches to find a good step size.
+One method called backtracking will later be important in multi-dimensional optimization as it can be used to find optimal scalar-valued parameters, such as step sizes. 
 }
 
-\section*{Overview of Line Search Algorithms} % ===============================
+\section*{Golden Section Search} % -----------------------------------------
 
-% TODO: make this metaphor more concise.
-Imagine you are hiking a steep mountain.
-When it is time to head home, thick fog gathers around, reducing visibility to just a couple of feet.
-How can you find your way back with such limited visibility?
-One strategy is to pick a downhill direction and follow that direction as far as you can, or until it starts leading upward again.
-Then choose another downhill direction, and take that as far as you can, repeating the process.
-By always choosing a downhill direction, you hope to eventually make it back to the base of the mountain.
+The \emph{golden section search} finds the minumum $x^*$ of a unimodal function $f:[a,b]\rightarrow\mathbb{R}$ by iteratively defining smaller intervals where $x^*$ must lie.
+This method is especially useful when information about the function's derivative does not exist, is not known, or is costly to compute.
 
-This is the basic approach of \emph{line search algorithms} for numerical optimization.
-Let $f$ be a scalar-valued function.
-The goal is to find the \emph{global minimizer} $\x^*$ such that $f(\x^*) \le f(\x)$ for all $\x$ in the domain of $f$.
-After choosing an initial guess $\x_0$, we produce a sequence of approximations $\x_1,\ \x_2,\ \x_3,\ \ldots$ using the rule
-\begin{equation}
-    \x_{k+1} = \x_k + \alpha_k \mathbf{p}_k.
-    \label{eq:line-search-iter}
-\end{equation}
-The point $\mathbf{p}_k$ is the \emph{search direction} (which way to go) and the scalar $\alpha_k$ is called the \emph{step size} (how far to go).
-% This procedure is called a line search because at each iteration, we are simply examining the function in a particular linear direction.
-% The choice of the step size $\alpha_k$ is often chosen by solving a one-dimensional optimization problem in the given direction.
-The choice of search direction and step size at each step is what defines different line search algorithms.
-
-\subsection*{Derivative versus Derivative-Free Methods} % ---------------------
-
-A function's derivative provides information about how the value of the function changes at each point, and can be used to determine local optima.
-Unfortunately, not all objective functions are differentiable, and many are difficult or costly to differentiate.
-Thus some line search methods utilize the derivative of the objective function, but others do not.
-
-\section*{Interval Approximation Methods for Unimodal Functions} % ============
-
-A function $f:[a,b]\rightarrow\mathbb{R}$ satisfies the \emph{unimodal property} if it has just \textbf{one} local (hence global) minimum and is monotonic to the left and right of the minimum.
-The following line search methods optimize a unimodal function by partitioning the function's domain into progressively smaller intervals that contain the minimizer.
-% Although we may not end up with the exact minimum, these method allows us to pin down the true minimum within an interval of any given width in a finite number of steps.
-% The first two, golden section and bisection search, are especially simple, as the step size in some sense is fixed, and we are only left with a binary decision of search direction.
-% Newton's Method uses an algorithm to determine both the step size and direction of the search.
-% Our final algorithm, The Secant Method, can be thought of as an approximation of Newton's Method.
-
-\subsection*{Golden Section Search} % -----------------------------------------
-
-Let $f:[a,b]\rightarrow\mathbb{R}$ be unimodal.
-Starting with the closed interval $[a,b]$, the \emph{golden section search} finds a smaller interval that contains $x^*$ as follows.
-
-Choose two points $a'$ and $b'$ with $a' < b'$.
-If $f(a') \geq f(b')$, the unimodal property guarantees that the minimizer must be in the interval $[a', b]$, for otherwise the function $f$ would have a local minimum in both $[a, a']$ and $[a', b]$. % TODO: WHY??
-In the next step, we repeat the process over the interval $[a', b]$.
-If instead $f(a') \leq f(b')$, then we choose the interval $[a, b']$ for the next step.
-Finally, if $f(a') = f(b')$, then it does not matter which interval is chosen.
-
-It turns out that there is an optimal choice for the two test points $a'$ and $b'$.
-Given the current interval $[a, b]$, choose $a'$ and $b'$ satisfying
+To find a smaller interval where $x^*$ must lie, strategically choose testing points
 \begin{align*}
-a' &= a + \rho(b - a) \\
-b' &= a + (1 - \rho)(b - a),
+\tilde{a} &= b - \frac{b - a}{\phi}\\
+\tilde{b} &= a + \frac{b - a}{\phi}
 \end{align*}
-where $\rho = \frac{1}{2}(3 - \sqrt{5}) \approx 0.382$ (this constant is related to the famous \emph{golden ratio}, hence the name of the algorithm).
+where $\phi = \frac{1 + \sqrt{5}}{2}$ is the \emph{golden ratio} \footnote{Note that this is the same as $\tilde{a} = a + \rho(b-a)$ and $\tilde{b} = a + (1-\rho)(b-a)$ where $\rho = \frac{3-\sqrt{5}}{2}$.}.
+These points are strategic as they create evenly sized intervals $[\tilde{a}, b]$ and $[a, \tilde{b}]$.
+In fact, these intervals are \emph{golden sections} as the ratio of the lengths of $[a,\tilde{a}]$ and $[\tilde{a},b]$ is the same as the ratio of the lengths of $[\tilde{a}, b]$ and $[a, b]$.
+Additionally, the property of the golden ratio that  $\frac{1}{\phi^2} = 1 - \frac{1}{\phi}$ leads to a smaller amout of computations needed.
+Please see the Additional Material for a derivation of both of these facts.
 
-\begin{comment} % TODO: What does this have to do with the implementation?
-By choosing these particular points, we need to only evaluate the function at one additional point in the next step.
-To demonstrate this fact, the reader may verify that, within the interval $[a, b']$, the point $a'$ already satisfies the equation
-\begin{equation*}
-a' = a + (1 - \rho)(b' - a),
-\end{equation*}
-and so we need only evaluate the function at the point $c$ satisfying
-\begin{equation*}
-c = a + \rho(b' - a).
-\end{equation*}
-\end{comment}
+Now consider the following three cases.
+If $f(\tilde{a}) < f(\tilde{b})$, then the function cannot decrease on $[\tilde{b}, b]$ due to the fact that it increased on $[\tilde{a}, \tilde{b}]$ and is unimodal (Refer to Figure \ref{linesearch:gs}).
+Thus, $x^*\in [a, \tilde{b}]$.
+By similar reasoning, if $f(\tilde{a}) > f(\tilde{b})$ , then $x^* \in [\tilde{a}, b]$.
+If $f(\tilde{a}) = f(\tilde{b})$, then the unimodality of $f$ does not give us any information about where the minimizer may lie.
+To continue iterating, let $x^*\in [a, \tilde{b}]$ or $x^*\in[\tilde{a}, b]$ (but the method is not guaranteed to converge to the local minimum if this is the case).
+Continue this iterative proccess on the smaller interval until a desired stopping criteria.
+Once this criteria is reached, the minimum can be approximated as the midpoint of the final interval.
+This method converges linearly.
 
-At each step, the interval is reduced by a factor of $1-\rho$, which means that after $n$ steps, the minimizer is pinned down to within an interval approximately $(0.618)^n$ times the length of the original interval.
-Note that this rate of convergence is independent of the objective function.
+\begin{figure}[H]
+\centering
+\includegraphics[width=.7\textwidth]{figures/golden_section.pdf}
+\caption{An illustration of using the golden section method to optimize a unimodal function. As $f(\tilde{a}) < f(\tilde{b})$, $x^*$ must be in the interval $[a, \tilde{b}]$.}
+\label{linesearch:gs}
+\end{figure}
 
-\begin{problem} % Golden Section Search
-Write a function that accepts a callable function $f$, interval limits $a$ and $b$, and a number of iterations \li{niter} to calculate.
-Implement the golden section search as described above, returning the midpoint of the final interval.
+\begin{algorithm}[H]
+\begin{algorithmic}[1]
+\Procedure{golden\_section}{$f,\hspace{0.02in}a,\hspace{0.02in}b$,\hspace{0.02in}tol,\hspace{0.02in}maxiters}
+   \State $x_0 \gets (a + b)/2$
+        \Comment{Set the initial minimizer approximation.}
+   \State $\phi = (1+\sqrt{5})/2$
+        \Comment{Set $\phi$.}
+   \For{i=0\dots maxiters}
+       \Comment Update the approximation a maximum number of times.
+        \State $\tilde{a} \gets b - (b - a)/\phi$
+            \Comment{Set $\tilde{a}$.}
+        \State $\tilde{b} \gets a + (b-a)/\phi$
+            \Comment{Set $\tilde{b}$. }
+        \If{$f(\tilde{a}) \leq f(\tilde{b})$}
+              \Comment{Set the new boundaries of the interval}
+              \State $b \gets \tilde{b}$
+         \Else{}
+               \State $a \gets \tilde{a}$
+                \EndIf
+        \State $x_1 = (a + b)/2$
+             \Comment{Set the minimizer approximation.}
+        \If{$|x_0-x_1| <$ tol}
+              \State break
+                      \Comment{Break out of the loop if the tolerance has been reached}
+	   \EndIf
+        \State $x_0 = x_1$
+                      \Comment{Update the approximations.}
+   \EndFor
+   \Return $x_0$
+\EndProcedure
+\end{algorithmic}
+\caption{The Golden Section Search}
+\label{Alg:Golden-Section-Search}
+\end{algorithm}
 
-Use your function to minimize $f(x) = e^x - 4x$ on the interval $\lbrack 0, 3 \rbrack$.
-How many steps do you need to take to get within $.001$ of the true minimizer?
-% TODO: how do you plan on testing / reporting this part?
+\begin{problem}
+Write a function that accepts a callable function $f$, interval limits $a$ and $b$, a stopping tolerance \li{tol}, and a max number of iterations \li{maxiters}.
+Implement the golden section search and return the minimizer approximation, whether or not the algorithm converged (bool), and the number of iterations executed.
+
+Test your function by minimizing $f(x) = e^x - 4x$ on the interval $[0, 3]$, and by comparing your results to the results of \li{scipy.optimize.golden()}.
+The following code shows how to use \li{scipy.optimize.golden()}.
+ 
+\begin{lstlisting}
+>>> from scipy import optimize as opt
+>>> import numpy as np
+
+>>> f = lambda x : np.exp(x) - 4*x
+>>> result = opt.golden(f, brack=(0,3), tol=.001)
+\end{lstlisting}
 \label{prob:golden-section-search}
 \end{problem}
 
-\subsection*{Bisection Algorithm} % -------------------------------------------
+\section*{Newton's Method} % =========================
 
-This method is similar to the Golden Ratio method, but instead of cutting our interval into two overlapping sections, we divide the interval evenly in half, and then use the derivative $f'(x)$ to determine where the minimizer lies.
-This method takes advantage of the fact that a unimodal function's derivative is strictly less than 0 to the left of the minimizer, and strictly greater than 0 to the right.
+\emph{Newton's method} is a root finding method that can be used to find optimal values.
+It requires the ability to evaluate a function's first and second derivatives at specified points $(x_k)_{k=1}^n$.
+For each $x_k$, it uses the points $f(x_k)$, $Df(x_k)$, and $D^2 f(x_k)$ to fit $f$ with a quadratic
+$$q(x) = f(x_k) + Df(x_k) (x - x_k) + \frac{1}{2} D^2 f(x_k) (x - x_k)^2$$
+found using a Taylor expansion (see Figure \ref{linesearch:quadratic}).
+It then uses the critical value of $q(x)$ as the subsequent approximation $x_{k+1}$ for the minimizer as follows:
+\begin{align*}
+0 &= q'(x) = Df(x_k) + D^2 f(x_k)(x-x_k) \\
+x_{k+1} &= x_k - \frac{Df(x_k)}{D^2 f(x_k)} \\
+\end{align*}
+where $x_{k+1}$ was plugged into for $x$ and solved for.
 
-For a unimodal function $f:[a, b]\rightarrow\mathbb{R}$, take the midpoint, $x_1 = \frac{b + a}{2}$.
-If $f'(x_1) > 0$, the critical point must lie in the interval $[a, x_1]$; otherwise, the critical point lies in the other half of the interval, $[x_1, b]$.
-We repeat this process on the correct interval until the desired accuracy is achieved.
-
-At each step, the interval is reduced by a factor of two.
-This is slightly quicker than the factor of $1-\rho$ in the Golden Section search method.
-Like the golden section search, the convergence of this method is independent of the objective function.
-
-\begin{problem} % Bisection algorithm
-Write a function that accepts a callable function $f$, interval limits $a$ and $b$, and a number of iterations \li{niter} to calculate.
-Implement the bisection algorithm as described above, returning the midpoint of the final interval.
-
-Use your function to minimize the same objective function as in Problem \ref{prob:golden-section-search}.
-How many steps do you need to take to get within $.001$ of the true minimizer?
-Time both algorithms and report which one is faster to converge.
-% TODO: how do you plan on testing this?
-\end{problem}
-
-\section*{Newton's Method and Quasi-Newton Methods} % =========================
-
-Newton's Method, is a basic line search algorithm that uses the derivatives of the function to select a direction and step size.
-
-To use this method, we need a function that is twice differentiable.
-The idea is to approximate the function with a quadratic polynomial and then solve the trivial problem of minimizing the polynomial.
-Doing so in an iterative manner can lead us to the actual minimizer.
-Let $f$ be a function satisfying the appropriate conditions, and let us make an initial guess, $x_0$.
-The relevant quadratic approximation to $f$ at $x_0$ is
-\begin{equation*}
-q(x) = f(x_0) + f'(x_0)(x-x_0) + \frac{1}{2}f''(x_0)(x-x_0)^2,
-\end{equation*}
-which is the second-degree Taylor polynomial for $f$ centered at $x_0$.
-The minimum for this quadratic function is easily found by solving $q'(x) = 0$, and we take the obtained $x$-value as our new approximation.
-The formula for the $(k+1)$-th approximation, which the reader can verify, is
-\begin{equation*}
-x_{k+1} = x_k - \frac{f'(x_k)}{f''(x_k)}.
-\end{equation*}
-In the one dimensional case, there are only two search directions: to the right ($+$) or to the left ($-$).
-Newton's method chooses the search direction $\p_k = \text{sign}(-f'(x_k)/f''(x_k))$ and the step size $\alpha_k = |f'(x_k)/f''(x_k)|$.
-
-The convergence properties of this sequence depend heavily on the initial guess $x_0$ and the function $f$.
-Roughly speaking, if $x_0$ is sufficiently close to the actual minimizer, and if $f$ is well-approximated by parabolas, then one can expect the sequence to converge quickly.
-However, there are cases when the sequence converges slowly or not at all.
-See Figure \ref{linesearch:newton}.
-
-\begin{figure}
+\begin{figure}[H]
 \centering
-\includegraphics[width=.7\textwidth]{figures/newton.pdf}
-\caption{The results of Newton's Method using two different initial guesses.
-The global minimizer was correctly found with initial guess of 1.
-However, an initial guess of 4 led to only a local minimum.}
-\label{linesearch:newton}
+\includegraphics[width = .7 \textwidth]{figures/quad_approx.pdf}
+\caption{A quadratic approximation of $f$ at $x_k$.
+Note that the minimum of $q(x)$, $x_{k+1}$, is close to the minimum of $f$.
+Also note that an initial starting point close to the right side of the graph could cause problems with Newton's method.
+Namely, it could cause the algorithm to converge to a (non-global) local minimum.
+Furthermore, the fact that $D^2 f(x) < 0$ in this domain could affect the ability of the algorithm to converge.}
+\label{linesearch:quadratic}
 \end{figure}
 
-\begin{problem}
-Implement Newton's Method.
-You will write a function that takes a function and its two derivatives, as well as a starting point.
-It will return the minimizer.
+As Newton's method approximates $f$ with a quadratic, it works fairly well when $D^2 f(x) > 0$ on the entire domain; otherwise, it may fail to converge.
+When it converges, it does so quadratically.
+In order for it to converge to the global minimum, when $f$ is not unimodal, the initial guess $x_0$ must be sufficiently close to $x^*$.
 
-Use this function to minimize $f(x) = x^2 + \sin(5x)$ with an initial guess of $x_0 = 0$.
-Now try other initial guesses farther away from the true minimizer, and note when the method fails to obtain the correct answer.
+\begin{problem}
+Write a method that accepts a function $f$'s first and second derivatives as callable functions $df$ and $d2f$, a starting point $x0$, a stopping tolerance \li{tol}, and a max number of iterations \li{maxiters}.
+Implement Newton's Method as described above and return the minimizer approximation, whether or not the algorithm converged (bool), and the number of iterations executed.
+
+Test your function by minimizing $f(x) = x^2 + \sin(5x)$ with an initial guess of $x_0 = 0$, a stopping tolerance of $10^{-10}$, and $500$ max iterations.
+Compare it to \li{scipy.optimize.newton()} to check your answers.
+Be aware, however, that it is a root finding function, and as such will need to passed the first and second derivatives as follows:
+\begin{lstlisting}
+>>> df = lambda x : 2*x + 5*np.cos(5*x)
+>>> d2f = lambda x : 2 - 25*np.sin(5*x)
+>>> result = opt.newton(df, x0 = 0, fprime = d2f, tol = 1e-10, maxiter = 500)
+# If fprime is not provided, the Secant method will be used.
+\end{lstlisting}
+Note that other initial guesses can yield different minima for this function.
 \end{problem}
 
-\subsection*{One-Dimensional Secant Method} % ---------------------------------
+\subsection*{Secant Method} % ---------------------------------
 
-Sometimes we would like to use Newton's Method, but for whatever reason we don't have a second derivative.
-Maybe calculating it is too costly or the function is not twice differentiable.
-In this situation we can approximate the second derivative using the first derivative.
-The approximation using a secant calculation, hence the name.
-We use the same basic algorithm as in Newton's Method, but with an approximation for the second derivative of the objective function.
-\begin{equation*}
-x_{n+1} = x_n - \frac{f'(x_n)}{f''_{approx}(x_n)},
-\end{equation*}
-where we approximate the second derivative as follows:
-\begin{equation*}
-f''_{approx}(x_n) = \frac{f'(x_n) - f'(x_{n-1})}{x_n - x_{n-1}}.
-\end{equation*}
-This gives us the final equation:
-\begin{equation*}
-x_{n+1} = x_n - \frac{x_n - x_{n-1}}{f'(x_n) - f'(x_{n-1})}f'(x_n),
-\end{equation*}
+When the second derivative of a function is not available or is computationally expensive, a \emph{Quasi-Newton method} could be used.
+These methods perform Newton's method with a numerically approximated second derivative.
+The \emph{Secant method} approximates it using secant lines, or in other words, the rate of change between points.
+The approximation can be thought of as a difference quotient\footnote{An equation of the form $\frac{f(x + h) - f(x)}{h}.$} where $h = \Delta x$.
+Thus, $$D^2 f(x_n) \approx \frac{Df(x_n) - Df(x_{n-1})}{x_n - x_{n-1}}.$$
+This defines a new search method equation as follows:
+$$x_{n+1} = x_n - \frac{x_n - x_{n-1}}{Df(x_n) - Df(x_{n-1})}Df(x_n).$$
+This method converges superlinearly, with convergence criteria similar to Newton's method. 
 Notice that this equation requires two initial points (both $x_n$ and $x_{n-1}$) to calculate the next estimate.
 
-\begin{problem} % Secant Method.
-Write a function that accepts a scalar-valued function $f$, its first derivative $Df$, and two starting points.
-Use the secant method to find and return the minimizer of $f$.
+\begin{problem}
+Write a function that accepts a first derivative $df$, starting points $x0$ and $x1$, a stopping tolerance \li{tol}, and a max number of iterations \li{maxiters}.
+Implement the Secant method as described above and return the minimizer approximation, whether or not the algorithm converged (bool), and the number of iterations executed.
 
-Use your function to minimize $f(x) = x^2 + \sin(x) + \sin(10x)$ with initial guesses of $x_0 = 0$ and $x_1 = -1$.
-Now try other initial guesses farther away from the true minimizer, and note when the method fails to obtain the correct answer.
-
-(Hint: You may want to plot this function to understand why this problem is so sensitive to the starting point.)
+Test your code with the function $f(x) = x^2 + \sin(x) + \sin(10x)$ and with initial guesses of $x_0 = 0$ and $x_1 = -1$.
+Compare your answer with the graph of the function.
+Note that this function is highly sensitive to the starting point, which is why it is not as helpful to compare your function with SciPy's method.
+As noted above, \li{scipy.optimize.newton()} uses the Secant method when the second derivative is not available.
+The only difference in the syntax is that the \li{fprime} argument is not included.
+This means that the function only takes in one initial condition, so it could converge to a different minimum.
 \end{problem}
 
-\section*{General Line Search Methods} % ======================================
+\section*{Descent Methods} % ========================================
 
-\subsection*{Step Size Calculation} % -----------------------------------------
+\emph{Descent methods} are optimization algorithms that create successive approximations ($\textbf{x}_0$, $\textbf{x}_1$,  $\textbf{x}_2$, ...) to a minimizer by descending towards it.
+They can be written in the form
+\begin{equation}
+\textbf{x}_{k+1} = \textbf{x}_k + \alpha_k \textbf{p}_k
+\label{eq:descent}
+\end{equation}
+where $\alpha_k$ is the \emph{step size} and $\textbf{p}_k$ is the \emph{search direction}.
 
-Given a differentiable function $f: \mathbb{R}^n \rightarrow \mathbb{R}$ that we wish to minimize, and assuming that we already have a current point $\x_k$ and direction $\p_k$ in which to search, how do we choose our step size $\alpha_k$? If our step size is too small, we will not make good progress toward the minimizer, and convergence will be slow.
-If the step size is too large, however, we may overshoot and produce points that are far away from the solution.
-A common approach to pick an appropriate step size involves the \emph{Wolfe conditions}:
+To be effective, these methods must use a good step size $\alpha_k$.
+If $\alpha_k$  is too large, the method will overstep the minimum (refer to Figure \ref{fig:alpha}).
+If it is too small, the method will converge slowly and become computationally expensive.
+To find a good value of $\alpha_k$, one-dimensional optimization may be used.
+When a one-dimensional optimization method is used to find a step size, it is referred to as a \emph{line search}.
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=.7\textwidth]{figures/large_alpha.pdf}
+\caption{When $\alpha_k$ is too large, a descent method will overstep the minimizer. }
+\label{fig:alpha}
+\end{figure}
+
+\subsection*{Step Size Calculation} % ======================================
+
+Any one-dimensional optimization method can be used to find an optimal step size $\alpha_k$ by minimizing $\phi_k(\alpha) =  f(\textbf{x}_k + \alpha\textbf{p}_k)$.
+In practice, doing this at every iteration is not always practical, as it may be too computationally expensive.
+Often computational resources could be more efficiently employed finding a better search direction than a better step size.
+Thus, other methods have been derived to find a step size that may not be optimal, but good enough.
+These methods do not seek to minimize $\phi_k(\alpha)$, but instead seek to sufficiently decrease it.
+
+The most common approach is to find an $\alpha_k$ that satisfies the \emph{Wolfe conditions}:
 \begin{align*}
-&f(\x_k + \alpha_k\p_k) \leq f(\x_k) + c_1\alpha_k\nabla f(\x_k)\trp \p_k, &(0 < c_1 < 1),
-\\ &\nabla f(\x_k + \alpha_k\p_k)\trp \p_k \geq c_2\nabla f(\x_k)\trp \p_k, &(c_1 < c_2 < 1).
+&f(\textbf{x}_k + \alpha_k \textbf{p}_k) \leq f(\textbf{x}_k) + c_1\alpha_k\nabla f(\textbf{x}_k)\trp \textbf{p}_k  \\
+& -\nabla f(\textbf{x}_k + \alpha_k \textbf{p}_k)\trp \textbf{p}_k \leq -c_2\nabla f(\textbf{x}_k)\trp \textbf{p}_k
 \end{align*}
+where $0 < c1 < c2 < 1$ (for the  best results, choose $c1 << c2$).
+The first condition is often referred to as the \emph{Armijo condition}.
+It ensures that each step decreases $f$.
+But this condition is not enough on its own.
+By Taylors theorem,
+$$f(\textbf{x}_k + \alpha_k \textbf{p}_k) = f(\textbf{x}_k) + \alpha_k\nabla f(\textbf{x}_k)\trp \textbf{p}_k + \mathcal{O}(\alpha_k^2).$$
+Thus, a very small $\alpha_k$ will always satisfy the Armijo condition (note that as $\textbf{p}_k$ is a descent direction, $f(\textbf{x}_k)\trp\textbf{p}_k < 0$).
+As a small step size is not always effective, the second Wolfe condition, also known as the \emph{curvature condition}, must also be satisfied.
 
-The search direction $p_k$ is often required to satisfy $p_k\trp \nabla f(\x_k) < 0$, in which case it is called a \emph{descent direction}, since the function is guaranteed to decrease in this direction.
-Generally speaking, choosing a step size $\alpha_k$ satisfying these conditions ensures that we achieve sufficient decrease in the function and also that we do not terminate the search at a point of steep decrease (since then we could achieve even better results by choosing a slightly larger step size).
-The first condition is known as the \emph{Armijo} condition.
+It is possible to find an $\alpha_k$ that satisfies the Wolfe conditions, but is far from the minimizer of $\phi_k(\alpha)$.
+To ensure an $\alpha_k$ is near the minimizer, the \emph{Strong Wolfe conditions} must be used.
+These conditions modify the curvatuve condition, so that it is now
+$$ |\nabla f(\textbf{x}_k + \alpha_k \textbf{p}_k)\trp \textbf{p}_k| \leq c_2|\nabla f(\textbf{x}_k)\trp \textbf{p}_k|.$$
 
-We will discuss methods of finding search directions in future labs.
-For now, we will discuss one simple algorithm for finding an appropriate step size which satisfies the Armijo conditions.
+Another set of conditions that can be used is called the \emph{Armijo - Goldstein conditions}
+$$ f(\textbf{x}_k) + (1 - c)\alpha_k\nabla f(\textbf{x}_k)\trp \textbf{p}_k \leq f(\textbf{x}_k + \alpha_k\textbf{p}_k) \leq f(\textbf{x}_k) + c\alpha_k\nabla f(\textbf{x}_k)\trp\textbf{p}_k$$
+where $0 < c < 1$.
+These conditions are very similar to the Wolfe conditions (note that the right inequality is the Armijo condition). 
+However, they do not require the calculation of the directional derivative $\nabla f(\textbf{x}_k + \alpha_k \textbf{p}_k)\trp\textbf{p}_k$.
+They perform as well as the Wolfe conditions in most situations, but are not well-matched for quasi-Newton methods with positive definite Hessians.
 
-\subsection*{Backtracking} % --------------------------------------------------
+\subsubsection*{Backtracking} % --------------------------------------------------
 
-Finding such a step size satisfying these conditions is not always an easy task, however.
-One simple approach, known as \emph{backtracking}, starts with an initial step size $\alpha$, and repeatedly scales it down until the Armijo condition is satisfied.
-That is, choose $\alpha >0, \rho \in (0, 1), c\in (0, 1)$, and while
-\[f(\x_k + \alpha \p_k) > f(\x_k) + c\alpha\nabla f(\x_k)\trp \p_k,\]
-re-scale $\alpha = \rho\alpha$.
-Once the loop terminates, set $\alpha_k = \alpha$.
-Note that the value $\nabla f(\x_k)\trp \p_k$ remains fixed for the duration of the backtracking algorithm, and hence need only be calculated once at the beginning.
+\emph{Backtracking} is a line search algorithm that can be used to find a value of $\alpha_k$ that satisfies certain conditions.
+It starts with an initial step size $\alpha$, and repeatedly scales it down by a factor $\rho$ until the conditions are satisfied.
+The algorithm below only requires $\alpha$ to satisfy the Armijo-condition.
+This is usually sufficient, but if it finds $\alpha$'s that are too small, the algorithm can be modified to satisfy the curvature or Goldstein conditions as well.
 
-\begin{problem} % Backtracking
-Implement this backtracking algorithm using the function definition in the spec file.
-Your function will accept a function, its derivative, a starting point, and the direction p.
+\begin{algorithm}[H]
+\begin{algorithmic}[1]
+\Procedure{backtracking}{$f,\hspace{0.02in}df,\hspace{0.02in}\textbf{x},\hspace{0.02in}\textbf{p},\hspace{0.02in}\alpha,\hspace{0.02in}\rho,\hspace{0.02in}c$}
+	\State $\textbf{dfp}\gets df(\textbf{x})\trp\textbf{p}$
+		\Comment{Compute these values only once.}
+	\State $\textbf{fx}\gets f(\textbf{x})$
+	\While{$\big(f(\textbf{x}_k + \alpha\textbf{p}_k) > \textbf{fx} + c\hspace{0.01in}\alpha\hspace{0.01in}\textbf{dfp}\big)$}
+		\State $\alpha \gets \rho\alpha$
+	\EndWhile
+	\Return $\alpha$
+\EndProcedure
+\end{algorithmic}
+\caption{Backtracking using the Armijo Condition}
+\label{Alg:backtracking}
+\end{algorithm}
+
+\begin{problem}
+Write a function that accepts a callable function $f$, its gradient $df$, approximation $\textbf{x}$, search direction $\textbf{p}$, initial step length $\alpha$, and parameters $\rho$ and $c$.
+Implement the backtracking algorithm using the Armijo condition and return the optimal step size.
+
+\li{scipy.optimize.linesearch.scalar_search_armijo()} finds an optimal step size using the Armijo conditions.
+It may not give the exact answer as your implementation as it decreases $\alpha$ differently, but the answers should be similar.
+\begin{lstlisting}
+# Recall that autograd takes the derivatives of functions.
+>>> from autograd import grad
+
+>>> f = lambda x: x[0]**2 + x[1]**2 + x[2]**2
+>>> x = np.array([150., .03, 40.])
+>>> p = np.array([-.5, -100., -4.5])
+>>> phi = lambda alpha: f(x + alpha*p)
+>>> derphi = grad(phi)
+>>> alpha, _ = opt.linesearch.scalar_search_armijo(phi, phi(0.), derphi(0.))
+
+\end{lstlisting}
 \end{problem}
 
-% TODO: Need a problem that USES this backtracking algorithm!
-% OR, we might want to introduce this in ND-Opt with Gradient Descent?
+\section*{Additional Material}
 
-\subsection*{Line Search in SciPy} % ------------------------------------------
+\subsection*{Golden Search Derivations}
 
-SciPy's \li{optimize} module contains implementations of various optimization algorithms, including several line search methods.
-In particular, the module provides a useful routine for calculating a step size satisfying the Wolfe Conditions described above, which is more robust and efficient than our simple backtracking approach.
-We recommend its use for the remainder of this lab.
-The function is called \li{line_search()}, and accepts several arguments.
-We can typically leave the keyword arguments at their default values, but we do need to pass in the objective function, its gradient, the current point, and the search direction.
-The following code gives an example of its usage, using the objective function $f(x, y) = x^2+4y^2$.
+The ratio of the lengths of $[a, \tilde{a}]$ and $[\tilde{a}, b]$ is the same as the ratio betwen the lengths of $[\tilde{a}, b]$ and $[a, b]$ as follows:
+\begin{align*}
+\frac{\tilde{a}-a}{b-\tilde{a}} &= \frac{(b-a)(1-\frac{1}{\phi})}{b-b+\frac{b-a}{\phi}} \\
+&= \phi(1-\frac{1}{\phi}) \\
+\frac{b-\tilde{a}}{b-a} &= \frac{1}{\phi}
+\end{align*}
+As one of the properties of the golden ratio states that $\frac{1}{\phi^2} = 1 - \frac{1}{\phi}$, they are equal.
 
-\begin{lstlisting}
->>> import numpy as np
->>> from scipy.optimize import line_search
->>>
->>> def objective(x):
->>>     return x[0]**2 + 4*x[1]**2
->>>
->>> def grad(x):
->>>     return np.array([2*x[0], 8*x[1]])
->>>
->>> x = np.array([1., 3.]) # current point
->>> p = -grad(x)           # current search direction
->>> a = line_search(objective, grad, x, p)[0]
->>> print a
-0.125649913345
-\end{lstlisting}
-
-Note that the function returns a tuple of values, the first of which is the step size.
-
-% TODO: An application problem that uses SciPy!
+Chosing the test points according to the golden ratio saves on computations.
+For example, consider the case where $f(\tilde{a}) > f(\tilde{b})$ and label $a_0 = a$ and $a_1 = \tilde{a}$.
+Thus, $x^* \in [\tilde{a}, b]$ and for the next iteration
+\begin{align*}
+\tilde{a_1} &= b - \frac{b - a_1}{\phi} \\
+&= b - \frac{b - b + \frac{b - a_0}{\phi}}{\phi}\\
+&= b - \frac{b - a_0}{\phi^2}\\
+&= a_0 + \frac{b - a_0}{\phi}\\
+&= \tilde{b}
+\end{align*}
+Therefore, the next $\tilde{a}$ is the previous $\tilde{b}$.
+Similarly, if $f(\tilde{a}) < f(\tilde{b})$, then the next $\tilde{b}$ will be the previous $\tilde{a}$.

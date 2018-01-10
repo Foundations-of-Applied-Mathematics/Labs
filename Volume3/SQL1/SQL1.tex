@@ -1,524 +1,577 @@
-\newcommand{\lsql}[1]{\lstinline[language=SQL,prebreak=]!#1!}
+\lab{SQL I: Introduction}{Introduction to SQL}
+\objective{Being able to store and manipulate large data sets quickly is a fundamental part of data science.
+The SQL language is the classic database management system for working with tabular data.
+In this lab we introduce the basics of SQL, including creating, reading, updating, and deleting SQL tables, all via Python's standard SQL interaction modules.}
 
-\lab{SQL and Relational Databases}{SQL}
-\objective{Understand concepts of a relational database and the fundamentals of the SQL language via SQLite.}
-\label{lab:sql_rdb}
+% TODO: reference https://docs.python.org/3/library/sqlite3.html.
 
-When working with large amounts of data, it is important to be able to quickly find and retrieve interesting information.
-Fortunately, there is a way to handle such massive amounts of data in a reasonably efficient way: a database.
-A database is simply a structured repository of data, and it allows us to store and retrieve information very quickly.
-It is managed by a \emph{database management system}, or DBMS.
-The DBMS is software that allows users to interact directly with the database.
+% A database is a structured repository of data, and it allows for efficient storage and retrieval of information.
+% A database is managed by a database management system, or DBMS.
+% The most common DBMSs use a variant of the SQL language to interact with the database.
 
-\section*{Relational Databases}
-A \emph{relational database} is a paradigm for organizing data inside of a database.
-In this paradigm, the data is broken down into tuples of information.
-These tuples are then grouped into tables, or \emph{relations}, each of which is simply a set of tuples.
-Each table has a \emph{schema} that defines the attributes of the tuples within the table.
-If we fix an order to the attributes in the schema, we can think of each attribute as a column
-of the table, and each tuple as a row of the table. See Figure \ref{fig:relation} for an illustration of
-these ideas.
+\section*{Relational Databases} % =============================================
 
-As an example, suppose we have demographic data for a large number of individuals.
-If we are interested in the gender and age of the individuals, we might make a table
-with schema (Name, Gender, Age). This table would consist of several 3-tuples, such as
-(Jane Doe, F, 20). Alternatively, we can view this table as having three columns
-and as many rows as there are individuals within our data set.
-We might also create a table with schema (Name, Employment Status, Income, Education).
+A \emph{relational database} is a collection of tables called \emph{relations}.
+A single row in a table, called a \emph{tuple}, corresponds to an individual instance of data.
+The columns, called \emph{attributes} or \emph{features}, are data values of a particular category.
+The collection of column headings is called the \emph{schema} of the table, which describes the kind of information stored in each entry of the tuples.
+% See Figure \ref{fig:sql-relation} for an illustration of these ideas.
 
-In the relational paradigm, there must be at least one attribute in each schema that can act as a \emph{primary key}.
-This can uniquely identify each tuple of the table.
-It is common to use an ID number or other such unique information for the primary key.
-In our example above, the ``Name" attribute acted as a primary key. However, this attribute only works as a primary
-key provided no two individuals within the data set have the same name.
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth]{rdb_table.pdf}
-\caption{Elements of a relation.}
-\label{fig:relation}
+For example, suppose a database contains demographic information for $M$ individuals.
+If a table had the schema \li{(Name, Gender, Age)}, then each row of the table would be a $3$-tuple corresponding to a single individual, such as \li{(Jane Doe, F, 20)} or \li{(Samuel Clemens, M, 74.4)}.
+The table would therefore be $M\times 3$ in shape.
+Another table with the schema \li{(Name, Income)} would be $M \times 2$ if it included all $M$ individuals.
+
+% TODO: move this to SQL 2 where we talk about joins.
+\begin{comment} % Primary keys (This got removed but is very important!)
+Each table in a relational database must have at least one attribute that \textbf{uniquely} identifies an entry of the data, called a \emph{primary key}.
+Most primary keys are ID numbers, but any attribute will do as long as the values are unique for each tuple.
+For example, the \li{Name} attribute in the previous example could be considered a primary key provided no two individuals in the database have identical names.
+\end{comment}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=.7\textwidth]{rdb_table.pdf}
+    \caption{See \url{https://en.wikipedia.org/wiki/Relational_database}.}
+    \label{fig:sql-relation}
 \end{figure}
 
-One important feature of a database is the \emph{transaction}, which is a conceptual protocol for
-interacting with the database.
-Most relational databases are transactional databases.
-The best way to conceptualize this is imagine that your database is like a bank.
-Your connection to the database is analogous to the bank teller.
-When you make one or more deposits and withdrawals, you are making a transaction.
-A database transaction should have certain properties to protect the integrity of the data.
-These properties are described in detail in \li{en.wikipedia.org/wiki/ACID}
+\subsection*{SQLite} % --------------------------------------------------------
 
-\section*{Introduction to SQL}
-Most common DBMSs use a variant of the SQL language to interact with the database.
-SQL is an acronym for \emph{Structured Query Language}, and may be pronounced like the word ``sequel" or by saying
-the letters ``s", ``q", and ``l" separately.
-While SQL is not generally portable across different DBMSs, we will focus on the parts of SQL that are relatively common.
-In particular, we will base our discussion on the SQLite database management system, a very popular DBMS.
+The most common database management systems (DBMS) for relational databases are based on \emph{Structured Query Language}, commonly called \emph{SQL} (pronounced\footnote{See \url{https://english.stackexchange.com/questions/7231/how-is-sql-pronounced} for a brief history of the somewhat controversial pronunciation of SQL.} ``sequel'').
+Though SQL is a language in and of itself, most programming languages have tools for executing SQL routines.
+In Python, the most common variant of SQL is \emph{SQLite}, implemented as the \li{sqlite3} module in the standard library.
 
-SQL consists of blocks of code called statements.
-Each statement is made up of clauses which may or may not require predicates.
-Predicates specify conditions that can limit the effect of a clause.
+A SQL database is stored in an external file, usually marked with the file extension \texttt{db} or \texttt{mdf}.
+These files should \textbf{not} be opened in Python with \li{open()} like text files; instead, any interactions with the database---creating, reading, updating, or deleting data---should occur as follows.
 
-\begin{info}
-SQL commands are often written in all caps to help distinguish them from the other parts of the query.
-It is only a matter of style.
-SQLite, along with most other database managers, is case insensitive.
-In Python's SQL interface, the semicolon is also not needed.
-However, most other database systems will require it, so it's a good idea to conform in Python.
+\begin{enumerate}
+    \item Create a connection to the database with \li{sqlite3.connect()}.
+    This creates a database file if one does not already exist.
+    \item Get a \emph{cursor}, an object that manages the actual traversal of the database, with the connection's \li{cursor()} method.
+    \item Alter or read data with the cursor's \li{execute()} method, which accepts an actual SQL command as a string.
+    \item Save any changes with the cursor's \li{commit()} method, or revert changes with \li{rollback()}.
+    \item Close the connection.
+\end{enumerate}
+
+\begin{lstlisting}
+>>> import sqlite3 as sql
+
+# Establish a connection to a database file or create one if it doesn't exist.
+>>> conn = sql.connect("my_database.db")
+>>> try:
+...     cur = conn.cursor()                         # Get a cursor object.
+...     cur.execute("SELECT * FROM MyTable")        # Execute a SQL command.
+... except sql.Error:                               # If there is an error,
+...     conn.rollback()                             #  revert the changes
+...     raise                                       #  and raise the error.
+... else:                                           # If there are no errors,
+...     conn.commit()                               #  save the changes.
+... finally:
+...     conn.close()                                # Close the connection.
+\end{lstlisting}
+
+\begin{warn} % Remember to commit changes.
+Some changes, such as creating and deleting tables, are automatically committed to the database as part of the cursor's \li{execute()} method.
+Be \textbf{extremely cautious} when deleting tables, as the action is immediate and permanent.
+Most changes, however, do not take effect in the database file until the connection's \li{commit()} method is called.
+Be careful not to close the connection before committing desired changes, or those changes will not be recorded.
+\end{warn}
+
+The \li{with} statement can be used with \li{open()} so that file streams are automatically closed, even in the event of an error.
+Likewise, combining the \li{with} statement with \li{sql.connect()} automatically rolls back changes if there is an error and commits them otherwise.
+However, the actual database connection is \textbf{not} closed automatically.
+With this strategy, the previous code block can be reduced to the following.
+
+\begin{lstlisting}
+>>> try:
+...     with sql.connect("my_database.db") as conn:
+...         cur = conn.cursor()                     # Get the cursor.
+...         cur.execute("SELECT * FROM MyTable")    # Execute a SQL command.
+... finally:                                        # Commit or revert, then
+...     conn.close()                                #  close the connection.
+\end{lstlisting}
+
+\section*{Managing Database Tables} % =========================================
+
+SQLite uses five native data types (relatively few compared to other SQL systems) that correspond neatly to native Python data types.
+
+\begin{table}[H]
+\begin{tabular}{c|c}
+    Python Type & SQLite Type \\
+    \hline
+    \li{None} & \lsql{NULL} \\
+    \li{int} & \lsql{INTEGER} \\
+    \li{float} & \lsql{REAL} \\
+    \li{str} & \lsql{TEXT} \\
+    \li{bytes} & \lsql{BLOB}
+\end{tabular}
+\end{table}
+
+The \lsql{CREATE TABLE} command, together with a table name and a schema, adds a new table to a database.
+The schema is a comma-separated list where each entry specifies the column name, the column data type,\footnote{Though SQLite does not force the data in a single column to be of the same type, most other SQL systems enforce uniform column types, so it is good practice to specify data types in the schema.} and other optional parameters.
+For example, the following code adds a table called \li{MyTable} with the schema \li{(Name, ID, Age)} with appropriate data types.
+
+\begin{lstlisting}
+>>> with sql.connect("my_database.db") as conn:
+...     cur = conn.cursor()
+...     cur.execute("CREATE TABLE MyTable (Name TEXT, ID INTEGER, Age REAL)")
+...
+>>> conn.close()
+\end{lstlisting}
+
+The \lsql{DROP TABLE} command deletes a table.
+However, using \lsql{CREATE TABLE} to try to create a table that already exists or using \lsql{DROP TABLE} to remove a nonexistent table raises an error.
+Use \lsql{DROP TABLE IF EXISTS} to remove a table without raising an error if the table doesn't exist.
+See Table \ref{table:sql-table-management} for more table management commands.
+
+\begin{table}[H]
+    \begin{tabular}{c|l}
+    Operation & SQLite Command \\ \hline
+    Create a new table & \lsql{CREATE TABLE} \li{<table> (<schema>);} \\
+    Delete a table & \lsql{DROP TABLE} \li{<table>;} \\
+    Delete a table if it exists & \lsql{DROP TABLE IF EXISTS} \li{<table>;} \\
+    Add a new column to a table & \lsql{ALTER TABLE} \li{<table>} \lsql{ADD} \li{<column> <dtype>} \\
+    Remove an existing column & \lsql{ALTER TABLE} \li{<table>} \lsql{DROP COLUMN} \li{<column>;} \\
+    Rename an existing column & \lsql{ALTER TABLE} \li{<table>} \lsql{ALTER COLUMN} \li{<column> <dtype>;} \\
+    \end{tabular}
+\caption{SQLite commands for managing tables and columns.}
+\label{table:sql-table-management}
+\end{table}
+
+% TODO: include this in the discussion of Primary Keys in SQL 2.
+% The \lsql{NOT NULL} command is a constraint on the StudentID column.
+% It requires that all records in the table have a student ID.
+
+\begin{info} % All caps and semicolons.
+SQL commands like \lsql{CREATE TABLE} are often written in all caps to distinguish them from other parts of the query, like the table name.
+This is only a matter of style: SQLite, along with most other versions of SQL, is case insensitive.
+In Python's SQLite interface, the trailing semicolon is also unnecessary.
+However, most other database systems require it, so it's good practice to include the semicolon in Python.
 \end{info}
 
-Let's look at an example SQL statement:
-\begin{lstlisting}[language=SQL]
-SELECT * FROM table WHERE id=3+1 AND name='Bob';
-\end{lstlisting}
-This statement includes a SELECT clause and a WHERE clause.
-The WHERE clause contains two predicates: \texttt{id=3+1} and \texttt{name=`Bob'}.
-These two predicates limit the effect of the SELECT clause because any resulting tuples in the table must satisfy both conditions.
-This entire statement is classified as a query since it does not modify the database in any way.
+\begin{problem} % Create a student database.
+Write a function that accepts the name of a database file.
+Connect to the database (and create it if it doesn't exist).
+Drop the tables \li{MajorInfo}, \li{CourseInfo}, \li{StudentInfo}, and \li{StudentGrades} from the database \textbf{if} they exist.
+Next, add the following tables to the database with the specified column names and types.
+\begin{itemize}
+\item \li{MajorInfo}: \li{MajorID} (integers) and \li{MajorName} (strings).
+\item \li{CourseInfo}: \li{CourseID} (integers) and \li{CourseName} (strings).
+\item \li{StudentInfo}: \li{StudentID} (integers), \li{StudentName} (strings), and \li{MajorID} (integers).
+\item \li{StudentGrades}: \li{StudentID} (integers), \li{CourseID} (integers), and \li{Grade} (strings).
+\end{itemize}
+Remember to commit and close the database.
+You should be able to execute your function more than once with the same input without raising an error.
 
-SQL has several classes of statements.
-The two main classes we will cover in this lab are schema (Table \ref{table:sql-schema}) and data manipulation (Table \ref{table:sql-data_manip}).
-We will give you a simplified description of each command and its syntax.
-You are encouraged to look up the full syntax outside of this lab.
+To check the database, use the following commands to get the column names of a specified table.
+Assume here that the database file is called \texttt{students.db}.
 
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-Keyword & Syntax \\
-\hline
-\lsql{CREATE TABLE} & \lsql{CREATE TABLE <table> (<col1> <type>, <col2> <type>, ...);} \\
-\lsql{DROP TABLE} & \lsql{DROP TABLE <table>;} \\
-\lsql{CREATE INDEX} & \lsql{CREATE INDEX <name> ON <table> (<col>);} \\
-\lsql{DROP INDEX} & \lsql{DROP INDEX <name>;} \\
-\hline
-\end{tabular}
-\caption{The SQL Schema commands}
-\label{table:sql-schema}
-\end{table}
-
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-Keyword & Syntax \\
-\hline
-\lsql{INSERT INTO} & \lsql{INSERT INTO <table> <attributes> VALUES (<value1>, <value2>, ...);} \\
-\lsql{UPDATE} & \lsql{UPDATE <table> SET (<col1>=<val1>, <col2>=<val2>, ...) WHERE <condition>;} \\
-\lsql{DELETE} & \lsql{DELETE FROM <table> WHERE <condition>;} \\
-\lsql{SELECT} & \lsql{SELECT <attributes> FROM <table> WHERE <condition>;} \\
-\hline
-\end{tabular}
-\caption{The SQL Data Manipulation commands}
-\label{table:sql-data_manip}
-\end{table}
-
-\section*{SQL in Python}
-Python has built-in support for SQLite databases using the standard library.
-Let's open a database called \texttt{test1}.
 \begin{lstlisting}
-import sqlite3 as sql
-db = sql.connect("test1")
+>>> with sql.connect("students.db") as conn:
+...     cur = conn.cursor()
+...     cur.execute("SELECT * FROM StudentInfo;")
+...     print([d[0] for d in cur.description])
+...
+<<['StudentID', 'StudentName', 'MajorID']>>
 \end{lstlisting}
-The \li{connect()} function is used to connect to a database.
-If it does not already exist, then a new database will be created using the string passed as the argument for the name.
-The new database was created as a file in the current working directory.
-
-\subsection*{Ending the SQL Session}
-Once we are finished performing SQL statements and interacting with the database, we need to commit our changes and safely close the connection
-to the database.
-This can be done by calling methods on the database connection object.
-\begin{lstlisting}
-db.commit()     #save changes made in the transaction
-db.close()      #safely close the database
-\end{lstlisting}
-
-A database connection is automatically closed in Python when the connection object is garbage-collected.  However, it is nice to be safe and explicit in closing a database connection using the \li{close()} method.
-
-\subsection*{Cursor}
-To execute SQL commands, we need to get a cursor object from the database.
-\begin{lstlisting}
-cur = db.cursor()
-\end{lstlisting}
-The cursor object has several useful methods (Table \ref{table:cursormethods}).  Through the cursor, we will execute all of our SQL commands.
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-Method & Description \\
-\hline
-\li{execute} & Execute a single SQL statement \\
-\li{executemany} & Execute a single SQL statement over a sequence \\
-\li{executescript} & Execute a SQL script (multiple SQL commands) \\
-\li{close} & Closes the cursor object \\
-\hline
-\end{tabular}
-\caption{Cursor object methods}
-\label{table:cursormethods}
-\end{table}
-
-Before creating a table, we need to  understand how SQLite stores information in a database.
-SQLite uses five native data types (a simplified system from other SQL database managers).
-Table \ref{table:typemap}, gives a mapping between Python and SQLite native types.
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-Python Type & SQLite Type \\
-\hline
-\li{None} & \lsql{NULL} \\
-\li{int} & \lsql{INTEGER} \\
-\li{long} & \lsql{INTEGER} \\
-\li{float} & \lsql{REAL} \\
-\li{str} & \lsql{TEXT} \\
-\li{buffer} & \lsql{BLOB} \\
-\hline
-\end{tabular}
-\caption{Python and SQLite types mapping}
-\label{table:typemap}
-\end{table}
-
-\subsection*{Creating and Dropping Tables}
-Let's create a table.
-\begin{lstlisting}
-cur.execute('CREATE TABLE StudentInformation (StudentID INTEGER NOT NULL, Name TEXT, MajorCode INTEGER);')
-\end{lstlisting}
-This will create the empty table in Table \ref{table:StudentInformation}.
-\begin{table}
-\begin{tabular}{|l|l|l|l|}
-\hline
-StudentID & Name & MajorCode \\
-\hline
-\end{tabular}
-\caption{StudentInformation}
-\label{table:StudentInformation}
-\end{table}
-
-The arguments in parentheses are the column names followed by the data type that entries in that column will be,
-and together these form the schema of the table.
-The \lsql{INTEGER} data type in SQLite is a 1, 2, 3, 4, 6, or 8 byte integer depending on the value.
-The \lsql{NOT NULL} command is a \emph{constraint} on the StudentID column.  It requires that all records in the table have a student ID.
-
-\begin{info}
-SQLite does not enforce types on columns.
-Just like Python, SQLite is dynamically typed.
-However, most other database systems strictly enforce column types.
-It is a good idea to conform to the column types specified in the schema.
-\end{info}
-
-
-Note that each command we execute returns the same cursor object.  This object is equipped with a method that allows us to look
-at any results of the previous command.  The result is formally known as the \emph{result set}.
-If you use \li{cur.fetchall()}, you will see an empty list.
-That is because the create table command does not return a result set.
-
-Now we want to build a relation between students, the courses they've had, and their grades in those courses.
-\begin{lstlisting}
-cur.execute('CREATE TABLE StudentGrades (StudentID INT NOT NULL, CourseID INT, Grade TEXT);')
-\end{lstlisting}
-
-\begin{problem}
-In this problem, you will create two new tables in the database ``sql1''.
-The first table will be called MajorInfo and have a column called MajorID and MajorName.
-MajorID is an integer and MajorName is a string.
-
-The second table will be called CourseInfo and have columns called CourseID and CourseName, also integers and strings, respectively.
-
-Hint: In order to view information about the columns of the table, run the following command:
-\begin{lstlisting}
-cur.execute("PRAGMA table_info('table_name')")
-for info in cur:
-    print info
-\end{lstlisting}
-For each column, this command will output (ID, name, type, notnull, default value, primary key).  Also, don't forget to commit and close your database.
-\label{prob:new_tables}
+\label{prob:sql1-create-student-tables}
 \end{problem}
 
-We can also destroy tables using the \lsql{DROP TABLE} command.
-\begin{lstlisting}
-cur.execute("CREATE TABLE test_table (id INT, name TEXT);")
-\end{lstlisting}
-We can delete the table by dropping it.
-\begin{lstlisting}
-cur.execute("DROP TABLE test_table;")
-\end{lstlisting}
-If a table doesn't exist, an exception will be raised.
-We can tell the database to drop the table only if it really exists by using \lsql{DROP TABLE IF EXISTS test_table;}.
+\section*{Inserting, Removing, and Altering Data} % ===========================
 
-\subsection*{Inserting and Removing Data}
-Let's insert some data into our new tables.
-We can add rows to tables using the \lsql{INSERT INTO} command.
-\begin{lstlisting}
-cur.execute("INSERT INTO StudentInformation VALUES(55, 'John Smith', 2);")
-\end{lstlisting}
-After running this statement, we will have the table in Table \ref{table:StudentInformation1}.
-\begin{table}
-\begin{tabular}{|l|l|l|l|}
-\hline
-StudentID & Name & MajorCode \\
-\hline
-55 & John Smith & 2 \\
-\hline
-\end{tabular}
-\caption{StudentInformation}
-\label{table:StudentInformation1}
-\end{table}
+Tuples are added to SQLite database tables with the \lsql{INSERT INTO} command.
 
-Note that SQLite will assume that values match sequentially with the schema of the table.
-We can also specify the schema of the table to use in the mapping of the values.
 \begin{lstlisting}
-cur.execute("INSERT INTO StudentInformation(MajorCode, Name, StudentID)  VALUES(55, 'John Smith', 2);")
-\end{lstlisting}
-This will map the value 55 to MajorCode and the value 2 to StudentID.  This may be useful sometimes.
-
-It can quickly become tedious to insert large amounts of data into a table, one row at a time.
-We can automate the process somewhat by using the \li{executemany} method of the cursor object.
-To insert several rows into a table using a single command, we can do the following:
-\begin{lstlisting}
-cur.executemany("INSERT INTO StudentInformation VALUES (?, ?, ?, ?);", rows)
-\end{lstlisting}
-In the code above, we assume that \li{rows} is a Python list of tuples, each tuple containing the data for one
-row.
-
-We may remove rows from a table using the \lsql{DELETE FROM} command.
-\begin{lstlisting}
-cur.execute("DELETE FROM StudentInformation WHERE MajorCode=55;")
+# Add the tuple (Samuel Clemens, 1910421, 74.4) to MyTable in my_database.db.
+>>> with sql.connect("my_database.db") as conn:
+...     cur = conn.cursor()
+...     cur.execute("INSERT INTO MyTable "
+...                 "VALUES('Samuel Clemens', 1910421, 74.4);")
 \end{lstlisting}
 
-\begin{warn}
-\emph{\textbf{Never}} use Python's string operations to construct a SQL query.
-It is extremely insecure and is an easy target for a well known type of database called a SQL injection attack.
+With this syntax, SQLite assumes that values match sequentially with the schema of the table.
+The schema of the table can also be written explicitly for clarity.
 
-Parameter substitution can be used to construct dynamic queries.
-In the simplest way, it involves using a `?' character whenever you want to use a value and providing a
-sequence of values as a second argument to \li{execute()}.
 \begin{lstlisting}
-statement = "INSERT INTO StudentInformation VALUES(?, ?, ?, ?);"
-values = (55, 'John Smith', 372897382, 2)
-cur.execute(statement, values)
+>>> with sql.connect("my_database.db") as conn:
+...     cur = conn.cursor()
+...     cur.execute("INSERT INTO MyTable(Name, ID, Age) "
+...                 "VALUES('Samuel Clemens', 1910421, 74.4);")
+\end{lstlisting}
+
+\begin{warn} % SQL injection attack.
+\textbf{Never} use Python's string operations to construct a SQL query from variables.
+Doing so makes the program susceptible to a \emph{SQL injection attack}.\footnote{See \url{https://xkcd.com/327/} for an example.}
+Instead, use parameter substitution to construct dynamic commands: use a \li{?} character within the command, then provide the sequence of values as a second argument to \li{execute()}.
+
+\begin{lstlisting}
+>>> with sql.connect("my_database.db") as conn:
+...     cur = conn.cursor()
+...     values = ('Samuel Clemens', 1910421, 74.4)
+...     # Don't piece the command together with string operations!
+...     # cur.execute("INSERT INTO MyTable VALUES " + str(values)) # BAD!
+...     # Instead, use parameter substitution.
+...     cur.execute("INSERT INTO MyTable VALUES(?,?,?);", values)  # Good.
 \end{lstlisting}
 \end{warn}
 
-\begin{problem}
-The ICD is a large collection of codes used to classify any diagnosis that a doctor would make.
-When someone goes to the hospital or doctors office, their visit will be recorded using these codes.
-Insurance companies, the government, and researchers find this data useful.
-The data file provided to you, \li{icd9.csv}, has simulated health histories for one million persons.
-Each line has columns for identification number, gender, and age, followed by ICD-9 codes of various quantities.
-Note that the codes for each individual are written in a single string, each code separated by semicolons.
-Create a new database with a single table to store all the simulated data.  Call the database ``sql2'' and the table ``ICD.''
-Your table should have four columns, one each for id number, gender, age, and codes.
+To insert several rows at a time to the same table, use the cursor object's \li{executemany()} method and parameter substitution with a list of tuples.
+This is typically much faster than using \li{execute()} repeatedly.
 
-Because of the volume of data, it is highly recommended you use the \li{executemany()} method of the cursor.
-It will be about twice as fast as using an \li{execute()} for each line of the CSV file.
-Recall the \li{csv} package in Python. To read a CSV file into a list of tuples, where each tuple consists
-of the delimited values of a particular line in the file, one can use the following code as a guideline:
 \begin{lstlisting}
-import csv
-with open('filename', 'rb') as csvfile:
-    rows = [row for row in csv.reader(csvfile, delimiter=',')]
+# Insert (Samuel Clemens, 1910421, 74.4) and (Jane Doe, 123, 20) to MyTable.
+>>> with sql.connect("my_database.db") as conn:
+...     cur = conn.cursor()
+...     rows = [('John Smith', 456, 40.5), ('Jane Doe', 123, 20)]
+...     cur.executemany("INSERT INTO MyTable VALUES(?,?,?);", rows)
 \end{lstlisting}
-Hint: Don't forget to commit and close your database.
-\label{prob:icd9tables}
+
+\begin{problem} % Populate student tables.
+Expand your function from Problem \ref{prob:sql1-create-student-tables} so that it populates the tables with the data given in Tables \ref{table:sql1-student-majorinfo}--\ref{table:sql1-student-grades}.
+
+\begin{table}[H]
+\begin{subtable}{0.55\textwidth}
+    \centering
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \footnotesize
+        \begin{tabular}{|l|l|}
+            \hline MajorID & MajorName \\ \hline
+            1 & Math \\
+            2 & Science \\
+            3 & Writing \\
+            4 & Art \\ \hline
+        \end{tabular}
+        \caption{MajorInfo}
+        \label{table:sql1-student-majorinfo}
+    \end{subtable}
+    \hfil
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \footnotesize
+        \begin{tabular}{|l|l|}
+            \hline CourseID & CourseName \\ \hline
+            1 & Calculus \\
+            2 & English \\
+            3 & Pottery \\
+            4 & History \\ \hline
+        \end{tabular}
+        \caption{CourseInfo}
+        \label{table:sql1-student-courseinfo}
+    \end{subtable}
+    \\[1.em] % NOTE: Use 4.01em to align the tables at the top and bottom.
+    \begin{subtable}{\textwidth}
+        \centering
+        \footnotesize
+        \begin{tabular}{|l|l|l|}
+            \hline StudentID & StudentName & MajorID \\ \hline
+            401767594 & Michelle Fernandez & 1 \\
+            678665086 & Gilbert Chapman & NULL \\
+            553725811 & Roberta Cook & 2 \\
+            886308195 & Rene Cross & 3 \\
+            103066521 & Cameron Kim & 4 \\
+            821568627 & Mercedes Hall & NULL \\
+            206208438 & Kristopher Tran & 2 \\
+            341324754 & Cassandra Holland & 1 \\
+            262019426 & Alfonso Phelps & NULL \\
+            622665098 & Sammy Burke & 2 \\ \hline
+        \end{tabular}
+        \caption{StudentInfo}
+        \label{table:sql1-student-info}
+    \end{subtable}
+\end{subtable}
+\hfil
+\begin{subtable}{.35\textwidth}
+    \centering
+    \footnotesize
+    \begin{tabular}{|l|l|l|}
+        \hline StudentID & CourseID & Grade \\ \hline
+        401767594 & 4 & C \\
+        401767594 & 3 & B-- \\
+        678665086 & 4 & A+ \\
+        678665086 & 3 & A+ \\
+        553725811 & 2 & C \\
+        678665086 & 1 & B \\
+        886308195 & 1 & A \\
+        103066521 & 2 & C \\
+        103066521 & 3 & C-- \\
+        821568627 & 4 & D \\
+        821568627 & 2 & A+ \\
+        821568627 & 1 & B \\
+        206208438 & 2 & A \\
+        206208438 & 1 & C+ \\
+        341324754 & 2 & D-- \\
+        341324754 & 1 & A-- \\
+        103066521 & 4 & A \\
+        262019426 & 2 & B \\
+        262019426 & 3 & C \\
+        622665098 & 1 & A \\
+        622665098 & 2 & A-- \\ \hline
+    \end{tabular}
+    \caption{StudentGrades}
+    \label{table:sql1-student-grades}
+\end{subtable}
+\caption{Student database.}
+\end{table}
+
+The \li{StudentInfo} and \li{StudentGrades} tables are also recorded in \texttt{student\_info.csv} and \texttt{student\_grades.csv}, respectively, with \lsql{NULL} values represented as $-1$.
+A CSV (\textbf{c}omma-\textbf{s}eparated \textbf{v}alues) file can be read like a normal text file or with the \li{csv} module.
+
+\begin{lstlisting}
+>>> import csv
+>>> with open("student_info.csv", 'r') as infile:
+...     rows = list(csv.reader(infile))
+\end{lstlisting}
+
+To validate your database, use the following command to retrieve the rows from a table.
+
+\begin{lstlisting}
+>>> with sql.connect("students.db") as conn:
+...     cur = conn.cursor()
+...     for row in cur.execute("SELECT * FROM MajorInfo;"):
+...         print(row)
+<<(1, 'Math')
+(2, 'Science')
+(3, 'Writing')
+(4, 'Art')>>
+\end{lstlisting}
+\label{prob:sql1-populate-students}
 \end{problem}
 
 \begin{problem}
-Create the following tables in the same database you created in Problem \ref{prob:new_tables} (``sql1'').  You may do so however you think is best.
+The data file \texttt{us\_earthquakes.csv}\footnote{Retrieved from \url{https://datarepository.wolframcloud.com/resources/Sample-Data-US-Earthquakes}.} contains data from about 3,500 earthquakes in the United States since the 1769.
+Each row records the year, month, day, hour, minute, second, latitude, longitude, and magnitude of a single earthquake (in that order).
+Note that latitude, longitude, and magnitude are floats, while the remaining columns are integers.
 
-\begin{table}[H]
-\begin{tabular}{|l|l|l|}
-\hline
-StudentID & Name & MajorCode \\
-\hline
-401767594 & Michelle Fernandez & 1 \\
-678665086 & Gilbert Chapman & 1 \\
-553725811 & Roberta Cook & 2 \\
-886308195 & Rene Cross & 3 \\
-103066521 & Cameron Kim & 4 \\
-821568627 & Mercedes Hall & 3 \\
-206208438 & Kristopher Tran & 2 \\
-341324754 & Cassandra Holland & 1 \\
-262019426 & Alfonso Phelps & 3 \\
-622665098 & Sammy Burke &2 \\
-\hline
-\end{tabular}
-\caption{StudentInformation}
-\end{table}
-
-\begin{table}[H]
-\begin{tabular}{|l|l|}
-\hline
-ID & Name \\
-\hline
-1 & Math \\
-2 & Science \\
-3 & Writing \\
-4 & Art \\
-\hline
-\end{tabular}
-\caption{MajorInfo}
-\end{table}
-
-\begin{table}[H]
-\begin{tabular}{|l|l|l|}
-\hline
-StudentID & ClassID & Grade \\
-\hline
-401767594 & 4 & C \\
-401767594 & 3 & B- \\
-678665086 & 4 & A+ \\
-678665086 & 3 & A+ \\
-553725811 & 2 & C \\
-678665086 & 1 & B \\
-886308195 & 1 & A \\
-103066521 & 2 & C \\
-103066521 & 3 & C- \\
-821568627 & 4 & D \\
-821568627 & 2 & A+ \\
-821568627 & 1 & B \\
-206208438 & 2 & A \\
-206208438 & 1 & C+ \\
-341324754 & 2 & D- \\
-341324754 & 1 & A- \\
-103066521 & 4 & A \\
-262019426 & 2 & B \\
-262019426 & 3 & C \\
-622665098 & 1 & A \\
-622665098 & 2 & A- \\
-\hline
-\end{tabular}
-\caption{StudentGrades}
-\end{table}
-
-\begin{table}[H]
-\begin{tabular}{|l|l|}
-\hline
-ClassID & Name \\
-\hline
-1 & Calculus \\
-2 & English \\
-3 & Pottery \\
-4 & History \\
-\hline
-\end{tabular}
-\caption{CourseInfo}
-\end{table}
-\label{prob:sampletables}
+Write a function that accepts the name of a database file.
+Drop the table \li{USEarthquakes} if it already exists, then create a new \li{USEarthquakes} table with schema \li{(Year, Month, Day, Hour, Minute, Second, Latitude, Longitude, Magnitude)}.
+Populate the table with the data from \texttt{us\_earthquakes.csv}.
+Remember to commit the changes and close the connection.
+\\ (Hint: using \li{executemany()} is much faster than using \li{execute()} in a loop.)
+\label{prob:sql1-create-earthquakes}
 \end{problem}
 
-\subsection*{Updating Rows of a Table}
-We can modify records in a table by using the \lsql{UPDATE} command.
+\subsection*{The WHERE Clause} % ----------------------------------------------
+
+Deleting or altering existing data in a database requires some searching for the desired row or rows.
+The \lsql{WHERE} clause is a \emph{predicate} that filters the rows based on a boolean condition.
+The operators \lsql{==}, \lsql{\!=}, \lsql{<}, \lsql{>}, \lsql{<=}, \lsql{>=}, \lsql{AND}, \lsql{OR}, and \lsql{NOT} all work as expected to create search conditions.
+
 \begin{lstlisting}
-cur.execute("UPDATE StudentInformation SET MajorCode=2, StudentID=55, Name='Jonathan Smith' WHERE StudentID=2;")
+>>> with sql.connect("my_database.db") as conn:
+...     cur = conn.cursor()
+...     # Delete any rows where the Age column has a value less than 30.
+...     cur.execute("DELETE FROM MyTable WHERE Age < 30;")
+...     # Change the Name of "Samuel Clemens" to "Mark Twain".
+...     cur.execute("UPDATE MyTable SET Name='Mark Twain' WHERE ID==1910421;")
 \end{lstlisting}
 
-\begin{info}
-When updating a table, having a sufficient \lsql{WHERE} clause is essential.  Any record that matches the criteria will be modified.
-If we omitted the \lsql{WHERE} clause, every record in the table would be set to the values given in the example.
+If the \lsql{WHERE} clause were omitted from either of the previous commands, every record in \li{MyTable} would be affected.
+\textbf{Always} use a very specific \lsql{WHERE} clause when removing or updating data.
+
+\begin{table}[H]
+    \begin{tabular}{c|l}
+    Operation & SQLite Command \\ \hline
+    Add a new row to a table & \lsql{INSERT INTO} \li{table} \lsql{VALUES}\li{(<values>);} \\
+    Remove rows from a table & \lsql{DELETE FROM} \li{<table>} \lsql{WHERE} \li{<condition>;} \\
+    Change values in existing rows & \lsql{UPDATE} \li{<table>} \lsql{SET} \li{<column1>=<value1>, ...} \lsql{WHERE} \li{<condition>;} \\
+    % \lsql{SELECT} & \lsql{SELECT} \li{<attribute1>, ...} \lsql{FROM} \li{<table>} \lsql{WHERE} \li{<condition>;} \\
+    \end{tabular}
+\caption{SQLite commands for inserting, removing, and updating rows.}
+\label{table:sql1-row-management}
+\end{table}
+
+\begin{problem} % Dealing with missing data.
+Modify your function from Problems \ref{prob:sql1-create-student-tables} and \ref{prob:sql1-populate-students} so that in the \li{StudentInfo} table, values of $-1$ in the \li{MajorID} column are replaced with \lsql{NULL} values.
+
+Also modify your function from Problem \ref{prob:sql1-create-earthquakes} in the following ways.
+\begin{enumerate}
+    \item Remove rows from \li{USEarthquakes} that have a value of $0$ for the \li{Magnitude}.
+    \item Replace $0$ values in the \li{Day}, \li{Hour}, \li{Minute}, and \li{Second} columns with \lsql{NULL} values.
+\end{enumerate}
+\end{problem}
+
+\section*{Reading and Analyzing Data} % =======================================
+
+Constructing and managing databases is fundamental, but most time in SQL is spent analyzing existing data.
+A \emph{query} is a SQL command that reads all or part of a database without actually modifying the data.
+Queries start with the \lsql{SELECT} command, followed by column and table names and additional (optional) conditions.
+The results of a query, called the \emph{result set}, are accessed through the cursor object.
+After calling \li{execute()} with a SQL query, use \li{fetchall()} or another cursor method from Table \ref{table:sql1-cursor-methods} to get the list of matching tuples.
+
+\begin{table}[H]
+\begin{tabular}{r|l}
+    Method & Description \\ \hline
+    \li{execute()} & Execute a single SQL command \\
+    \li{executemany()} & Execute a single SQL command over different values \\
+    \li{executescript()} & Execute a SQL script (multiple SQL commands) \\
+    \li{fetchone()} & Return a single tuple from the result set \\
+    \li{fetchmany(n)} & Return the next $n$ rows from the result set as a list of tuples\\
+    \li{fetchall()} & Return the entire result set as a list of tuples \\
+\end{tabular}
+\caption{Methods of database cursor objects.}
+\label{table:sql1-cursor-methods}
+\end{table}
+
+\begin{lstlisting}
+>>> conn = sql.connect("students.db")
+>>> cur = conn.cursor()
+
+# Get tuples of the form (StudentID, StudentName) from the StudentInfo table.
+>>> cur.execute("SELECT StudentID, StudentName FROM StudentInfo;")
+>>> cur.fetchone()          # List the first match (a tuple).
+<<(401767594, 'Michelle Fernandez')>>
+
+>>> cur.fetchmany(3)        # List the next three matches (a list of tuples).
+<<[(678665086, 'Gilbert Chapman'),
+ (553725811, 'Roberta Cook'),
+ (886308195, 'Rene Cross')]>>
+
+>>> cur.fetchall()          # List the remaining matches.
+<<[(103066521, 'Cameron Kim'),
+ (821568627, 'Mercedes Hall'),
+ (206208438, 'Kristopher Tran'),
+ (341324754, 'Cassandra Holland'),
+ (262019426, 'Alfonso Phelps'),
+ (622665098, 'Sammy Burke')]>>
+
+# Use * in place of column names to get all of the columns.
+>>> cur.execute("SELECT * FROM MajorInfo;").fetchall()
+<<[(1, 'Math'), (2, 'Science'), (3, 'Writing'), (4, 'Art')]>>
+
+>>> conn.close()
+\end{lstlisting}
+
+% % Not needed, just use fetchmany().
+% The \lsql{LIMIT} predicate truncates the result set to a specified number of tuples.
+The \lsql{WHERE} predicate can also refine a \lsql{SELECT} command.
+If the condition depends on a column in a different table from the data that is being a selected, create a \emph{table alias} with the \lsql{AS} command to specify columns in the form \li{table.column}.
+
+\begin{lstlisting}
+>>> conn = sql.connect("students.db")
+>>> cur = conn.cursor()
+
+# Get the names of all math majors.
+>>> cur.execute("SELECT SI.StudentName "
+...             "FROM StudentInfo AS SI, MajorInfo AS MI "
+...             "WHERE SI.MajorID == MI.MajorID AND MI.MajorName == 'Math'")
+# The result set is a list of 1-tuples; extract the entry from each tuple.
+>>> [t[0] for t in cur.fetchall()]
+<<['Cassandra Holland', 'Michelle Fernandez']>>
+
+# Get the names and grades of everyone in English class.
+>>> cur.execute("SELECT SI.StudentName, SG.Grade "
+                "FROM StudentInfo AS SI, StudentGrades AS SG "
+                "WHERE SI.StudentID == SG.StudentID AND CourseID == 2;")
+>>> cur.fetchall()
+<<[('Roberta Cook', 'C'),
+ ('Cameron Kim', 'C'),
+ ('Mercedes Hall', 'A+'),
+ ('Kristopher Tran', 'A'),
+ ('Cassandra Holland', 'D-'),
+ ('Alfonso Phelps', 'B'),
+ ('Sammy Burke', 'A-')]>>
+
+>>> conn.close()
+\end{lstlisting}
+
+\begin{problem} % SELECT data from multiple tables.
+Write a function that accepts the name of a database file.
+Assuming the database to be in the format of the one created in Problems \ref{prob:sql1-create-student-tables} and \ref{prob:sql1-populate-students}, query the database for all tuples of the form (\li{StudentName}, \li{CourseName}) where that student has an ``A'' or ``A+'' grade in that course.
+Return the list of tuples.
+\end{problem}
+
+\subsection*{Aggregate Functions} % -------------------------------------------
+
+A result set can be analyzed in Python using tools like NumPy, but SQL itself provides a few tools for computing a few very basic statistics: \lsql{AVG()}, \lsql{MIN()}, \lsql{MAX()}, \lsql{SUM()}, and \lsql{COUNT()} are \emph{aggregate functions} that compress the columns of a result set into the desired quantity.
+
+\begin{lstlisting}
+>>> conn = sql.connect("students.db")
+>>> cur = conn.cursor()
+
+# Get the number of students and the lowest ID number in StudentInfo.
+>>> cur.execute("SELECT COUNT(StudentName), MIN(StudentID) FROM StudentInfo;")
+>>> cur.fetchall()
+<<[(10, 103066521)]>>
+\end{lstlisting}
+
+\begin{problem}
+Write a function that accepts the name of a database file.
+Assuming the database to be in the format of the one created in Problem \ref{prob:sql1-create-earthquakes}, query the \li{USEarthquakes} table for the following information.
+\begin{itemize}
+    \item The magnitudes of the earthquakes during the 19th century ($1800$--$1899$).
+    \item The magnitudes of the earthquakes during the 20th century ($1900$--$1999$).
+    \item The average magnitude of all earthquakes in the database.
+\end{itemize}
+Create a single figure with two subplots: a histogram of the magnitudes of the earthquakes in the 19th century, and a histogram of the magnitudes of the earthquakes in the 20th century.
+Show the figure, then return the average magnitude of all of the earthquakes in the database.
+Be sure to return an actual number, not a list or a tuple.
+\\(Hint: use \li{np.ravel()} to convert a result set of 1-tuples to a 1-D array.)
+\label{prob:sql1-earthquake-analysis}
+\end{problem}
+
+\begin{info} % Don't jump to conclusions in data analysis.
+Problem \ref{prob:sql1-earthquake-analysis} raises an interesting question: are the number of earthquakes in the United States increasing with time, and if so, how drastically?
+A closer look shows that only $3$ earthquakes were recorded (in this data set) from $1700$--$1799$, $208$ from $1800$--$1899$, and a whopping $3049$ from $1900$--$1999$.
+Is the increase in earthquakes due to there actually being more earthquakes, or to the improvement of earthquake detection technology?
+The best answer without conducting additional research is ``probably both.''
+Be careful to question the nature of your data---how it was gathered, what it may be lacking, what biases or lurking variables might be present---before jumping to strong conclusions.
 \end{info}
+%
+See the following for more info on the \li{sqlite3} and SQL in general.
+\begin{itemize}
+    \item \url{https://docs.python.org/3/library/sqlite3.html}
+    \item \url{https://www.w3schools.com/sql/}
+    \item \url{https://en.wikipedia.org/wiki/SQL_injection}
+\end{itemize}
 
-\subsection*{Adding Columns to a Table}
-After you have created a table, you can add more columns to the table by using the \lsql{ALTER TABLE} command.  For example, if we wanted to add the column "age" into our students table.  We run this command.
-\begin{lstlisting}
-cur.execute("ALTER TABLE StudentInformation ADD COLUMN age INTEGER;")
-\end{lstlisting}
+\newpage
 
-\subsection*{Selecting Data From Tables}
-The process of retrieving data from a table in a database is accomplished by the \lsql{SELECT} statement.
-The \lsql{SELECT} statement can be thought of as a very high level set description.
-For example, to view the contents of an entire table, we simply need to unconditionally select its contents.
-\begin{lstlisting}[language=SQL]
-SELECT * FROM students;
-\end{lstlisting}
-This is equivalent to the following set (where $x$ is a row).
-\[ \setconstruct{x}{x \in \text{classes}} \]
+\section*{Additional Material} % ==============================================
 
-We can also select specific columns.
-\begin{lstlisting}[language=SQL]
-SELECT StudentID, Name FROM students;
-\end{lstlisting}
-Or we can impose conditions on the selected rows.
-\begin{lstlisting}[language=SQL]
-SELECT StudentID, Name FROM students WHERE MajorCode=1;
-\end{lstlisting}
-This query results in the following table (Table \ref{table:selectmath}) where the contents are all the students that are math majors.
+\subsection*{Shortcuts for WHERE Conditions}
 
-You can also further refine which rows you select by using the \lsql{AND} or \lsql{OR} commands.  These commands will connect expressions.  For example, to get the math and science majors. One could run the command.
-\begin{lstlisting}[language=SQL]
-SELECT StudentID, Name FROM students WHERE MajorCode=1 OR MajorCode=2;
-\end{lstlisting}
+Complicated \lsql{WHERE} conditions can be simplified with the following commands.
+\begin{itemize}
+    \item \lsql{IN}: check for equality to one of several values quickly, similar to Python's \li{in} operator.
+    In other words, the following SQL commands are equivalent.
+    \begin{center}
+        \lsql{SELECT * FROM StudentInfo WHERE MajorID == 1 OR MajorID == 2;}
+        \\
+        \lsql{SELECT * FROM StudentInfo WHERE MajorID IN (1,2);}
+    \end{center}
 
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-StudentID & Name \\
-\hline
-401767594 & Michelle Fernandez \\
-678665086 & Gilbert Chapman \\
-341324754 & Cassandra Holland \\
-\hline
-\end{tabular}
-\caption{Selected students who are math majors.}
-\label{table:selectmath}
-\end{table}
-
-Select statements return a \emph{result set}.
-This is an iterable object.
-Each row in the object is represented as a tuple of values.
-\begin{lstlisting}
-cur.execute('SELECT StudentID, Name FROM students WHERE MajorCode=1;')
-for student in cur:
-    print student
-\end{lstlisting}
-We can also use the fetch methods of the returned cursor to extract rows from the result set (Table \ref{table:fetching}).
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-Method & Description \\
-\hline
-\li{fetchone()} & Return a single row from the result set \\
-\li{fetchmany(n)} & Return the next $n$ rows from the result set \\
-\li{fetchall()} & Return the entire result set \\
-\hline
-\end{tabular}
-\caption{Fetch methods of a cursor.}
-\label{table:fetching}
-\end{table}
-
-\begin{problem}
-From the ICD9 table you created in Problem \ref{prob:icd9tables}, how many men between the ages of 25 and 35 are there?  How many women between those same ages?  Return your answers as a tuple.
-\label{prob:youngfreqcodes}
-\end{problem}
+    \item \lsql{BETWEEN}: check two (inclusive) inequalities quickly.
+    The following are equivalent.
+    \begin{center}
+        \lsql{SELECT * FROM MyTable WHERE AGE >= 20 AND AGE <= 60;}
+        \\
+        \lsql{SELECT * FROM MyTable WHERE AGE BETWEEN 20 AND 60;}
+    \end{center}
+\end{itemize}
 
 \begin{comment}
-From the ICD9 table you created in Problem \ref{prob:icd9tables}, how many men between the ages of 25 and 35 are there?  How many women between those same ages?
+\subsection*{SQLite Exception Classes} % --------------------------------------
 
-What code is the most frequent code for men between age 25 and 35?
-What code is the most frequent for women between the same age?
+The \li{sqlite3} module defines several custom exception classes.
+The base class, \li{sqlite3.Error}, has two notable subclasses: \li{sqlite3.InterfaceError}, which indicates a problem with the connection to the database, and \li{sqlite3.DatabaseError}, which indicates a problem with the database itself.
+Table \ref{table:sqlite3-exceptions} lists some of the more common errors and descriptions of the kinds of problems that trigger them.
+
+\begin{table}[H]
+\begin{tabular}{c|l}
+    Error Name & Description \\ \hline
+    % \li{Error} & The base class for errors thrown by \li{sqlite3}.  All other errors inherit from \\& this class.  Catching this error will catch any error raised. \\ \hline
+    % \li{InterfaceError} & Raised when there is a problem with the interface to the database rather\\& than the database itself. \\
+    % \li{DatabaseError} & Raised when there is an error with the database itself. \\ \hline
+    \li{DataError} &  Raised when there are errors in the processed\\& data (e.g. division by zero, value out of range, etc.). \\ \hline
+    \li{OperationalError} & Raised for errors related to the database that \\& are not the fault of the programmer. For example, an unexpected\\& disconnect, failure to process a transaction, a memory allocation error\\& during a transaction, etc.\\
+    \li{IntegrityError} & Raised when the relational integrity of the \\& database is compromised. \\
+    \li{InternalError} & Raised when there is an internal error such as\\& an invalid cursor, out-of-sync transaction, etc. \\ \hline
+    \li{ProgrammingError} & Raised for programming errors, including incorrect SQL syntax. \\ \hline
+    \li{NotSupportedError} & Raised when a method is called that is not\\& supported by the database. \\
+\end{tabular}
+\caption{Exception classes that inherit from \li{sqlit3.DatabaseError}.}
+\label{table:sqlite3-exceptions}
+\end{table}
 \end{comment}
-
-\subsection*{When an Error Occurs}
-It is important to be able to recover from errors gracefully, especially when working a database.
-Data integrity in a database is often a critical need.
-When an error occurs, we need to undo the changes that triggered the error.
-Fortunately, \li{sqlite3} reports a variety of errors.
-These errors and when they are raised is explained in PEP249 (\url{http://legacy.python.org/dev/peps/pep-0249/}).
-\begin{description}
-\item[Error] The base class for errors thrown by \li{sqlite3}.  All other errors inherit from this class.  Catching this error will catch any error raised.
-\item[InterfaceError] Raised when there is a problem with the interface to the database rather than the database itself.
-\item[DatabaseError] Raised when there is an error with the database itself.
-\item[DataError] Subclass of DatabaseError.  Raised when there are errors in the processed data (division by zero, value out of range, etc.).
-\item[OperationalError] Subclass of DatabaseError. Raised for errors related to the database that are not the fault of the programmer.  For example, an unexpected disconnect, failure to process a transaction, a memory allocation error during a transaction, etc.
-\item[IntegrityError] Subclass of DatabaseError.  Raised when the relational integrity of the database is compromised.
-\item[InternalError] Subclass of DatabaseError. Raised when there is an internal error such as an invalid cursor, out-of-sync transaction, etc.
-\item[ProgrammingError] Subclass of DatabaseError.  Raised for programming errors.
-\item[NotSupportedError] Subclass of DatabaseError.  Raised when a method is called that is not supported by the database.
-\end{description}
-
-The way to gracefully recover from errors is to catch them and handle them accordingly.  For example, if any error occurs, with the interface or the database, we immediately rollback the transaction.  If no error occurs, commit.  We could use if-statements or we could use a try-except block.
-\begin{lstlisting}
-try:
-    <code>
-    db.commit()
-except sql.Error:
-    db.rollback()
-\end{lstlisting}
-Note that rolling back is not needed if we are just performing queries.
-If we don't change any of the data in the database, there is no need to roll anything back.  However, even with queries, there is the potential for errors.  You must design your code to handle these errors gracefully.
-
-\let\undefined\lsql 

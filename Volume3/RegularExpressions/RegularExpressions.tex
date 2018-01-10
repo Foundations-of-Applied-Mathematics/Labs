@@ -1,154 +1,134 @@
+\lab{Regular Expressions}{Regular Expressions}
+\objective{Cleaning and formatting data are fundamental problems in data science.
+Regular expressions are an important tool for working with text carefully and efficiently, and are useful for both gathering and cleaning data.
+This lab introduces regular expression syntax and common practices, including an application to a data cleaning problem.
+}
 
+% TODO: use fullmatch() instead of search() in the examples up to the end of the regex syntax section.
 
-\lab{Basic Regular Expressions}{Basic Regular Expressions}
-\objective{Learn the basics of using regular expressions to find text}
-\label{lab:Regex_Basic}
+% TODO: Important links!
+% \url{https://docs.python.org/3/howto/regex.html}
+% \url{https://docs.python.org/3/library/re.html}
 
-Regular expressions allow for quick searching and replacing of general patterns of text.
-While nearly all text editors have a feature that will find and replace exact strings of text, regular expressions are used to find text in a much more general way. For example, using a single regular expression, you can find every email address in a text file without having to sift through it by hand.
-% include email regex?
-% TODO add a cool example here... this will do for now:
     % As an example, the following program will find and fill in missing colons after control statements in normally formatted python files:
     % % ^((def|if|elif|else|while|for|with).*):\s*$
 
-\section*{Terminology and Basics}
-A ``regular expression'' is basically just a string of characters that follow a certain syntax.
-Computer programs can then interpret these expressions as instructions to search for certain kinds of text.
-We will often call regular expressions ``patterns'', and we will say that certain patterns ``match'' certain strings.
-The general idea is that a regular expression represents a large set of strings (for example, all valid email addresses), and if a specific string is in that set, we say that the regular expression matches that string.
-% TODO talk w. ryan about what they'll know at this point about DFSMs
+A \emph{regular expression} or \emph{regex} is a string of characters that follows a certain syntax to specify a pattern.
+Strings that follow the pattern are said to \emph{match} the expression (and vice versa).
+A single regular expression can match a large set of strings, such as the set all valid email addresses.
+% The idea is similar to using wildcards like \li{*} in the Unix shell: the command \li{ls *.py} displays \textbf{all} files that have a \texttt{.py} file extension.
 
-\begin{warn} %TODO why doesn't this work?
-Regular expression libraries have been implemented and are a part of the standard distribution of nearly every programming language, and many text editors have a find-and-replace mode that uses regular expressions.
-Unfortunately, the syntax for regular expressions may be slightly different in each implementation.
-There is no universal standard for all regular expressions across all platforms.
-However, the orginal syntax and a few variants are very widespread, so the basic regular expression techniques we learn in this lab should be virtually the same in almost every situation you will encounter them.
+\begin{warn}
+There are some universal standards for regular expression syntax, but the exact syntax varies slightly depending on the program or language.
+However, the syntax presented in this lab (for Python) is sufficiently similar to any other regex system.
+Consider learning to use regular expressions in vim or your favorite text editor, keeping in mind that there are bound to be slight syntactic differences from what is presented here.
 \end{warn}
 
-The simplest use of regular expressions is to match text literally.
-For example, the pattern \li{"cat"} matches the string \li{"cat"} but does not match the strings \li{"dog"} or \li{"bat"}.
+\section*{Regular Expression Syntax in Python} % ==============================
 
-Now that we have a general idea of what regular expressions are, we will see how to use them in Python.
+The \li{re} module implements regular expressions in Python.
+The function \li{re.<<compile>>()} takes in a regular expression string and returns a corresponding \emph{pattern} object, which has methods for determining if and how other strings match the pattern.
+For example, the \li{search()} method returns \li{None} for a string that doesn't match, and a \emph{match} object for a string that does (more on these later).
 
-\section*{Regular Expressions in Python}
-The python package \li{re} contains the functionality for using regular expressions.
-To use it, simply run the command \li{import re}.
-
-The following Python code demonstrates what we said earlier about the regular expression \li{"cat"}:
 \begin{lstlisting}
->>> bool(re.match("cat", "cat"))
-True
->>> bool(re.match("cat", "dog"))
-False
->>> bool(re.match("cat", "bat"))
-False
+>>> import re
+>>> pattern = re.<<compile>>("cat")     # Make a pattern for finding 'cat'.
+>>> bool(pattern.search("cat"))     # 'cat' matches 'cat', of course.
+<<True>>
+>>> bool(pattern.search("catfish")) # 'catfish' also contains 'cat'.
+<<True>>
+>>> bool(pattern.search("hat"))     # 'hat' does not contain 'cat'.
+<<False>>
 \end{lstlisting}
 
-The main functions we will use are \li{re.match(pattern, string_to_test)} and \li{re.compile(pattern)}.
-You can think of \li{re.match} as returning a boolean value representing whether the given pattern matched the given string.
-The function \li{re.compile} returns a compiled object that represents a regular expression.
-You can then call the \li{match} function on this compiled object to get a boolean value.
-There is a similar function, \li{re.search}, which will match the regular expression anywhere inside a given string.
-We will see one example shortly where \li{re.search} is preferred in multiline matching.
+\begin{warn} % re.match() only matches the beginning!
+The poorly named \li{match()} method for pattern objects only matches strings that satisfy the pattern \textbf{at the beginning} of the string.
+To answer the question ``does any part of my target string match this regular expression?'' always use the \li{search()} method.
+\begin{lstlisting}
+>>> pattern = re.<<compile>>("cat")
+>>> bool(pattern.match("catfish"))
+<<True>>
+>>> bool(pattern.match("fishcat"))
+<<False>>
+>>> bool(pattern.search("fishcat"))
+<<True>>
+\end{lstlisting}
+\end{warn}
 
-The following code shows an example of how to use \li{re.compile}:
+\begin{info} % re.search() vs. re.compile().search()
+Most of the functions in the \li{re} module are shortcuts for compiling a pattern object and calling one of its methods.
+For example, the following lines of code are equivalent.
 \begin{lstlisting}
->>> pattern = re.compile("any regular expression")
->>> result = pattern.match("any string")
+>>> bool(re.<<compile>>("cat").search("catfish"))
+<<True>>
+>>> bool(re.search("cat", "catfish"))
+<<True>>
 \end{lstlisting}
-The above code is equivalent to the following:
-\begin{lstlisting}
->>> result = re.match("any regular expression", "any string")
-\end{lstlisting}
-Most programs use the compiled form (the first of the above two examples) for efficiency.
+Using \li{re.<<compile>>()} is good practice because the resulting object is reusable, while each call to \li{re.search()} compiles a new (but redundant) pattern object.
+\end{info}
 
-When constructing a regular expression, it is best to construct your pattern string using Python's syntax for raw strings by prefacing the string with the \li{'r'} character. This causes the constructed string to treat backslashes as actual backslash characters, rather than the start of an escape sequence.
+\begin{problem} % Easy regular expression, construct test cases.
+Write a function that compiles and returns a regular expression pattern object with the pattern string \li{"python"}.
 
-For example:
+Construct positive and negative test cases to test your object.
+Having good test cases will be important later, so be thorough.
+Your verification process might start as follows.
 \begin{lstlisting}
->>> normal = "hello\nworld"
->>> raw = r"hello\nworld"
->>> print normal
-hello
-world
->>> print raw
-hello\nworld
->>> type(normal), normal
-(str, 'hello\nworld')
->>> type(raw), raw
-(str, 'hello\\nworld')
+>>> pattern = re.<<compile>>("cat")
+>>> positive = ["cat", "catfish", "fish cat", "your cat ran away"]
+>>> assert all(pattern.search(p) for p in positive)
 \end{lstlisting}
-Note that \li{raw} and \li{normal} are both python strings; one was just constructed differently. Also notice that when we constructed \li{raw}, it inserted an extra backslash before the existing backslash.
-
-We use raw strings because the backslash character is a very important special character in regular expressions. If we wanted to use backslash characters as part of a normally-constructed Python string, we would need to either escape every single backslash by using two backslashes each time, or we could take the much easier and less confusing route of using Python's raw strings.
-To demonstrate this effect, suppose we wanted to know whether the regular expression \li{"\\\$3\\.00"} matched the string \li{"\$3.00"}. We could get our answer in either of the following ways:
-\begin{lstlisting}
->>> bool(re.match("\\$3\\.00", "$3.00"))
-True
->>> bool(re.match(r"\$3\.00", "$3.00"))
-True
-\end{lstlisting}
-(You will see why this pattern matches this string soon)
-
-Remember, readability counts.
-
-\section*{Literal Characters and Metacharacters}
-The following characters are used as metacharacters in regular expressions:
-\begin{lstlisting}
-. ^ $ * + ? { } [ ] \ | ( )
-\end{lstlisting}
-These characters mean special things when used in regular expressions, making the vast power of regular expressions possible.
-We will get to using these characters later. For now, what do we do if want to match these characters literally?
-We simply escape these characters using the metacharacter \li{'\\'}:
-\begin{lstlisting}
->>> pattern = re.compile(r"\$2\.95, please")
->>> bool(pattern.match("$2.95, please"))
-True
->>> bool(pattern.match("$295, please"))
-False
->>> bool(pattern.match("$2.95"))
-False
-\end{lstlisting}
-\begin{problem}
-Define the variable \li{pattern_string} using literal characters and escaped metacharacters in such a way that the following python program prints \li{True}:
-\begin{lstlisting}
-import re
-pattern_string = r""  # Edit this line
-pattern = re.compile(pattern_string)
-print bool(pattern.match("^{(!%.*_)}&"))
-\end{lstlisting}
+\label{prob:regex-superbasic}
 \end{problem}
 
-A little misleadingly, the \li{re.match} method isn't actually checking whether the given regular expression matches entire strings.
-Rather, it checks whether the regular expression matches \emph{at} the \emph{beginning} of the string, even if the string continues on afterward.
-For example:
-% \regex   x   x xabc abcx
+\subsection*{Literal Characters and Metacharacters} % -------------------------
+
+The following string characters (separated by spaces) are \emph{metacharacters} in Python's regular expressions, meaning they have special significance in a pattern string:
+\li{. ^ \$ * + ? \{ \} [ ] \\ | ( )}.
+
+To construct a regular expression that matches strings with one or more metacharacters in them requires two things.
+First, use \emph{raw strings} instead of regular Python strings by prefacing the string with an \li{r}, such as \li{r"cat"}.
+The resulting string interprets backslashes as actual backslash characters, rather than the start of an escape sequence like \li{\\n} or \li{\\t}.
+Second, preface any metacharacters with a backslash to indicate a literal character.
+For example, the following code constructs a regular expression to match the string \li{"\$3.99? Thanks."}.
+
 \begin{lstlisting}
->>> pattern = re.compile(r"x")
->>> bool(pattern.match("x"))
-True
->>> bool(pattern.match("xabc"))
-True
->>> bool(pattern.match("abcx"))
-False
+>>> dollar = re.<<compile>>(r"\$3\.99\? Thanks\.")
+>>> bool(dollar.search("$3.99? Thanks."))
+<<True>>
+>>> bool(dollar.search("$3\.99? Thanks."))
+<<False>>
+>>> bool(dollar.search("$3.99?"))   # Doesn't contain the entire pattern.
+<<False>>
 \end{lstlisting}
 
-You might not expect the pattern \li{'x'} to match the string \li{"xabc"}, but it does.
-This can cause confusion and headache, so we'll have to be a little more precise with the help of metacharacters.
+Without raw strings, every backslash in has to be written as a double backslash, which makes many regular expression patterns hard to read (\li{"\\\\\$3\\\\.99\\\\? Thanks\\\\."}).
+Readability counts.
 
-The \emph{line anchor} metacharacters, \li{'^'} and \li{'\$'}, are used to match the start and the end of a line of text, respectively.
-Let's see them in action:
-% \regex   ^x$   x xabc abcx
+\begin{problem}
+Write a function that compiles and returns a regular expression pattern object that matches the string \li{"^\{@\}(?)[\%]\{.\}(*)[_]\{&\}\$"}.
+\label{prob:regex-metacharacter-literals}
+\end{problem}
+
+The regular expressions of Problems \ref{prob:regex-superbasic} and \ref{prob:regex-metacharacter-literals} only match strings that are or include the exact pattern.
+The metacharacters allow regular expressions to have much more flexibility and control so that a single pattern could match a wide variety of strings, or a very specific set of strings.
+
+To begin, the \emph{line anchor} metacharacters \li{^} and \li{\$} are used to match the \textbf{start} and the \textbf{end} of a line of text, respectively.
+This shrinks the matching set, even when using the \li{search()} method instead of the \li{match()} method.
+For example, the only single-line string that the expression \li{^x\$} matches is \li{'x'}, whereas the expression \li{x} can match any string with an \li{x} in it.
+
 \begin{lstlisting}
->>> pattern = re.compile(r"^x$")
->>> bool(pattern.match("x"))
-True
->>> bool(pattern.match("xabc"))
-False
->>> bool(pattern.match("abcx"))
-False
+>>> has_x, just_x = re.<<compile>>(r"x"), re.<<compile>>(r"^x$")
+>>> for test in ["x", "xabc", "abcx"]:
+...     print(test + ':', bool(has_x.search(test)), bool(just_x.search(test)))
+...
+<<x: True True
+xabc: True False>>                    # Starts with 'x', but doesn't end with it.
+<<abcx: True False>>                    # Ends with 'x', but doesn't start with it.
 \end{lstlisting}
 
+% TODO: put this back in later.
+\begin{comment}
 An added benefit of using \li{'^'} and \li{'\$'} is that they allow you to search across multiple lines.
 For example, how would we match \li{"World"} in the string \mbox{\li{"Hello\\nWorld"}}?
 Using \li{re.MULTILINE} in the \li{re.search} function will allow us to match at the beginning of each new line, instead of just the beginning of the string.
@@ -156,359 +136,268 @@ Since we have seen two ways to match strings with regex expressions, the followi
 
 \begin{lstlisting}
 >>>bool(re.search("^W","Hello\nWorld"))
-False
+<<False>>
 >>>bool(re.search("^W","Hello\nWorld", re.MULTILINE))
-True
->>>pattern1 = re.compile("^W")
->>>pattern2 = re.compile("^W", re.MULTILINE)
+<<True>>
+>>>pattern1 = re<<.compile>>("^W")
+>>>pattern2 = re<<.compile>>("^W", re.MULTILINE)
 >>>bool(pattern1.search("Hello\nWorld"))
-False
+<<False>>
 >>>bool(pattern2.search("Hello\nWorld"))
-True
+<<True>>
 \end{lstlisting}
 
 For simplicity, the rest of the lab will focus on single line matching.
+\end{comment}
 
-% TODO should i include this?
-% \begin{Warn}
-%     From now until we say otherwise, we will be only using single-line regular expressions. At that point, certain things change slightly, and instead of confusing you with them now, we'll save those differnces until then.
-% \end{Warn}
-
-Let's move on to \li{'('}, \li{')'}, and \li{'|'}.
-The \li{'|'} character (the ``pipe'' character, usually found on the key below the backspace key) matches one of two or more regular expressions:
+The \emph{pipe} character \li{|} is like a logical \li{OR} in a regular expression: \li{A|B} matches \li{A} or \li{B}.
 \begin{lstlisting}
->>> pattern2 = re.compile(r"^red$|^blue$")
->>> pattern3 = re.compile(r"^red$|^blue$|^orange$")
->>> bool(pattern2.match("red")),     bool(pattern3.match("red"))
-(True, True)
->>> bool(pattern2.match("blue")),    bool(pattern3.match("blue"))
-(True, True)
->>> bool(pattern2.match("orange")),  bool(pattern3.match("orange"))
-(False, True)
->>> bool(pattern2.match("redblue")), bool(pattern3.match("redblue"))
-(False, False)
+>>> rb, rbg = re.<<compile>>(r"^red$|^blue$"), re.<<compile>>(r"^red$|^blue$|^green$")
+>>> for test in ["red", "blue", "green", "redblue"]:
+...     print(test + ":", bool(rb.search(test)), bool(rbg.search(test)))
+<<red: True True
+blue: True True
+green: False True
+redblue: False False>>                # The line anchors prevent matching here.
 \end{lstlisting}
 
-You can think of \li{'|'} as doing an ``or'' operation.
-How would we create a regular expression that matched both \li{"one fish"} and \li{"two fish"}?
-Although the regular expression \li{"one fish|two fish"} works, there is a better way, by using both the pipe character and parentheses:
-\begin{lstlisting}
->>> pattern = re.compile(r"^(one|two) fish$")
->>> bool(pattern.match("one fish"))
-True
->>> bool(pattern.match("two fish"))
-True
->>> bool(pattern.match("three fish"))
-False
->>> bool(pattern.match("one two fish"))
-False
-\end{lstlisting}
-% assert (bool(pattern.match("one fish")), bool(pattern.match("two fish")), bool(pattern.match("three fish")), bool(pattern.match("one two fish"))) == (1,1,0,0)
-As the above example demonstrates, parentheses are used to group sequences of characters together and change the order of precedence of the metacharacters, much like how parentheses work in an arithmetic expression such as \li{3*(4+5)}. In regular expressions, the \li{'|'} metacharacter has the lowest precedence out of all the metacharacters.
+The parentheses \li{()} create a \emph{group} in a regular expression.
+Among other things, a group establishes an order of operations in an expression, much like how parentheses work in an arithmetic expression such as $3\cdot(4+5)$.
 
-Parentheses actually have more uses, which we will learn later.
-For now, note that parentheses aren't matched literally:
-% \regex   r(hi)no(c(e)ro)s   rhinoceros
 \begin{lstlisting}
->>> bool(re.match(r"r(hi)no(c(e)ro)s", "rhinoceros"))
-True
+>>> fish = re.<<compile>>(r"^(one|two) fish$")
+>>> for test in ["one fish", "two fish", "red fish", "one two fish"]:
+...     print(test + ':', bool(fish.search(test)))
+...
+<<one fish: True
+two fish: True
+red fish: False
+one two fish: False>>
 \end{lstlisting}
 
-Parentheses help give regular expressions higher precedence.
-For example, \li{"^one|two fish$"} gives precedence to the invisible string concatenation between \li{"two"} and \li{"fish"} while \li{"^(one|two) fish$"} gives precedence to the \li{'\|'} metacharacter.
-
-%
-%\begin{problem}
-%Give a description of \emph{every} string that the pattern \li{"^one|two fish\$"} matches. Hint: Consider the strings \li{"one more"} and \li{"thirty-two fish"}.
-%\end{problem}
+% Parentheses help give regular expressions higher precedence.
+% For example, \li{"^one|two fish\$"} gives precedence to the invisible string concatenation between \li{"two"} and \li{"fish"} while \li{"^(one|two) fish\$"} gives precedence to the \li{'\|'} metacharacter.
 
 \begin{problem}
-Define the variable \li{pattern_string} using the metacharacter \li{'|'} and parentheses in such a way that the following python program prints \li{True}:
+Write a function that compiles and returns a regular expression pattern object that matches the following strings (and no other strings, even with \li{re.search()}).
 
-\begin{lstlisting}
-import re
-pattern_string = r""  # Edit this line
-pattern = re.compile(pattern_string)
-strings_to_match = [ "Book store", "Book supplier", "Mattress store", "Mattress supplier", "Grocery store", "Grocery supplier"]
-print all(pattern.match(string) for string in strings_to_match)
-\end{lstlisting}
-Your regular expression should not match any other string, including strings such as \li{"Book store sale"}.
+\centering
+\begin{tabular}{lll}
+\li{"Book store"} & \li{"Mattress store"} & \li{"Grocery store"} \\
+\li{"Book supplier"} & \li{"Mattress supplier"} & \li{"Grocery supplier"} \\
+\end{tabular}
 \end{problem}
 
-\section*{Character Classes}
-The metacharacters \li{'['} and \li{']'} are used to create \emph{character classes}.
-Here they are in action:
-% \regex   b[aei]d   bad bed bid bud bod byd
-\begin{lstlisting}
->>> pattern = re.compile(r"[xy]")
->>> bool(pattern.match("x"))
-True
->>> bool(pattern.match("y"))
-True
->>> bool(pattern.match("z"))
-False
->>> bool(pattern.match("x: Why does this match? Were you paying attention?"))
-True
-\end{lstlisting}
+\subsection*{Character Classes} % ---------------------------------------------
 
-In essence, a character class will match any one out of several characters.
+The hard bracket metacharacters \li{[} and \li{]} are used to create \emph{character classes}, a part of a regular expression that can match a variety of characters.
+For example, the pattern \li{[abc]} matches any of the characters \li{a}, \li{b}, or \li{c}.
+This is different than a group delimited by parentheses: a group can match multiple characters, while a character class matches only one character.
+For instance, \li{[abc]} does not match \li{ab} or \li{abc}, and \li{(abc)} matches \li{abc} but not \li{ab} or even \li{a}.
 
-Inside character classes, there are two additional metacharacters: \li{'-'} and \li{'^'}.
-Although we've already seen \li{'^'} as a metacharacter, it has a different meaning when used inside a character class.
-When \li{'^'} appears \emph{as the first character} in a character class, the character class matches anything not specified instead.
-Think of \li{'^'} as performing a set complement operation on the character class.
-For example:
-% \regex   ^[^ab]$   x # a b
-\begin{lstlisting}
->>> pattern = re.compile(r"^[^ab]$")
->>> bool(pattern.match("x"))
-True
->>> bool(pattern.match("#"))
-True
->>> bool(pattern.match("a"))
-False
->>> bool(pattern.match("b"))
-False
-\end{lstlisting}
-
-Note that the two \li{'^'} characters mean completely different things; the first \mbox{\li{'^'}} anchors us at the beginning of the line, while the second \li{'^'} performs a set complement operation on the character class \li{"[ab]"}.
-
-The other character class metacharacter is \li{'-'}. This is used to specifiy a range of values.
-For example:
-% \regex   ^[a-z][0-9][0-9]$   a90 z73 A90 zs3
-\begin{lstlisting}
->>> pattern = re.compile(r"^[a-z][0-9][0-9]$")
->>> bool(pattern.match("a90"))
-True
->>> bool(pattern.match("z73"))
-True
->>> bool(pattern.match("A90"))
-False
->>> bool(pattern.match("zs3"))
-False
-\end{lstlisting}
-
-Multiple ranges or characters can be included in a single character class; in this case, the character class will match any character that fits either criterion:
-\begin{lstlisting}
->>> pattern = re.compile(r"^[abcA-C][0-27-9]$")
->>> bool(pattern.match("b8"))
-True
->>> bool(pattern.match("B2"))
-True
->>> bool(pattern.match("a9"))
-True
->>> bool(pattern.match("a4"))
-False
->>> bool(pattern.match("E1"))
-False
-\end{lstlisting}
-Notice in the first line that \li{[abcA-C]} acts like \li{[a|b|c|(A-C)]} and \li{[0-27-9]} acts like \li{[(0-2)|(7-9)]}.
-
-Finally, there are some built-in shorthands for certain character classes:
-\begin{itemize}
-    \item \li{'\\d'} (think ``digit'') matches any digit. It is equivalent to \li{"[0-9]"}.
-    \item \li{'\\w'} (think ``word'') matches any alphanumeric character or underscore. It is equivalent to \li{"[a-zA-Z0-9_]"}.
-    \item \li{'\\s'} (think ``space'') matches any whitespace character. It is equivalent to \li{"[ \\t\\n\\r\\f\\v]"}.
-\end{itemize}
-The following character classes are the complements of those above:
-\begin{itemize}
-    \item \li{'\\D'} is equivalent to \li{"[\^0-9]"} or \li{"[\^\D]"}
-    \item \li{'\\W'} is equivalent to \li{"[\^a-zA-Z0-9\_]"} or \li{"[\^\W]"}
-    \item \li{'\\S'} is equivalent to \li{"[^ \\t\\n\\r\\f\\v]"} or \li{"[\^\S]"}
-\end{itemize}
-
-These character classes can be used in character classes; for example, \li{"[\_A-Z\\s]"} will match an underscore, any capital letter, or any whitespace character.
-
-The \li{'.'} metacharacter, equivalent to \li{"[\^\\n]"} on UNIX and \li{"[\^\\r\\n]"} on Windows, matches any character except for a line break.
-For example:
-% \regex   ^.\d.$   a0b 888 n2% abc m&m cat
-\begin{lstlisting}
->>> pattern = re.compile(r"^.\d.$")
->>> bool(pattern.match("a0b"))
-True
->>> bool(pattern.match("888"))
-True
->>> bool(pattern.match("n2%"))
-True
->>> bool(pattern.match("abc"))
-False
->>> bool(pattern.match("m&m"))
-False
->>> bool(pattern.match("cat"))
-False
-\end{lstlisting}
-
-\begin{problem}
-Define the variable \li{pattern_string} in such a way that the following python program prints \li{True}:
+Within character classes, there are two additional metacharacters.
+When \li{^} appears \textbf{as the first character} in a character class, right after the opening bracket \li{[}, the character class matches anything \textbf{not} specified instead.
+In other words, \li{^} is the set complement operation on the character class.
+Additionally, the dash \li{-} specifies a range of values.
+For instance, \li{[0-9]} matches any digit, and \li{[a-z]} matches any lowercase letter.
+Thus \li{[^0-9]} matches any character \textbf{except} for a digit, and \li{[^a-z]} matches any character \textbf{except} for a lowercase letters
 
 \begin{lstlisting}
-import re
-pattern_string = r""  # Edit this line
-pattern = re.compile(pattern_string)
-
-strings_to_match = ["a", "b", "c", "x", "y", "z"]
-uses_line_anchors = (pattern_string.startswith('^') and pattern_string.endswith('$'))
-solution_is_clever = (len(pattern_string) == 8)
-matches_list = all(pattern.match(string) for string in strings_to_match)
-
-print uses_line_anchors and solution_is_clever and matches_list
+>>> p1, p2 = re.<<compile>>(r"^[a-z][^0-7]$"), re.<<compile>>(r"^[^abcA-C][0-27-9]$")
+>>> for test in ["d8", "aa", "E9", "EE", "d88"]:
+...     print(test + ':', bool(p1.search(test)), bool(p2.search(test)))
+...
+<<d8: True True>>
+<<aa: True False>>                      # a is not in [^abcA-C] or [0-27-9].
+<<E9: False True>>                      # E is not in [a-z].
+<<EE: False False>>                     # E is not in [a-z] or [0-27-9].
+<<d88: False False>>                    # Too many characters.
 \end{lstlisting}
-\end{problem}
 
-\begin{problem}
-A \emph{valid python identifier} (aka a valid variable name) is defined as any string composed of an alphabetic character or underscore followed by any (possibly empty) sequence of alphanumeric characters and underscores.
+Note that \li{[0-27-9]} acts like \li{[(0-2)|(7-9)]}.
 
-Define the variable \li{identifier_pattern_string} that defines a regular expression that matches valid python identifiers that are exactly five characters long.
+There are also a variety of shortcuts that represent common character classes, listed in Table \ref{table:regex-character-class-shortcuts}.
+Familiarity with these shortcuts makes some regular expressions significantly more readable.
 
-To help you test your pattern, the following program should print \mbox{\li{True}.} (This is necessary but not sufficient to show your regular expression is correct):
+\begin{table}[H]
+\begin{tabular}{c|l}
+Character & Description \\ \hline
+% \li{\\number} & Matches the contents of the group of the same number. \\
+\li{\\b} & Matches the empty string, but only at the start or end of a word. \\
+\li{\\d} & Matches any decimal digit; equivalent to \li{[0-9]}. \\
+\li{\\D} & Matches any non-digit character; equivalent to \li{[^\\d]}. \\
+\li{\\s} & Matches any whitespace character; equivalent to \li{[ \\t\\n\\r\\f\\v]}. \\
+\li{\\S} & Matches any non-whitespace character; equivalent to \li{[^\\s]}. \\
+\li{\\w} & Matches any alphanumeric character; equivalent to \li{[a-zA-Z0-9_]}. \\
+\li{\\W} & Matches any non-alphanumeric character; equivalent to \li{[^\\w]}. \\
+% \li{\\\\} & Matches a literal backslash. \\
+\end{tabular}
+\caption{Character class shortcuts.}
+\label{table:regex-character-class-shortcuts}
+\end{table}
+
+Any of the character class shortcuts can be used within other custom character classes.
+For example, \li{[\_A-Z\\s]} matches an underscore, capital letter, or whitespace character.
+
+Finally, a period \li{.} matches \textbf{any} character except for a line break, and is therefore equivalent to \li{[\^\\n]} on UNIX machines and \li{[\^\\r\\n]} on Windows machines.
+This is a very powerful metacharacter; be careful to only use it when part of the regular expression really should match \textbf{any} character.
+
 \begin{lstlisting}
-import re
-identifier_pattern_string = r""  # Edit this line
-identifier_pattern = re.compile(identifier_pattern_string)
+# Match any three-character string with a digit in the middle.
+>>> pattern = re.<<compile>>(r"^.\d.$")
+>>> for test in ["a0b", "888", "n2%", "abc", "cat"]:
+...     print(test + ':', bool(pattern.search(test)))
+...
+<<a0b: True
+888: True
+n2%: True
+abc: False
+cat: False>>
 
-valid = ["mouse", "HORSE", "_1234", "__x__", "while"]
-not_valid = ["3rats", "err*r", "sq(x)", "too_long"]
-
-print all(identifier_pattern.match(string) for string in valid) and not any(identifier_pattern.match(string) for string in not_valid)
+# Match two letters followed by a number and two non-newline characters.
+>>> pattern = re.<<compile>>(r"^[a-zA-Z][a-zA-Z]\d..$")
+>>> for test in ["tk421", "bb8!?", "JB007", "Boba?"]:
+...     print(test + ':', bool(pattern.search(test)))
+..
+<<tk421: True
+bb8!?: True
+JB007: True
+Boba?: False>>
 \end{lstlisting}
 
-Hint: Use the \li{'\\w'} character class to keep your regular expression relatively short.
-\begin{info}
-As you might have noticed, using this definition, \li{"while"} is considered a valid python identifier, even though it really is a reserved word. In the following problems, we will make a few other simplifying assumptions about the python language.
-\end{info}
-\end{problem}
+\begin{table}[H]
+\begin{tabular}{c|l}
+Character & Description \\ \hline
+\li{.}    & Matches any character except a newline. \\
+\li{^}    & Matches the start of the string. \\
+\li{\$}   & Matches the end of the string or just before the newline at the end of the string. \\
+% \li{\\\\}   & Either escapes special characters or signals a special sequence. \\
+\li{|}    & \li{A|B} creates an regular expression that will match either \li{A} or \li{B}. \\
+\li{[...]}     & Indicates a set of characters. A \li{^} as the first character indicates a complementing set. \\
+\li{(...)}  & Matches the regular expression inside the parentheses.\\ & The contents can be retrieved or matched later in the string. \\
+\end{tabular}
+\caption{Standard regular expression metacharacters in Python.}
+\label{table:regex-special-characters}
+\end{table}
 
-\section*{Repetition}
-Suppose in the last problem we wanted the string to be 20 characters long.
-You wouldn't want to write \li{\\w} 20 times.
-In fact, what if you wanted to match at most one instance of a character or a number with at least three digits?
-The metacharacters \li{'*'}, \li{'+'}, \li{'\{'}, and \li{'\}'} are very useful for repetition.
+% TODO: shorten this section.
 
-The \li{'*'} metacharacter means ``Match zero or more times (as many as possible)'' when it follows another regular expression.
-For instance:
-% \regex   ^a*b$   b ab aab aaab abab abc
+\subsection*{Repetition} % ----------------------------------------------------
+
+The remaining metacharacters are for matching a specified number of characters.
+This allows a single regular expression to match strings of varying lengths.
+
+\begin{table}[H]
+\begin{tabular}{c|l}
+Character & Description \\ \hline
+\li{*}    & Matches 0 or more repetitions of the preceding regular expression. \\
+\li{+}    & Matches 1 or more repetitions of the preceding regular expression. \\
+\li{?}    & Matches 0 or 1 of the preceding regular expression. \\
+\li{\{m,n\}}  & Matches from m to n repetitions of the preceding regular expression. \\
+\li{*?}, \li{+?}, \li{??}, \li{\{m,n\}?} & Non-greedy versions of the previous four special characters.
+\end{tabular}
+\caption{Repetition metacharacters for regular expressions in Python.}
+\label{table:regex-special-characters2}
+\end{table}
+
+
+% The \li{'*'} metacharacter means ``Match zero or more times (\textbf{as many as possible})'' when it follows another regular expression.
+% The \li{'+'} metacharacter means ``Match one or more times (as many as possible)'' when it follows another regular expression.
+% The \li{'?'} metacharacter means ``Match one time (if possible) or do nothing (i.e. match zero times)'' when it follows another regular expression:
+% The curly brace metacharacters are used to specify a more precise amount of repetition:
+
 \begin{lstlisting}
->>> pattern = re.compile(r"^a*b$")
->>> bool(pattern.match("b"))
-True
->>> bool(pattern.match("ab"))
-True
->>> bool(pattern.match("aab"))
-True
->>> bool(pattern.match("aaab"))
-True
->>> bool(pattern.match("abab"))
-False
->>> bool(pattern.match("abc"))
-False
+# Match 0 or more 'a' characters, ending in a 'b'.
+>>> pattern = re.<<compile>>(r"^a*b$")
+>>> for test in ["b", "ab", "aaaaaaaaaab", "aba"]:
+...     print(test + ':', bool(pattern.search(test)))
+...
+<<b: True>>                             # 0 'a' characters, then 1 'b'.
+<<ab: True>>
+<<aaaaaaaaaab: True>>                   # Several 'a' characters, then 1 'b'.
+<<aba: False>>                          # 'b' must be the last character.
+
+# Match an 'h' followed by at least one 'i' or 'a' characters.
+>>> pattern = re.<<compile>>(r"^h[ia]+$")
+>>> for test in ["ha", "hii", "hiaiaa", "h", "hah"]:
+...     print(test + ':', bool(pattern.search(test)))
+...
+<<ha: True
+hii: True>>
+<<hiaiaa: True>>                        # [ia] matches 'i' or 'a'.
+<<h: False>>                            # Need at least one 'i' or 'a'
+<<hah: False>>                          # 'i' or 'a' must be the last character.
+
+# Match an 'a' followed by 'b' followed by 0 or 1 'c' characters.
+>>> pattern = re.<<compile>>(r"^abc?$")
+>>> for test in ["ab", "abc", "abcc", "ac"]:
+...     print(test + ':', bool(pattern.search(test)))
+...
+<<ab: True
+abc: True>>
+<<abcc: False>>                         # Only up to one 'c' is allowed.
+<<ac: False>>                           # Missing the 'b'.
 \end{lstlisting}
 
-The \li{'+'} metacharacter means ``Match one or more times (as many as possible)'' when it follows another regular expression.
-As an example:
-% \regex   ^h[ia]+$   ha hii hiai haaia h hah he
+Each of the repetition operators acts on the expression immediately preceding it.
+This could be a single character, a group, or a character class.
+For instance, \li{(abc)+} matches \li{abc}, \li{abcabc}, \li{abcabcabc}, and so on, but not \li{aba} or \li{cba}.
+On the other hand, \li{[abc]*} matches any sequence of \li{a}, \li{b}, and \li{c}, including \li{abcabc} and \li{aabbcc}.
+
+The curly braces \li{\{\}} specify a custom number of repetitions allowed.
+\li{\{,n\}} matches \textbf{up to} $n$ instances, \li{\{m,\}} matches \textbf{at least} $m$ instances, \li{\{k\}} matches \textbf{exactly} $k$ instances, and \li{\{m,n\}} matches from $m$ to $n$ instances.
+Thus the \li{?} operator is equivalent to \li{\{,1\}} and \li{+} is equivalent to \li{\{1,\}}.
+
 \begin{lstlisting}
->>> pattern = re.compile(r"^h[ia]+$")
->>> bool(pattern.match("ha"))
-True
->>> bool(pattern.match("hii"))
-True
->>> bool(pattern.match("hiaiaa"))
-True
->>> bool(pattern.match("h"))
-False
->>> bool(pattern.match("hah"))
-False
+# Match exactly 3 'a' characters.
+>>> pattern = re.<<compile>>(r"^a{3}$")
+>>> for test in ["aa", "aaa", "aaaa", "aba"]:
+...     print(test + ':', bool(pattern.search(test)))
+...
+<<aa: False>>                           # Too few.
+<<aaa: True
+aaaa: False>>                         # Too many.
+<<aba: False>>
 \end{lstlisting}
 
-It's important to understand why \li{"hiaiaa"} \emph{is} a match here; matching multiple times means matching the preceeding \emph{expression} multiple times, not matching the \emph{results} of the preceeding expression multiple times. We haven't yet learned how to construct a regular expression with that behavior.
+\begin{warn} % Use line anchors with repetition operators.
+Line anchors are especially important when using repetition operators.
+Consider the following (bad) example and compare it to the previous example.
 
-The \li{'?'} metacharacter means ``Match one time (if possible) or do nothing (i.e. match zero times)'' when it follows another regular expression:
-% \regex   ^abc?$   abc ab abd ac
 \begin{lstlisting}
->>> pattern = re.compile(r"^abc?$")
->>> bool(pattern.match("abc"))
-True
->>> bool(pattern.match("ab"))
-True
->>> bool(pattern.match("abd"))
-False
->>> bool(pattern.match("ac"))
-False
+# Match exactly 3 'a' characters, hopefully.
+>>> pattern = re.<<compile>>(r"a{3}")
+>>> for test in ["aaa", "aaaa", "aaaaa", "aaaab"]:
+...     print(test + ':', bool(pattern.search(test)))
+...
+<<aaa: True
+aaaa: True>>                          # Should be too many!
+<<aaaaa: True>>                         # Should be too many!
+<<aaaab: True>>                         # Too many, and even with the 'b'?
 \end{lstlisting}
-
-The curly brace metacharacters are used to specify a more precise amount of repetition:
-% \regex   ^a{2,4}$   a aa aaa aaaa aaaaa aaaaaa bbb
-\begin{lstlisting}
->>> pattern = re.compile(r"^a{2,4}$")
->>> bool(pattern.match("a"))
-False
->>> bool(pattern.match("aa"))
-True
->>> bool(pattern.match("aaa"))
-True
->>> bool(pattern.match("aaaa"))
-True
->>> bool(pattern.match("aaaaa"))
-False
-\end{lstlisting}
-
-If two arguments \li{x} and \li{y} are given to the curly braces (i.e., \li{\{x, y\}}), the preceeding regular expression must appear between \li{x} and \li{y} times, inclusive, in order for the overall expression to match.
-
-\begin{warn}
-In this last example, line anchors can save us from a lot of confusion. Note the differences between the following example and the example immediately above:
-% \regex   a{2,4}   a aa aaa aaaa aaaaa aaaaaa
-\begin{lstlisting}
->>> pattern = re.compile(r"a{2,4}")
->>> bool(pattern.match("a"))
-False
->>> bool(pattern.match("aa"))
-True
->>> bool(pattern.match("aaa"))
-True
->>> bool(pattern.match("aaaa"))
-True
->>> bool(pattern.match("aaaaa"))
-True
-\end{lstlisting}
+The unexpected matches occur because \li{"aaa"} is at the beginning of each of the test strings.
+With the line anchors \li{^} and \li{\$}, the search truly only matches the exact string \li{"aaa"}.
 \end{warn}
 
-If only one argument \li{x} is given and is followed by a comma, the preceeding regular expression must match \li{x} or more times. If only one argument \li{x} is given without a comma, the preceeding regular expression must match \emph{exactly} \li{x} times.
-For example:
-\begin{lstlisting}
->>> exactly_three = re.compile(r"^a{3}$")
->>> three_or_more = re.compile(r"^a{3,}$")
->>> def test_both_patterns(string):
-...     return bool(exactly_three.match(string)), bool(three_or_more.match(string))
->>> test_both_patterns("a")
-(False, False)
->>> test_both_patterns("aa")
-(False, False)
->>> test_both_patterns("aaa")
-(True, True)
->>> test_both_patterns("aaaa")
-(False, True)
->>> test_both_patterns("aaaaa")
-(False, True)
-\end{lstlisting}
-You can also test \li{\{,x\}} which will match the preceeding regular expression up to \li{x} times.
-
 \begin{problem}
-Modify your definition of \li{identifier_pattern_string} from the previous problem to match valid python identifiers of any length.
+A \emph{valid Python identifier} (a valid variable name) is any string staring with an alphabetic character or an underscore, followed by any (possibly empty) sequence of alphanumeric characters and underscores.
+
+Define a function that compiles and returns a regular expression pattern object that matches any valid Python identifier.
+\\(Hint: Use the \li{\\w} character class shortcut to keep your regular expression clean.)
+
+Check your regular expression against the following words.
+These test cases are a good start, but are not exhaustive.
+
+\centering
+\begin{tabular}{c|lllll}
+Matches: & \li{"Mouse"} & \li{"compile"} & \li{"_123456789"} & \li{"__x__"} & \li{"while"} \\ \hline
+Non-matches: & \li{"3rats"} & \li{"err*r"} & \li{"sq(x)"} & \li{"sleep()"} & \li{"     x"}
+\end{tabular}
+% As you might have noticed, using this definition, \li{"while"} is considered a valid python identifier, even though it really is a reserved word. In the following problems, we will make a few other simplifying assumptions about the python language.
 \end{problem}
 
-% For example, your regular expression should match each of the following: % todo format
-%     compile(),
-%     \_\_unicode\_\_(), and
-%     a113()
-% and should not match any of the following:
-%     pattern.match(),
-%     fxn(no\_arguments\_please),
-%     365\_day\_timer(),
-%     variable,
-%     err*r(), and
-%     sleep()()
 
-\begin{comment}
+\begin{comment} % Might be worth putting this in...
 \begin{problem}
 A \emph{valid python parameter definition} is defined as the concatenation of the following strings:
 \begin{itemize}
@@ -519,13 +408,13 @@ A \emph{valid python parameter definition} is defined as the concatenation of th
 
 Define a variable \li{parameter_pattern_string} that defines a regular expression that matches valid python parameter definitions.
 
-For example, each element of \li{["max=4.2", "string= ''", "num_guesses", "msg ='\\\\'", "volume_fn=_CALC_VOLUME"]} is a valid python parameter definition, while each element of \li{["300", "no spaces", "is_4=(value==4)", "pattern = r'^one|two fish$'", 'string="these last two are actually valid in python, but they should not be matched by your pattern"']} is not. % TODO add more negative examples maybe?
+For example, each element of \li{["max=4.2", "string= ''", "num_guesses", "msg ='\\\\'", "volume_fn=_CALC_VOLUME"]} is a valid python parameter definition, while each element of \li{["300", "no spaces", "is_4=(value==4)", "pattern = r'^one|two fish\$'", 'string="these last two are actually valid in python, but they should not be matched by your pattern"']} is not. % TODO add more negative examples maybe?
 \end{problem}
 \end{comment}
 
 
-\begin{comment}
-\begin{problem*}
+\begin{comment} % Might be worth putting this in...
+\begin{problem}
 A \emph{valid python function definition} is defined as the concatenation of the following strings:
 \begin{itemize}
     \item \li{"def"}
@@ -538,43 +427,40 @@ A \emph{valid python function definition} is defined as the concatenation of the
 \end{itemize}
 with any number of spaces between each element of the above list.
 
-Define a variable \li{function_pattern_string} that defines a regular expression that matches valid python function definitions. Using
-\li{function_pattern_string}, write a program \texttt{match\_function\_definition.py}
-which repeatedly asks the user for a string and prints out whether that string is a valid python function definition, halting only if the inputted string is \li{"exit"}.
+Define a variable \li{function_pattern_string} that defines a regular expression that matches valid python function definitions.
 
 For example, the program should behave as follows:
 \begin{lstlisting}
 >>> run match_function_definition.py
 Enter a string>>> def compile(pattern,string):
-True
+<<True>>
 Enter a string>>> def  space  ( ) :
-True
+<<True>>
 Enter a string>>> def func(_dir, file_path='\Desktop\files', val=_PI):
-True
+<<True>>
 Enter a string>>> def func(num=3., num=.5, num=0.0):
-True
+<<True>>
 Enter a string>>> def func(num=., error,):
-False
+<<False>>
 Enter a string>>> def variable:
-False
+<<False>>
 Enter a string>>> def not.allowed(, *args):
-False
+<<False>>
 Enter a string>>> def err*r('no parameter name'):
-False
+<<False>>
 Enter a string>>> def func(value=_MY_CONSTANT, msg='%s' % _DEFAULT_MSG):
-False
+<<False>>
 Enter a string>>> def func(s1='', a little tricky, s2=''):
-False
+<<False>>
 Enter a string>>> def func(): Remember your line anchors!
-False
+<<False>>
 Enter a string>>> deffunc()
-False
+<<False>>
 Enter a string>>> func():
-False
+<<False>>
 Enter a string>>> exit
 
 \end{lstlisting}
-Hint: Use \li{input_string = raw_input("Enter a string>>> ")} for user input.
 
 \begin{warn}
 In the end, my variable \li{function_pattern_string} was \emph{215 characters long}. You WILL make a mistake while defining \li{function_pattern_string}; do you want to try to debug a 215-character regular expression? Do NOT try to define it all at once!
@@ -582,10 +468,10 @@ In the end, my variable \li{function_pattern_string} was \emph{215 characters lo
 Instead, use your previously defined regular expressions to make this easier. For example, either of the two following idioms will work:
 \begin{lstlisting}
 >>> key_1 = "basic"
->>> print ("This is a " + key_1 + " way to concatenate strings.")
+>>> print("This is a " + key_1 + " way to concatenate strings.")
 This is a basic way to concatenate strings.
 >>> format_dict = {"key_1": "basic", "key_2": "much more", "key_3": "advanced"}
->>> print ("This is a {key_2} {key_3} way to concatenate strings. It's {key_2} flexible.".format(**format_dict))
+>>> print("This is a {key_2} {key_3} way to concatenate strings. It's {key_2} flexible.".format(**format_dict))
 This is a much more advanced way to concatenate strings. It's much more flexible.
 \end{lstlisting}
 Keep in mind that you'll have to remove the line anchors from your previously defined regular expressions.
@@ -594,35 +480,179 @@ For reference, I used about ten lines to define \li{function_pattern_string} and
 \end{warn}
 
 \label{prob:match_function_definition}
-\end{problem*}
+\end{problem}
 \end{comment}
 
+\section*{Manipulating Text with Regular Expressions} % ======================
 
+So far we have been solely concerned with whether or not a regular expression and a string match, but the power of regular expressions comes with what can be done with a match.
+In addition to the \li{search()} method, regular expression pattern objects have the following useful methods.
 
+\begin{table}[H]
+\begin{tabular}{r|l}
+Method & Description \\ \hline
+\li{match()}     & Match a regular expression pattern to the beginning of a string. \\
+\li{fullmatch()} & Match a regular expression pattern to all of a string. \\
+\li{search()}    & Search a string for the presence of a pattern. \\
+\li{sub()}       & Substitute occurrences of a pattern found in a string. \\
+\li{subn()}      & Same as sub, but also return the number of substitutions made. \\
+\li{split()}     & Split a string by the occurrences of a pattern. \\
+\li{findall()}   & Find all occurrences of a pattern in a string. \\
+\li{finditer()}  & Return an iterator yielding a match object for each match.
+\end{tabular}
+\caption{Methods of regular expression pattern objects.}
+\end{table}
 
-
-\section*{Cleaning Dirty Data with Regular Expressions}
-A common consensus among data scientists is that the majority of your time will be spent cleaning data. Throughout the remainder of this volume, you will have multiple opportunities to practice cleaning data.
-
-Often times, cleaning data is as simple as changing the format of your data or filling missing values. However, with text-based data, additional work is often necessary. Using regular expressions to clean text-based data is often a good option.
-
-\begin{problem}
-The provided file \li{contacts.txt} contains poorly formatted contact data for 5000 (fictitious) individuals. This dataset contains birthdays, email addresses, and phone numbers for the individuals.
-
-You will notice that much of this data is missing. To make things more complicated, the format of the data isn't consistent. For example, some birthdays are in the format \li{1/1/99}, some in the format \li{01/01/1999}, and some in the format \li{1/1/1999}. The formatting for phone numbers is not consistent either. Some phone numbers are of the form \li{(123)456-7890} while others are of the form \li{123-456-7890}.
-
-Using regular expressions, create a Python dictionary where the key is the name of the individual and the value is a dictionary of data. For example, the resulting dictionary should look something like this:
 \begin{lstlisting}
-{"John Doe":{"bday":"1/1/1990",
-             "email":"john_doe90@gmail.com",
-             "phone":"(123)456-7890"}}
+# Find words that start with 'cat'.
+>>> expr = re.<<compile>>(r"\bcat\w*")  # \b is the shortcut for a word boundary.
+
+>>> target = "Let's catch some catfish for the cat"
+>>> bool(expr.search(target))       # Check to see if there is a match.
+<<True>>
+
+>>> expr.findall(target)            # Get all matching substrings.
+<<['catch' 'catfish', 'cat']>>
+
+>>> expr.sub("DOG", target)         # Substitute 'DOG' for the matches.
+<<"Let's DOG some DOG for the DOG">>
+
+>>> expr.split(target)              # Split the target by the matches.
+<<["Let's ", ' some ', ' for the ', '']>>
 \end{lstlisting}
 
+Some substitutions require remembering part of the text that the regular expression matches.
+Groups are useful here: each group in the regular expression can be represented in the substitution string by \li{\\n}, where $n$ is an integer (starting at 1) specifying which group to use.
+
+\begin{lstlisting}
+# Find words that start with 'cat', remembering what comes after the 'cat'.
+>>> pig_latin = re.compile(r"\bcat(\w*)")
+>>> target = "Let's catch some catfish for the cat"
+
+>>> pig_latin.sub(r"at\1clay", target)  # \1 = (\w*) from the expression.
+<<"Let's atchclay some atfishclay for the atclay">>
+\end{lstlisting}
+
+\begin{info} % Greedy repetition, check with findall().
+The repetition operators \li{?}, \li{+}, \li{*}, and \li{\{m,n\}} are \emph{greedy}, meaning that they match the largest string possible.
+On the other hand, the operators \li{??}, \li{+?}, \li{*?}, and \li{\{m,n\}?} are \emph{non-greedy}, meaning they match the smallest strings possible.
+This is very often the desired behavior for a regular expression.
+
+\begin{lstlisting}
+>>> target = "<abc> <def> <ghi>"
+
+# Match angle brackets and anything in between.
+>>> greedy = re.<<compile>>(r"^<.*>$")  # Greedy *
+>>> greedy.findall(target)
+<<['<abc> <def> <ghi>']>>               # The entire string matched!
+
+# Try again, using the non-greedy version.
+>>> nongreedy = re.<<compile>>(r"<.*?>")# Non-greedy *?
+>>> nongreedy.findall(target)
+<<['<abc>', '<def>', '<ghi>']>>         # Each <> set is an individual match.
+\end{lstlisting}
+\end{info}
+
+Finally, there are a few customizations that make searching larger texts manageable.
+Each of these \emph{flags} can be used as keyword arguments to \li{re.<<compile>>()}.
+
+\begin{table}[H]
+\begin{tabular}{c|l}
+Flag & Description \\ \hline
+\li{re.DOTALL}     & \li{.} matches any character at all, including the newline. \\
+\li{re.IGNORECASE} & Perform case-insensitive matching. \\
+\li{re.MULTILINE}  & \li{^} matches the beginning of lines (after a newline)
+               as well as the string; \\ & \li{\$} matches the end of lines (before a newline) as well as the end of the string.
+\end{tabular}
+\caption{Regular expression flags.}
+\end{table}
+
+\begin{lstlisting}
+# Match any line with 3 consecutive 'a' characters somewhere.
+>>> pattern = re.<<compile>>("^.*a{3}.*$", re.MULTILINE)    # Search each line.
+>>> pattern.findall("""
+This is aaan example.
+This is not an example.
+Actually, it's an example, but it doesn't match.
+This example does maaatch though.""")
+<<['This is aaan example.', 'This example does maaatch though.']>>
+
+# Match anything instance of 'cat', ignoring case.
+>>> catfinder = re.compile("cat", re.IGNORECASE)
+>>> catfinder.findall("cat CAT cAt TAC ctacATT")
+<<['cat', 'CAT', 'cAt', 'cAT']>>
+\end{lstlisting}
+
+\begin{problem}
+A Python \emph{block} is composed of several lines of code with the same indentation level.
+Blocks are delimited by key words and expressions, followed by a colon.
+Possible key words are \li{if}, \li{elif}, \li{else}, \li{for}, \li{while}, \li{try}, \li{except}, \li{finally}, \li{with}, \li{def}, and \li{class}.
+Some of these keywords require an expression of some sort to follow before the colon (\li{if}, \li{elif}, \li{for}, etc.), some require no expressions to follow before the colon (\li{else}, \li{finally}), and \li{except} may or may not have an expression following before the colon.
+
+Write a function that accepts a string of Python code and uses regular expressions to place colons in the appropriate spots.
+You may assume that every colon is missing in the input string.
+See the following for an example.
+
+\begin{lstlisting}
+"""
+k, i, p = 999, 1, 0
+while k > i
+    i *= 2
+    p += 1
+    if k != 999
+        print("k should not have changed")
+    else
+        pass
+print(p)
+"""
+
+# The string given above should become this string.
+"""
+k, i, p = 999, 1, 0
+while k > i:
+    i *= 2
+    p += 1
+    if k != 999:
+        print("k should not have changed")
+    else:
+        pass
+print(p)
+"""
+\end{lstlisting}
+\end{problem}
+
+\begin{problem}
+The file \texttt{fake\_contacts.txt} contains poorly formatted contact data for 2000 fictitious individuals.
+Each line of the file contains data for one person, including their name and possibly their birthday, email address, and/or phone number.
+The formatting of the data is not consistent, and much of it is missing.
+For example, not everyone has their birthday listed, and those who do may have it listed in the form \li{1/1/11}, \li{1/01/2011}, or some other format.
+
+Use regular expressions to parse the data and format it uniformly, writing birthdays as \li{mm/dd/yyyy} and phone numbers as \li{(xxx)xxx-xxxx}.
+Return a dictionary where the key is the name of an individual and the value is another dictionary containing their information.
+Each of these inner dictionaries should have the keys \li{"birthday"}, \li{"email"}, and \li{"phone"}.
+In the case of missing data, map the key to \li{None}.
+The first two entries of the completed dictionary are given below.
+
+\begin{lstlisting}
+{
+    "John Doe": {
+        "birthday": "01/01/1990",
+        "email": "john_doe90@hopefullynotarealaddress.com",
+        "phone": "(123)456-7890"
+        },
+    "Jane Smith": {
+        "birthday": None,
+        "email": None,
+        "phone": "(222)111-3333"
+        },
+# ...
+}
+\end{lstlisting}
 \end{problem}
 
 \newpage
 
-\section*{Additional Material}
+\section*{Additional Material} % ==============================================
 
 \section*{Regular Expressions in the Unix Shell}
 As we have seen thusfar, regular expressions are very useful when we want to match patterns. Regular expressions can be used when matching patterns in the Unix Shell. Though there are many Unix commands that take advantage of regular expressions, we will focus on \li{grep} and \li{awk}.
@@ -664,7 +694,7 @@ $ ls -l | awk ' {if ($1 ~ /^d/) print $9} '
 Notice in this example, we printed the names of the directories, whereas in one of the example using \li{grep}, we printed all the details of the directories as well.
 
 \begin{warn}
-Some of the definitions for character classes we used earlier in this lab will not work in the Unix Shell. For example, \li{\\w} and \li{\\d} are not defined. Instead of \li{\\w}, use \li{[[:alnum:]]}. Instead of \li{\\d}, use \li{[[:digit:]]}. For a complete list of similar character classes, search the internet for ``POSIX Character Classes'' or ``Bracket Character Classes.''
+Some of the definitions for character classes we used earlier in this lab will not work in the Unix Shell. For example, \li{\\w} and \li{\\d} are not defined. Instead of \li{\\w}, use \li{[[:alnum:]]}. Instead of \li{\\d}, use \li{[[:digit:]]}. For a complete list of similar character classes, search the internet for \emph{POSIX Character Classes} or \emph{Bracket Character Classes.}
 \end{warn}
 
 \begin{problem}
@@ -684,3 +714,5 @@ These queries can be produced using one command each.
 \end{problem}
 
 We encourage the interested reader to research more about how regular expressions can be used with \li{sed}.
+
+% TODO: deterministic finite state automata.

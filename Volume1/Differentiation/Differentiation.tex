@@ -4,12 +4,6 @@
 Depending on the application and on the available information, the derivative may be calculated symbolically, numerically, or with differentiation software.
 In this lab we explore these three ways to take a derivative, discuss what settings they are each appropriate for, and demonstrate their strengths and weaknesses.
 % This lab should be done after completing the Python Essentials lab on SymPy.
-% In this lab, we explore three ways to differentiate with Python
-% First, we will use SymPy, which uses symbolic computations to calculate exact derivatives.
-% Next, we will examine finite difference quotients, which are used to approximate derivatives when the original function is not known or if the derivative is too computationally expensive.
-% Lastly, we will investigate autograd, which automatically differentiates Python code.
-% Autograd can be used to approximate derivatives of functions that have Python structures outside of a normal expression.
-% The error and the computational cost for each of these differentiation techniques will also be examined.
 }
 
 \section*{Symbolic Differentiation} % =========================================
@@ -61,7 +55,7 @@ Since this definition relies on $h$ approaching $0$, choosing a small, fixed val
 f'(x_0) \approx \frac{f(x_0+h) - f(x_0)}{h}
 \label{eq:first-order-forward-difference}
 \end{equation}
-This quotient is called the \emph{first order forward difference quotient}.
+This approximation is called the \emph{first order forward difference quotient}.
 Using the points $x_0$ and $x_0-h$ in place of $x_0+h$ and $x_0$, respectively, results in the \emph{first order backward difference quotient}.
 \begin{equation}
 f'(x_0) \approx \frac{f(x_0) - f(x_0-h)}{h}
@@ -70,7 +64,7 @@ f'(x_0) \approx \frac{f(x_0) - f(x_0-h)}{h}
 
 Forward difference quotients use values of $f$ at $x_0$ and points greater than $x_0$, while backward difference quotients use the values of $f$ at $x_0$ and points less than $x_0$.
 A \emph{centered difference quotient} uses points on either side of $x_0$, and typically results in a better approximation than the one-sided quotients.
-Adding (\ref{eq:first-order-forward-difference}) and (\ref{eq:first-order-backward-difference}) yields the \emph{second order centered difference quotient}.
+Combining (\ref{eq:first-order-forward-difference}) and (\ref{eq:first-order-backward-difference}) yields the \emph{second order centered difference quotient}.
 \[
 f'(x_0) = \frac{1}{2}f'(x_0) + \frac{1}{2}f'(x_0) \approx
 \frac{f(x_0+h) - f(x_0)}{2h} + \frac{f(x_0) - f(x_0-h)}{2h}
@@ -113,7 +107,7 @@ For example, the following is a centered difference quotient for the second deri
 \[
 f''(x_0) \approx \frac{f(x_0-h) - 2f(x_0) + f(x_0+h)}{h^2}
 \]
-This particular quotient is important for finite difference methods that approximate numerical solutions to certain partial differential equations.
+This particular quotient is important for finite difference methods that approximate numerical solutions to some partial differential equations.
 \end{info}
 
 
@@ -240,12 +234,13 @@ In this case $h=1$ since data comes in from the radar stations at $1$ second int
 Successive readings for $\alpha$ and $\beta$ at integer times $t=7,8,\ldots,14$ are stored in the file \texttt{plane.npy}.
 Each row in the array represents a different reading; the columns are the observation time $t$, the angle $\alpha$ (in degrees), and the angle $\beta$ (also in degrees), in that order.
 The Cartesian coordinates of the plane can be calculated from the angles $\alpha$ and $\beta$ as follows.
-\[
+\begin{equation}
+\label{eq:differentiation-plane-conversion}
 x(\alpha, \beta) = a \frac{\tan(\beta)}{\tan(\beta)-\tan(\alpha)}
 \qquad
 y(\alpha, \beta) = a \frac{\tan(\beta)\tan(\alpha)}{\tan(\beta)-\tan(\alpha)}
-\]
-Load the data, convert $\alpha$ and $\beta$ to radians, then compute the coordinates $x(t)$ and $y(t)$ at each given $t$.
+\end{equation}
+Load the data, convert $\alpha$ and $\beta$ to radians, then compute the coordinates $x(t)$ and $y(t)$ at each given $t$ using \ref{eq:differentiation-plane-conversion}.
 Approximate $x'(t)$ and $y'(t)$ using a forward difference quotient for $t=7$, a backward difference quotient for $t=14$, and a centered difference quotient for $t=8,9,\ldots,13$ (see Figure \ref{fig:difference-quotient-grid}).
 Return the values of the speed $\sqrt{x'(t)^2+y'(t)^2}$ at each $t$.\footnote{This problem originates from \emph{Numerical Methods in Engineering with Python 3} by Jaan Kiusalaas.}
 \\(Hint: \li{np.deg2rad()} will be helpful.)
@@ -304,7 +299,7 @@ To test your function, define a simple function like $f(x,y) = [x^2, x^3 - y]\tr
 \label{prob:jac_center}
 \end{problem}
 
-\begin{comment}
+\begin{comment} % Not enough room. Needs updating if added back in.
 \begin{problem}
 Find the error between your Jacobian function and the analytically computed derivative on the square $[-1,1] \times [-1,1]$ using ten thousand grid points (100 per side).
 You may apply your Jacobian function to the points one at a time using a double \li{for} loop.  Once you get the error matrix for a given point, calculate the Frobenius norm of this matrix (\li{la.norm()} defaults to the Frobenius norm).  This norm will be your total error for that point.
@@ -320,194 +315,185 @@ $f(x,y) = \left[\begin{array}{c} x^2 \\ x+y \end{array}\right]$.
 \end{problem}
 \end{comment}
 
-\section*{Autograd}%=====================================================
-Autograd is a package that allows for efficient automatic differentiation of NumPy and some SciPy code.
-It has the ability to handle taking the derivative of functions that contain almost all NumPy structures\footnote{For a list of NumPy features that autograd does not support, refer to \url{https://github.com/HIPS/autograd/blob/master/docs/tutorial.md}.}, including \li{if} statements, \li{while} loops and recursion.
-It is very beneficial when calculating derivatives of unconventional or very complex functions.
-Due to this feature, it is extremely useful in many applications such as machine learning and neural networks.
+% TODO: Introduce Google tangent as well as HIPS Autograd. Be brief.
 
-Autograd is installed by running \li{pip install autograd} in the terminal.
-See \url{https://github.com/HIPS/autograd} for more complete installation instructions.
+\section*{Differentiation Software} % =========================================
 
-To support most of the NumPy features, autograd uses a thinly-wrapped version of Numpy called \li{autograd.numpy}.
-This lab will denote the autograd's version of NumPy as \li{anp}.
-Use \li{anp} the same way NumPy is used.
+Many machine learning algorithms and structures, especially neural networks, rely on the gradient of a cost or objective function.
+To facilitate their research, several organizations have recently developed Python packages for numerical differentiation.
+For example, the Harvard Intelligent Probabilistic Systems Group (HIPS) started developing \li{autograd} in 2014 (\url{https://github.com/HIPS/autograd}) and Google released \li{tangent} in 2017 (\url{https://github.com/google/tangent}).
+These tools are incredibly robust: they can differentiate functions with NumPy routines,\footnote{See \url{https://github.com/HIPS/autograd/blob/master/docs/tutorial.md} for which features Autograd supports.} \li{if} statements, \li{while} loops, and even recursion.
+% They are therefore beneficial for calculating derivatives of unconventional or very complex functions.
+We conclude with a brief introduction to Autograd.\footnote{Autograd is not included in Anaconda; install it with \texttt{pip install autograd}.}
 
-The function \li{grad()} returns a function that is the gradient of the original function, if the original function returns a scalar.
-This new function accepts the same parameters as the original function.
-The following code computes the derivative of $e^{\sin\left(\cos\left(x\right)\right)}$ at $x=1$ using autograd.
+Autograd's \li{grad()} accepts a scalar-valued function and returns its gradient as a function that accepts the same parameters as the original.
+% The following code computes the derivative of $e^{\sin\left(\cos\left(x\right)\right)}$ at $x=1$ using Autograd.
+To support most of the NumPy features, Autograd comes with its own thinly-wrapped version of Numpy, \li{autograd.numpy}.
+Import this version of NumPy as \li{anp} to avoid confusion.
+
 \begin{lstlisting}
+>>> from autograd import numpy as anp       # Use autograd's version of NumPy.
 >>> from autograd import grad
->>> import autograd.numpy as anp        # Use autograd's version of NumPy.
 
 >>> g = lambda x: anp.exp(anp.sin(anp.cos(x)))
->>> grad_g = grad(g)
->>> grad_g(1.)
+>>> dg = grad(g)                            # dg() is a callable function.
+>>> dg(1.)                                  # Use floats as input, not ints.
 -1.2069777039799139
 \end{lstlisting}
 
-For multivariate functions, the parameter \li{argnum} specifies the variable with respect to which the gradient is computed.
-\begin{lstlisting}
->>> f = lambda x,y: 3*x*y+2*y- x
-
-# Take the gradient with respect to the first variable x.
->>> grad_f = grad(f, argnum=0)
->>> grad_f(.25,.5)
-array(0.5)
-
-# Take the gradient with respect to the second variable y.
->>> grad_f = grad(f, argnum=1)
->>> grad_f(.25,.5)
-array(2.75)
-\end{lstlisting}
-
-Finding the gradient with respect to multiple variables can by done using \li{multigrad()} by specifying the variables in the \li{argnums} parameter.
-
-\begin{lstlisting}
-from autograd import multigrad
-
->>> grad_f = multigrad(f, argnums=[0,1])
->>> grad_f(.25,.5)
-(array(0.5),array(2.75))
-\end{lstlisting}
-
-\begin{problem}
-Compute the derivative of $f(x) = \ln \sqrt{ \sin \left(\sqrt {x}\right) }$ at $x=\frac{\pi}{4}$ using SymPy, the second order centered difference quotient and autograd.
-Print the computation time and error for each method.
-Do not include initializations of functions or variables in the computation time.
-Return the value of the autograd approximation.
-
-SymPy will take the exact derivative of the function yielding zero error.
-However, SymPy will also have the longest computation time.
-The second order centered difference quotient will take the least amount of time and produce the greatest error.
-Autograd will have a shorter computation time than SymPy and a smaller error than the second order centered difference quotient.
-\end{problem}
-
-As seen in the previous problem, autograd can be an efficient tool in differentiation.
-Although autograd does not calculate exact derivatives, the resulting error is relatively small with less computation time than SymPy.
-
+\begin{comment} % Not enough room, and not useful later.
 Autograd can differentiate a function as many times as desired.
 
 \begin{lstlisting}
->>> f = lambda x: anp.sin(x)+3**anp.cos(x)
+>>> f = lambda x: anp.sin(x) + 3**anp.cos(x)
 
 # Calculate the first derivative.
->>> grad_f = grad(f)
+>>> df = grad(f)
 
 # Calculate the second derivative and so forth.
->>> grad_f2 = grad(grad_f)
->>> grad_f3 = grad(grad_f2)
->>> df3(1.)
-array(2.683445898750351)
+>>> ddf = grad(df)
+>>> dddf = grad(ddf)
+>>> dddf(1.)
+2.683445898750351
 \end{lstlisting}
+\end{comment}
 
-The main advantage of using autograd in differentiation is that it can differentiate many structures in Python functions.
-In fact, it can handle functions that include loops, \li{if} statements and recursion.
-For example, the following code computes the Taylor series of $e^{x}$ evaluated at $x=2$.
-
-\begin{lstlisting}
-import numpy as np
-
-# Define the Taylor series.
-# Note that this function does not account for array broadcasting.
->>> def taylor_exp(x, tol=.0001):
-... 	result = 0
-...		cur_term = x
-...		i = 0
-...		while anp.<<abs>>(cur_term) >= tol:
-# Autograd's version of NumPy doesn't have the math attribute so use NumPy.
-...			cur_term = x**i/np.math.factorial(i)
-...			result += cur_term
-...			i += 1
-...		return result
-
-# Compute the gradient.
->>> d_taylor_exp = grad(taylor_exp)
-# Note that differentiation in autograd only works with float values.
->>> d_taylor_exp(2.)
-array(7.388994708994709)
-\end{lstlisting}
-
-\begin{problem}
-Write a function that uses autograd to take the first and second derivatives of the Taylor series of $\sin\left(x\right)$.
-Plot the original function along with its two derivatives on the interval $[-\pi,\pi]$.
-\end{problem}
-
-Although \li{grad()} is very efficient, it does not allow for array broadcasting.
-However, autograd has another function \li{elementwise_grad()} that does.
+Functions that \li{grad()} produces do not support array broadcasting, meaning they do not accept arrays as input.
+Autograd's \li{elementwise_grad()} returns functions that can accept arrays, like using \li{"numpy"} as an argument in SymPy's \li{sy.lambdify()}.
 
 \begin{lstlisting}
 >>> from autograd import elementwise_grad
 
->>> grad_f = elementwise_grad(f)
->>> grad_f(anp.array([1.,2.,3.]))
-array([-1.13338111, -1.04855565, -1.04224253])
+>>> pts = anp.array([1, 2, 3], dtype=anp.<<float>>)
+>>> dg = elementwise_grad(g)        # Calculate g'(x) with array support.
+>>> dg(pts)                         # Evaluate g'(x) at each of the points.
+array([-1.2069777 , -0.55514144, -0.03356146])
 \end{lstlisting}
 
-While the \li{grad()} function can only find the gradient of functions that output scalars, \li{jacobian()} can find the gradient of vectors.
-The following example shows how to find the Jacobian of $f(x,y) = \left[\begin{array}{c} x^2 \\ x+y \end{array}\right]$ evaluated at $(1,1)$.
+% >>> g = lambda x: anp.exp(anp.sin(anp.cos(x)))
+% >>> g(pts)                          # Evaluate g(x) at an array of points.
+% array([ 1.67262669,  0.66748447,  0.43343135])
+
+
+SymPy would have no trouble differentiating $g(x)$ in these examples.
+However, Autograd can also differentiate Python functions that look nothing like traditional mathematical functions.
+For example, the following code computes the Taylor series of $e^{x}$ with a loop.
 
 \begin{lstlisting}
->>> from autograd import jacobian
+>>> from sympy import factorial
 
->>> f = lambda x: anp.array([x[0]**2, x[0]+x[1]])
->>> jacobian_f = jacobian(f)
->>> jacobian_f(anp.array([1.,1.]))
-array([[ 2.,  0.],
-       [ 1.,  1.]])
+>>> def taylor_exp(x, tol=.0001):
+...     """Compute the Taylor series of e^x with terms greater than tol."""
+...     result, i, term = 0, 0, x
+...     while anp.abs(term) > tol:
+...         term = x**i / int(factorial(i))
+...         result, i = result + term, i + 1
+...     return result
+...
+>>> d_exp = grad(taylor_exp)
+>>> print(d_exp(2., .1), d_exp(2., .0001))
+7.26666666667 7.38899470899
 \end{lstlisting}
 
-\begin{problem}
-\item Let $f: \mathbb{R}^2 \to \mathbb{R}^2$ be defined by
-
-\begin{equation*}
-f(x, y) =
-\left[\begin{array}{c}
-e^{x} \sin(y) + y^3 \\
-3y - \cos(x)
-\end{array}\right].
-\end{equation*}
-
-Find the Jacobian using SymPy, the second order centered difference quotient and autograd.
-Print the time it takes to compute each Jacobian evaluated at $(x,y) = (1,1)$.
-Do not include the initialization of any variables or functions in the computation time.
-Return the value of the autograd approximation.
+\begin{problem} % Take the derivative of a recursive function.
+The \emph{Chebyshev Polynomials} are recursively defined as follows.
+\[
+T_0(x) = 1\qquad T_1(x) = x\qquad T_n(x) = 2xT_{n-1}(x) - T_{n-2}(x)
+\]
+Write a function that accepts an array $x$ and an integer $n$ and recursively computes $T_n(x)$.
+Use Autograd and your first function to create a function for $T_n'(x)$.
+Use this last function to plot each $T_n'(x)$ over the domain $[-1, 1]$ for $n=0,1,2,3,4$.
+\\(Hint: Use \li{anp.ones_like(x)} to handle the case when $n = 0$.)
 \end{problem}
 
-See \url{https://github.com/HIPS/autograd} for more examples with autograd.
+\begin{problem} % Compare differentiation methods.
+Let $f(x) = (\sin(x) + 1)^{\sin(\cos(x))}$ as in Problems \ref{prob:sympy-symbolic-diff} and \ref{prob:difference-quotient-convergence}.
+Write a function that accepts an integer $N$ and performs the following experiment $N$ times.
+\begin{enumerate}
+\item Choose a random value $x_0$.
+\item Use your function from Problem \ref{prob:sympy-symbolic-diff} to calculate the ``exact'' value of $f'(x_0)$.
+Time how long the entire process takes, including calling your function (each iteration).
+\item Time how long it takes to get an approximation $\tilde{f}'(x_0)$ of $f'(x_0)$ using the fourth-order centered difference quotient from Problem \ref{prob:difference-quotient-convergence}.
+Record the absolute error $|f'(x_0) - \tilde{f}'(x_0)|$ of the approximation.
+\item Time how long it takes to get an approximation $\bar{f}'(x_0)$ of $f'(x_0)$ using Autograd (calling \li{grad()} every time).
+Record the absolute error $|f'(x_0) - \bar{f}'(x_0)|$ of the approximation.
+\end{enumerate}
 
-\begin{comment}
+Plot the computation times versus the absolute errors on a log-log plot with different colors for SymPy, the difference quotient, and Autograd.
+For SymPy, assume an absolute error of \li{1e-18} (since only positive values can be shown on a log plot).
+
+For $N=200$, your plot should resemble the following figure.
+Note that SymPy has the least error but the most computation time, and that the difference quotient takes the least amount of time but has the most error.
+% Autograd also has less computation time than SymPy and smaller errors than the difference quotient.
+
+\begin{figure}[H]
+    \includegraphics[width=.7\textwidth]{figures/efficiency.pdf}
+\end{figure}
+\end{problem}
 
 \newpage
 
 \section*{Additional Material} % ==============================================
 
-\subsection*{Derivations} % ---------------------------------------------------
+\subsection*{More Autograd} % -------------------------------------------------
 
-Note that in solving (\ref{eq:taylor-formula-forward-diff}) for $f'(x_0)$, the result is
+For scalar-valued functions with multiple inputs, the parameter \li{argnum} specifies the variable that the derivative is computed with respect to.
+Providing a list for \li{argnum} gives several outputs.
 
-\begin{equation}
-\label{equ:forward_diff_with_remainder}
-f'(x_0) = \frac{f(x_0+h)-f(x_0)}{h} - \frac{R_2(h)}{h}.
-\end{equation}
-Now evaluate Taylor's formula at $x_0-h$ to derive
+\begin{lstlisting}
+>>> f = lambda x,y: 3*x*y + 2*y - x
 
-\begin{equation}\label{equ:backwards_diff_with_remainder}
-f'(x_0) = \frac{f(x_0)-f(x_0-h)}{h} + \frac{R_2(-h)}{h}.
-\end{equation}
-The first term on the right hand side of \eqref{equ:backwards_diff_with_remainder} is called the \emph{first order backward difference quotient.}
-This quotient also approximates $f'(x_0)$ to the first order.
-Adding \eqref{equ:forward_diff_with_remainder} to \eqref{equ:backwards_diff_with_remainder} and solving for $f'(x_0)$ results in
+# Take the derivative of f with respect to the first variable, x.
+>>> dfdx = grad(f, argnum=0)            # Should be dfdx(x,y) = 3y - 1,
+>>> dfdx(5., 1.)                        # so dfdx(5,1) = 3 - 1 = 2.
+2.0
 
-\begin{equation}\label{equ:centered_diff}
-f'(x_0) = \frac{\frac{1}{2}f(x_0+h) - \frac{1}{2}f(x_0-h)}{h} + \frac{R_2(-h) - R_2(h)}{2h}.
-\end{equation}
-The \emph{second order centered difference quotient} is the first term of the right hand side of \eqref{equ:centered_diff}.
+# Take the gradient with respect to the second variable, y.
+>>> dfdy = grad(f, argnum=1)            # Should be dfdy(x,y) = 3x + 2,
+>>> dfdy(5., 1.)                        # so dfdy(5,1) = 15 + 2 = 17.
+17.0
 
-Investigate the remainder term to see how accurate this approximation is.
+# Get the full gradient.
+>>> grad_f = grad(f, argnum=[0,1])
+>>> anp.array(grad_f(5., 1.))
+array([  2.,  17.])
+\end{lstlisting}
+
+Finally, Autograd's \li{jacobian()} can differentiate vector-valued functions.
+% The following example shows how to find the Jacobian of $f(x,y) = \left[\begin{array}{c} x^2 \\ x+y \end{array}\right]$.
+
+\begin{lstlisting}
+>>> from autograd import jacobian
+
+>>> f = lambda x: anp.array([x[0]**2, x[0]+x[1]])
+>>> f_jac = jacobian(f)
+>>> f_jac(anp.array([1., 1.]))
+array([[ 2.,  0.],
+       [ 1.,  1.]])
+\end{lstlisting}
+
+\subsection*{Google Tangent} % ------------------------------------------------
+
+Google's \li{tangent} package is similar to Autograd, both in purpose and syntax.
+However, Tangent differentiates code ahead of time, while Autograd waits until the last second to actually do any calculations.
+Tangent also tends to be slightly faster than Autograd.
+
+\begin{lstlisting}
+>>> import tangent              # Install with 'pip install tangent'.
+
+>>> def f(x):                   # Tangent does not support lambda functions,
+...     return x**2 - x + 3
+...
+>>> df = tangent.grad(f)
+>>> df(10)                      # ...but the functions do accept integers.
+19.0
+\end{lstlisting}
+
+\begin{comment} % NOT FINISHED! ...and not really necessary.
+\subsection*{Convergence of the Centered Difference Quotient} % ---------------
+
 Recall from the proof of Taylor's theorem that $R_k = \frac{f^{(k)}(x_0)}{k!}h^k + R_{k+1}$.
 Therefore,
-
 \begin{align*}
 \frac{R_2(-h) - R_2(h)}{2h} &= \frac{1}{2h}\left(\frac{f''(x_0)}{2!}h^2 + R_{3}(-h) - \frac{f''(x_0)}{2!}h^2 - R_{3}(h) \right)\\
 &= \frac{1}{2h} ( R_3(-h)-R_3(h))\\
@@ -517,7 +503,6 @@ Therefore,
 \end{align*}
 once $h$ is restricted to some $\delta$-neighborhood of 0.
 So this centered difference quotient is of the second order and its error is smaller than using the first order forward and backward difference quotients when $|h|<1$.
-
 \end{comment}
 
 % =============================================================================

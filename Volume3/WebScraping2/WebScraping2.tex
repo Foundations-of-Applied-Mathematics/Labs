@@ -1,213 +1,186 @@
-\lab{Advanced BeautifulSoup}{Advanced BeautifulSoup}
-\objective{Learn how to use BeautifulSoup to scrape information from the internet and put it into easy-to-access data tables}
-\label{lab:Advanced_BS}
+\lab{Web Scraping II: Advanced Web Scraping Techniques}{Advanced Web Scraping Techniques}
 
-The internet is full of information.
-Sometimes this information is easy to read, sometimes it's not.
-No matter the case, web scraping is a useful tool used to transform unstructured data into structured data that is easier to analyze.
+\objective{Gathering data from the internet often requires information from several web pages.
+In this lab, we present two methods for crawling through multiple web pages without violating copyright laws or straining the load a server.
+We also demonstrate how to scrape data from asynchronously loaded web pages, and how to interact programmatically with web pages when needed.}
 
-\begin{warn}
-Web scraping has legal implications.
-Do not scrape copyrighted information without the consent of the copyright owner.
-Many websites, in their terms and conmditions agreement, prohibit the practice of crawling parts or all of their website.
-Be careful and considerate when doing any sort of crawling.
-Be careful when writing and testing code so that there is no unintended behavior.
+\section*{Scraping Etiquette} % ===============================================
+
+% TODO: this could be in the intro of something.
+% Web scraping has utility in countless research and analysis scenarios where gathering and structuring data from the web is a necessity.
+% There may be no suitable, accessible web API, and doing the job manually is often impractical and slow, sometimes impossible.
+
+There are two main ways that web scraping can be problematic for a website owner.
+First, if the scraper doesn't respect the website's terms and conditions or gathers private or proprietary data.
+Second, if the scraper imposes too much extra server load by making requests too often or in quick succession.
+These are extremely important considerations in any web scraping program.
+
+\begin{warn} % Don't scrape illegally.
+Scraping copyrighted information without the consent of the copyright owner can have severe legal consequences.
+Many websites, in their terms and conditions, prohibit scraping parts or all of the site.
+Websites that do allow scraping usually have a file called \texttt{robots.txt} (for example, \url{www.google.com/robots.txt}) that specifies which parts of the website are off-limits and how often requests can be made according to the \emph{robots exclusion standard}.%
+\footnote{See \href{http://www.robotstxt.org/orig.html}{\texttt{www.robotstxt.org/orig.html}} and \href{https://en.wikipedia.org/wiki/Robots_exclusion_standard}{\texttt{en.wikipedia.org/wiki/Robots\_exclusion\_standard}}.}
+
+Be careful and considerate when doing any sort of scraping, and take care when writing and testing code to avoid unintended behavior.
+It is up to the programmer to create a scraper that respects the rules found in the terms and conditions and in \texttt{robots.txt}.%
+\footnote{Python provides a parsing library called \texttt{urllib.robotparser} for reading \texttt{robot.txt} files.
+For more information, see \url{https://docs.python.org/3/library/urllib.robotparser.html}.
+}
 \end{warn}
 
-\section*{Scrapers and Crawlers}
-If you are on a website and all the information you want is contained on one page, you simply use a web scraper to read through the html code and pick out what you want.
-An example of this might be your professor's webpage, and you just need to scrape his phone number and email.
-Suppose instead that your information is found only after clicking through various links.
-For example, you want to find the email addresses and phone numbers for all the professors in the math deaprtment, but you can only get this information by clicking though an online directory, similar to \url{http://math.byu.edu/peopleresearch/faculty}.
-This would require \textit{crawling} through various links to open up each professor's home page, and then scraping their sites.
-So scrapers are good for getting the information you need from a page, while crawlers will get you to the various pages from which you want to scrape information.
-
-\subsection*{What Can You Scrape?}
-There are some website that permit the practice of web scraping.
-To ensure that scraping is well-behaved, most websites will tell a crawler where they can and cannot go, and scrapers what they can and cannot scrape.
-All of this information is included in a text file in the root domain of a website.
-The file is always titled \texttt{robots.txt} and defines considerate behaviors for web crawlers.
-Each robots file has a set of rules that label parts of a website as disallowed.
-Parts of a website that are not disallowed are implied to allow access by web crawlers.
-Many websites will limit crawlers to parts of the sites that will not place a large load on the 
-website's server.
-It is your duty to honor the rules in \texttt{robots.txt} if they exist.
-
-\section*{Simple Scraping}
-In lab \ref{lab:BS_scraping}, BeautifulSoup was used to read short bits of HTML code or a file using the \li{open()} command.
-Once the file is loaded, you can navigate through the HTML tree and pick out the data that you want.
-
-\begin{problem}
-Go to the url \url{http://www.federalreserve.gov/releases/lbr/20030930/default.htm}.
-Download the page source as an htm file and use BeautifulSoup to load the file.
-Using the methods taught, write a function that returns a 2-D NumPy array for bank information.
-Each row in the array represents a different bank, and each column represents a different piece of bank information.
-In your array, include the Bank Name, Rank, ID, Domestic Assets, and number of Domestic Branches for the following banks: JPMORGAN, CAPITAL ONE, and DISCOVER.
-\end{problem}
-
-This is a very slow way to access information from a website.
-Remember this was only one in a list of over 20 different links to bank information.
-What if we wanted to get information from every link?
-Imagine trying to go through HTML trees for a hundred different websites only by copying and pasting HTML code!
-
-Use the \li{urllib2} library in conjunction with BeautifulSoup to load HTML code from any website.
-We will go through some simple examples.
-First import \li{urllib2.}
-Use \li{urllib2}'s \li{urlopen()} function in conjunction with \li{read()} to load the HTML code into Python.
-Then simply use \li{BeautifulSoup()} to turn the HTML code into a navigable HTML tree. 
-Note \li{urllib2} may need to be installed or updated before use.
+The standard way to get the HTML source code of a website using Python is via the \li{requests} library.\footnote{Though \texttt{requests} is not part of the standard library, it is recognized as a standard tool in the data science community. See \url{http://docs.python-requests.org/}.}
+Calling \li{requests.get()} sends an HTTP GET request to a specified website; the result is an object with a response code to indicate whether or not the request was responded to, and access to the website source code.
 
 \begin{lstlisting}
->>> from bs4 import BeautifulSoup
->>> import urllib2
+>>> import requests
 
->>> url = "http://csb.stanford.edu/class/public/pages/sykes_webdesign/05_simple.html"
+# Make a request and check the result. A status code of 200 is good.
+>>> response = requests.get("http://www.example.com")
+>>> print(response.status_code, response.ok, response.reason)
+<<200 True OK>>
 
->>> content = urllib2.urlopen(url).read()
->>> soup = BeautifulSoup(content)
+# The HTML of the website is stored in the 'text' attribute.
+>>> print(response.text)
+<<<!doctype html>
+<html>
+<head>
+    <title>Example Domain</title>
 
->>> print(soup.prettify())
-<<<html>
- <head>
-  <title>
-   A very simple webpage
-  </title>
-  <basefront size="4">
-  </basefront>
- </head>
- <body bgcolor="FFFFFF">
-  ...
- </body>
-</html>>>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />>>
+# ...
 \end{lstlisting}
 
-\begin{warn}
-Since \li{urllib2} accesses a website server, you may run into problems where you cannot establish a connection to the server.
-You can create a \li{try-except} clause to account for this, or just rerun your program.
-One possible way is as follows.
+\begin{warn} % Pause between requests!
+Consecutive GET requests without pauses can strain a website's server and provoke retaliation.
+Most servers are designed to identify such scrapers, block their access, and sometimes even blacklist the user.
+This is especially common in smaller websites that aren't built to handle enormous amounts of traffic.
+To briefly pause the program between requests, use \li{time.sleep()}.
 \begin{lstlisting}
-while True:
-    try:
-        content = urllib2.urlopen(url).read()
-        break
-    except:
-        pass
+>>> import time
+>>> time.sleep(3)                   # Pause execution for 3 seconds.
 \end{lstlisting}
+
+The amount of necessary wait time depends on the website.
+Sometimes, \texttt{robots.txt} contains a \li{Request-rate} directive which gives a ratio of the form \li{<requests>/<seconds>}.
+If this doesn't exist, pausing for a half-second to a second between requests is typically sufficient.
+An email to the site's webmaster is always the safest approach, and may be necessary for large scraping operations.
 \end{warn}
 
-\begin{problem}\label{SanDiego}
+\section*{Crawling Through Multiple Pages} % ==================================
 
-Using the website \url{http://www.wunderground.com/history/airport/KSAN/2015/1/1/DailyHistory.html?req_city=San+Diego&req_state=CA&req_statename=California&reqdb.zip=92101&reqdb.magic=1&reqdb.wmo=99999&MR=1} 
-and BeautifulSoup, return the Actual Max Temperature.
-Return the tag which contains the link for the 'Next Day' button.
-Also, return the url attached to the link.
+While web \emph{scraping} refers to the actual gathering of web-based data, web \emph{crawling} refers to the navigation of a program between webpages.
+Web crawling allows a program to gather related data from multiple web pages and websites.
 
-\end{problem}
-
-Sometimes, data we are interested in is contained over several different web urls.
-For example, what if we wanted a graph of the temperature highs over a period of time?
-For \url{www.wunderground.com}, the temperature history for a given city will be contained on separate pages for each day, just as in problem \ref{SanDiego}. In order to access information over several websites, we just need to load each new website into BeautifulSoup and locate the information we're interested in. Consider the following example.
-
-In this example we look at the actual maximum temperature over the year 2014 in San Diego.
-\begin{lstlisting}
-from bs4 import BeautifulSoup
-import urllib2
-import re
-
-weather_url = 'https://www.wunderground.com/history/airport/KSAN/2014/1/1/DailyHistory.html'
-
-weather_content = urllib2.urlopen(weather_url).read()
-weather_soup = BeautifulSoup(weather_content)
-
-actual = []
-
-while('2015' not in weather_soup.find(class_='history-date').string):
-    while(len(weather_soup.find_all(string='Actual')) != 1):
-        weather_content = urllib2.urlopen(weather_url).read()
-        weather_soup = BeautifulSoup(weather_content)
-    actual_temp = weather_soup.find(string='Max Temperature').parent.parent.next_sibling.next_sibling.span.span.text
-    actual.append(int(actual_temp))
-    next_url = weather_soup.find(string=re.compile('Next Day')).parent['href']
-    weather_url = 'https://www.wunderground.com'+next_url
-    weather_content = urllib2.urlopen(weather_url).read()
-    weather_soup = BeautifulSoup(weather_content)
-
-\end{lstlisting}
-Let's examine the code to see how it works.
-
-After importing the necessary modules and opening up the url in BeautifulSoup, we define the variable \li{actual} to store the max temperatures in a list.
-Notice in the url that our dates start in 2014.
-Since we only want to go through the year 2014 and stop in 2015, we need a way to end our search once we get into 2015.
-Using \li{class_='history-date'}, we can find a tag which has the year in the string.
-
-The next while loop is an error check.
-Sometimes this website does not load properly, so we check that all the information we need is located in the HTML code.
-In this case, we are looking for the actual max temp for a day, so we need to make sure the 'Actual' column shows up.
-
-The next line of code defines \li{actual_temp}, which first directs us to the row of 'Max Temperature' and then navigates to the temperature column.
-This value is then turned to an \li{int} and stored in the list of temperatures.
-
-Lastly, we find the url reference that is associated with the 'Next Day' link.
-We manually create the new url, keeping in mind that the new url found in the link is only an extension of the server website.
-This means that if the server is found at \url{http://www.wunderground.com} and the \li{'href'} value for the link is \url{/history/airport/KSAN/...}, then then new url we load into BeautifulSoup is \url{http://www.wunderground.com/history/airport/KSAN/...}.
-Therefore, we add the string representing the base url with the string representing the extension part of the url.
-
-The output is the list of actual max temps over a year, which we can graph.
-
-\begin{problem}
-Adjust the above code to write a function that makes a list of the average max temperatures over a year.
-Graph this list, then return it.
-Note that because this code goes through a whole year's worth of urls, the function will take a long time to run.
-\end{problem}
-
-Let's do another example before we turn you lose on the internet.
-This next example will look at the Commercial Bank data found at \url{http://www.federalreserve.gov/releases/lbr}.
-We will look primarily at the Consolidated Assets for JPMorgan over the years from 2003 to 2014.
+Consider \href{https://www.wunderground.com}{\texttt{www.wunderground.com}}, a site that records weather data in various cities.
+The page \url{https://www.wunderground.com/history/airport/KSAN/2012/7/1/DailyHistory.html} records\\the weather in San Diego on July 1, 2012.
+Data for previous or subsequent days can be accessed by clicking on the \texttt{Previous Day} and \texttt{Next Day} links, so gathering data for an entire month or year requires crawling through several pages.
+The following example gathers temperature data for July 1 through July 4 of 2012.
 
 \begin{lstlisting}
-from bs4 import BeautifulSoup
-import urllib2
 import re
+import time
+import requests
+from bs4 import BeautifulSoup
 
-bank_url = 'http://www.federalreserve.gov/releases/lbr/'
-bank_content = urllib2.urlopen(bank_url).read()
-bank_soup = BeautifulSoup(bank_content)
 
-assets = []
+def wunder_temp(day="/history/airport/KSAN/2012/7/1/DailyHistory.html"):
+    """Crawl through Weather Underground and extract temperature data."""
+    # Initialize variables, including a regex for finding the 'Next Day' link.
+    actual_mean_temp = []
+    next_day_finder = re.<<compile>>(r"Next Day")
+    base_url = "https://www.wunderground.com"       # Web page base URL.
+    page = base_url + day                           # Complete page URL.
+    current = None
 
-dates_list = bank_soup.find_all(href=re.compile('((200[3-9])|(201[0-4])).*/default.htm'))
+    for _ in range(4):
+        while current is None:  # Try downloading until it works.
+            # Download the page source and PAUSE before continuing.
+            page_source = requests.get(page).text
+            time.sleep(1)           # PAUSE before continuing.
+            soup = BeautifulSoup(page_source, "html.parser")
+            current = soup.find(string="Mean Temperature")
 
-for url in dates_list:
-    link_url = str('http://www.federalreserve.gov/releases/lbr/'+url['href'])
-    link_content = urllib2.urlopen(link_url).read()
-    link_soup = BeautifulSoup(link_content)
-    amt = link_soup.find(string=re.compile('JPMORGAN')).parent.next_sibling.next_sibling.next_sibling.next_sibling.next_sibling.next_sibling.next_sibling.next_sibling.next_sibling.next_sibling
-    assets.append(amt.string)
+        # Navigate to the relevant tag, then extract the temperature data.
+        temp_tag = current.parent.parent.next_sibling.next_sibling.span.span
+        actual_mean_temp.append(int(temp_tag.string))
+
+        # Find the URL for the page with the next day's data.
+        new_day = soup.find(string=next_day_finder).parent["href"]
+        page = base_url + new_day                   # New complete page URL.
+        current = None
+
+    return actual_mean_temp
 \end{lstlisting}
-Now we will examine this code and see how it works.
 
-We first import the necessary modules and load the url into BeautifulSoup.
-We create the variable \li{assets} to store the list of asset values.
+In this example, the \li{for} loop cycles through the days, and the \li{while} loop ensures that each website page loads properly: if the downloaded \li{page_source} doesn't have a tag whose string is ``Mean Temperature'', the request is sent again.
+Later, after locating and recording the Actual Mean Temperature, the function locates the link to the next day's page.
+This link is stored in the HTML as a relative website path (\texttt{/history/airport/...}); the complete URL to the next day's page is the concatenation of the base URL \url{https://www.wunderground.com} with this relative link.
 
-To get the links we need, we use \li{find_all()} and select the unique identifiers of the link, namely that the links start with \li{20**} and end in \li{/default.htm}.
-Next we run the \li{for} loop to iterate through each link.
+\begin{problem} % Plot July temperatures from Weather Underground.
+Modify \li{wunder_temp()} so that it gathers the Actual Mean Temperature, Actual Max Temperature, and Actual Min Temperature for every day in July of 2012.
+Plot these three measurements against time on the same plot.
 
-Just as in the previous example, we need to concatenate the server url \url{http://www.federalreserve.gov/release/lbr/} with the extension urls we stored in \li{dates_list}.
-This link is loaded into BeautifulSoup.
+Consider printing information at each iteration of the outer loop to keep track of the program's progress.
+\end{problem}
 
-Now that we are on the webpage desired, we find the row we want by looking for the tag containing \li{'JPMORGAN'}. Once we have the tag, we navigate to the appropriate column.
-Notice we need to use 10 calls to \li{.next_sibling} in order to get to the correct information.
-The info is then appended into the data list.
+An alternative approach that is often useful is to first identify the links to relevant pages, then scrape each of these page in succession.
+For example, the Federal Reserve releases quarterly data on large banks in the United States at \url{http://www.federalreserve.gov/releases/lbr}.
+The following function extracts the four measurements of total consolidated assets for JPMorgan Chase during 2004.
 
-\begin{problem}
-Choose 1 of 3 options.
+\begin{lstlisting}
+def bank_data():
+    """Crawl through the Federal Reserve site and extract bank data."""
+    # Compile regular expressions for finding certain tags.
+    link_finder = re.<<compile>>(r"2004$")
+    chase_bank_finder = re.<<compile>>(r"^JPMORGAN CHASE BK")
+
+    # Get the base page and find the URLs to all other relevant pages.
+    base_url="https://www.federalreserve.gov/releases/lbr/"
+    base_page_source = requests.get(base_url).text
+    base_soup = BeautifulSoup(base_page_source, "html.parser")
+    link_tags = base_soup.find_all(name='a', href=True, string=link_finder)
+    pages = [base_url + tag.attrs["href"] for tag in link_tags]
+
+    # Crawl through the individual pages and record the data.
+    chase_assets = []
+    for page in pages:
+        time.sleep(1)               # PAUSE, then request the page.
+        soup = BeautifulSoup(requests.get(page).text, "html.parser")
+
+        # Find the tag corresponding to Chase Banks's consolidated assets.
+        temp_tag = soup.find(name="td", string=chase_bank_finder)
+        for _ in range(10):
+            temp_tag = temp_tag.next_sibling
+        # Extract the data, removing commas.
+        chase_assets.append(int(temp_tag.string.replace(',', '')))
+
+    return chase_assets
+\end{lstlisting}
+
+% Just as in the previous example, the base URL \url{http://www.federalreserve.gov/release/lbr/} is concatenated with the extension URLs found on the base page.
+
+\begin{problem} % Crawl through bank data.
+Modify \li{bank_data()} so that it extracts the total consolidated assets (``Consol Assets'') for JPMorgan Chase, Bank of America, and Wells Fargo recorded each December from 2004 to the present.
+In a single figure, plot each bank's assets against time.
+Be careful to keep the data sorted by date.
+\end{problem}
+
+\begin{problem} % Crawl through sports data.
+ESPN hosts data on NBA athletes at \url{http://www.espn.go.com/nba/statistics}.
+Each player has their own page with detailed performance statistics.
+For each of the five offensive leaders in points and each of the five defensive leaders in rebounds, extract the player's career minutes per game (MPG) and career points per game (PPG).
+Make a scatter plot of MPG against PPG for these ten players.
+\end{problem}
+
+\begin{comment} % Old problem options.
 \begin{enumerate}
 \item Load \url{http://www.google.com/finance} into BeautifulSoup.
-Towards the bottom of the web page, there is a Sector Summary.
+Towards the bottom of the web page, there is a Sector summary.
 Go through each sector and locate the top five Gainers.
 In a SQL table, store the Name, abbreviation, \% Change, and Mkt Cap of the top Gainer for each Sector.
 
-\item Load \url{http://www.espn.go.com/nba/statistics} into BeautifulSoup.
+\item Load  into BeautifulSoup.
 Go through the top five offensive leaders.
 In a SQL table, store the name, career games played, career mins per game, career points per game, and career FG\% for each player.
 
@@ -215,102 +188,174 @@ In a SQL table, store the name, career games played, career mins per game, caree
 Go though each player on the World Cup US women's team.
 In a SQL table, store the name, hometown, position, and \# of games played in the World Cup.
 \end{enumerate}
-\end{problem}
+\end{comment}
 
-\section*{Advanced Scraping}
-The examples we have looked at so far have been very basic since the HTML is stored in the source code for the web pages.
-However, we will look at some examples where the HTML is written dynamically.
-This means the HTML is brought in from a separate source through javascript or ajax as a \li{.php} or \li{.aspx} table.
-These tables can be difficult to grab data from.
+\section*{Asynchronously Loaded Content and User Interaction} % ===============
 
-Go to the website \url{http://www.simplesoccerstats.com/stats/teamstats.php?lge=14&type=goals&season=0}.
-Open up the page source by right clicking and choosing the option for the page source.
-There is HTML code, but is it correct?
-Hit \li{ctrl+f} and search for `Chicago,' one of the teams that appears on the actual webpage.
-It's not there!
-You can even try the following:
+Web crawling with the methods presented in the previous section fails under a few circumstances.
+First, many webpages use \emph{JavaScript}, the standard client-side scripting language for the web, to load portions of their content  \emph{asynchronously}.
+This means that at least some of the content isn't initially accessible through the page's source code.
+Second, some pages require user interaction, such as clicking buttons which aren't links (\li{<a>} tags which contain a URL that can be loaded) or entering text into form fields (like search bars).
+
+\begin{comment} % Old example; this site is blocked by BYU OIT for gambling.
+Navigate to the website \url{http://www.simplesoccerstats.com/stats/teamstats.php?lge=14&type=goals&season=0}.
+Notice that there is a row for the Chicago team displayed in the browser.
+Open up the page source,
+Hit \li{ctrl+f} and search for ``Chicago''.
+Notice that it isn't there.
+The following code will produce a similar result:
 
 \begin{lstlisting}
->>> from bs4 import BeautifulSoup
->>> import urllib2
->>> import re
-
 >>> soccer_url = 'http://www.simplesoccerstats.com/stats/teamstats.php?lge=14&type=goals&season=0'
->>> soccer_content = urllib2.urlopen(soccer_url).read()
+>>> soccer_content = requests.get(soccer_url).text
 >>> soccer_soup = BeautifulSoup(soccer_content)
 
 >>> print(soccer_soup.find(string='Chicago'))
 <<None>>
 \end{lstlisting}
-Still nothing. This means the actual table of information is stored somewhere else.
+Still nothing.
+This means the actual table of information is loaded asynchronously.
+\end{comment}
 
-\subsection*{Selenium}
+The \emph{Selenium} framework provides a solution to both of these problems.
+Originally developed for writing unit tests for web applications, Selenium allows a program to open a web browser and interact with it in the same way that a human user would, including clicking and typing.
+It also has BeautifulSoup-esque tools for searching the HTML source of the current page.
 
-Selenium is a great tool to use on simple websites as well as websites with dynamic HTML source code.
-Basically Selenium will open up a browser and you can see what it is looking at.
-You can look at the source code of the actual website, and you can have some limited control over navigation, such as clicking links, clicking dropdown menus, pressing the back or forward buttons, etc.
-To use Selenium, import the following:
-\begin{lstlisting}
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-\end{lstlisting}
-The \li{webdriver} allows you to use website functionality, while \li{Keys} allows you to use special keyboard keys like RETURN (i.e. when you want to send information through text boxes).
-Next, you want to open up a web browser and a website.
-For these exercises we will use Firefox.
-You can also use Chrome or IE if those are more familiar; all the commands will be similar.
+% This solves the issue of scraping asynchronously loaded content and content that is available only through direct user interaction because the browser can execute the necessary JavaScript and interact with the page in all the ways a user does.
 
-\begin{lstlisting}
-driver = webdriver.Firefox()
-example_url = 'http://www.example.com'
-driver.get(example_url)
-\end{lstlisting}
-
-\begin{info}
-If not already installed, you will have to download both Selenium and the driver associated with the browser you would like you use. More information and links to download can be found at \url{https://pypi.python.org/pypi/selenium}. In addition, the browser will need to be up to date.
+\begin{info} % Get the driver file.
+Selenium requires an executable \emph{driver} file for each kind of browser.
+The following examples use Google Chrome, but Selenium supports Firefox, Internet Explorer, Safari, Opera, and PhantomJS (a special browser without a user interface).
+See \url{https://seleniumhq.github.io/selenium/docs/api/py} or \url{http://selenium-python.readthedocs.io/installation.html} for installation instructions.
 \end{info}
 
-The \li{.get()} command acts like \li{urllib2}'s \li{.urlopen()} and \li{.read()} combination.
-We can print out the HTML code using Selenium's \li{.page_source} attribute.
-\begin{lstlisting}
->>> print(driver.page_source)
-<<<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"><head>
-    <title>Example Domain</title>
-    ...
-</body></html>>>
-\end{lstlisting}
-Once we have the source code, we can read it into BeautifulSoup.
+To use Selenium, start up a browser using one of the drivers in \li{selenium.webdriver}.
+The browser has a \li{get()} method for going to different web pages, a \li{page_source} attribute containing the HTML source of the current page, and a \li{close()} method to exit the browser.
 
-Remember how we said Selenium reads HTML from a webpage differently than BeautifulSoup?
-Take a look again at the soccer example.
 \begin{lstlisting}
 >>> from selenium import webdriver
->>> from bs4 import BeautifulSoup
 
->>> browser = webdriver.Firefox()
+# Start up a browser and go to example.com.
+>>> browser = webdriver.Chrome()
+>>> browser.get("https://www.example.com")
+
+# Feed the HTML source code for the page into BeautifulSoup for processing.
+>>> soup = BeautifulSoup(browser.page_source, "html.parser")
+>>> print(soup.prettify())
+<<<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+ <head>
+  <title>
+   Example Domain
+  </title>
+  <meta charset="utf-8"/>
+  <meta content="text/html; charset=utf-8" http-equiv="Content-type"/>>>
+# ...
+
+>>> browser.close()                 # Close the browser.
+\end{lstlisting}
+
+
+% The \li{webdriver} is the object through which commands are given to the browser, while \li{Keys} simulates pressing keyboard keys like RETURN.
+Selenium can deliver the HTML page source to BeautifulSoup, but it also has its own tools for finding tags in the HTML.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{l|l}
+    Method & Returns \\ \hline
+    % \li{get()} & Go to a specified web page. \\
+    % \li{close()} & Close the browser. \\
+    \li{find_element_by_tag_name()} & The first tag with the given name \\
+    \li{find_element_by_name()} & The first tag with the specified \li{<<name>>} attribute \\
+    \li{find_element_by_class_name()} & The first tag with the given \li{<<class>>} attribute \\
+    \li{find_element_by_id()} & The first tag with the given \li{<<id>>} attribute \\
+    \li{find_element_by_link_text()} & The first tag with a matching \li{<<href>>} attribute \\
+    \li{find_element_by_partial_link_text()} & The first tag with a partially matching \li{<<href>>} attribute \\
+\end{tabular}
+\caption{Methods of the \li{selenium.webdriver.Chrome} class.}
+\label{table:selenium-chrome-driver}
+\end{table}
+
+Each of the \li{find_element_by_*()} methods returns a single object representing a \emph{web element} (of type \li{selenium.webdriver.remote.webelement.WebElement}), much like a BeautifulSoup tag (of type \li{bs4.element.Tag}).
+If no such element can be found, a Selenium \li{NoSuchElementException} is raised.
+Each webdriver also has several \li{find_elements_by_*()} methods (element\textbf{s}, plural) that return a list of all matching elements, or an empty list if there are no matches.
+
+Web element objects have methods that allow the program to interact with them: \li{click()} sends a click, \li{send_keys()} enters in text, and \li{clear()} deletes existing text.
+This functionality makes it possible for Selenium to interact with a website in the same way that a human would.
+For example, the following code opens up \li{https://www.google.com}, types ``Python Selenium Docs'' into the search bar, and hits enter.
+
+\begin{lstlisting}
+>>> from selenium.webdriver.common.keys import Keys
+>>> from selenium.common.exceptions import NoSuchElementException
+
+>>> browser = webdriver.Chrome()
+>>> try:
+...     browser.get("https://www.google.com")
+...     try:
+...         # Get the search bar, type in some text, and press Enter.
+...         search_bar = browser.find_element_by_name('q')
+...         search_bar.clear()                  # Clear any pre-set text.
+...         search_bar.send_keys("Python Selenium Docs")
+...         search_bar.send_keys(Keys.RETURN)   # Press Enter.
+...     except NoSuchElementException:
+...         print("Could not find the search bar!")
+...         raise
+... finally:
+...     browser.close()
+...
+\end{lstlisting}
+
+
+\begin{comment} % Continuation of old section, removed since BYU blocks stuff.
+To illustrate that using Selenium solves the problem of asynchronously-loaded content, use it to load the soccer statistics page from the previous example.
+\begin{lstlisting}
+>>> browser = webdriver.Chrome()
 >>> soccer_url = "http://www.simplesoccerstats.com/stats/teamstats.php?lge=14&type=goals&season=0"
 >>> browser.get(soccer_url)
 >>> soccer_soup = BeautifulSoup(browser.page_source)
->>> browser.quit() #closes the web browser
+>>> browser.quit() # Closes the web browser.
 >>> print(soccer_soup.find(string='Chicago').parent)
 <<<td>Chicago</td>>>
 \end{lstlisting}
-This time there is a tag with `Chicago' contained as text!
+Notice that there is now a tag containing \li{"Chicago"}.
+\end{comment}
 
-\begin{problem}\label{bball}
-Consider the url \url{http://stats.nba.com/league/team/#!/?sort=W&dir=1}.
-Use Selenium to return a list of the \li{a} tags containing each of the 30 NBA teams.
-Use \li{.find_all()} in conjunction with whatever unique identifiers get you the correct tags.
-Hint: class and tag name are a good start.
+\begin{problem} % Enter something in a search bar.
+The arXiv (pronounced ``archive'') is an online repository of scientific publications, hosted by Cornell University.
+Write a function that accepts a string to serve as a search query.
+Use Selenium to enter the query into the search bar of \url{https://arxiv.org} and press Enter.
+The resulting page has up to 25 links to the PDFs of technical papers that match the query.
+Gather these URLs, then continue to the next page (if there are more results) and continue gathering links until obtaining at most 100 URLs.
+Return the list of URLs.
 \end{problem}
 
+\begin{info}
+Using Selenium to access a page's source code is typically much safer, though slower, than using \li{requests.get()}, since Selenium waits for each web page to load before proceeding.
+For instance, the arXiv is a somewhat defensive about scrapers (\url{https://arxiv.org/help/robots}), but Selenium makes it possible to gather info from the website without offending the administrators.
+\end{info}
+
+\begin{comment} % old problem
 \begin{problem}
-Use the website from problem \ref{bball}.
-Create a SQL table which stores the following information:
+The NBA has live statistics \url{http://stats.nba.com/}.
+Use Selenium to return a list of the \li{a} tags containing each of the 30 NBA teams.
+Use the \li{find_all()} method in conjunction with whatever unique identifiers get you the correct tags.
+\\(Hint: class and tag name are a good start). % What even is this?
+
 \begin{itemize}
 \item The column titles are Name, HW\%, AW\%, where Name is each team name, HW\% is the Home Win \%, and AW\% is the Away Win \%.
 \item Each row represents a different basketball team, with its home and away win percentages.
 \end{itemize}
-Hint: You will need to use Selenium to access each teams website using the links from the tags found in problem \ref{bball}.
+Hint: You will need to use Selenium to access each teams website using the links from the tags found in problem \ref{prob:scraping-bball}.
 If the websites do not load properly, consider a \li{try-except} clause like the one suggested previously.
+\end{problem}
+\end{comment}
+
+\begin{problem}
+\emph{Project Euler} (\url{https://projecteuler.net}) is a collection of mathematical computing problems.
+Each problem is listed with an ID, a description/title, and the number of users that have solved the problem.
+
+Using Selenium, BeautifulSoup, or both, for each of the (at least) 600 problems in the archive at \url{https://projecteuler.net/archives}, record the problem ID and the number of people who have solved it.
+Return a list of IDs, sorted from largest to smallest by the number of people who have solved them.
+That is, the first entry in the list should be the ID of the \textbf{most solved} problem, and the last entry in the list should be the ID of the \textbf{least solved} problem.
+\\(Hint: start by identifying the URLs to each archive page.)
 \end{problem}

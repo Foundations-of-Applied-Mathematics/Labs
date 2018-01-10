@@ -1,423 +1,589 @@
-\renewcommand{\lsql}[1]{\lstinline[language=SQL,prebreak=]!#1!}
+\lab{SQL II (The Sequel)}{Advanced SQL}
+\objective{
+Since SQL databases contain multiple tables, retrieving information about the data can be complicated.
+In this lab we discuss joins, grouping, and other advanced SQL query concepts to facilitate rapid data retrieval.
+% SQL queries can often get very complex, and can involve several relations in a database.
+% In this lab, we discuss how to join tables together in order to get information stored between them.
+% We also discuss several other advanced SQL selection concepts, such as: aggregate functions, ordering, grouping, case expressions, and comparison structures.
+}
 
-\lab{SQL 2 (The SQL Sequel)}{Advanced SQL}
-\objective{Learn more of the advanced and specialized features of SQL.}
-% TODO: A BETTER OBJECTIVE STATEMENT!!!!
-\label{lab:advancedsql}
+We will use the following database as an example throughout this lab, found in \texttt{students.db}.
 
-\section*{Database Normalization}
-Normalizing a database is the process of organizing tables and columns to minimize the amount of redundant information in the database.
-For example, a non-normalized database might have a table that stores customer contact information and a table that contains all of the products a company has sold.
-However, they might want to track who buys what products in case they need to contact them later. To do so, they store all the contact information of a particular buyer along with every item they purchased.
-Now, two tables store the customer contact information.
-If we needed to update a customer's phone number, we have to update two tables.
+\begin{table}[H]
+\begin{subtable}{0.55\textwidth}
+    \centering
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \footnotesize
+        \begin{tabular}{|l|l|}
+            \hline MajorID & MajorName \\ \hline
+            1 & Math \\
+            2 & Science \\
+            3 & Writing \\
+            4 & Art \\ \hline
+        \end{tabular}
+        \caption{MajorInfo}
+        \label{table:sql1-student-majorinfo}
+    \end{subtable}
+    \hfil
+    \begin{subtable}{.45\textwidth}
+        \centering
+        \footnotesize
+        \begin{tabular}{|l|l|}
+            \hline CourseID & CourseName \\ \hline
+            1 & Calculus \\
+            2 & English \\
+            3 & Pottery \\
+            4 & History \\ \hline
+        \end{tabular}
+        \caption{CourseInfo}
+        \label{table:sql1-student-courseinfo}
+    \end{subtable}
+    \\[1.em] % NOTE: Use 4.01em to align the tables at the top and bottom.
+    \begin{subtable}{\textwidth}
+        \centering
+        \footnotesize
+        \begin{tabular}{|l|l|l|}
+            \hline StudentID & StudentName & MajorID \\ \hline
+            401767594 & Michelle Fernandez & 1 \\
+            678665086 & Gilbert Chapman & NULL \\
+            553725811 & Roberta Cook & 2 \\
+            886308195 & Rene Cross & 3 \\
+            103066521 & Cameron Kim & 4 \\
+            821568627 & Mercedes Hall & NULL \\
+            206208438 & Kristopher Tran & 2 \\
+            341324754 & Cassandra Holland & 1 \\
+            262019426 & Alfonso Phelps & NULL \\
+            622665098 & Sammy Burke & 2 \\ \hline
+        \end{tabular}
+        \caption{StudentInfo}
+        \label{table:sql1-student-info}
+    \end{subtable}
+\end{subtable}
+\hfil
+\begin{subtable}{.35\textwidth}
+    \centering
+    \footnotesize
+    \begin{tabular}{|l|l|l|}
+        \hline StudentID & CourseID & Grade \\ \hline
+        401767594 & 4 & C \\
+        401767594 & 3 & B-- \\
+        678665086 & 4 & A+ \\
+        678665086 & 3 & A+ \\
+        553725811 & 2 & C \\
+        678665086 & 1 & B \\
+        886308195 & 1 & A \\
+        103066521 & 2 & C \\
+        103066521 & 3 & C-- \\
+        821568627 & 4 & D \\
+        821568627 & 2 & A+ \\
+        821568627 & 1 & B \\
+        206208438 & 2 & A \\
+        206208438 & 1 & C+ \\
+        341324754 & 2 & D-- \\
+        341324754 & 1 & A-- \\
+        103066521 & 4 & A \\
+        262019426 & 2 & B \\
+        262019426 & 3 & C \\
+        622665098 & 1 & A \\
+        622665098 & 2 & A-- \\ \hline
+    \end{tabular}
+    \caption{StudentGrades}
+    \label{table:sql1-student-grades}
+\end{subtable}
+\caption{Student database.}
+\end{table}
+
+\section*{Joining Tables} % ===================================================
+
+A \emph{join} combines rows from different tables in a database based on common attributes.
+In other words, a join operation creates a new, temporary table containing data from 2 or more existing tables.
+Join commands in SQLite have the following general syntax.
+\begin{lstlisting}
+SELECT <alias.column, ...>
+    FROM <table> AS <alias> JOIN <table> AS <alias>, ...
+    ON <alias.column> == <alias.column>, ...
+    WHERE <condition>
+\end{lstlisting}
+
+The \lsql{ON} clause tells the query how to join tables together.
+Typically if there are $N$ tables being joined together, there should be $N-1$ conditions in the \lsql{ON} clause.
+
+\subsection*{Inner Joins} % ---------------------------------------------------
+
+An \emph{inner join} creates a temporary table with the rows that have exact matches on the attribute(s) specified in the \lsql{ON} clause.
+Inner joins \textbf{intersect} two or more tables, as in Figure \ref{fig:sql2-inner-join}.
+
+\begin{figure}[H] % Inner and outer joins.
+\captionsetup[subfigure]{justification=centering}
+\centering
+\begin{subfigure}{.4\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/inner_join.pdf}
+    \caption{An inner join of A, B, and C.}
+    \label{fig:sql2-inner-join}
+\end{subfigure}
+\hfil
+\begin{subfigure}{.4\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/left_outer.pdf}
+    \caption{A left outer join of A with B and C.}
+    \label{fig:sql2-left-join}
+\end{subfigure}
+%
+% \begin{subfigure}{.3\textwidth}
+%     \centering
+%     \includegraphics[width=\textwidth]{figures/full_outer.pdf}
+%     \caption{A full outer join of A, B, and C.}
+%     \label{fig:sql2-full-join}
+% \end{subfigure}
+\caption{}
+\label{fig:joins}
+\end{figure}
+
+For example, Table \ref{table:sql1-student-info} (\li{StudentInfo}) and Table \ref{table:sql1-student-majorinfo} (\li{MajorInfo}) both have a \li{MajorID} column, so the tables can be joined by pairing rows that have the same \li{MajorID}.
+Such a join temporarily creates the following table.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|}
+    \hline StudentID & StudentName & MajorID & MajorID & MajorName \\ \hline
+    401767594 & Michelle Fernandez & 1 & 1 & Math \\
+    % 678665086 & Gilbert Chapman & NULL \\
+    553725811 & Roberta Cook & 2 & 2 & Science \\
+    886308195 & Rene Cross & 3 & 3 & Writing \\
+    103066521 & Cameron Kim & 4 & 4 & Art \\
+    % 821568627 & Mercedes Hall & NULL \\
+    206208438 & Kristopher Tran & 2 & 2 & Science \\
+    341324754 & Cassandra Holland & 1 & 1 & Math \\
+    % 262019426 & Alfonso Phelps & NULL \\
+    622665098 & Sammy Burke & 2 & 2 & Science \\ \hline
+\end{tabular}
+\caption{An inner join of \li{StudentInfo} and \li{MajorInfo} on \li{MajorID}.}
+\label{table:sql2-inner-join-temp}
+\end{table}
+
+Notice that this table is missing the rows where \li{MajorID} was \lsql{NULL} in the \li{StudentInfo} table.
+This is because there was no match for \lsql{NULL} in the \li{MajorID} column of the \li{MajorInfo} table, so the inner join throws those rows away.
+
+Because joins deal with multiple tables at once, it is important to assign table aliases with the \lsql{AS} command.
+Join statements can also be supplemented with \lsql{WHERE} clauses like regular queries.
+
+\begin{lstlisting}
+>>> import sqlite3 as sql
+>>> cur = sql.connect("district.db")
+>>> cur = conn.cursor()
+
+>>> cur.execute("SELECT * "
+...             "FROM StudentInfo AS SI INNER JOIN MajorInfo AS MI "
+...             "ON SI.MajorID = MI.MajorID;").fetchall()
+<<[(401767594, 'Michelle Fernandez', 1, 1, 'Math'),
+ (553725811, 'Roberta Cook', 2, 2, 'Science'),
+ (886308195, 'Rene Cross', 3, 3, 'Writing'),
+ (103066521, 'Cameron Kim', 4, 4, 'Art'),
+ (206208438, 'Kristopher Tran', 2, 2, 'Science'),
+ (341324754, 'Cassandra Holland', 1, 1, 'Math'),
+ (622665098, 'Sammy Burke', 2, 2, 'Science')]>>
+
+# Select the names and ID numbers of the math majors.
+>>> cur.execute("SELECT SI.StudentName, SI.StudentID "
+...             "FROM StudentInfo AS SI INNER JOIN MajorInfo AS MI "
+...             "ON SI.MajorID = MI.MajorID "
+...             "WHERE MI.MajorName == 'Math';").fetchall()
+<<[('Cassandra Holland', 341324754), ('Michelle Fernandez', 401767594)]>>
+\end{lstlisting}
+
+\begin{problem} % Simple inner join.
+Write a function that accepts the name of a database file.
+Assuming the database to be in the format of Tables \ref{table:sql1-student-majorinfo}--\ref{table:sql1-student-grades}, query the database for the list of the names of students who have a B grade in any course (not a B-- or a B+).
+\end{problem}
+
+\subsection*{Outer Joins} % ---------------------------------------------------
+
+A \emph{left outer join}, sometimes called a \emph{left join}, creates a temporary table with \textbf{all} of the rows from the first (left-most) table, and all the ``matched'' rows on the given attribute(s) from the other relations.
+Rows from the left table that don't match up with the columns from the other tables are supplemented with \lsql{NULL} values to fill extra columns.
+Compare the following table and code to Table \ref{table:sql2-inner-join-temp}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|}
+    \hline StudentID & StudentName & MajorID & MajorID & MajorName \\ \hline
+    401767594 & Michelle Fernandez & 1 & 1 & Math \\
+    678665086 & Gilbert Chapman & NULL & NULL & NULL \\
+    553725811 & Roberta Cook & 2 & 2 & Science \\
+    886308195 & Rene Cross & 3 & 3 & Writing \\
+    103066521 & Cameron Kim & 4 & 4 & Art \\
+    821568627 & Mercedes Hall & NULL & NULL & NULL \\
+    206208438 & Kristopher Tran & 2 & 2 & Science \\
+    341324754 & Cassandra Holland & 1 & 1 & Math \\
+    262019426 & Alfonso Phelps & NULL & NULL & NULL \\
+    622665098 & Sammy Burke & 2 & 2 & Science \\ \hline
+\end{tabular}
+\caption{A left outer join of \li{StudentInfo} and \li{MajorInfo} on \li{MajorID}.}
+\label{table:sql2-left-outer-join}
+\end{table}
+
+\begin{lstlisting}
+>>> cur.execute("SELECT * "
+...             "FROM StudentInfo AS SI LEFT OUTER JOIN MajorInfo AS MI "
+...             "ON SI.MajorID = MI.MajorID;").fetchall()
+<<[(401767594, 'Michelle Fernandez', 1, 1, 'Math'),
+ (678665086, 'Gilbert Chapman', None, None, None),
+ (553725811, 'Roberta Cook', 2, 2, 'Science'),
+ (886308195, 'Rene Cross', 3, 3, 'Writing'),
+ (103066521, 'Cameron Kim', 4, 4, 'Art'),
+ (821568627, 'Mercedes Hall', None, None, None),
+ (206208438, 'Kristopher Tran', 2, 2, 'Science'),
+ (341324754, 'Cassandra Holland', 1, 1, 'Math'),
+ (262019426, 'Alfonso Phelps', None, None, None),
+ (622665098, 'Sammy Burke', 2, 2, 'Science')]>>
+\end{lstlisting}
+
+Some flavors of SQL also support the \lsql{RIGHT OUTER JOIN} command, but \li{sqlite3} does not recognize the command since \lsql{T1 RIGHT OUTER JOIN T2} is equivalent to \lsql{T2 LEFT OUTER JOIN T1}.
+
+\subsection*{Joining Multiple Tables} % ---------------------------------------
+
+Complicated queries often join several different relations.
+If the same kind join is being used, the relations and conditional statements can be put in list form.
+For example, the following code selects courses that Kristopher Tran has taken, and the grades that he got in those courses, by joining three tables together.
+Note that 2 conditions are required in the \lsql{ON} clause in this case.
+
+\begin{lstlisting}
+>>> cur.execute("SELECT CI.CourseName, SG.Grade "
+...             "FROM StudentInfo AS SI "           # Join 3 tables.
+...                 "INNER JOIN CourseInfo AS CI, StudentGrades SG "
+...             "ON SI.StudentID==SG.StudentID AND CI.CourseID==SG.CourseID "
+...             "WHERE SI.StudentName == 'Kristopher Tran';").fetchall()
+<<[('Calculus', 'C+'), ('English', 'A')]>>
+\end{lstlisting}
+
+To use different kinds of joins in a single query, append one join statement after another.
+The join closest to the beginning of the statement is executed first, creating a temporary table, and the next join attempts to operate on that table.
+The following example performs an additional join on Table \ref{table:sql2-left-outer-join} to find the name and major of every student who got a C in a class.
+
+\begin{lstlisting}
+# Do an inner join on the results of the left outer join.
+>>> cur.execute("SELECT SI.StudentName, MI.MajorName "
+...             "FROM StudentInfo AS SI LEFT OUTER JOIN MajorInfo AS MI "
+...             "ON SI.MajorID == MI.MajorID "
+...             "INNER JOIN StudentGrades AS SG "
+...             "ON SI.StudentID = SG.StudentID "
+...             "WHERE SG.Grade = 'C';").fetchall()
+<<[('Michelle Fernandez', 'Math'),
+ ('Roberta Cook', 'Science'),
+ ('Cameron Kim', 'Art'),
+ ('Alfonso Phelps', None)]>>
+\end{lstlisting}
+
+In this last example, note carefully that Alfonso Phelps would have been excluded from the result set if an inner join was performed first instead of an outer join (since he lacks a major).
+
+\begin{problem} % Combining joins.
+Write a function that accepts the name of a database file.
+Query the database for all tuples of the form \li{(Name, MajorName, Grade)} where \li{Name} is a student's name and \li{Grade} is their grade in Calculus.
+Only include results for students that are actually taking Calculus, but be careful not to exclude students who haven't declared a major.
+\end{problem}
+
+\section*{Grouping Data} % ===================================================
+
+% \begin{table}
+% \begin{tabular}{c|l}
+% Function & Description \\
+% \hline
+% MIN() & Retrieve the smallest numeric value of a column \\
+% MAX()& Retrieve the largest numeric value of a column \\
+% SUM() & Sum the numeric values of a column \\
+% AVG() & Retrieve the average numeric value of the column \\
+% COUNT() & Retrieve the total number of matching records in a column \\
+% \end{tabular}
+% \caption{SQL aggregation functions.}
+% \label{table:aggregations}
+% \end{table}
+
+Many data sets can be naturally sorted into groups.
+The \lsql{GROUP BY} command gathers rows from a table and groups them by a certain attribute.
+The groups must are then combined by one of the \emph{aggregate functions} \lsql{AVG()}, \lsql{MIN()}, \lsql{MAX()}, \lsql{SUM()}, or \lsql{COUNT()}.
+The following code groups the rows in Table \ref{table:sql1-student-grades} by \li{studentID} and counts the number of entries in each group.
+ % (the number of courses that student is enrolled in).
+
+\begin{lstlisting}
+>>> cur.execute("SELECT StudentID, COUNT(*) "   # * means "all of the rows".
+...             "FROM StudentGrades "
+...             "GROUP BY StudentID").fetchall()
+<<[(103066521, 3),
+ (206208438, 2),
+ (262019426, 2),
+ (341324754, 2),
+ (401767594, 2),
+ (553725811, 1),
+ (622665098, 2),
+ (678665086, 3),
+ (821568627, 3),
+ (886308195, 1)]>>
+\end{lstlisting}
+
+\lsql{GROUP BY} can also be used in conjunction with joins.
+The join creates a temporary table like Tables \ref{table:sql2-inner-join-temp} or \ref{table:sql2-left-outer-join}, the results of which can then be grouped.
+
+\begin{lstlisting}
+>>> cur.execute("SELECT SI.StudentName, COUNT(*) "
+...             "FROM StudentGrades AS SG INNER JOIN StudentInfo AS SI "
+...             "ON SG.StudentID == SI.StudentID "
+...             "GROUP BY SG.StudentID").fetchall()
+<<[('Cameron Kim', 3),
+ ('Kristopher Tran', 2),
+ ('Alfonso Phelps', 2),
+ ('Cassandra Holland', 2),
+ ('Michelle Fernandez', 2),
+ ('Roberta Cook', 1),
+ ('Sammy Burke', 2),
+ ('Gilbert Chapman', 3),
+ ('Mercedes Hall', 3),
+ ('Rene Cross', 1)]>>
+\end{lstlisting}
+
+Just like the \lsql{WHERE} clause chooses rows in a relation, the \lsql{HAVING} clause chooses groups from the result of a \lsql{GROUP BY} based on some criteria related to the groupings.
+For this particular command, it is often useful (but not always necessary) to create an alias for the columns of the result set with the \lsql{AS} operator.
+For instance, the result set of the previous example can be filtered down to only contain students who are taking 3 courses.
+
+\begin{lstlisting}
+>>> cur.execute("SELECT SI.StudentName, COUNT(*) as num_courses "   # Alias.
+...             "FROM StudentGrades AS SG INNER JOIN StudentInfo AS SI "
+...             "ON SG.StudentID == SI.StudentID "
+...             "GROUP BY SG.StudentID "
+...             "HAVING num_courses == 3").fetchall()   # Refer to alias later.
+<<[('Cameron Kim', 3), ('Gilbert Chapman', 3), ('Mercedes Hall', 3)]>>
+
+# Alternatively, get just the student names.
+>>> cur.execute("SELECT SI.StudentName "                            # No alias.
+...             "FROM StudentGrades AS SG INNER JOIN StudentInfo AS SI "
+...             "ON SG.StudentID == SI.StudentID "
+...             "GROUP BY SG.StudentID "
+...             "HAVING COUNT(*) == 3").fetchall()
+<<[('Cameron Kim',), ('Gilbert Chapman',), ('Mercedes Hall',)]>>
+\end{lstlisting}
+
+\begin{problem} % HAVING
+Write a function that accepts a database file.
+Query the database for the list of the names of courses that have at least 5 student enrolled in them.
+\end{problem}
+
+\section*{Other Miscellaneous Commands} % =====================================
+
+\subsection*{Ordering Result Sets} % ------------------------------------------
+
+The \lsql{ORDER BY} command sorts a result set by one or more attributes.
+Sorting can be done in ascending or descending order with \lsql{ASC} or \lsql{DESC}, respectively.
+This is always the very last statement in a query.
+
+\begin{lstlisting}
+>>> cur.execute("SELECT SI.StudentName, COUNT(*) AS num_courses "   # Alias.
+...             "FROM StudentGrades AS SG INNER JOIN StudentInfo AS SI "
+...             "ON SG.StudentID == SI.StudentID "
+...             "GROUP BY SG.StudentID "
+...             "ORDER BY num_courses DESC, SI.StudentName ASC").fetchall()
+<<[('Cameron Kim', 3),>>                # The results are now ordered by the
+<< ('Gilbert Chapman', 3),>>            # number of courses each student is in,
+<< ('Mercedes Hall', 3),>>              # then alphabetically by student name.
+<< ('Alfonso Phelps', 2),
+ ('Cassandra Holland', 2),
+ ('Kristopher Tran', 2),
+ ('Michelle Fernandez', 2),
+ ('Sammy Burke', 2),
+ ('Rene Cross', 1),
+ ('Roberta Cook', 1)]>>
+\end{lstlisting}
+
+\begin{problem} % COUNT(), ORDER BY.
+Write a function that accepts a database file.
+Query the given database for tuples of the form \li{(MajorName, N)} where \li{N} is the number of students in the specified major.
+Sort the results in ascending order by the count \li{N}.
+\end{problem}
+
+\subsection*{Searching Text with Wildcards} % ---------------------------------
+
+The \lsql{LIKE} operator within a \lsql{WHERE} clause matches patterns in a \lsql{TEXT} column.
+The special characters \lsql{\%} and \lsql{_} and called \emph{wildcards} that match any number of characters or a single character, respectively.
+For instance, \li{\%Z\_} matches any string of characters ending in a Z then another character, and \li{\%i\%} matches any string containing the letter i.
+
+\begin{lstlisting}
+>>> results = cur.execute("SELECT StudentName FROM StudentInfo "
+...                       "WHERE StudentName LIKE '%i%';").fetchall()
+>>> [r[0] for r in results]
+<<['Michelle Fernandez', 'Gilbert Chapman', 'Cameron Kim', 'Kristopher Tran']>>
+\end{lstlisting}
+
+\begin{problem} % LIKE
+Write a function that accepts a database file.
+Query the database for tuples of the form \li{(StudentName, MajorName)} where the last name of the specified student begins with the letter C.
+\end{problem}
+
+\subsection*{Case Expressions} % ----------------------------------------------
+
+A case expression maps the values in a column using boolean logic.
+There are two forms of a case expression: simple and searched.
+A \emph{simple case expression} matches and replaces specified attributes.
+
+\begin{lstlisting}
+# Replace the values MajorID with new custom values.
+>>> cur.execute("SELECT StudentName, CASE MajorID "
+...                 "WHEN 1 THEN 'Mathematics' "
+...                 "WHEN 2 THEN 'Soft Science' "
+...                 "WHEN 3 THEN 'Writing and Editing' "
+...                 "WHEN 4 THEN 'Fine Arts' "
+...                 "ELSE 'Undeclared' END "
+...             "FROM StudentInfo "
+...             "ORDER BY StudentName ASC;").fetchall()
+<<[('Alfonso Phelps', 'Undeclared'),
+ ('Cameron Kim', 'Fine Arts'),
+ ('Cassandra Holland', 'Mathematics'),
+ ('Gilbert Chapman', 'Undeclared'),
+ ('Kristopher Tran', 'Soft Science'),
+ ('Mercedes Hall', 'Undeclared'),
+ ('Michelle Fernandez', 'Mathematics'),
+ ('Rene Cross', 'Writing and Editing'),
+ ('Roberta Cook', 'Soft Science'),
+ ('Sammy Burke', 'Soft Science')]>>
+\end{lstlisting}
+
+A \emph{searched case expression} involves using a boolean expression at each step, instead of listing all of the possible values for an attribute.
+
+\begin{lstlisting}
+# Change NULL values in MajorID to 'Undeclared' and non-NULL to 'Declared'.
+>>> cur.execute("SELECT StudentName, CASE "
+...                 "WHEN MajorID IS NULL THEN 'Undeclared' "
+...                 "ELSE 'Declared' END "
+...             "FROM StudentInfo "
+...             "ORDER BY StudentName ASC;").fetchall()
+<<[('Alfonso Phelps', 'Undeclared'),
+ ('Cameron Kim', 'Declared'),
+ ('Cassandra Holland', 'Declared'),
+ ('Gilbert Chapman', 'Undeclared'),
+ ('Kristopher Tran', 'Declared'),
+ ('Mercedes Hall', 'Undeclared'),
+ ('Michelle Fernandez', 'Declared'),
+ ('Rene Cross', 'Declared'),
+ ('Roberta Cook', 'Declared'),
+ ('Sammy Burke', 'Declared')]>>
+\end{lstlisting}
+
+\section*{Chaining Queries} % =================================================
+
+The result set of any SQL query is really just another table with data from the original database.
+Separate queries can be made from result sets by enclosing the entire query in parentheses.
+For these sorts of operations, it is very important to carefully label the columns resulting from a subquery.
+
+\begin{lstlisting}
+>>> cur.execute("SELECT majorstatus, COUNT(*) AS majorcount "
+...             "FROM ( "                                   # Begin subquery.
+...                 "SELECT StudentName, CASE "
+...                 "WHEN MajorID IS NULL THEN 'Undeclared' "
+...                 "ELSE 'Declared' END AS majorstatus "
+...                 "FROM StudentInfo) "                    # End subquery.
+...             "GROUP BY majorstatus "
+...             "ORDER BY majorcount DESC;").fetchall()
+[('Declared', 7), ('Undeclared', 3)]
+\end{lstlisting}
+
+\begin{problem} % Average GPA.
+Write a function that accepts the name of a database file.
+Query the database for tuples of the form \li{(StudentName, N, GPA)} where \li{N} is the number of courses that the specified student is enrolled in and \li{GPA} is their grade point average based on the following point system.
+
+\begin{center}
+\begin{tabular}{lclclcl}
+A+, A   = 4.0 & & B   = 3.0 & & C   = 2.0 & & D   = 1.0 \\
+    A-- = 3.7 & & B-- = 2.7 & & C-- = 1.7 & & D-- = 0.7 \\
+    B+  = 3.4 & & C+  = 2.4 & & D+  = 1.4 & &
+\end{tabular}
+\end{center}
+Order the results from greatest GPA to least.
+\end{problem}
+
+\begin{comment}
+
+\newpage
+
+\section*{Additional Material}
+
+\subsection*{Database Normalization}
+
+When creating a database, once must carefully consider its structure.
+When a database is organized in such a way as to avoid redunancy, it is \emph{normalized}.
+
+Consider a company whose database has a table that stores customer contact information and a table that contains sales data.
+This company wants to track who buys what products.
+To do so, they store all the contact information of a particular buyer with every item they purchased.
+Now two tables store the customer contact information.
+If they need to update a customer's phone number, they have to update two tables.
 While that may not be bad for small databases, larger databases would be near impossible to update correctly.
-The idea of normalizing a database allows us to store all customer contact information in one place in the database.
-All other tables that might need a customer's name, phone number, or address would reference the contact information table.
-When an update needs to be performed, we only need to update the contact information table.
-Then any table that references this information is also automatically up to date.
+The idea of normalizing this database would be to store all customer contact information in one place.
+All other tables that might need a customer's name, phone number, or address would reference that contact information table.
+When an update needs to be performed, only the contact information table would be updated.
+Any table that now references this information would automatically be up to date.
 
-To properly normalize a database, we need to discuss the types of relations tables might have.
+To properly normalize a database, we must consider the types of relations discussed in the below subsections.
+
 \subsection*{One to One}
-This is the simplest relation to model.
-A single table can be used to express this relation.
-The relation is between one record and at most one other record.
-An example of this relationship is an employee and their organization.
-One employee works at one organization.
-Another example would be that a driver's license belongs to only one person.
+
+A one-to-one relation is between one record and one other record.
+An example of this relationship is a U.S. citizen and his or her Social Security number.
+There is only one social security member per U.S. citizen and visa versa.
+This is the simplest relation to model and is often done using one table
 
 \subsection*{One to Many}
-This relationship and its inverse must be modeled with at least two tables.
-The general approach is to use a unique ID.
-Note that a relationship that appears one to one may actually be a one to many relationship.
-Many people will, therefore, use the same unique ID approach on one to one relationships too in the case it turns out to be a one to many relationship.
-An example of a one to many relationship would be between an department and its employees.
-The department would receive a unique ID and then each employee in that department would be tagged with that ID.
+
+A one-to-many relation occurs when one record can link to many records, and those records only link back to the original record.
+Consider the example of a mother and her children.
+A mother can have multiple children, but a child can only have one birth mother.
+This relationship must be modeled with at least two tables.
 
 \subsection*{Many to Many}
+
+A many-to-many relation occurs when a record can link to multiple other records and vice versa.
+For example, a textbook can be written by multiple authors.
+On the other hand, each author can write multiple textbooks.
 This relationship requires at least three tables.
-A many to many relationship can be visualized as two, separate one to many relationships.
-The records in each of the two tables receive a unique ID.
-A third table then serves as a map between IDs of table to IDs of the other table.
-An example of a many to many relationship is doctors and patients.
-One doctor can have several patients and one patient can have several doctors.
 
-For the rest of the lab, we will be using the following tables: \ref{table:students}, \ref{table:majors}, \ref{table:grades}, and \ref{table:classes}.
+Continuing with the example, one table contains author data.
+Each author is given a unique ID, or \emph{primary key}.
+Another table contains textbook data.
+Similarly, each textbook is given an ID in the form of a primary key.
+A third table, called the \emph{junction table}, serves as a map between the primary keys of the other two tables.
 
-\begin{table}
-\begin{tabular}{|l|l|l|l|}
-\hline
-StudentID & Name & MajorCode & MinorCode \\
-\hline
-401767594 & Michelle Fernandez & 1 & NULL \\
-678665086 & Gilbert Chapman & NULL & NULL\\
-553725811 & Roberta Cook & 2 & 1\\
-886308195 & Rene Cross & 3 & 1\\
-103066521 & Cameron Kim & 4 & 2\\
-821568627 & Mercedes Hall & NULL & 3 \\
-206208438 & Kristopher Tran & 2 & 4\\
-341324754 & Cassandra Holland & 1 & NULL\\
-262019426 & Alfonso Phelps & NULL & NULL\\
-622665098 & Sammy Burke & 2 & 3 \\
-\hline
-\end{tabular}
-\caption{students}
-\label{table:students}
-\end{table}
+\subsection*{More Joins} % ----------------------------------------------------
 
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-ID & Name \\
-\hline
-1 & Math \\
-2 & Science \\
-3 & Writing \\
-4 & Art \\
-\hline
-\end{tabular}
-\caption{fields}
-\label{table:majors}
-\end{table}
+A \emph{cross join} is a Cartesian product on a set of relations.
+Cross joins \textbf{union} two or more tables by combining rows in every way possible and filling in empty entries with \lsql{NULL} values.
+A cross join should only be used on small tables or with a strict condition, since the result set will likely be very large.
+% This join is equivalent to selecting both tables, and the sql command \lsql{FULL OUTER JOIN} which is not currently supported by Python's sqlite package.
 
-\begin{table}
-\begin{tabular}{|l|l|l|}
-\hline
-StudentID & ClassID & Grade \\
-\hline
-401767594 & 4 & C \\
-401767594 & 3 & B- \\
-678665086 & 4 & NULL \\
-678665086 & 3 & A+ \\
-553725811 & 2 & C \\
-678665086 & 1 & NULL \\
-886308195 & 1 & A \\
-103066521 & 2 & C \\
-103066521 & 3 & C- \\
-821568627 & 4 & D \\
-821568627 & 2 & NULL \\
-821568627 & 1 & B \\
-206208438 & 2 & A \\
-206208438 & 1 & C+ \\
-341324754 & 2 & D- \\
-341324754 & 1 & NULL \\
-103066521 & 4 & A \\
-262019426 & 2 & B \\
-262019426 & 3 & NULL \\
-622665098 & 1 & A \\
-622665098 & 2 & A- \\
-\hline
-\end{tabular}
-\caption{grades}
-\label{table:grades}
-\end{table}
-
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-ClassID & Name \\
-\hline
-1 & Calculus \\
-2 & English \\
-3 & Pottery \\
-4 & History \\
-\hline
-\end{tabular}
-\caption{classes}
-\label{table:classes}
-\end{table}
-
-\begin{problem}
-Classify the relations between the various records in these tables: \ref{table:students}, \ref{table:majors}, \ref{table:grades}, and \ref{table:classes}.
-
-Classify each relation as either one to one, one to many, or many to many.
-Identify the tables used in each relationship.
-\label{prob:tablerelations}
-\end{problem}
-
-\begin{info}
-There are instances where you would not want a completely normalized database.
-Whether to normalize your database depends on your specific needs.
-Usually, though, the decision to denormalize a database is a last-resort attempt to improve performance.
-\end{info}
-
-\section*{Joining Tables}
-We can use SQL to join two or more tables together for a query.
-This is a very powerful tool.
-SQLite supports three types of standard table joins.
-
-Joining tables is a common practice to collect data from different parts of the database into a single table.
-Joins are absolutely essential in a normalized database since data is split between multiple tables.
-
-\subsection*{Inner Join}
-This is often the default join operation in SQL.
-An inner join can be depicted as an intersection of two or more tables.
-\begin{figure}
-\centering
-\includegraphics[width=.5\textwidth]{figures/inner_join.pdf}
-\caption{An inner joining of tables A, B, and C.}
-\label{fig:inner_join}
-\end{figure}
-When performing an inner join on tables, the result will only be those records that match across all tables.
-For example, this join will select all the students' names along with their major as long as the students.majorcode matches the majors.id.
-If the students.majorcode is missing or null, then they won't be selected.
-\begin{lstlisting}[language=SQL]
-SELECT students.name, majors.name FROM students JOIN majors ON students.majorcode=majors.id;
-\end{lstlisting}
-An inner join is equivalent to the following pseudo-loop in Python
+% TODO: this is a crappy example because it has a WHERE...
 \begin{lstlisting}
-for row_s in students:
-    for row_m in majors:
-        if predicates(row_s, row_m):
-            yield columns(row_s, row_m)
+# Join together multiple tables with multiple conditionals.
+>>> cur.execute("SELECT * "
+...             "FROM MajorInfo AS MI "
+...                 "CROSS JOIN CourseInfo CI, StudentInfo AS SI "
+...              "WHERE MI.MajorID == CI.CourseID "
+...                 "AND SI.StudentName == 'Mercedes Hall';").fetchall()
+[(1, 'Math', 1, 'Calculus', 821568627, 'Mercedes Hall', 'NULL'),
+ (2, 'Science', 2, 'English', 821568627, 'Mercedes Hall', 'NULL'),
+ (3, 'Writing', 3, 'Pottery', 821568627, 'Mercedes Hall', 'NULL'),
+ (4, 'Art', 4, 'History', 821568627, 'Mercedes Hall', 'NULL')]
+
+# Cross join is equivalent to selecting everything from all tables.
+>>> cur.execute("SELECT * FROM MajorInfo MI, CourseInfo CI WHERE MI.MajorID \
+... = CI.CourseID;")
+>>> cur.fetchall()
+[(1, 'Math', 1, 'Calculus'),
+ (2, 'Science', 2, 'English'),
+ (3, 'Writing', 3, 'Pottery'),
+ (4, 'Art', 4, 'History')]
 \end{lstlisting}
 
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-students.name & majors.name \\
-\hline
-Michelle Fernandez & Math \\
-Roberta Cook & Science \\
-Rene Cross & Writing \\
-Cameron Kim & Art \\
-Kristopher Tran & Science \\
-Cassandra Holland & Math \\
-Sammy Burke & Science \\
-\hline
-\end{tabular}
-\caption{An inner join of students and majors}
-\label{table:ij_studentsmajors}
-\end{table}
+% TODO: SELF JOIN?
 
-\subsection*{Left Outer Join}
-A left outer join will return all relations from the left table even if they don't match any relation on the joined tables.
-An illustration of a left outer join is given in figure \ref{fig:left_outer}.
-\begin{figure}
-\centering
-\includegraphics[width=.5\textwidth]{figures/left_outer.pdf}
-\caption{A left outer table join of A with tables B and C.}
-\label{fig:left_outer}
-\end{figure}
-
-A Pythonesque loop that illustrates how to perform a left outer join is
-\begin{lstlisting}
-for row_s in students:
-    for row_m in majors:
-        if predicates(row_s, row_m):
-            yield columns(row_s, row_m)
-        else:
-            yield columns(row_s)
-\end{lstlisting}
-
-The following left outer join will result in the table shown in table \ref{table:lo_studentsmajors}.
-\begin{lstlisting}[language=SQL]
-SELECT students.name, majors.name FROM students LEFT OUTER JOIN majors ON students.majorcode=majors.id;
-\end{lstlisting}
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-students.name & majors.name \\
-\hline
-Michelle Fernandez & Math \\
-Gilbert Chapman & None \\
-Roberta Cook & Science \\
-Rene Cross & Writing \\
-Cameron Kim & Art \\
-Mercedes Hall & None \\
-Kristopher Tran & Science \\
-Cassandra Holland & Math \\
-Alfonso Phelps & None \\
-Sammy Burke & Science \\
-\hline
-\end{tabular}
-\caption{A left outer join of students and majors}
-\label{table:lo_studentsmajors}
-\end{table}
-
-\subsection*{Cross Join}
-Essentially a Cartesian product of tables.
-Care must be taken when using cross join because of the size of the joined table.
-A cross join should only be used on small tables.
-It matches each relation in one table with every other possible combination of relations in the joined tables.
-For example, if you were to run a cross join on the above join.  You would get every student matched with every major.
-This doesn't really make much sense but can be useful for other applications.
-Use with caution.
-
-\section*{Advanced Selections}
-Aggregate functions are useful for summarizing the data in a column.
-The functions can be found in \ref{table:aggregations}.
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-Function & Description \\
-\hline
-MIN() & Retrieve the smallest numeric value of a column \\
-MAX()& Retrieve the largest numeric value of a column \\
-SUM() & Sum the numeric values of a column \\
-AVG() & Retrieve the average numeric value of the column \\
-COUNT() & Retrieve the total number of matching records in a column \\
-\hline
-\end{tabular}
-\caption{SQL aggregation functions}
-\label{table:aggregations}
-\end{table}
-
-We can count the number of students by executing the following SQL statement.
-\begin{lstlisting}[language=SQL]
-SELECT COUNT(*) FROM students;
-\end{lstlisting}
-
-\subsection*{Ordering and Grouping Relations}
-The \lsql{ORDER BY} keyword can be used to sort the result set by columns.
-We can sort in ascending order or descending order.
-\begin{lstlisting}[language=SQL]
-SELECT name FROM students ORDER BY name ASC;
-SELECT name FROM students ORDER BY name DESC;
-\end{lstlisting}
-
-Another useful SQL keyword is the \lsql{GROUP BY} keyword.
-It is used along with an aggregating function to group the result set by columns.
-\begin{lstlisting}[language=SQL]
-SELECT grade, COUNT(studentid) FROM grades GROUP BY grade;
-\end{lstlisting}
-The result set is given in table \ref{table:group_by_grade}.
-\begin{table}
-\begin{tabular}{|l|l|}
-\hline
-grade & COUNT(studentid) \\
-\hline
-None & 5 \\
-A & 4 \\
-A+ & 1 \\
-A- & 1 \\
-B & 2 \\
-B- & 1 \\
-C & 3 \\
-C+ & 1 \\
-C- & 1 \\
-D & 1 \\
-D- & 1 \\
-\hline
-\end{tabular}
-\caption{Grouping of students by grade.}
-\label{table:group_by_grade}
-\end{table}
-
-\begin{problem}
-Create a database containing tables \ref{table:students}, \ref{table:majors}, \ref{table:grades}, and \ref{table:classes}.
-Write a SQL query to count how many students belong to each major, including students that don't have a major.
-Sort your results in ascending order by name.
-Your result set should be table \ref{table:grouporder}
-\begin{table}[H]
-\begin{tabular}{|l|l|}
-\hline
-None & 3 \\
-Art & 1 \\
-Math & 2 \\
-Science & 3 \\
-Writing & 1 \\
-\hline
-\end{tabular}
-\caption{Result set}
-\label{table:grouporder}
-\end{table}
-\label{prob:studentmajors}
-\end{problem}
-
-Another important keyword is the \lsql{HAVING} keyword.
-This is necessary because the \lsql{WHERE} clause does not support aggregate functions.
-A \lsql{HAVING} clause requires a \lsql{GROUP BY} clause.
-The following will not work.
-\begin{lstlisting}[language=SQL]
-SELECT grade FROM grades GROUP BY grade WHERE COUNT(*)=1;
-\end{lstlisting}
-Since \lsql{COUNT} is an aggregating function, the following is required.
-\begin{lstlisting}[language=SQL]
-SELECT grade FROM grades GROUP BY grade HAVING COUNT(*)=1;
-\end{lstlisting}
-This SQL query returns all the grades that occur only once in the table.
-A simple way to remember the difference is \emph{\lsql{WHERE} operates on individual records and \lsql{HAVING} operates on groups of records}.
-
-\begin{problem}
-Select all the students who have received grades (non-null grades) in more than two classes.  How many grades did he receive?
-\label{prob:manygrades}
-\end{problem}
-
-\subsection*{Case Expression}
-A case expression allows you to temporarily modify records from a select operation.
-There are two forms of the case expression; simple and searched.
-The simple form of the expression is a match and replace on a specified column.
-A simple case expression is demonstrated below.
-This code will return the name of the student along with their majorcode.
-But instead of integers, the names of the majors will be returned.
-\begin{lstlisting}[language=SQL]
-SELECT name,
-CASE majorcode
-    WHEN 1 THEN 'Math'
-    WHEN 2 THEN 'Science'
-    WHEN 3 THEN 'Writing'
-    WHEN 4 THEN 'Art'
-    ELSE 'Undeclared'
-    END AS major
-FROM students;
-\end{lstlisting}
-
-A searched case expression using a boolean expression for the \lsql{WHEN} clauses.
-\begin{lstlisting}[language=SQL]
-SELECT name,
-CASE
-    WHEN majorcode IS NULL THEN 'Undeclared'
-    ELSE majorcode
-    END AS major,
-CASE
-    WHEN minorcode IS NULL THEN 'Undeclared'
-    ELSE minorcode
-    END AS minor
-FROM students;
-\end{lstlisting}
-
-\begin{problem}
-Find the overall GPA of all the students in the school.
-Use a regular 4.0 scale (A=4.0, B=3.0, C=2.0, D=1.0).
-Any pluses or minuses are dropped so an A- becomes an A.
-
-Your result set should be one column and one row with average of all GPAs of all the students taking classes.
-Your solution should return a single floating point number.
-
-Use the \lsql{ROUND()} function in SQL to round your result to the nearest hundredth.
-\label{prob:studentGPA}
-\end{problem}
-
-\subsection*{Like Command}
-The SQL keyword, \lsql{LIKE}, allows us to match patterns in a column.
-For example,
-\begin{lstlisting}[language=SQL]
-SELECT name, studentid FROM students WHERE studentid LIKE '\%4';
-\end{lstlisting}
-will return all the students that have a student ID that ends with the digit 4.
-Use `\textbackslash\%' before the `4' to signify that there can be any number of characters before the `4.'
-If you only want one character, you can use an underscore.
-For example, if you were to search a database of words in the english dictionary and you entered the following command:
-\begin{lstlisting}[language=SQL]
-SELECT word FROM englishDictionary WHERE word LIKE 'i_';
-\end{lstlisting}
-You would get words like `is,' `it,' or `in.'
+% A left/right outer join selects all rows from just one relation, while a \emph{cross join} (also known as a \emph{full outer join}) selects all rows from all relations.
 
 
-\begin{problem}
-Write a SQL statement that will find all students with a last name that begins with the letter `C' and return their names and majors.  Your returned records should be
-\begin{table}[H]
-\begin{tabular}{|l|l|}
-\hline
-Gilbert Chapman & None \\
-Roberta Cook & Science \\
-Rene Cross & Writing \\
-\hline
-\end{tabular}
-\label{table:likec_solution}
-\end{table}
-\label{prob:likec}
-\end{problem}
-
-\let\undefined\lsql
+\end{comment}
