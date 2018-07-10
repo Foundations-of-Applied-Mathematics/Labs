@@ -1,7 +1,7 @@
 \def\Mu{\boldsymbol{\mu}}
 \def\Lamb{\boldsymbol{\lambda}}
 
-\lab{Interior Point II: Quadratic Programs}{Interior Point II: Quadratic Programs}
+\lab{Interior Point 2: Quadratic Programs}{Interior Point 2: Quadratic Programs}
 \objective{Interior point methods originated as an alternative to the Simplex method for solving linear optimization problems. However, they can also be adapted to treat convex optimization problems in general.
 In this lab, we implement a primal-dual Interior Point method for convex quadratic constrained optimization and explore applications in elastic membrane theory and finance.}
 
@@ -12,7 +12,7 @@ In this lab, we implement a primal-dual Interior Point method for convex quadrat
 A \emph{quadratic constrained optimization problem} differs from a linear constrained optimization problem only in that the objective function is quadratic rather than linear.
 We can pose such a problem as follows:
 \begin{align*}
-\text{minimize }\qquad \frac{1}{2}&\x^TQ\x + \c^T\x\\
+\text{minimize }\qquad \frac{1}{2}&\x\trp Q\x + \c\trp \x\\
 \text{subject to }\qquad &A\x \succeq \b,\\
 &G\x = \mathbf{h}.
 \end{align*}
@@ -25,7 +25,7 @@ Such problems are called \emph{convex}, since the objective function is convex.
 To simplify the exposition, we will also only allow inequality constraints (generalizing to include equality constraints is not difficult).
 Thus, we have the problem
 \begin{align*}
-\text{minimize }\qquad \frac{1}{2}&\x^TQ\x + \c^T\x\\
+\text{minimize }\qquad \frac{1}{2}&\x\trp Q\x + \c\trp \x\\
 \text{subject to }\qquad &A\x \succeq \b\\
 \end{align*}
 where $Q$ is an $n\times n$ positive semidefinite matrix, $\x, \c \in \mathbb{R}^n$, $A$ is an $m \times n$ matrix,
@@ -34,7 +34,7 @@ and $\b \in \mathbb{R}^m$.
 %We begin by deriving the KKT conditions for this problem.
 The Lagrangian function for this problem is:
 \begin{align}
-\mathcal{L}(\x,\Mu) = \frac{1}{2}\x^TQ\x + \c^T\x - \Mu^T(A\x -\b),
+\mathcal{L}(\x,\Mu) = \frac{1}{2}\x\trp Q\x + \c\trp \x - \Mu\trp (A\x -\b),
 \label{eq:lagrangian}
 \end{align}
 where $\Mu \in \mathbb{R}^m$ is the (as of yet unknown) Lagrange multiplier.
@@ -43,7 +43,7 @@ where $\Mu \in \mathbb{R}^m$ is the (as of yet unknown) Lagrange multiplier.
 We next take the gradient of the Lagrangian with respect to $x$ and set it equal to zero:
 \begin{align*}
 0 &= \nabla_x \mathcal{L}(x,\lambda)\\
-&= Qx + c - A^T\lambda.
+&= Qx + c - A\trp \lambda.
 \end{align*}
 We next write the complementary slackness condition:
 \[
@@ -69,7 +69,7 @@ Equations \ref{eq:lagrangian} and \ref{eq:equality}, together with complementary
 % we make this substitution into the complementary slackness conditions.
 % We obtain the following statement of the KKT conditions:
 \begin{align*}
-Q\x - A^T\Mu + \c &= \0,\\
+Q\x - A\trp \Mu + \c &= \0,\\
 A\x - \y - \b &= \0,\\
 y_i\mu_i &= 0, \qquad i=1,2,\ldots,m,\\
 \y,\Mu &\succeq \0.
@@ -87,7 +87,7 @@ Then the roots of the function
 \begin{align*}
 F(\x,\y,\Mu) =
 \begin{bmatrix}
-Q\x-A^T\Mu + c\\
+Q\x-A\trp \Mu + c\\
 A\x-\y-\b\\
 YM\e
 \end{bmatrix}
@@ -99,12 +99,12 @@ The derivative matrix of this function is given by
 \[
 DF(\x,\y,\Mu) =
 \begin{bmatrix}
-Q & 0 & -A^T\\
+Q & 0 & -A\trp \\
 A & -I & 0\\
 0 & M & Y
 \end{bmatrix},
 \]
-and the duality measure $\nu$ for this problem is \[\nu = \frac{\y^T\Mu}{m}.\]
+and the duality measure $\nu$ for this problem is \[\nu = \frac{\y\trp \Mu}{m}.\]
 
 \subsection*{Search Direction}
 
@@ -123,7 +123,7 @@ where $\sigma\in [0,1)$ is the centering parameter.
 Copy your \li{interiorPoint()} function from the previous lab into your solutions file for this lab, renaming it \li{qInteriorPoint()}.
 This new function should accept the arrays $Q, \c, A,$ and $\b$, a tuple of arrays \li{guess} giving initial estimates for $\x, \y,$ and $\Mu$ (this will be explained later), along with the keyword arguments \li{niter=20} and \li{tol=1e-16}.
 
-Modify your code to match the $F$ and $DF$ described above, and calculate the search direction $(\triangle \x^T, \triangle \y^T, \triangle \Mu^T)$ by solving Equation \ref{eq:searchDirection}.
+Modify your code to match the $F$ and $DF$ described above, and calculate the search direction $(\triangle \x\trp , \triangle \y\trp , \triangle \Mu\trp )$ by solving Equation \ref{eq:searchDirection}.
 Use $\sigma = \frac{1}{10}$ for the centering parameter.
 
 Hint: What are the dimensions of $F$ and $DF$?
@@ -137,7 +137,7 @@ We first apply Newton's method to $F$, obtaining a Newton search direction $(\tr
 that solves the system
 \begin{equation}
 \begin{bmatrix}
-Q & 0 & -A^T\\
+Q & 0 & -A\trp \\
 A & -I & 0\\
 0 & \Lambda & \mathcal{Y}
 \end{bmatrix}
@@ -148,7 +148,7 @@ A & -I & 0\\
 \end{bmatrix}
 =
 \begin{bmatrix}
--Qx + A^T\lambda - c\\
+-Qx + A\trp \lambda - c\\
 -Ax + y + b\\
 -\Lambda\mathcal{Y}e
 \end{bmatrix}.
@@ -159,7 +159,7 @@ an improved direction by perturbing the system of equations. This is done by mak
 
 First calculate the \emph{duality measure}
 \[
-\nu = \frac{1}{m}y^T\lambda,
+\nu = \frac{1}{m}y\trp \lambda,
 \]
 which tells us about how close we are to the optimal point (values closer to zero indicate better proximity to the optimizer).
 
@@ -175,7 +175,7 @@ You can check that this value is given by the minimum of the values
 
 Continuing on, we compute the Newton duality measure given by
 \[
-\hat{\nu} = \frac{1}{m}(y + \hat{\alpha}\triangle y)^T(\lambda + \hat{\alpha}\triangle \lambda),
+\hat{\nu} = \frac{1}{m}(y + \hat{\alpha}\triangle y)\trp (\lambda + \hat{\alpha}\triangle \lambda),
 \]
 and then the centering parameter
 \[
@@ -186,7 +186,7 @@ Finally, we obtain our search direction $(\triangle x', \triangle y', \triangle 
 system
 \begin{equation}
 \begin{bmatrix}
-Q & 0 & -A^T\\
+Q & 0 & -A\trp \\
 A & -I & 0\\
 0 & \Lambda & \mathcal{Y}
 \end{bmatrix}
@@ -197,7 +197,7 @@ A & -I & 0\\
 \end{bmatrix}
 =
 \begin{bmatrix}
--Qx + A^T\lambda - c\\
+-Qx + A\trp \lambda - c\\
 -Ax + y + b\\
 -\Lambda\mathcal{Y}e - \triangle \Lambda\triangle\mathcal{Y}e + \sigma\nu e
 \end{bmatrix}.
@@ -255,8 +255,8 @@ The code listed below will calculate an appropriate starting point:
 def startingPoint(G, c, A, b, guess):
     """
     Obtain an appropriate initial point for solving the QP
-    .5 x^T Gx + x^T c s.t. Ax >= b.
-    Inputs:
+    .5 x\trp  Gx + x\trp  c s.t. Ax >= b.
+    Parameters:
         G -- symmetric positive semidefinite matrix shape (n,n)
         c -- array of length n
         A -- constraint matrix shape (m,n)
@@ -314,7 +314,7 @@ We summarize the entire algorithm below.
 Complete the implementation of \li{qInteriorPoint()}.
 Return the optimal point $\x$ as well as the final objective function value.
 You may want to print out the duality measure $\nu$ to check the progress of the iteration.
-% and \li{verbose}, a boolean value indicating whether or not to print the current objective function value ($ \frac{1}{2}x_k^TQx_k + c^Tx_k$) and duality measure ($\nu_k = \frac{1}{m}y_k^T\lambda_k$) at each iteration.
+% and \li{verbose}, a boolean value indicating whether or not to print the current objective function value ($ \frac{1}{2}x_k\trp Qx_k + c\trp x_k$) and duality measure ($\nu_k = \frac{1}{m}y_k\trp \lambda_k$) at each iteration.
 % \end{problem}
 
 Test your algorithm on the simple problem
@@ -402,10 +402,10 @@ If we let $\x$ be a one-dimensional array giving the tent height at each grid po
 
 The theory of elastic membranes claims that such materials tend to naturally minimize a quantity known as the \emph{Dirichlet energy}.
 This quantity can be expressed as a quadratic function of the membrane.
-Then since we have modeled our tent with a discrete grid of values, this energy function has the form \[\frac{1}{2}\x^T H \x + \c^T \x,\] where $H$ is a particular positive semidefinite matrix closely related to Laplace's Equation, $\c$ is a vector whose entries are all equal to $-(n-1)^{-2}$, and $n$ is the side length of the grid.
+Then since we have modeled our tent with a discrete grid of values, this energy function has the form \[\frac{1}{2}\x\trp  H \x + \c\trp  \x,\] where $H$ is a particular positive semidefinite matrix closely related to Laplace's Equation, $\c$ is a vector whose entries are all equal to $-(n-1)^{-2}$, and $n$ is the side length of the grid.
 Our circus tent is therefore given by the solution to the quadratic constrained optimization problem:
 \begin{align*}
-\text{minimize }\qquad &\frac{1}{2}\x^T H \x + \c^T \x\\
+\text{minimize }\qquad &\frac{1}{2}\x\trp  H \x + \c\trp  \x\\
 \text{subject to }\qquad &\x \succeq L.\\
 \end{align*}
 See Figure \ref{fig:tent} for an example of a tent pole configuration and the corresponding tent.
@@ -479,29 +479,29 @@ The variance or spread of these values is associated with the risk of the asset,
 For our purposes, we will assume that each asset has a positive risk, i.e. there are no \emph{riskless} assets available.
 
 Stated more precisely, our portfolio consists of $n$ risky assets together with an allocation vector
-$\x = (x_1,\ldots,x_n)^T$, where $x_i$ indicates the proportion of wealth we invest in asset $i$.
+$\x = (x_1,\ldots,x_n)\trp $, where $x_i$ indicates the proportion of wealth we invest in asset $i$.
 By definition, the vector $\x$ must satisfy \[\sum_{i=1}^n x_i = 1.\]
-Suppose the $i^{th}$ asset has an expected rate of return $\mu_i$ and a standard deviation $\sigma_i$.
+Suppose the $i$th asset has an expected rate of return $\mu_i$ and a standard deviation $\sigma_i$.
 The total return on our portfolio, i.e. the expected percent change in our invested wealth over the investment period, is given by
 \[\sum_{i=1}^n \mu_ix_i.\]
-We define the risk of this portfolio in terms of the covariance matrix $Q$ of the $n$ assets: \[\sqrt{\x^T Q \x}.\]
+We define the risk of this portfolio in terms of the covariance matrix $Q$ of the $n$ assets: \[\sqrt{\x\trp  Q \x}.\]
 The covariance matrix $Q$ is always positive semidefinite, and captures the variance and correlations of the assets.
 
 Given that we want our portfolio to have a prescribed return $R$, there are in general many possible allocation vectors $\x$ that make this possible.
 It would be wise to choose the vector minimizing the risk.
 We can state this as a quadratic program:
 \begin{align*}
-\text{minimize }\qquad &\frac{1}{2}\x^TQ\x\\
+\text{minimize }\qquad &\frac{1}{2}\x\trp Q\x\\
 \text{subject to }\qquad &\sum_{i=1}^n x_i = 1\\
 &\sum_{i=1}^n \mu_ix_i = R.\\
 \end{align*}
-Note that we have slightly altered our objective function for convenience, as minimizing $\frac{1}{2}\x^TQ\x$ is equivalent to minimizing $\sqrt{\x^TQ\x}$.
+Note that we have slightly altered our objective function for convenience, as minimizing $\frac{1}{2}\x\trp Q\x$ is equivalent to minimizing $\sqrt{\x\trp Q\x}$.
 The solution to this problem will give the portfolio with least risk having a return $R$.
 Because the components of $\x$ are not constrained to be nonnegative, the solution may have some negative entries.
 This indicates short selling those particular assets.
 If we want to disallow short selling, we simply include nonnegativity constraints, stated in the following problem:
 \begin{align*}
-\text{minimize }\qquad &\frac{1}{2}\x^TQ\x\\
+\text{minimize }\qquad &\frac{1}{2}\x\trp Q\x\\
 \text{subject to }\qquad &\sum_{i=1}^n x_i = 1\\
 &\sum_{i=1}^n \mu_ix_i = R\\
 &\x \succeq \0.
@@ -524,7 +524,7 @@ See Figure \ref{fig:frontier}.
 One difficulty of this model is that the risk and return of each asset is in general unknown.
 After all, no one can predict the stock market with complete certainty.
 There are various ways of estimating these values given past stock prices, and we take a very straightforward approach.
-Suppose for each asset we have $k$ previous return values of the asset. That is, for asset $i$, we have the data vector\[y^i = [y^i_1,\,\, \ldots, \,\,y^i_k]^T.\]
+Suppose for each asset we have $k$ previous return values of the asset. That is, for asset $i$, we have the data vector\[y^i = [y^i_1,\,\, \ldots, \,\,y^i_k]\trp .\]
 We estimate the expected rate of return for asset $i$ by simply taking the average of $y_1,\ldots,y_k$, and we estimate the variance
 of asset $i$ by taking the variance of the data.
 We can estimate the covariance matrix for all assets by taking the covariance matrix of the vectors $y^1,\ldots,y^n$.

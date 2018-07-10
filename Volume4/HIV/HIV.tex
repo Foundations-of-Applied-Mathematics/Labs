@@ -26,31 +26,24 @@ Since these treatments can be expensive and often have negative side effects, it
 Sometimes combinations of these drugs are used to provide a better effect.
 In this lab we will use optimal control to find the optimal dosage of a two-drug combination\footnote{\textit{SHORT COURSES ON THE MATHEMATICS OF BIOLOGICAL COMPLEXITY}, Web. 15 Apr. 2015 http://www.math.utk.edu/~lenhart/smb2003.v2.html.}.
    
-   % \begin{thebibliography}{9}
-% 
-% \bibitem{paper}
-% "SHORT COURSES ON THE MATHEMATICS OF BIOLOGICAL COMPLEXITY." \textit{SHORT COURSES ON THE MATHEMATICS OF BIOLOGICAL COMPLEXITY}, Web. 15 Apr. 2015 http://www.math.utk.edu/~lenhart/smb2003.v2.html.
-
-% \bibitem{constants}
-% .
-% \end{thebibliography}
-   
-\begin{problem}
-Explain what makes HIV unique. What are the consequences of this? What is AIDS?
-\label{problem:hiv:virusunderstanding}
-\end{problem}
-
-\begin{problem}
-How is AIDS treated and what are the considerations for treatment?
-\label{problem:hiv:treatment}
-\end{problem}
+%\begin{problem}
+%Explain what makes HIV unique. What are the consequences of this? What is AIDS?
+%\label{problem:hiv:virusunderstanding}
+%\end{problem}
+%
+%\begin{problem}
+%How is AIDS treated and what are the considerations for treatment?
+%\label{problem:hiv:treatment}
+%\end{problem}
 
 \section*{Derivation of Control}
 We begin by defining some variables.
-Let $s_1$ and $s_2$ represent the production of T cells by various processes.
-Let $B_1$ and $B_2$ be half saturation constants (sort of like crowd control in the blood stream and plasma).
+Let $T$ represents the concentration of $CD4^+T$ cells and $V$ the concentration of HIV particles.
+$s_1$ and $s_2$ represent the production of T cells by various processes.
+$B_1$ and $B_2$ are half saturation constants (sort of like crowd control in the blood stream and plasma).
 Let $\mu$ be the death rate of uninfected T cells, k the rate of infection of T cells, and c the death rate of the virus.
-Lastly, the g be the input rate of some external viral source.
+Let g be the input rate of some external viral source.
+The control variables $u_1$ and $u_2$ represent the amount of drugs that introduce new T cells or kill the virus, respectively.
 \footnote{`Immunotherapy of HIV-1 Infection', Kirschner, D. and Webb, G. F., Journal of Biological Systems, 6(1), 71-83 (1998)}
 
 Next we write the state system, the equations that describe the changes in T cells and viruses:
@@ -60,7 +53,6 @@ Next we write the state system, the equations that describe the changes in T cel
 		\frac{\it{d}V(t)}{\it{dt}} &= \frac{gV(t)}{B_2+V(t)}(1-u_2(t)) - cV(t)T(t).
 	\end{split} \label{original_state:HIV}
 \end{align}
-Here $T$ represents the concentration of $CD4^+T$ cells and $V$ the concentration of HIV particles. 
 The term $s_1-\frac{s_2V(t)}{B_1+V(t)}$ is the source/proliferation of unaffected T cells,
 $\mu T(t)$ the natural loss of T cells, $kV(t)T(t)$ the loss of T cells by infection. 
 $\frac{gV(t)}{B_2+V(t)}$ represents the viral contribution to plasma, and $cV(t)T(t)$ the viral loss.
@@ -75,7 +67,7 @@ This functional considers i) the benefit of T cells, and ii) the systematic cost
 The constants $A_1$ and $A_2$ represent scalars to adjust the size of terms coming from $u_1^2$ and $u_2^2$ respectively. 
 We seek an optimal control $u_1^*,u_2^*$ satisfying
 \[
-J(u_1^*,u_2^*)=\max\{J(u_1,u_2)|(u_1,u_2)\in U\},
+J(u_1^*,u_2^*)=\max\{J(u_1,u_2)|(u_1,u_2)\in U\}=\min\{-J(u_1,u_2)|(u_1,u_2)\in U\},
 \]
 where $U=\{(u_1,u_2)|u_i $ is measurable $,\,a_i\le u_i \le b_i$, $t\in[0,t_f]$ for $i=1,2\}$.
  
@@ -84,41 +76,38 @@ The Hamiltonian is defined as:
 \begin{align*}
 	H = \vec{\lambda} \cdot \vec{f} - L\\
 	H =\lambda_1\Big[ s_1 - \frac{s_2V}{B_1+V}-\mu T-kVT+u_1T \Big] &+ \lambda_2 \Big[\frac{g(1-u_2)V}{B_2+V}-cVT\Big]\\
-	 &-  [T-(A_1u_1^2+A_2u_2^2)].
+	 &+  [T-(A_1u_1^2+A_2u_2^2)].
 \end{align*}
-Note that the costate is represented with $\lambda$ instead of $p$. Now based on what we know from class we have:
+Note that the costate is represented with $\lambda$ instead of $p$.
+The costate evolution equations are:
 \begin{align*}
-	\lambda_1^{'} &=-\frac{\partial H}{\partial T} =  1+\lambda_1[\mu+kV^*-u_1^*]+\lambda_2cV^*,\\
-	\lambda_2^{'} &= -\frac{\partial H}{\partial V} = \lambda_1\Big[\frac{B_1s_2}{(B_1+V^*)^2}+kT^*\Big] -\lambda_2\Big[\frac{B_2g(1-u_2^*)}				{B_2+V^*)^2}-cT^*\Big].
+	\lambda_1^{'} &=-\frac{\partial H}{\partial T} =  -1+\lambda_1[\mu+kV^*-u_1^*]+\lambda_2cV^*,\\
+	\lambda_2^{'} &= -\frac{\partial H}{\partial V} = \lambda_1\Big[\frac{B_1s_2}{(B_1+V^*)^2}+kT^*\Big] -\lambda_2\Big[\frac{B_2g(1-u_2^*)}				{(B_2+V^*)^2}-cT^*\Big].
 \end{align*}
-
-The transversality conditions are $\lambda_1(t_f)=\lambda_2(t_f)=0$, with $T(0)=T_0$ and $V(0)=V_0$. 
-%Also 
-%$$u_1^* = min\Bigg\{max\Bigg\{a_1,\frac{1}{2A_1}(\lambda_1T^*(t))\Bigg\},b_1\Bigg\}$$
-%$$u_2^* = min\Bigg\{max\Bigg\{a_2,\frac{-\lambda_2}{2A_2}\frac{V*(t)}{(B_2+V^*(t))}\Bigg\},b_2\Bigg\}$$
-%The optimality equations are:
-%$$\frac{\partial H}{\partial u_1} = -2A_1u_1^*(t)+\lambda_1T^*(t)=0$$
-%$$\frac{\partial H}{\partial u_2} = -2A_2u_2^*(t)+\lambda_2\big[\frac{-gV^*(t)}{B_2+V^*(t)}\big
+The transversality (or endpoint) conditions are $\lambda_1(t_f)=\lambda_2(t_f)=0$, with $T(0)=T_0$ and $V(0)=V_0$. 
+The optimality equations are:
+$$\frac{\partial H}{\partial u_1} = -2A_1u_1^*(t)+\lambda_1T^*(t)=0$$
+$$\frac{\partial H}{\partial u_2} = -2A_2u_2^*(t)+\lambda_2\big[\frac{-gV^*(t)}{B_2+V^*(t)}\big]=0$$
 From these conditions we obtain
 \begin{align*}
-	u_1^*(t) &= \frac{-1}{2A_1}\left[\lambda_1T^*(t)\right],\\
-	u_2^*(t) &= \frac{1}{2A_2}\left[\lambda_2\frac{gV^*(t)}{B_2+V^*(t)}\right].
+	u_1^*(t) &= \frac{1}{2A_1}\left[\lambda_1T^*(t)\right],\\
+	u_2^*(t) &= \frac{-1}{2A_2}\left[\lambda_2\frac{gV^*(t)}{B_2+V^*(t)}\right].
 \end{align*}
 From the bounds on the controls we have
 \begin{align*}
 	\begin{split}
-		u_1^*(t)&=\min\left\{\max\{a_1,\frac{-1}{2A_1}(\lambda_1T^*(t))\},b_1\right\},\\
-		u_2^*(t)&=\min\left\{\max\{a_2,\frac{\lambda_2}{2A_2}\frac{gV^*(t)}{B_2+V^*(t)}\},b_2\right\}.
+		u_1^*(t)&=\min\left\{\max\{a_1,\frac{1}{2A_1}(\lambda_1T^*(t))\},b_1\right\},\\
+		u_2^*(t)&=\min\left\{\max\{a_2,\frac{-\lambda_2}{2A_2}\frac{gV^*(t)}{B_2+V^*(t)}\},b_2\right\}.
 	\end{split}
 \end{align*}
 This gives us the optimal system
 \begin{align}
 	\begin{split}
-		T'&=s_1-\frac{s_2V}{B_1+V}-\mu T-kVT+\min\{\max\{a_1,\frac{-1}{2A_1}(\lambda_1T)\},b_1\}T,\\
-		V'&=\frac{g(1-\min\{\max\{a_2,\frac{\lambda_2}{2A_2}\frac{gV}{B_2+V}\},b_2\})V}{B_2+V}-cVT
+		T'&=s_1-\frac{s_2V}{B_1+V}-\mu T-kVT+\min\{\max\{a_1,\frac{1}{2A_1}(\lambda_1T)\},b_1\}T,\\
+		V'&=\frac{g(1-\min\{\max\{a_2,\frac{-\lambda_2}{2A_2}\frac{gV}{B_2+V}\},b_2\})V}{B_2+V}-cVT
 	\end{split} \label{modified_state:HIV}\\
 	\begin{split}
-		\lambda_1'&=1+\lambda_1\left[\mu+kV-\min\{\max\{a_1,\frac{1}{2A_1}(\lambda_1T)\},b_1\}\right]+\lambda_2cV,\\
+		\lambda_1'&=-1+\lambda_1\left[\mu+kV-\min\{\max\{a_1,\frac{1}{2A_1}(\lambda_1T)\},b_1\}\right]+\lambda_2cV,\\
 		\lambda_2'&=\lambda_1\left[\frac{B_1s_2}{(B_1+V)^2}+kT\right]-\lambda_2\left[\frac{B_2g(1-\min\{\max\{a_2,\frac{-\lambda_2}{2A_2}\frac{V}			{B_2+V}\},b_2\})}{(B_2+V)^2}-cT\right],
 	\end{split}
 \end{align}
@@ -139,7 +128,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 #Code from RK4 Lab with minor edits				
-def initialize_all(y0, t0, t, n):
+def initialize_all(y0, t0, tf, n):
     """ An initialization routine for the different ODE solving
     methods in the lab. This initializes Y, T, and h. """
     if isinstance(y0, np.ndarray):
@@ -147,17 +136,17 @@ def initialize_all(y0, t0, t, n):
     else:
         Y = np.empty(n)
     Y[0] = y0
-    T = np.linspace(t0, t, n)
-    h = float(t - t0) / (n - 1)
+    T = np.linspace(t0, tf, n)
+    h = float(tf - t0) / (n - 1)
     return Y, T, h
 
-def RK4(f, y0, t0, t, n):
+def RK4(f, y0, t0, tf, n):
     """ Use the RK4 method to compute an approximate solution
     to the ODE y' = f(t, y) at n equispaced parameter values from t0 to t
     with initial conditions y(t0) = y0.
     
     y0 is assumed to be either a constant or a one-dimensional numpy array.
-    t and t0 are assumed to be constants.
+    tf and t0 are assumed to be constants.
     f is assumed to accept three arguments.
     The first is a constant giving the value of t.
     The second is a one-dimensional numpy array of the same size as y.
@@ -167,10 +156,10 @@ def RK4(f, y0, t0, t, n):
     y is a constant or an array of size 1.
     It returns an array of shape (n, y.size) otherwise.
     In either case, Y[i] is the approximate value of y at
-    the i'th value of np.linspace(t0, t, n).
+    the i'th value of np.linspace(t0, tf, n).
     """
-    Y,T,h = initialize_all(y0,t0,t,n)
-    for i in xrange(n-1):
+    Y,T,h = initialize_all(y0,t0,tf,n)
+    for i in range(n-1):
         K1 = f(T[i],Y[i],i)
         K2 = f(T[i]+h/2.,Y[i]+h/2.*K1,i)
         K3 = f(T[i]+h/2.,Y[i]+h/2.*K2,i)
@@ -239,7 +228,7 @@ def state_equations(t,y,i):
 The state equations work great in the RK4 solver; however, the costate equations have end conditions rather than initial conditions. Thus we want our RK4 solver to iterate backwards from the end to the beginning. An easy way to accomplish this is to define a function $ \hat{\lambda}_i(t)=\lambda_i(t_f - t).$ Then $\hat{\lambda}_i$ has the initial conditions $\hat{\lambda}_i(0) = \lambda_i(t_f)$. We get the new equations
 
 \begin{align*}
-\dot{\hat{\lambda}}_1(t) &=\lambda_1(t_f-t)\left(-\mu - kV(t_f-t) + u_{1}(t_f-t)\right) - c\lambda_2(t_f-t)V(t_f-t) - 1, \\
+\dot{\hat{\lambda}}_1(t) &=\lambda_1(t_f-t)\left(-\mu - kV(t_f-t) + u_{1}(t_f-t)\right) - c\lambda_2(t_f-t)V(t_f-t) + 1, \\
 \dot{\hat{\lambda}}_2(t) &= -\lambda_1(t_f-t)\left(\frac{s_2B_1}{(B_1+V(t_f-t))^2}+kT(t_f-t)\right) \\
 &+ \lambda_2(t_f-t)\left(\frac{gB_2(1-u_2(t_f-t))}{(B_2 + V(t_f-t))^2} - cT(t_f-t)\right).
 \end{align*}

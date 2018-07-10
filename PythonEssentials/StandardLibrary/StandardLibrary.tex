@@ -107,7 +107,7 @@ A \emph{name} (or variable) is a reference to a Python object, and a \emph{names
 \end{lstlisting}
 
 A single equals sign assigns a name to an object.
-If a name is assigned to another name, that new name either refers to the same object that the original name refers to, or to a copy of that object.
+If a name is assigned to another name, that new name refers to the same object as the original name.
 
 \begin{lstlisting}
 >>> beatles = ["John", "Paul", "George", "Ringo"]
@@ -117,7 +117,8 @@ If a name is assigned to another name, that new name either refers to the same o
 \end{lstlisting}
 
 To see all of the names in the current namespace, use the built-in function \li{dir()}.
-To delete a variable from the namespace, use the \li{del} keyword (\textbf{with caution!}).
+To delete a name from the namespace, use the \li{del} keyword (\textbf{with caution!}).
+% Objects are not actually deleted from memory until there are no names referring to it.
 
 \begin{lstlisting}
 # Add 'stem' to the namespace.
@@ -147,13 +148,13 @@ This feature is called \emph{garbage collection}.
 
 \subsection*{Mutability} % ----------------------------------------------------
 
-Python object types are either mutable or immutable.
-An \emph{immutable} object cannot be altered once created, so assigning a new name to it creates a copy in memory.
-A \emph{mutable} object's value may be changed, so assigning a new name to it does \emph{not} create a copy.
-Therefore, if two names refer to the same mutable object, any changes to the object will be reflected in both names.
+Every Python object type falls into one of two categories: a \emph{mutable} object may be altered at any time, while an \emph{immutable} object cannot be altered once created.
+Attempting to change an immutable object creates a new object in memory.
+If two names refer to the same mutable object, any changes to the object are reflected in both names since they still both refer to that same object.
+On the other hand, if two names refer to the same immutable object and one of the values is ``changed,'' one name will refer to the original object, and the other will refer to a new object in memory.
 
 \begin{warn} % Extensive Mutability Warning.
-It is possible to copy a mutable object, but failing to do so correctly can cause subtle problems.
+Failing to correctly copy mutable objects can cause subtle problems.
 For example, consider a dictionary that maps items to their base prices.
 To make a similar dictionary that accounts for a small sales tax, we might try to make a copy by assigning a new name to the first dictionary.
 
@@ -175,7 +176,7 @@ To make a similar dictionary that accounts for a small sales tax, we might try t
 \end{lstlisting}
 
 To avoid this problem, explicitly create a copy of the object by casting it as a new structure.
-Changes made to the copy will not change the original object.
+Changes made to the copy will not change the original object, since they are distinct objects in memory.
 To fix the above code, replace the second line with the following:
 
 \begin{lstlisting}
@@ -193,7 +194,7 @@ Determine which of Python's object types are mutable and which are immutable by 
     \item Alter the object via only one of the names (for tuples, use \li{my_tuple += (1,)}).
     \item Check to see if the two names are equal.
     If they are, then since changing one name changed the other, the names refer to the same object and the object type is mutable.
-    Otherwise, the names refer to different objects---meaning a copy was made in step 2---and therefore the object type is immutable.
+    Otherwise, the names refer to different objects---meaning a new object was created in step 2---and therefore the object type is immutable.
 \end{enumerate}
 For example, the following experiment shows that \li{dict} is a mutable type.
 \begin{lstlisting}
@@ -296,11 +297,11 @@ $ python example1.py
 This file was executed from the command line or an interpreter.>>
 \end{lstlisting}
 
-Executing the file with IPython's \li{run} command executes each line of the file and also adds the module's names to the current namespace.
+Executing the file with IPython's special \li{<p<\%run>p>} command executes each line of the file and also adds the module's names to the current namespace.
 \textbf{This is the quickest way to test individual functions via IPython}.
 
 \begin{lstlisting}
-<g<In [1]:>g> run example1.py
+<g<In [1]:>g> <p<%run>p> example1.py
 <<Data: [0, 1, 2, 3]
 This file was executed from the command line or an interpreter.>>
 
@@ -308,8 +309,8 @@ This file was executed from the command line or an interpreter.>>
 Data: [0, 1, 2, 3]
 \end{lstlisting}
 
-Importing the file also executes each line,\footnote{Try importing the \li{this} or \li{antigravity} modules.
-In these cases, importing actually executes some code.} but only adds the indicated alias to the namespace.
+Importing the file also executes each line,\footnote{Try importing the \lif{this} or \lif{antigravity} modules.
+Importing these modules actually executes some code.} but only adds the indicated alias to the namespace.
 Also, code under the \li{if __name__ == "__main__"} clause is \textbf{not} executed when a file is imported.
 
 \begin{lstlisting}
@@ -360,7 +361,7 @@ In IPython, run the file and test \li{sum_of_squares()}.
 
 \begin{lstlisting}
 # Run the file, adding the function sum_of_squares() to the namespace.
-<g<In [1]:>g> run example2
+<g<In [1]:>g> <p<%run>p> example2
 
 <g<In [2]:>g> sum_of_squares(3)
 <r<Out[2]:>r> 5                           # Should be 14!
@@ -381,7 +382,7 @@ def sum_of_squares(x):
 
 \begin{lstlisting}
 # Run the file again to refresh the namespace.
-<g<In [3]:>g> run example2
+<g<In [3]:>g> <p<%run>p> example2
 
 # Now sum_of_squares() is updated to the new, corrected version.
 <g<In [4]:>g> sum_of_squares(3)
@@ -608,10 +609,10 @@ System Arguments: ['example3.py', 'with', '2', 'many', 'arguments']>>
 \end{lstlisting}
 
 Note that the first command line argument is always the filename, and that \li{sys.argv} is always a list of strings, even if a number is provided on the command line.
-In IPython, command line arguments are specified after the \li{run} command.
+In IPython, command line arguments are specified after the \li{<p<\%run>p>} command.
 
 \begin{lstlisting}
-In [1]: run example3.py hello
+<g<In [1]:>g> <p<%run>p> example3.py hello
 <<HELLO>>
 \end{lstlisting}
 

@@ -3,7 +3,7 @@
 
 USAGE="usage: ./compile_labs.sh [LaTeX compiler, defaults to pdflatex]"
 MAX_TIME=30
-FILES=(PythonEssentials Volume1 Volume2 Volume3 Volume4)
+FILES=(PythonEssentials DataScienceEssentials Volume1 Volume2 Volume3 Volume4)
 SUCCESS=true
 LOG="_compilelog.errlog"
 SEP="===================="

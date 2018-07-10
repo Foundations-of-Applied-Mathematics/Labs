@@ -1,6 +1,6 @@
-\lab{Interior Point I: Linear Programs}{Interior Point I: Linear Programs}
+\lab{Interior Point 1: Linear Programs}{Interior Point 1: Linear Programs}
 
-% Bold mu, lambda, and beta symbols for this lab.
+% Bold mu, lambda, and beta symbols for this lab. TODO: move to command.tex.
 \def\Mu{\boldsymbol{\mu}}
 \def\Lamb{\boldsymbol{\lambda}}
 \def\Beta{\boldsymbol{\beta}}
@@ -35,19 +35,18 @@ In general, the Simplex Method requires many more iterations (though each iterat
 Some of the most popular and successful types of Interior Point methods are known as Primal-Dual Interior Point methods.
 Consider the following linear program:
 \begin{align*}
-\text{minimize }\qquad &\c^T\x\\
+\text{minimize }\qquad &\c\trp \x\\
 \text{subject to }\qquad &A\x = \b\\
-&\x \geq \0.
+&\x \succeq \0.
 \end{align*}
 Here, $\x, \c \in \mathbb{R}^n$, $\b \in \mathbb{R}^m$, and $A$ is an $m \times n$ matrix with full row rank.
-% By $x \geq 0$, we simply mean that each coordinate of $x$ is nonnegative.
+% By $x \succeq 0$, we simply mean that each coordinate of $x$ is nonnegative.
 % Note that this formulation is quite general, as any linear program can be posed in this manner, after appropriate transformations.
-% TODO: Change \geq to the component-wise inequality that is used in the book.
 This is the \emph{primal} problem, and its \emph{dual} takes the form:
 \begin{align*}
-\text{maximize }\qquad &\b^T\Lamb\\
-\text{subject to }\qquad &A^T\Lamb + \Mu = \c\\
-&\Mu,\Lamb \geq \0,
+\text{maximize }\qquad &\b\trp \Lamb\\
+\text{subject to }\qquad &A\trp \Lamb + \Mu = \c\\
+&\Mu,\Lamb \succeq \0,
 \end{align*}
 where $\Lamb \in \mathbb{R}^m$ and $\Mu \in \mathbb{R}^n$.
 % Changed s to \mu to match the textbook.
@@ -58,25 +57,25 @@ The theory of convex optimization gives us necessary and sufficient conditions f
 The Lagrangian for the primal problem is as follows:
 \[
 \CalL(\x, \Lamb, \Mu)
-= \c^T\x + \Lamb^T(\b - A\x) - \Mu^T\x
+= \c\trp \x + \Lamb\trp (\b - A\x) - \Mu\trp \x
 \]
 The KKT conditions are
 \begin{align*}
-A^T\Lamb + \Mu &= \c\\
+A\trp \Lamb + \Mu &= \c\\
 A\x &= \b\\
 x_i\mu_i &= 0, \quad i = 1,2,\ldots,n,\\
-\x, \Mu &\geq 0.
+\x, \Mu &\succeq 0.
 \end{align*}
 It is convenient to write these conditions in a more compact manner, by defining an almost-linear function $F$ and setting it equal to zero:
 \begin{align*}
 F(\x,\Lamb,\Mu) :=
 \begin{bmatrix}
-A^T\Lamb + \Mu - \c\\
+A\trp \Lamb + \Mu - \c\\
 A\x - \b\\
 M\x\\
 \end{bmatrix}
 &= \0,\\
-(\x,\Mu) &\geq 0,
+(\x,\Mu &\succeq \0),
 \end{align*}
 where $M = \text{diag}(\mu_1,\mu_2,\ldots,\mu_n)$.
 Note that the first row of $F$ is the KKT condition for dual feasibility, the second row of $F$ is the KKT condition for the primal problem, and the last row of $F$ accounts for complementary slackness.
@@ -101,34 +100,34 @@ s_id_i(x) &= 0,\quad i=1,2,\ldots,j,\\
 d_i(x) &\geq 0,\quad i=1,2,\ldots,j,\\
 s_i &\geq 0,\quad i=1,2,\ldots,j.
 \end{align*}
-For our linear program, $f(x) = c^Tx$, $c_i(x) = A_i^Tx - b_i$ (where $A_i$ denotes the $i$-th row of $A$), and $d_i(x) = x_i$.
+For our linear program, $f(x) = c\trp x$, $c_i(x) = A_i\trp x - b_i$ (where $A_i$ denotes the $i$-th row of $A$), and $d_i(x) = x_i$.
 Hence, you can check that our Lagrangian function is
 \[
-\mathcal{L}(x,\lambda,s) = c^Tx - \lambda^T(Ax - b) - s^Tx.
+\mathcal{L}(x,\lambda,s) = c\trp x - \lambda\trp (Ax - b) - s\trp x.
 \]
 We then calculate
 \[
-\nabla_x\mathcal{L}(x,\lambda,s) = (c^T - \lambda^TA - s^T)^T = c - A^T\lambda - s.
+\nabla_x\mathcal{L}(x,\lambda,s) = (c\trp  - \lambda\trp A - s\trp )\trp  = c - A\trp \lambda - s.
 \]
 The KKT conditions can now be expressed as follows:
 \begin{align*}
-A^T\lambda + s &= c\\
-Ax &= b\\
+A\trp \lambda + s &= c\\
+A\x &= \b\\
 x_is_i &= 0, \quad i = 1,2,\ldots,n,\\
-x, s &\geq 0.
+\x, \mathbf{s} &\succeq 0.
 \end{align*}
 In fact, it is convenient to write these conditions in a more compact manner, by defining an almost-linear function $F$ and setting it equal to zero:
 \begin{align*}
 F(\x,\Lamb,\Mu) :=
 \begin{bmatrix}
-A^T\lambda + s - c\\
+A\trp \lambda + s - c\\
 Ax - b\\
 XSe\\
 \end{bmatrix}
 &= 0,\\
-(x,s) &\geq 0,
+(\x,\mathbf{s} &\succeq \0),
 \end{align*}
-where $X = \text{diag}(x_1,x_2,\ldots,x_n)$, $S = \text{diag}(s_1,s_2,\ldots,s_n)$, and $e = (1,1,\ldots,1)^T$.
+where $X = \text{diag}(x_1,x_2,\ldots,x_n)$, $S = \text{diag}(s_1,s_2,\ldots,s_n)$, and $e = (1,1,\ldots,1)\trp $.
 \end{comment} % Derivation overkil ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 \begin{problem} % First step: define F(x,lamb,mu) -----------------------------
@@ -142,11 +141,11 @@ This function should accept $\x$, $\Lamb$, and $\Mu$ as parameters and return a 
 
 \subsection*{Search Direction}
 
-A Primal-Dual Interior Point method is a line search method that starts with an initial guess $(\x_0^T, \Lamb_0^T, \Mu_0^T)$ and produces a sequence of points that converge to $({\x^*}^T, {\Lamb^*}^T, {\Mu^*}^T)$, the solution to the KKT equations and hence the solution to the original linear program.
+A Primal-Dual Interior Point method is a line search method that starts with an initial guess $(\x_0\trp , \Lamb_0\trp , \Mu_0\trp )$ and produces a sequence of points that converge to $({\x^*}\trp , {\Lamb^*}\trp , {\Mu^*}\trp )$, the solution to the KKT equations and hence the solution to the original linear program.
 %We now describe how to select the search direction and step length at each iteration of the algorithm.
 The constraints on the problem make finding a search direction and step length a little more complicated than for the unconstrained line search we have studied previously.
 
-In the spirit of Newton's Method, we can form a linear approximation of the system $F(\x,\Lamb,\Mu) = \0$ centered around our current point $(\x, \Lamb, \Mu)$, and calculate the direction $(\triangle \x^T, \triangle \Lamb^T, \triangle \Mu^T)$ in which to step to set the linear approximation equal to $\0$.
+In the spirit of Newton's Method, we can form a linear approximation of the system $F(\x,\Lamb,\Mu) = \0$ centered around our current point $(\x, \Lamb, \Mu)$, and calculate the direction $(\triangle \x\trp , \triangle \Lamb\trp , \triangle \Mu\trp )$ in which to step to set the linear approximation equal to $\0$.
 This equates to solving the linear system:
 \begin{align}
 DF(\x,\Lamb,\Mu)
@@ -158,7 +157,7 @@ We can calculate this matrix block-wise by obtaining the partial derivatives of 
 We thus obtain:
 \[
 DF(\x,\Lamb,\Mu) = \left[\begin{array}{ccc}
-0 & A^T & I \\
+0 & A\trp  & I \\
 A & 0 & 0 \\
 M & 0 & X
 \end{array}\right]
@@ -168,18 +167,18 @@ where $X = \text{diag}(x_1,x_2,\ldots,x_n).$
 \begin{comment} % More derivation overkill vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 For example, consider the topmost block entry of $F(\x,\Lamb,\Mu)$, given by
 \[
-A^T\lambda + s - c.
+A\trp \lambda + s - c.
 \]
 We calculate the partial derivatives of this expressions as follows:
 \begin{align*}
-\frac{\partial}{\partial x}[A^T\lambda + s - c] &= 0,\\
-\frac{\partial}{\partial \lambda}[A^T\lambda + s - c] &= A^T,\\
-\frac{\partial}{\partial s}[A^T\lambda + s - c] &= I.\\
+\frac{\partial}{\partial x}[A\trp \lambda + s - c] &= 0,\\
+\frac{\partial}{\partial \lambda}[A\trp \lambda + s - c] &= A\trp ,\\
+\frac{\partial}{\partial s}[A\trp \lambda + s - c] &= I.\\
 \end{align*}
 Hence, the topmost block row of $DF(\x,\Lamb,\Mu)$ is given by
 \[
 \begin{bmatrix}
-0 \quad A^T \quad I\\
+0 \quad A\trp  \quad I\\
 \end{bmatrix}.
 \]
 Continuing in this manner, we can calculate the entire derivative matrix, which leads us to the following linear system:
@@ -187,7 +186,7 @@ Continuing in this manner, we can calculate the entire derivative matrix, which 
 
 Unfortunately, solving Equation \ref{eq:naiveNewton} often leads to a search direction that is too greedy.
 Even small steps in this direction may lead the iteration out of the feasible region by violating one of the constraints.
-To remedy this, we define the \emph{duality measure} $\nu$\footnote{$\nu$ is the Greek letter for $n$, pronounced ``nu.''} of the problem: \[\nu = \frac{\x^T\Mu}{n} \]
+To remedy this, we define the \emph{duality measure} $\nu$\footnote{$\nu$ is the Greek letter for $n$, pronounced ``nu.''} of the problem: \[\nu = \frac{\x\trp \Mu}{n} \]
 The idea is to use Newton's method to identify a direction that strictly decreases $\nu$.
 Thus instead of solving Equation \ref{eq:naiveNewton}, we solve:
 \begin{align}
@@ -197,12 +196,12 @@ DF(\x,\Lamb,\Mu)
 \begin{bmatrix} \0 \\ \0 \\ \sigma\nu\e \end{bmatrix}
 \label{eq:newNewton}
 \end{align}
-where $\e = (1,1,\ldots,1)^T$ and $\sigma \in [0,1)$ is called the \emph{centering parameter}.
+where $\e = (1,1,\ldots,1)\trp $ and $\sigma \in [0,1)$ is called the \emph{centering parameter}.
 The closer $\sigma$ is to 0, the more similar the resulting direction will be to the plain Newton direction.
 The closer $\sigma$ is to 1, the more the direction points inward to the interior of the of the feasible region.
 
 \begin{problem} % Search direction --------------------------------------------
-Within \li{interiorPoint()}, write a subroutine to compute the search direction $(\triangle \x^T, \triangle \Lamb^T, \triangle \Mu^T)$ by solving Equation \ref{eq:newNewton}.
+Within \li{interiorPoint()}, write a subroutine to compute the search direction $(\triangle \x\trp , \triangle \Lamb\trp , \triangle \Mu\trp )$ by solving Equation \ref{eq:newNewton}.
 Use $\sigma = \frac{1}{10}$ for the centering parameter.
 
 Note that only the last block row of $DF$ will need to be changed at each iteration (since $M$ and $X$ depend on $\Mu$ and $\x$, respectively).
@@ -212,7 +211,7 @@ Consider using the functions \li{lu_factor()} and \li{lu_solve()} from the \li{s
 \begin{comment} % Old strategy for search direction vvvvvvvvvvvvvvvvvvvvvvvvvvv
 \begin{equation}
 \begin{bmatrix}
-0 & A^T & I\\
+0 & A\trp  & I\\
 A & 0 & 0\\
 S & 0 & X
 \end{bmatrix}
@@ -229,7 +228,7 @@ S & 0 & X
 \end{bmatrix},
 \label{eq:affine}
 \end{equation}
-where $r_b = Ax - b$ and $r_c = A^T\lambda + s - c$.
+where $r_b = Ax - b$ and $r_c = A\trp \lambda + s - c$.
 This Newton direction is too greedy, however, and even small steps in this direction may cause us to violate the nonnegativity condition (the last line of the KKT conditions).
 We need to find a new search direction.
 
@@ -243,7 +242,7 @@ Denote the solution to this system by $(\triangle \x^a, \triangle \Lamb^a, \tria
 As discussed, however, we must deviate from this direction somewhat, and so we additionally solve the following linear system of equations:
 \begin{equation}
 \begin{bmatrix}
-0 & A^T & I\\
+0 & A\trp  & I\\
 A & 0 & 0\\
 S & 0 & X
 \end{bmatrix}
@@ -268,7 +267,7 @@ Note that
 \triangle X^a &= \text{diag}(\triangle x_1^a,\ldots,\triangle x_n^a),\\
 \triangle S^a &= \text{diag}(\triangle \Mu_1^a,\ldots,\triangle \Mu_n^a).
 \end{align*}
-Further, define $\mu := x^Ts/n$.
+Further, define $\mu := x\trp s/n$.
 This quantity, called the \emph{duality measure}, tells us roughly how close we are to the optimal solution, with values closer to 0 being more desirable.
 It is present in Equation \ref{eq:centering} for the purpose of obtaining a search direction that leads to a decrease towards 0 in the duality measure.
 
@@ -280,7 +279,7 @@ First, make the following calculations (which give the maximum allowable step le
 \end{align*}
 Next, define
 \[
-\mu_a := \frac{1}{n}(x+\alpha_a^p\triangle \x^a)^T(s+\alpha_a^d\triangle \Mu^a),
+\mu_a := \frac{1}{n}(x+\alpha_a^p\triangle \x^a)\trp (s+\alpha_a^d\triangle \Mu^a),
 \]
 which is simply the duality measure for the point obtained by taking a full step in the Newton direction.
 Finally, calculate $\sigma$ by the formula
@@ -353,7 +352,7 @@ Fortunately, the only difference between the two equations is the right-hand sid
 Thus, we can avoid repetitious calculation by first factorizing the block matrix
 \[
 \begin{bmatrix}
-0 & A^T & I\\
+0 & A\trp  & I\\
 A & 0 & 0\\
 S & 0 & X
 \end{bmatrix}
@@ -370,7 +369,7 @@ Another potentially tricky calculation that comes up in each iteration has the f
 \[
 \min\left(1, \displaystyle\min_{i : u_i < 0}-\frac{v_i}{u_i}\right),
 \]
-where $\mathbf{u} = (u_1, \ldots, u_n)^T$ and $\mathbf{v} = (v_1, \ldots, v_n)^T$ are vectors.
+where $\mathbf{u} = (u_1, \ldots, u_n)\trp $ and $\mathbf{v} = (v_1, \ldots, v_n)\trp $ are vectors.
 This can be done in a vectorized fashion in Python as follows (assuming that the arrays \li{u} and \li{v} have already been initialized):
 \begin{lstlisting}
 >>> mask = u < 0
@@ -396,15 +395,15 @@ The following function will calculate an appropriate initial point.
 \begin{lstlisting}
 def starting_point(A, b, c):
     """Calculate an initial guess to the solution of the linear program
-    min c^T x, Ax = b, x>=0.
+    min c\trp  x, Ax = b, x>=0.
     Reference: Nocedal and Wright, p. 410.
     """
     # Calculate x, lam, mu of minimal norm satisfying both
     # the primal and dual constraints.
-    B = la.inv(A.dot(A.T))
-    x = A.T.dot(B.dot(b))
-    lam = B.dot(A.dot(c))
-    mu = c - A.T.dot(lam)
+    B = la.inv(A @ A.T))
+    x = A.T @ B @ b
+    lam = B @ A @ c
+    mu = c - (A.T @ lam)
 
     # Perturb x and s so they are nonnegative.
     dx = max((-3./2)*x.min(), 0)
@@ -425,7 +424,7 @@ def starting_point(A, b, c):
 Complete the implementation of \li{interiorPoint()}.
 
 Use the function \li{starting_point()} provided above to select an initial point, then run the iteration \li{niter} times, or until the duality measure is less than \li{tol}.
-Return the optimal point $\x^*$ and the optimal value $\c^T\x^*$.
+Return the optimal point $\x^*$ and the optimal value $\c\trp \x^*$.
 
 The duality measure $\nu$ tells us in some sense how close our current point is to the minimizer.
 The closer $\nu$ is to 0, the closer we are to the optimal point.
@@ -434,7 +433,7 @@ Thus, by printing the value of $\nu$ at each iteration, you can track how your a
 To test your implementation, use the following code to generate a random linear program, along with the optimal solution.
 % TODO: update the spec file with this version of randomLP().
 \begin{lstlisting}
-    """Generate a linear program min c^T x s.t. Ax = b, x>=0.
+    """Generate a linear program min c\trp  x s.t. Ax = b, x>=0.
     First generate m feasible constraints, then add
     slack variables to convert it into the above form.
     Inputs:
@@ -450,8 +449,8 @@ To test your implementation, use the following code to generate a random linear 
     A[A[:,-1]<0] *= -1
     x = np.random.random(n)*10
     b = np.zeros(m)
-    b[:n] = A[:n,:].dot(x)
-    b[n:] = A[n:,:].dot(x) + np.random.random(m-n)*10
+    b[:n] = A[:n,:] @ x
+    b[n:] = A[n:,:] @ x + np.random.random(m-n)*10
     c = np.zeros(n+m)
     c[:n] = A[:n,:].sum(axis=0)/n
     A = np.hstack((A, np.eye(m)))
@@ -462,7 +461,7 @@ To test your implementation, use the following code to generate a random linear 
 >>> A, b, c, x = randomLP(m, n)
 >>> point, value = interiorPoint(A, b, c)
 >>> np.allclose(x, point[:n])
-True
+<<True>>
 \end{lstlisting}
 \end{problem}
 
@@ -478,12 +477,12 @@ The method of \emph{least absolute deviations} (LAD) also seeks to find a best f
 In particular, suppose we have a set of data points $(y_1, \x_1), (y_2, \x_2), \ldots, (y_m, \x_m)$, where $y_i \in \mathbb{R}$, $\x_i \in \mathbb{R}^n$ for $i = 1, 2, \ldots, m$.
 Here, the $\x_i$ vectors are the \emph{explanatory variables} and the $y_i$ values are the \emph{response variables}, and we assume the following linear model:
 \[
-y_i = \Beta^T\mathbf{x}_i + b, \qquad i = 1, 2, \ldots, m,
+y_i = \Beta\trp \mathbf{x}_i + b, \qquad i = 1, 2, \ldots, m,
 \]
 where $\Beta\in\mathbb{R}^n$ and $b \in \mathbb{R}$.
 The error between the data and the proposed linear model is given by
 \[
-\sum_{i=1}^n |\Beta^T\mathbf{x}_i + b - y_i|,
+\sum_{i=1}^n |\Beta\trp \mathbf{x}_i + b - y_i|,
 \]
 and we seek to choose the parameters $\Beta, b$ so as to minimize this error.
 
@@ -508,7 +507,7 @@ Hence, the least absolute deviations solution is less stable than the least squa
 In some cases there are even infinitely many lines that minimize the least absolute deviations error term.
 However, one can expect a unique solution in most cases.
 
-The least absolute deviations solution arises naturally when we assume that the residual terms $\Beta^T\mathbf{x}_i + b - y_i$ have a particular statistical distribution (the Laplace distribution).
+The least absolute deviations solution arises naturally when we assume that the residual terms $\Beta\trp \mathbf{x}_i + b - y_i$ have a particular statistical distribution (the Laplace distribution).
 Ultimately, however, the choice between least absolute deviations and least squares depends on the nature of the data at hand, as well as your own good judgment.
 
 % =============================================================================
@@ -519,24 +518,24 @@ Ultimately, however, the choice between least absolute deviations and least squa
 
 \subsection*{LAD as a Linear Program}
 We can formulate the least absolute deviations problem as a linear program, and then solve it using our interior point method.
-For $i = 1, 2, \ldots, m$ we introduce the artificial variable $u_i$ to take the place of the error term $|\Beta^T\mathbf{x}_i + b - y_i|$, and we require this variable to satisfy $u_i \geq |\Beta^T\mathbf{x}_i + b - y_i|$.
+For $i = 1, 2, \ldots, m$ we introduce the artificial variable $u_i$ to take the place of the error term $|\Beta\trp \mathbf{x}_i + b - y_i|$, and we require this variable to satisfy $u_i \geq |\Beta\trp \mathbf{x}_i + b - y_i|$.
 This constraint is not yet linear, but we can split it into an equivalent set of two linear constraints:
 \begin{align*}
-u_i &\geq \Beta^T\mathbf{x}_i + b - y_i,\\
-u_i &\geq y_i - \Beta^T\mathbf{x}_i - b.
+u_i &\geq \Beta\trp \mathbf{x}_i + b - y_i,\\
+u_i &\geq y_i - \Beta\trp \mathbf{x}_i - b.
 \end{align*}
 The $u_i$ are implicitly constrained to be nonnegative.
 
 Our linear program can now be stated as follows:
 \begin{align*}
 \text{minimize }\qquad &\sum_{i=1}^m u_i\\
-\text{subject to }\qquad &u_i \geq \Beta^T\mathbf{x}_i + b - y_i,\\
-&u_i \geq y_i - \Beta^T\mathbf{x}_i - b.
+\text{subject to }\qquad &u_i \geq \Beta\trp \mathbf{x}_i + b - y_i,\\
+&u_i \geq y_i - \Beta\trp \mathbf{x}_i - b.
 \end{align*}
 Now for each inequality constraint, we bring all variables ($u_i, \Beta, b$) to the left hand side and introduce a nonnegative slack variable to transform the constraint into an equality:
 \begin{align*}
-u_i  - \Beta^T\mathbf{x}_i - b - s_{2i-1}&= -y_i,\\
-u_i +\Beta^T\mathbf{x}_i + b - s_{2i}&= y_i,\\
+u_i  - \Beta\trp \mathbf{x}_i - b - s_{2i-1}&= -y_i,\\
+u_i +\Beta\trp \mathbf{x}_i + b - s_{2i}&= y_i,\\
 s_{2i-1}, s_{2i}&\geq 0.
 \end{align*}
 
@@ -545,27 +544,27 @@ We can fix this situation by writing these variables as the difference of nonneg
 \begin{align*}
   \Beta &= \Beta_1 - \Beta_2,\\
   b &= b_1 - b_2,\\
-  &\Beta_1, \Beta_2, b_1, b_2 \geq 0.
+  &\Beta_1, \Beta_2\succeq \0; b_1, b_2 \geq 0.
 \end{align*}
 Substituting these values into our constraints, we have the following system of constraints:
 \begin{align*}
-u_i  - \Beta_1^T\mathbf{x}_i + \Beta_2^T\mathbf{x}_i - b_1 + b_2 - s_{2i-1}&= -y_i,\\
-u_i + \Beta_1^T\mathbf{x}_i - \Beta_2^T\mathbf{x}_i + b_1 - b_2 - s_{2i}&= y_i,\\
-u_i, \Beta_1, \Beta_2, b_1, b_2, s_{2i-1}, s_{2i}&\geq 0.
+u_i  - \Beta_1\trp \mathbf{x}_i + \Beta_2\trp \mathbf{x}_i - b_1 + b_2 - s_{2i-1}&= -y_i,\\
+u_i + \Beta_1\trp \mathbf{x}_i - \Beta_2\trp \mathbf{x}_i + b_1 - b_2 - s_{2i}&= y_i,\\
+\Beta_1, \Beta_2 \succeq \0; u_i, b_1, b_2, s_{2i-1}, s_{2i}&\geq 0.
 \end{align*}
-Writing $\mathbf{y} = (-y_1, y_1, -y_2, y_2, \ldots, -y_m, y_m)^T$ and $\Beta_i = (\beta_{i,1}, \ldots, \beta_{i,n})^T$ for $i = \{1, 2\}$, we can aggregate all of our variables into one vector as follows:
+Writing $\mathbf{y} = (-y_1, y_1, -y_2, y_2, \ldots, -y_m, y_m)\trp $ and $\Beta_i = (\beta_{i,1}, \ldots, \beta_{i,n})\trp $ for $i = \{1, 2\}$, we can aggregate all of our variables into one vector as follows:
 \[
-\mathbf{v} = (u_1,\ldots, u_m, \beta_{1,1},\ldots, \beta_{1,n}, \beta_{2,1},\ldots, \beta_{2,n}, b_1, b_2, s_1,\ldots,s_{2m})^T.
+\mathbf{v} = (u_1,\ldots, u_m, \beta_{1,1},\ldots, \beta_{1,n}, \beta_{2,1},\ldots, \beta_{2,n}, b_1, b_2, s_1,\ldots,s_{2m})\trp .
 \]
-Defining $\c = (1, 1, \ldots, 1, 0, \ldots, 0)^T$ (where only the first $m$ entries are equal to 1), we can write our objective function as
+Defining $\c = (1, 1, \ldots, 1, 0, \ldots, 0)\trp $ (where only the first $m$ entries are equal to 1), we can write our objective function as
 \[
-\sum_{i=1}^m u_i = \mathbf{c}^T\mathbf{v}.
+\sum_{i=1}^m u_i = \mathbf{c}\trp \mathbf{v}.
 \]
 Hence, the final form of our linear program is:
 \begin{align*}
-  \text{minimize }\qquad &\mathbf{c}^T\mathbf{v}\\
+  \text{minimize }\qquad &\mathbf{c}\trp \mathbf{v}\\
   \text{subject to }\qquad A\mathbf{v} &= \mathbf{y},\\
-  \mathbf{v} &\geq 0,
+  \mathbf{v} &\succeq \0,
 \end{align*}
 where $A$ is a matrix containing the coefficients of the constraints.
 Our constraints are now equalities, and the variables are all nonnegative, so we are ready to use our interior point method to obtain the solution.
@@ -573,7 +572,7 @@ Our constraints are now equalities, and the variables are all nonnegative, so we
 \subsection*{LAD Example}
 
 Consider the following example.
-We start with an array \li{data}, each row of which consists of the values $y_i, x_{i,1},\ldots,x_{i,n}$, where $\mathbf{x}_i = (x_{i,1}, x_{i,2}, \ldots, x_{i,n})^T$.
+We start with an array \li{data}, each row of which consists of the values $y_i, x_{i,1},\ldots,x_{i,n}$, where $\mathbf{x}_i = (x_{i,1}, x_{i,2}, \ldots, x_{i,n})\trp $.
 We will have $3m + 2(n+1)$ variables in our linear program.
 Below, we initialize the vectors $\mathbf{c}$ and $\mathbf{y}$.
 \begin{lstlisting}
@@ -611,7 +610,7 @@ Now we can calculate the solution by calling our interior point function.
 
 The variable \li{sol}, however, holds the value for the vector
 \[
-\mathbf{v} = (u_1,\ldots, u_m, \beta_{1,1},\ldots, \beta_{1,n}, \beta_{2,1},\ldots, \beta_{2,n}, b_1, b_2, s_1,\ldots,s_{2m+1})^T.
+\mathbf{v} = (u_1,\ldots, u_m, \beta_{1,1},\ldots, \beta_{1,n}, \beta_{2,1},\ldots, \beta_{2,n}, b_1, b_2, s_1,\ldots,s_{2m+1})\trp .
 \]
 We extract values of $\Beta = \Beta_1-\Beta_2$ and $b = b_1 - b_2$ with the following code:
 \begin{lstlisting}

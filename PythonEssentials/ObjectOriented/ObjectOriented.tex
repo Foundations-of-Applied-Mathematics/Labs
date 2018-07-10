@@ -37,14 +37,14 @@ class Backpack:
 \end{lstlisting}
 
 An \emph{attribute} is a variable stored within an object.
-This \li{Backpack} class has two attributes: \li{name} and \li{contents}.
+The \li{Backpack} class has two attributes: \li{name} and \li{contents}.
 In the body of the class definition, attributes are assigned and accessed via the name \li{self}.
 This name refers to the object internally once it has been created.
 
 \subsection*{Instantiation} % -------------------------------------------------
 
 The \li{class} code block above only defines a blueprint for backpack objects.
-To create an actual backpack object, ``call'' the class name like a function.
+To create an actual backpack object, call the class name like a function.
 This triggers the constructor and returns a new \emph{instance} of the class, an object whose type is the class.
 
 \begin{lstlisting}
@@ -58,7 +58,7 @@ This triggers the constructor and returns a new \emph{instance} of the class, an
 >>> print(my_backpack.name, my_backpack.contents)
 <<Fred []>>
 
-# The object's attributes can be modified dynamically.
+# The object's attributes can be modified after instantiation.
 >>> my_backpack.name = "George"
 >>> print(my_backpack.name, my_backpack.contents)
 <<George []>>
@@ -92,11 +92,11 @@ A function that belongs to a specific class is called a \emph{method}.
 class Backpack:
     # ...
     def put(self, item):
-        """Add 'item' to the backpack's list of contents."""
+        """Add an item to the backpack's list of contents."""
         self.contents.append(item)  # Use 'self.contents', not just 'contents'.
 
     def take(self, item):
-        """Remove 'item' from the backpack's list of contents."""
+        """Remove an item from the backpack's list of contents."""
         self.contents.remove(item)
 \end{lstlisting}
 
@@ -153,9 +153,9 @@ def test_backpack():
 
 To create a new class that is similar to one that already exists, it is often better to \emph{inherit} the methods and attributes from an existing class rather than create a new class from scratch.
 This creates a \emph{class hierarchy}: a class that inherits from another class is called a \emph{subclass}, and the class that a subclass inherits from is called a \emph{superclass}.
-To define a subclass, add the name of the superclass as an ``argument'' at the end of the \li{class} declaration.
+To define a subclass, add the name of the superclass as an argument at the end of the \li{class} declaration.
 
-For example, since a knapsack is a kind of backpack (but not all backpacks are knapsacks), we create a special \li{Knapsack} subclass that inherits the structure and behaviors of the \li{Backpack} class, and adds some extra functionality.
+For example, since a knapsack is a kind of backpack (but not all backpacks are knapsacks), we create a special \li{Knapsack} subclass that inherits the structure and behaviors of the \li{Backpack} class and adds some extra functionality.
 
 \begin{lstlisting}
 # Inherit from the Backpack class in the class definition.
@@ -208,7 +208,7 @@ class Knapsack(Backpack):
         """Calculate the weight of the knapsack by counting the length of the
         string representations of each item in the contents list.
         """
-        return sum([len(str(item)) for item in self.contents])
+        return sum(len(str(item)) for item in self.contents)
 \end{lstlisting}
 
 Since \li{Knapsack} inherits from \li{Backpack}, a knapsack object \textbf{is} a backpack object.
@@ -279,7 +279,7 @@ Every Python object is automatically endowed with several magic methods, which c
 % ; to see an object's magic methods in IPython, type two underscores before pressing tab.
 
 \begin{lstlisting}
-<g<In [1]:>g> run object_oriented.py
+<g<In [1]:>g> <p<%run>p> object_oriented.py
 
 <g<In [2]:>g> b = Backpack("Oscar", "green")
 
@@ -311,7 +311,7 @@ The more common magic methods define how an object behaves with respect to addit
 For example, how should addition be defined for backpacks?
 A simple option is to add the number of contents.
 Then if backpack \li{A} has $3$ items and backpack \li{B} has $5$ items, \li{A + B} should return $8$.
-To incorporate this idea, implement the \li{__add__()} magic method.
+To incorporate this idea, we implement the \li{__add__()} magic method.
 
 \begin{lstlisting}
 class Backpack:
@@ -362,11 +362,11 @@ As with addition, the object on the left side of the \li{<} operator is passed t
 
 \begin{lstlisting}
 >>> pack1, pack2 = Backpack("Maggy", "magenta"), Backpack("Yolanda", "yellow")
->>> pack1 < pack2
+>>> pack1 < pack2                   # Equivalent to pack1.__lt__(pack2).
 <<False>>
 
 >>> pack2.put('pencils')
->>> pack1 < pack2                   # Equivalent to pack1.__lt__(pack2).
+>>> pack1 < pack2
 <<True>>
 \end{lstlisting}
 
@@ -394,7 +394,7 @@ Method & Comparison Operator \\ \hline
 % \li{__and__()} & \li{\&}\\
 % \li{__or__()} & \li{|}\\
 \end{tabular}
-\caption{Common magic methods for arithmetic and comparisons. What each of these operations do, or should do, is up to the programmer and should be carefully documented.
+\caption{Common magic methods for arithmetic and comparisons. What each of these operations do is up to the programmer and should be carefully documented.
 For more methods and details, see \url{https://docs.python.org/3/reference/datamodel.html\#special-method-names}.}
 \end{table}
 
@@ -576,7 +576,7 @@ See \url{https://docs.python.org/3/glossary.html\#term-hashable} for details.
 
 If the \li{__hash__()} method is not defined, the default hash value is the object's memory address (accessible via the built-in function \li{id()}) divided by $16$, rounded down to the nearest integer.
 However, two objects that compare as equal via the \li{__eq__()} magic method must have the same hash value.
-A simple \li{__hash__()} method for the \li{Backpack} class that conforms to this rule and returns an integer might be the following.
+The following simple \li{__hash__()} method for the \li{Backpack} class conforms to this rule and returns an integer.
 
 \begin{lstlisting}
 class Backpack:

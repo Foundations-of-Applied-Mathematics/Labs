@@ -7,15 +7,15 @@ This situation happens most frequently when trying to approximate integrals of p
 \section*{Monte Carlo Simulation} % ===========================================
 
 The standard procedure of Monte Carlo integration is not always the most efficient or accurate way to estimate an integral.
-Consider the probability density function (p.d.f) of the standard normal distribution in one dimension.
+Consider the probability density function (p.d.f) of the standard normal distribution in one dimension,
 \begin{equation}
-f_X(t) = \frac{e^{-t^2/2}}{\sqrt{2\pi}}
+f_X(t) = \frac{e^{-t^2/2}}{\sqrt{2\pi}}.
 \label{eq:imsamp-standard-normal}
 \end{equation}
-The probability that a random draw from the standard normal distribution is greater than $3$ is given by the following integral.
+The probability that a random draw from the standard normal distribution is greater than $3$ is given by the integral
 \begin{equation}
-\int_{3}^{\infty} f_X(t)\,dt = \frac{1}{\sqrt{2\pi}}\int_{3}^{\infty} e^{-t^2/2}\:dt
-\label{eq:integral}
+\int_{3}^{\infty} f_X(t)\,dt = \frac{1}{\sqrt{2\pi}}\int_{3}^{\infty} e^{-t^2/2}\:dt.
+\label{eq:importsamp-integral}
 \end{equation}
 
 If $h: \mathbb{R} \rightarrow \mathbb{R}$ is the indicator function defined by
@@ -25,7 +25,7 @@ h(t) = \begin{cases}
 0 & \text{ if } t \leq 3,
 \end{cases}
 \]
-then (\ref{eq:integral}) can be rewritten as follows.
+then \eqref{eq:importsamp-integral} can be rewritten as
 \begin{equation}
 \int_{3}^{\infty} f_X(t)\:dt = \int_{-\infty}^{\infty} h(t)f_X(t)\:dt.
 \label{eq:infinity_integral}
@@ -33,12 +33,12 @@ then (\ref{eq:integral}) can be rewritten as follows.
 Note that this process can be generalized to any domain of integration by redefining the indicator function $h$ to match different bounds of integration.
 
 We can now easily estimate this same probability using Monte Carlo simulation.
-Given a random collection of draws $\{x_i\}_{i=1}^N$ from the standard normal distribution, we can estimate the integral from (\ref{eq:infinity_integral}) as follows.
+Given a random collection of draws $\{x_i\}_{i=1}^N$ from the standard normal distribution, we can estimate the integral from \eqref{eq:infinity_integral} as
 \begin{equation}
-\int_{-\infty}^{\infty} h(t)f_X(t)\,dt \approx \frac{1}{N}\sum_{i = 1}^{N}h(x_i)
-\label{eq:estimator}
+\int_{-\infty}^{\infty} h(t)f_X(t)\,dt \approx \frac{1}{N}\sum_{i = 1}^{N}h(x_i).
+\label{eq:importsamp-estimator}
 \end{equation}
-% Now that the estimator is defined, it is quite manageable to approximate (\ref{eq:integral}).
+% Now that the estimator is defined, it is quite manageable to approximate \eqref{eq:importsamp-integral}.
 % The estimate will get closer and closer to the actual value as more and more sample points are used.
 
 \section*{Statistics with SciPy} % ============================================
@@ -55,7 +55,7 @@ One of the most effective uses of \li{scipy.stats} is to create an object for a 
     \li{rvs()} & Draw a random number from the distribution.\\
 \end{tabular}
 % \caption{Some methods available for a distribution from scipy.stats.}
-\label{table:manipulation}
+\label{table:importsamp-manipulation}
 \end{table}
 
 The following code shows how to appropriately use the methods of \li{stats} objects.
@@ -103,14 +103,15 @@ Use \li{np.linspace()} and \li{pdf()} in order to plot a distribution.
     \li{beta()} & The beta distribution.
 \end{tabular}
 % \caption{Some methods from scipy.stats.}
-\label{table:manipulation}
+\label{table:importsamp-manipulation}
 \end{table}
 
-See Appendix \ref{appendix:stats-prob-tools} for a more thorough treatment of \li{scipy.stats}.
+% See Appendix \ref{appendix:stats-prob-tools} for a more thorough treatment of \li{scipy.stats}.
 
-\begin{problem} \label{prob:mc}
+\begin{problem}
+\label{prob:importsamp-mc}
 Write a function that accepts an integer parameter $N$.
-Use (\ref{eq:estimator}) to estimate the probability that a random draw from the standard normal distribution is greater than $3$ using $N$ samples.
+Use \eqref{eq:importsamp-estimator} to estimate the probability that a random draw from the standard normal distribution is greater than $3$ using $N$ samples.
 Return the approximation.
 Your answer should approach 0.0013499 for sufficiently large samples.
 \end{problem}
@@ -121,22 +122,22 @@ The Monte Carlo integration method returns an approximation of $0$ for the integ
 So, while standard Monte Carlo integration can get the job done if enough points are used, getting a good approximation requires an unacceptably large number of sample points.
 
 \section*{Importance Sampling} % ==============================================
+
 Importance sampling makes Monte Carlo integration more efficient in circumstances where random draws within the region of interest are unlikely.
 Note that in Monte Carlo integration, random points that are close to and within the bounds of integration are more likely to influence the approximation than points that are farther away.
 We call these closer points \emph{important} points.
 In importance sampling, we call the distribution of the integral we want to estimate the \emph{target distribution}, and we usually denote it $f_X$.
 The idea of importance sampling is to choose a new distribution, called the \emph{importance distribution}, that generates more important points.
 The importance distribution is usually denoted $g_Y$.
-We then modify (\ref{eq:estimator}) to take advantage of the importance distribution as follows.
-
-\begin{equation} \label{eq:importance}
-\int_{-\infty}^{\infty} h(t)f_X(t)\,dt \approx \frac{1}{N}\sum_{i = 1}^{N}\frac{h(y_i)f_X(y_i)}{g_Y(y_i)}
+We then modify \eqref{eq:importsamp-estimator} to take advantage of the importance distribution:
+\begin{equation} \label{eq:importsamp-importance}
+\int_{-\infty}^{\infty} h(t)f_X(t)\,dt \approx \frac{1}{N}\sum_{i = 1}^{N}\frac{h(y_i)f_X(y_i)}{g_Y(y_i)}.
 \end{equation}
 
 The fraction $\frac{f_X}{g_Y}$ is called the \emph{importance weight}.
 Because of this result, we can use samples $y_1, \cdots , y_N$ from any distribution with equation $g_Y$ to estimate the integral of $f_X$, as long as we multiply $h(y_i)$ by the importance weight.
 Note that if the importance distribution is chosen to be the same as the target distribution, or in other words, if we draw from the same distribution we are trying to estimate, then $g_Y = f_X$ and the importance weight is 1.
-In this case, the importance sampling method reduces to the original Monte Carlo simulation given by (\ref{eq:estimator}).
+In this case, the importance sampling method reduces to the original Monte Carlo simulation given by \eqref{eq:importsamp-estimator}.
 
 \begin{figure}[H]
 \includegraphics[width=.7\textwidth]{figures/importance_distribution.pdf}
@@ -145,7 +146,7 @@ In this case, the importance sampling method reduces to the original Monte Carlo
 \end{figure}
 
 \begin{info}
-The derivation of (\ref{eq:importance}) is based heavily on the \emph{Law of the Unconscious Statistician}, an important idea in statistics.
+The derivation of \eqref{eq:importsamp-importance} is based heavily on the \emph{Law of the Unconscious Statistician}, an important idea in statistics.
 See the Additional Materials section for details.
 \end{info}
 
@@ -155,7 +156,7 @@ There is no correct choice for the importance distribution.
 It may be possible to find the distribution that allows the simulation to converge the fastest, but oftentimes, the perfect answer is unnecessary.
 Close to perfect is good enough.
 
-To solve the same problem as in Problem \ref{prob:mc} using importance sampling, we choose a distribution that will generate more samples close to and greater than 3.
+To solve the same problem as in Problem \ref{prob:importsamp-mc} using importance sampling, we choose a distribution that will generate more samples close to and greater than 3.
 We will choose $g_Y$ to be the normal distribution with mean $\mu = 4$ and standard deviation $\sigma = 1$.
 Note that it is not necessary to choose an importance distribution of the same type as the target distribution.
 
@@ -163,14 +164,14 @@ Figure \ref{fig:importance} shows that a random draw from the importance distrib
 However, a draw greater than 3 from the importance distribution is accompanied by a low importance weight because it is so unlikely in the target distribution.
 Similarly, a draw less than 3 from the importance distribution has a higher importance weight because it is more likely in the target distribution.
 
-\begin{problem} \label{prob:mc_important}
+\begin{problem} \label{prob:importsamp-mc_important}
 Write a function that accepts a function handle $f$, representing the equation for the target distribution, a function handle $g$, representing the equation for the importance distribution, an indicator function $h$, a function that samples from the importance distribution, and an integer $n$ representing the number of samples to use.
-Use (\ref{eq:importance}) to approximate the integral of the target distribution and return this approximation.
+Use \eqref{eq:importsamp-importance} to approximate the integral of the target distribution and return this approximation.
 
-To test your function, estimate the same integral as in Problem \ref{prob:mc} using importance sampling.
+To test your function, estimate the same integral as in Problem \ref{prob:importsamp-mc} using importance sampling.
 Choose the importance distribution to be a normal distribution with mean $\mu = 4$ and standard deviation $\sigma = 1$ as shown below.
 Your answer should approach $0.0013499$ for large samples.
-When compared to Problem \ref{prob:mc} this should give more consistent results.
+When compared to Problem \ref{prob:importsamp-mc} this should give more consistent results.
 
 \begin{lstlisting}
 # Choose the importance distribution with mean 4 and std dev 1
@@ -181,10 +182,10 @@ When compared to Problem \ref{prob:mc} this should give more consistent results.
 
 \end{problem}
 
-\begin{problem} \label{prob:mc_is_compare}
+\begin{problem} \label{prob:importsamp-mc_is_compare}
 Using the two previous problems, create a plot that compares the error of the traditional method of Monte Carlo integration to the error of the importance sampling method.
 Choose your target distribution to be the standard normal distribution, and estimate the probability that a random draw is greater than $3$.
-Choose your importance distribution to be the same one you used to test Problem \ref{prob:mc_important}.
+Choose your importance distribution to be the same one you used to test Problem \ref{prob:importsamp-mc_important}.
 You should calculate the errors for $n = 5000, 10000, \ldots , 500000$.
 Your plot should resemble the following figure.
 
@@ -199,9 +200,9 @@ To determine the error of your approximations, the following code returns the ac
 \end{lstlisting}
 \end{problem}
 
-Problem \ref{prob:mc_is_compare} shows that we can achieve the same results as traditional Monte Carlo with only a fraction of the samples if we choose an appropriate importance distribution.
+Problem \ref{prob:importsamp-mc_is_compare} shows that we can achieve the same results as traditional Monte Carlo with only a fraction of the samples if we choose an appropriate importance distribution.
 However, even though there is no correct choice for an importance distribution, there are choices that do not give a better approximation of an integral than the Monte Carlo method would without importance sampling.
-In Problem \ref{prob:mc_important}, we chose a normal distribution with $\mu = 4$ and $\sigma = 1$ to be our importance distribution to test the function.
+In Problem \ref{prob:importsamp-mc_important}, we chose a normal distribution with $\mu = 4$ and $\sigma = 1$ to be our importance distribution to test the function.
 This produces more points larger than $3$ to use for our integral estimation.
 If we had chosen a normal distribution that was less likely to produce points larger than $3$, say for example a normal distribution with $\mu = 0$ and $\sigma = .5$, importance sampling would actually give a larger error than the traditional Monte Carlo method would alone.
 In addition, if we had chosen a normal distribution that produced hardly any points less than $3$, the approximation using importance sampling would also be worse.
@@ -222,16 +223,17 @@ Up to this point, the target distributions and the importance distributions have
 Importance sampling works for other types of distributions as well, and even works when the target distribution and the importance distribution are different from each other.
 The following problem is an example of this, and gives a potential real world application for importance sampling.
 
-\begin{problem} \label{prob:gamma}
+\begin{problem}
+\label{prob:importsamp-gamma}
 A tech support hotline receives an average of 2 calls per minute.
 What is the probability that they will have to wait at least 10 minutes to receive 9 calls?
 This problem can be modeled using a gamma distribution.
-The following equation is for calculating the probability of the gamma distribution.
-$$f_X(x) = \frac{x^{a-1}e^{-x/\theta}}{\Gamma(a)\theta^a}$$
-The value $a$ represents the number of calls we are waiting to receive.
-The value $\theta$ represents the the number of minutes it takes on average to receive one call.
-The variable $x$ represents the number of minutes needed to wait to receive $a$ calls given $\theta$ calls per minute.
-In the case of the above problem, $a = 9$, $\theta = .5$, and we want the probability that $x \geq 10$.
+The equation for calculating the probability of the gamma distribution is
+\begin{align}
+f_X(x) = \frac{x^{a-1}e^{-x/\theta}}{\Gamma(a)\theta^a}.
+\end{align}
+Here $a$ is the number of calls we are waiting to receive, $\theta$ is the number of minutes it takes on average to receive one call, and $x$ is the number of minutes needed to wait to receive $a$ calls given $\theta$ calls per minute.
+In the above problem, we have $a = 9$, $\theta = .5$, and we want the probability that $x \geq 10$.
 Creating the gamma distribution object in \li{scipy.stats} is similar to creating the normal distribution object.
 It has the same methods as the normal distribution object.
 
@@ -284,46 +286,37 @@ Remember that when given an array of samples, the indicator function needs to re
 
 \subsection*{Derivation of the importance sampling estimator}
 
-By the Law of the Unconscious Statistician (see Volume 2 \S 3.5), we can restate the integral from (\ref{eq:integral}) as
+By the Law of the Unconscious Statistician (see Volume 2 \S 3.5), we can restate the integral from \eqref{eq:importsamp-integral} as
 
 $$\int_{-\infty}^{\infty} h(t)f_X(t)\,dt = E[h(X)].$$
 
 Then we have
 
-\begin{equation*}
-\begin{split}
+\begin{align*}
 E[h(X)] & = \int_{-\infty}^{\infty} h(t)f_X(t)\,dt \\
 & = \int_{-\infty}^{\infty} h(t)f_X(t)\left ( \frac{g_Y(t)}{g_Y(t)} \right )\,dt \\
 & = \int_{-\infty}^{\infty} \left ( \frac{h(t)f_X(t)}{g_Y(t)} \right )g_Y(t)\,dt \\
-& = E\left [ \frac{h(Y)f_X(Y)}{g_Y(Y)}\right ]
-\end{split}
-\end{equation*}
+& = E\left[\frac{h(Y)f_X(Y)}{g_Y(Y)}\right],
+\end{align*}
 and the corresponding estimator is
 
-\begin{equation*}
-\begin{split}
+\begin{align*}
 \widehat{E}[h(X)] & = \widehat{E}\left [ \frac{h(Y)f_X(Y)}{g_Y(Y)}\right ] \\
-& = \frac{1}{N}\sum_{i = 1}^{N}\frac{h(y_i)f_X(y_i)}{g_Y(y_i)}
-\end{split}
-\end{equation*}
+& = \frac{1}{N}\sum_{i = 1}^{N}\frac{h(y_i)f_X(y_i)}{g_Y(y_i)}.
+\end{align*}
 
-\subsection*{Unnormalized Target Densities} % ====================================
+\subsection*{Unnormalized Target Densities} % ---------------------------------
 
-The methods discussed so far are only applicable if the target density is normalized, or in other words, has an integral of 1. If the target density is not normalized, (\ref{eq:importance}) becomes
+The methods discussed so far are only applicable if the target density is normalized, or in other words, has an integral of 1. If the target density is not normalized, \eqref{eq:importsamp-importance} becomes
 
-\begin{equation*} \label{eq:unnormalized}
-\begin{split}
+\begin{align*}
 E[h(X)] & = \frac{\int h(t)f(t)\,dt}{\int f(t)\,dt} \\
 & = \frac{\int h(t)f(t) \left ( \frac{g_Y(t)}{g_Y(t)} \right )\,dt}{{\int f(t)} \left ( \frac{g_Y(t)}{g_Y(t)} \right )\,dt} \\
 & = \frac{\int \left ( \frac{h(t)f(t)}{g_Y(t)} \right ) g_Y(t)\,dt}{\int \left ( \frac{f(t)}{g_Y(t)} \right ) g_Y(t)\,dt} \\
-& = \frac{E\left [ \frac{h(Y)f(Y)}{g_Y(Y)}\right ]}{E\left [ \frac{f(Y)}{g_Y(Y)}\right ]}
-\end{split}
-\end{equation*}
-
-The corresponding estimator becomes
-\begin{equation*}
-\begin{split}
+& = \frac{E\left [ \frac{h(Y)f(Y)}{g_Y(Y)}\right ]}{E\left [ \frac{f(Y)}{g_Y(Y)}\right]}.
+\end{align*}
+The corresponding estimator is
+\begin{align*}
 \widehat{E}_n[h(X)] & = \frac{\widehat{E}\left [ \frac{h(Y)f(Y)}{g_Y(Y)}\right ]}{\widehat{E}\left [ \frac{f(Y)}{g_Y(Y)}\right ]} \\
-& = \frac{\frac{1}{N}\sum_{i = 1}^{N}\frac{h(y_i)f(y_i)}{g_Y(y_i)}}{\frac{1}{N}\sum_{i = 1}^{N}\frac{f(y_i)}{g_Y(y_i)}} \\
-\end{split}
-\end{equation*}
+& = \frac{\frac{1}{N}\sum_{i = 1}^{N}\frac{h(y_i)f(y_i)}{g_Y(y_i)}}{\frac{1}{N}\sum_{i = 1}^{N}\frac{f(y_i)}{g_Y(y_i)}}.
+\end{align*}

@@ -1,0 +1,977 @@
+\lab{Pandas 1: Introduction}{Pandas 1: Introduction}
+\objective{Though NumPy and SciPy are powerful tools for numerical computing, they lack some of the high-level functionality necessary for many data science applications.
+Python's \emph{pandas} library, built on NumPy, is designed specifically for data management and analysis.
+In this lab, we introduce pandas data structures, syntax, and explore its capabilities for quickly analyzing and presenting data.
+}
+\label{lab:pandas1}
+
+% Just as NumPy is built on the \li{ndarray} data structure suited for efficient
+% scientific and numerical computation, pandas is centered around a handful of
+% core data structures custom built for data analysis: the \li{Series}, \li{DataFrame}, and \li{Panel}, which roughly correspond to one, two, and three-dimensional arrays.
+% The \li{Panel} data structure is not used nearly
+
+\section*{Series} % ===========================================================
+
+A pandas \li{Series} is generalization of a one-dimensional NumPy array.
+Like a NumPy array, every \li{Series} has a data type (\li{dtype}), and the entries of the \li{Series} are all of that type.
+Unlike a NumPy array, every \li{Series} has an \emph{index} that labels each entry, and a \li{Series} object can also be given a name to label the entire data set.
+
+\begin{lstlisting}
+>>> import numpy as np
+>>> import pandas as pd
+
+# Initialize a Series of random entries with an index of letters.
+>>> pd.Series(np.random.random(4), index=['a', 'b', 'c', 'd'])
+<<a    0.474170
+b    0.106878
+c    0.420631
+d    0.279713
+dtype: float64>>
+
+# The default index is integers from 0 to the length of the data.
+>>> pd.Series(np.random.random(4), name="uniform draws")
+<<0    0.767501
+1    0.614208
+2    0.470877
+3    0.335885
+Name: uniform draws, dtype: float64>>
+\end{lstlisting}
+
+The index in a \li{Series} is a pandas object of type \li{Index} and is stored as the \li{index} attribute of the \li{Series}.
+The plain entries in the \li{Series} are stored as a NumPy array and can be accessed as such via the \li{values} attribute.
+
+\begin{lstlisting}
+>>> s1 = pd.Series([1, 2, 3, 4], index=['a', 'b', 'c', 'd'], name="some ints")
+
+>>> s1.values                           # Get the entries as a NumPy array.
+<<array([1, 2, 3, 4])>>
+
+>>> print(s1.name, s1.dtype, sep=", ")  # Get the name and dtype.
+<<some ints, int64>>
+
+>>> s1.index                            # Get the pd.Index object.
+<<Index(['a', 'b', 'c', 'd'], dtype='object')>>
+\end{lstlisting}
+
+The elements of a \li{Series} can be accessed by either the regular position-based integer index, or by the corresponding label in the index.
+New entries can be added dynamically as long as a valid index label is provided, similar to adding a new key-value pair to a dictionary.
+A \li{Series} can also be initialize from a dictionary: the keys become the index labels, and the values become the entries.
+
+\begin{lstlisting}
+>>> s2 = pd.Series([10, 20, 30], index=["apple", "banana", "carrot"])
+>>> s2
+<<apple     10
+banana    20
+carrot    30
+dtype: int64>>
+
+# s2[0] and s2["apple"] refer to the same entry.
+>>> print(s2[0], s2["apple"], s2["carrot"])
+<<10 10 30>>
+
+>>> s2[0] += 5              # Change the value of the first entry.
+>>> s2["dewberry"] = 0      # Add a new value with label 'dewberry'.
+>>> s2
+<<apple       15
+banana      20
+carrot      30
+dewberry     0
+dtype: int64>>
+
+# Initialize a Series from a dictionary.
+>>> pd.Series({"eggplant":3, "fig":5, "grape":7}, name="more foods")
+<<eggplant    3
+fig         5
+grape       7
+Name: more foods, dtype: int64>>
+\end{lstlisting}
+
+Slicing and fancy indexing also work the same way in \li{Series} as in NumPy arrays.
+In addition, multiple entries of a \li{Series} can be selected by indexing a list of labels in the index.
+
+\begin{lstlisting}
+>>> s3 = pd.Series({"lions":2, "tigers":1, "bears":3}, name="oh my")
+>>> s3
+<<bears     3
+lions     2
+tigers    1
+Name: oh my, dtype: int64>>
+
+# Get a subset of the data by regular slicing.
+>>> s3[1:]
+<<lions     2
+tigers    1
+Name: oh my, dtype: int64>>
+
+# Get a subset of the data with fancy indexing.
+>>> s3[np.array([len(i) == 5 for i in s3.index])]
+<<bears    3
+lions    2
+Name: oh my, dtype: int64>>
+
+# Get a subset of the data by providing several index labels.
+>>> s3[ ["tigers", "bears"] ]
+tigers    1                     # Note that the entries are reordered,
+bears     3                     # and the name stays the same.
+<<Name: oh my, dtype: int64>>
+\end{lstlisting}
+
+\begin{comment} % Unnecessary, already getting too long.
+We can create a \li{Series} having constant values in the following manner:
+\begin{lstlisting}
+>>> val = 4     #desired constant value of Series
+>>> n = 6       #desired length of Series
+>>> s3 = pd.Series(val, index=np.arange(n))
+>>> s3
+0    4
+1    4
+2    4
+3    4
+4    4
+5    4
+dtype: int64
+\end{lstlisting}
+\end{comment}
+
+\begin{problem}
+Create a pandas \li{Series} where the index labels are the even integers $0,2,\ldots,50$, and the entries are $n^2 - 1$, where $n$ is the entry's label.
+Set all of the entries equal to zero whose labels are divisible by $3$.
+\end{problem}
+
+\subsection*{Operations with Series} % ----------------------------------------
+
+A \li{Series} object has all of the advantages of a NumPy array, including entry-wise arithmetic, plus a few additional features (see Table \ref{table:pandas-numerical-methods}).
+Operations between a \li{Series} $S_1$ with index $I_1$ and a \li{Series} $S_2$ with index $I_2$ results in a new \li{Series} with index $I_1\cup I_2$.
+In other words, the index dictates how two \li{Series} can interact with each other.
+
+\begin{lstlisting}
+>>> s4 = pd.Series([1, 2, 4], index=['a', 'c', 'd'])
+>>> s5 = pd.Series([10, 20, 40], index=['a', 'b', 'd'])
+>>> 2*s4 + s5
+<<a    12.0>>
+<<b     NaN>>                           # s4 doesn't have an entry for b, and
+<<c     NaN>>                           # s5 doesn't have an entry for c, so
+<<d    48.0>>                           # the combination is Nan (np.nan / None).
+<<dtype: float64>>
+\end{lstlisting}
+
+\begin{table}[H]
+\begin{tabular}{r|l}
+Method & Returns \\ \hline
+\li{<<abs>>()}     & Object with absolute values taken (of numerical data) \\
+\li{argmax()}  & The index label of the maximum value \\
+\li{argmin()}  & The index label of the minimum value \\
+\li{count()}   & The number of non-null entries \\
+\li{cumprod()} & The cumulative product over an axis \\
+\li{cumsum()}  & The cumulative sum over an axis \\
+\li{<<max>>()}     & The maximum of the entries \\
+\li{mean()}    & The average of the entries \\
+\li{median()}  & The median of the entries \\
+\li{<<min>>()}     & The minimum of the entries \\
+\li{mode()}    & The most common element(s) \\
+\li{prod()}    & The product of the elements \\
+\li{<<sum>>()}     & The sum of the elements \\
+\li{var()}     & The variance of the elements \\
+\end{tabular}
+\caption{Numerical methods of the \li{Series} and \li{DataFrame} pandas classes.
+% Methods marked with a * are not methods of NumPy's \li{ndarray} class.
+}
+\label{table:pandas-numerical-methods}
+\end{table}
+
+Many \li{Series} are more useful than NumPy arrays primarily because of their index.
+For example, a \li{Series} can be indexed by time with a pandas \li{DatetimeIndex}, an index with date and/or time values.
+The usual way to create this kind of index is with \li{pd.date_range()}.
+
+\begin{lstlisting}
+# Make an index of the first three days in July 2000.
+>>> pd.date_range("7/1/2000", "7/3/2000", freq='D')
+<<DatetimeIndex(['2000-07-01', '2000-07-02', '2000-07-03'],
+                dtype='datetime64[ns]', freq='D')>>
+\end{lstlisting}
+
+\begin{problem}
+Suppose you make an investment of $d$ dollars in a particularly volatile stock.
+Every day the value of your stock goes up by \$$1$ with probability $p$, or down by \$$1$ with probability $1-p$ (this is an example of a \emph{random walk}).
+
+Write a function that accepts a probability parameter $p$ and an initial amount of money $d$, defaulting to $100$.
+Use \li{pd.date_range()} to create an index of the days from 1 January 2000 to 31 December 2000.
+Simulate the daily change of the stock by making one draw from a Bernoulli distribution with parameter $p$ (a binomial distribution with one draw) for each day.
+Store the draws in a pandas \li{Series} with the date index and set the first draw to the initial amount $d$.
+Sum the entries cumulatively to get the stock value by day.
+Set any negative values to $0$, then plot the series using the \li{plot()} method of the \li{Series} object.
+
+Call your function with a few different values of $p$ and $d$ to observe the different possible kinds of behavior.
+\label{prob:pandas-random-walk}
+\end{problem}
+
+\begin{info}
+The \li{Series} in Problem \ref{prob:pandas-random-walk} is an example of a \emph{time series}, since it is indexed by time.
+Time series show up often in data science; we will explore them in more depth in another lab.
+\end{info}
+
+\begin{table}[H]
+\begin{tabular}{r|l}
+Method & Description \\ \hline
+\li{append()} & Concatenate two or more \li{Series}. \\
+\li{drop()} & Remove the entries with the specified label or labels \\
+\li{drop_duplicates()} & Remove duplicate values \\
+\li{dropna()} & Drop null entries \\
+\li{fillna()} & Replace null entries with a specified value or strategy \\
+\li{reindex()} & Replace the index \\
+\li{sample()} & Draw a random entry \\
+\li{shift()} & Shift the index \\
+% \li{truncate()} & \\
+\li{unique()} & Return unique values \\
+% \li{where()} & Search for entires that satisfy some criteria \\
+\end{tabular}
+\caption{Methods for managing or modifying data in a pandas \li{Series} or \li{DataFrame}.}
+\label{table:pandas-manage-data}
+\end{table}
+
+\section*{Data Frames} % ======================================================
+
+A \li{DataFrame} is a collection of \li{Series} that share the same index, and is therefore a two-dimensional generalization of a NumPy array.
+The row labels are collectively called the \emph{index}, and the column labels are collectively called the \emph{columns}.
+An individual column in a \li{DataFrame} object is one \li{Series}.
+
+There are many ways to initialize a \li{DataFrame}.
+In the following code, we build a \li{DataFrame} out of a dictionary of \li{Series}.
+
+\begin{lstlisting}
+>>> x = pd.Series(np.random.randn(4), ['a', 'b', 'c', 'd'])
+>>> y = pd.Series(np.random.randn(5), ['a', 'b', 'd', 'e', 'f'])
+>>> df1 = pd.DataFrame({"series 1": x, "series 2": y})
+>>> df1
+<<   series 1  series 2
+a -0.365542  1.227960
+b  0.080133  0.683523
+c  0.737970       NaN
+d  0.097878 -1.102835
+e       NaN  1.345004
+f       NaN  0.217523>>
+\end{lstlisting}
+
+Note that the index of this \li{DataFrame} is the union of the index of \li{Series} \li{x} and that of \li{Series} \li{y}.
+The columns are given by the keys of the dictionary \li{d}.
+Since \li{x} doesn't have a label \li{e}, the
+value in row \li{e}, column \li{1} is \li{NaN}.
+This same reasoning explains the other missing values as well.
+Note that if we take the first column of the \li{DataFrame} and drop the missing values, we recover the \li{Series} \li{x}:
+
+\begin{lstlisting}
+>>> df1["series1"].dropna()
+<<a   -0.365542
+b    0.080133
+c    0.737970
+d    0.097878
+Name: series 1, dtype: float64>>
+\end{lstlisting}
+
+\begin{warn}
+A pandas \li{DataFrame} cannot be sliced in exactly the same way as a NumPy array.
+Notice how we just used \li{df1["series 1"]} to access a \emph{column} of the
+the \li{DataFrame} \li{df1}.
+We will discuss this in more detail later on.
+\end{warn}
+
+We can also initialize a \li{DataFrame} using a NumPy array, creating custom
+row and column labels.
+\begin{lstlisting}
+>>> data = np.random.random((3, 4))
+>>> pd.DataFrame(data, index=['A', 'B', 'C'], columns=np.arange(1, 5))
+
+            1	        2	        3	        4
+A	 0.065646	 0.968593	 0.593394	 0.750110
+B	 0.803829	 0.662237	 0.200592	 0.137713
+C	 0.288801	 0.956662	 0.817915	 0.951016
+3 rows     4 columns
+\end{lstlisting}
+
+As with Series, if we don't specify the index or columns, the default is
+\li{np.arange(n)}, where \li{n} is either the number of rows or columns.
+
+\begin{comment} % Not necessary here. Too much info.
+It is also possible to create multi-indexed arrays, for example:
+\begin{lstlisting}
+>>> grade=['eighth', 'ninth', 'tenth']
+>>> subject=['math', 'science', 'english']
+>>> myindex = pd.MultiIndex.from_product([grade, subject], names=['grade', 'subject'])
+>>> myseries = pd.Series(np.random.randn(9), index=myindex)
+>>> myseries
+grade   subject
+eighth  math       1.706644
+        science   -0.899587
+        english   -1.009832
+ninth   math       2.096838
+        science    1.884932
+        english    0.413266
+tenth   math      -0.924962
+        science   -0.851689
+        english    1.053329
+dtype: float64
+\end{lstlisting}
+
+Multi-indexing is visually convenient, and will be explored further in Lab
+\ref{lab:pandas3}, where we will discuss pandas pivot tables.
+\end{comment}
+
+\section*{Viewing and Accessing Data}
+
+In this section we will explore some elementary accessing and querying
+techniques that enable us to maneuver through and gain insight into our data.
+Try using the \li{describe()} and \li{head()} methods for quick data summaries.
+
+\subsection*{Basic Data Access}
+
+We can slice the rows of a \li{DataFrame} much as with a NumPy array.
+
+\begin{lstlisting}
+>>> df = pd.DataFrame(np.random.randn(4, 2), index=['a', 'b', 'c', 'd'],
+                      columns = ['I', 'II'])
+>>> df[:2]
+
+          I        II
+a  0.758867  1.231330
+b  0.402484 -0.955039
+
+[2 rows x 2 columns]
+\end{lstlisting}
+
+More generally, we can select subsets of the data using the \li{iloc} and
+\li{loc} indexers.
+The \li{loc} index selects rows and columns based on
+their \emph{labels}, while the \li{iloc} method selects them based on their
+integer \emph{position}.
+Accessing \li{Series} and \li{DataFrame} objects
+using these indexing operations is more efficient than using bracket indexing, because the bracket indexing has to check many cases before it can determine how to slice the data structure.
+Using \li{loc}/\li{iloc} explicitly, bypasses the extra checks.
+
+\begin{lstlisting}
+>>> # select rows a and c, column II
+>>> df.loc[['a','c'], 'II']
+
+a    1.231330
+c    0.556121
+Name: II, dtype: float64
+
+>>> # select last two rows, first column
+>>> df.iloc[-2:, 0]
+
+c   -0.475952
+d   -0.518989
+Name: I, dtype: float64
+\end{lstlisting}
+
+Finally, a column of a \li{DataFrame} may be accessed using simple square
+brackets and the name of the column, or alternatively by treating the label
+as an object:
+\begin{lstlisting}
+>>> # get second column of df
+>>> df['II']        # or, equivalently, df.II
+
+a    1.231330
+b   -0.955039
+c    0.556121
+d    0.173165
+Name: II, dtype: float64
+\end{lstlisting}
+
+All of these techniques for getting subsets of the data may also be used to set
+subsets of the data:
+
+\begin{lstlisting}
+>>> # set second columns to zeros
+>>> df['II'] = 0
+>>> df['II']
+a    0
+b    0
+c    0
+d    0
+Name: II, dtype: int64
+
+>>> # add additional column of ones
+>>> df['III'] = 1
+>>> df
+            I  II  III
+a   -0.460457   0    1
+b    0.973422   0    1
+c   -0.475952   0    1
+d   -0.518989   0    1
+\end{lstlisting}
+
+% I FEEL LIKE THERE SHOULD BE A PROBLEM HERE!!
+
+\begin{comment} % Moved random walk to Series section.
+\subsection*{Plotting}
+
+Plotting is often a much more effective way to view and gain understanding of a dataset than simply viewing the raw numbers.
+Fortunately, pandas interfaces well with matplotlib, allowing relatively
+painless data visualization.
+
+Most of the functionality of plotting using pandas will be discussed in Lab \ref{lab:pandas2}.
+ In this lab, we will simply show how to plot a \li{Series}.
+Doing so is easy, as the \li{Series} object is equipped with its own plot
+function.
+% Change this example to use the titanic data, which will be cleaned up.
+
+Let's start with visualizing a simple random walk.
+By way of background, a \emph{random walk} is a
+stochastic process used to model a non-deterministic path through some space.
+It is a useful construct in
+many fields and can be used to explain things like the motion of a molecule as it travels through a liquid to modeling the fluctuations
+of stock prices.
+Here we will simulate a one-dimensional symmetric random walk on the integers, which can be
+described as follows.
+\begin{enumerate}
+  \item Start at 0.
+  \item Flip a fair coin.
+  \item If heads, move one unit to the right.
+Otherwise, move one unit to the left.
+  \item Go to Step 2.
+\end{enumerate}
+How can we simulate this random walk efficiently? Note that the walk is really characterized by the outcomes
+of the coin flip.
+If we represent heads by the number $1$ and tails by $-1$, then our position at a given moment
+is just the cumulative sum of all previous outcomes.
+Below, we simulate a sequence of coin flips, build the
+resulting random walk, and plot the outcome.
+\begin{lstlisting}
+>>> import matplotlib.pyplot as plt
+>>> N = 1000        # length of random walk
+>>> s = np.zeros(N)
+>>> s[1:] = np.random.binomial(1, .5, size=(N-1,))*2-1 #coin flips
+>>> s = pd.Series(s)
+>>> s = s.cumsum()  # random walk
+>>> s.plot()
+>>> plt.ylim([-50, 50])
+>>> plt.show()
+>>> plt.close()
+\end{lstlisting}
+
+The random walk is shown in Figure \ref{fig:PandasRandomWalk}.
+
+\begin{figure}
+\centering
+\includegraphics[width=.7 \textwidth]{randomWalk.pdf}
+\caption{Random walk of length 1000.}
+\label{fig:PandasRandomWalk}
+\end{figure}
+
+\begin{problem}
+Create five random walks of length 100, and plot them together in the same plot.
+
+Next, create a ``biased'' random walk by changing the coin flip probability of head from 0.5 to 0.51.
+Plot this biased walk with lengths 100, 10000, and then 100000.
+Notice the definite trend that emerges.
+Your results should be comparable to those in Figure \ref{pandas:biasedRandomWalk}.
+\end{problem}
+
+\begin{figure}
+\centering
+\includegraphics[width=.7 \textwidth]{biasedRandomWalk.pdf}
+\caption{Biased random walk of length 100 (above) and 10000 (below).}
+\label{pandas:biasedRandomWalk}
+\end{figure}
+\end{comment}
+
+\section*{SQL Operations in pandas} % =========================================
+
+The \li{DataFrame}, being a tabular data structure, bears an obvious resemblance to a typical relational
+database table.
+SQL is the standard for working with relational databases, and in this section we will
+explore how pandas accomplishes some of the same tasks as SQL.
+The SQL-like functionality of pandas is
+one of its biggest advantages, since it can eliminate the need to switch between programming languages
+for different tasks.
+Within pandas we can handle both the querying \emph{and} data analysis.
+
+For the following examples, we will use the following data:
+\begin{lstlisting}
+>>> #build toy data for SQL operations
+>>> name = ['Mylan', 'Regan', 'Justin', 'Jess', 'Jason', 'Remi', 'Matt', 'Alexander', 'JeanMarie']
+>>> sex = ['M', 'F', 'M', 'F', 'M', 'F', 'M', 'M', 'F']
+>>> age = [20, 21, 18, 22, 19, 20, 20, 19, 20]
+>>> rank = ['Sp', 'Se', 'Fr', 'Se', 'Sp', 'J', 'J', 'J', 'Se']
+>>> ID = range(9)
+>>> aid = ['y', 'n', 'n', 'y', 'n', 'n', 'n', 'y', 'n']
+>>> GPA = [3.8, 3.5, 3.0, 3.9, 2.8, 2.9, 3.8, 3.4, 3.7]
+>>> mathID = [0, 1, 5, 6, 3]
+>>> mathGd = [4.0, 3.0, 3.5, 3.0, 4.0]
+>>> major = ['y', 'n', 'y', 'n', 'n']
+>>> studentInfo = pd.DataFrame({'ID': ID, 'Name': name, 'Sex': sex, 'Age': age, 'Class': rank})
+>>> otherInfo = pd.DataFrame({'ID': ID, 'GPA': GPA, 'Financial_Aid': aid})
+>>> mathInfo = pd.DataFrame({'ID': mathID, 'Grade': mathGd, 'Math_Major': major})
+\end{lstlisting}
+
+Before querying our data, it is important to know some of its basic properties,
+such as number of columns, number of rows, and the datatypes of the columns.
+This can be done by simply calling the \li{info()} method on the desired
+\li{DataFrame}:
+
+\begin{lstlisting}
+>>> mathInfo.info()
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 5 entries, 0 to 4
+Data columns (total 3 columns):
+Grade         5 non-null float64
+ID            5 non-null int64
+Math_Major    5 non-null object
+dtypes: float64(1), int64(1), object(1)
+\end{lstlisting}
+
+We can also get some basic information about the structure of the \li{DataFrame}
+using the \li{head()} or \li{tail()} methods.
+
+\begin{lstlisting}
+>>> mathInfo.head()
+   Grade  ID Math_Major  ID  Age  GPA
+0    4.0   0          y   0   20  3.8
+1    3.0   1          n   2   18  3.0
+2    3.5   5          y   4   19  2.8
+3    3.0   6          n   6   20  3.8
+4    4.0   3          n   7   19  3.4
+\end{lstlisting}
+
+The method \li{isin()} is a useful way to find certain values in a
+\li{DataFrame}.
+ It compares the input (a list, dictionary, or \li{Series})
+to the \li{DataFrame} and returns a boolean \li{Series} showing whether or
+not the values match.
+You can then use this boolean array to select appropriate
+locations.
+Now let's look at the pandas equivalent of some SQL SELECT statements.
+\begin{lstlisting}
+>>> # SELECT ID, Age FROM studentInfo
+>>> studentInfo[['ID', 'Age']]
+
+>>> # SELECT ID, GPA FROM otherInfo WHERE Financial_Aid = 'y'
+>>> otherInfo[otherInfo['Financial_Aid']=='y'][['ID', 'GPA']]
+
+>>> # SELECT Name FROM studentInfo WHERE Class = 'J' OR Class = 'Sp'
+>>>  studentInfo[studentInfo['Class'].isin(['J','Sp'])]['Name']
+\end{lstlisting}
+
+\begin{problem}
+The example above shows how to implement a simple WHERE condition, and it is easy
+to have a more complex expression.
+Simply enclose each condition by parentheses,
+and use the standard boolean operators \li{\&} (AND), \li{\|} (OR), and \li{\~} (NOT) to
+connect the conditions appropriately.
+Use pandas to execute the following query:
+\begin{lstlisting}[language=SQL]
+SELECT ID, Name from studentInfo WHERE Age > 19 AND Sex = 'M'
+\end{lstlisting}
+\end{problem}
+
+Next, let's look at JOIN statements.
+In pandas, this is done with the \li{merge} function,
+which takes as arguments the two \li{DataFrame} objects to join, as well as keyword arguments specifying
+the column on which to join, along with the type (left, right, inner, outer).
+
+\begin{lstlisting}
+>>> # SELECT * FROM studentInfo INNER JOIN mathInfo ON studentInfo.ID = mathInfo.ID
+>>> pd.merge(studentInfo, mathInfo, on='ID') # INNER JOIN is the default
+   Age Class  ID    Name Sex  Grade Math_Major
+0   20    Sp   0   Mylan   M    4.0          y
+1   21    Se   1   Regan   F    3.0          n
+2   22    Se   3    Jess   F    4.0          n
+3   20     J   5    Remi   F    3.5          y
+4   20     J   6    Matt   M    3.0          n
+[5 rows x 7 columns]
+
+>>> # SELECT GPA, Grade FROM otherInfo FULL OUTER JOIN mathInfo ON otherInfo.ID = mathInfo.ID
+>>> pd.merge(otherInfo, mathInfo, on='ID', how='outer')[['GPA', 'Grade']]
+   GPA  Grade
+0  3.8    4.0
+1  3.5    3.0
+2  3.0    NaN
+3  3.9    4.0
+4  2.8    NaN
+5  2.9    3.5
+6  3.8    3.0
+7  3.4    NaN
+8  3.7    NaN
+[9 rows x 2 columns]
+\end{lstlisting}
+
+\begin{problem}
+Using a join operation, create a \li{DataFrame} containing the ID, age, and GPA of all male individuals.
+You ought to be able to accomplish this in one line of code.
+\end{problem}
+
+\begin{comment}
+This may be going into too much detail for an introductory lab...
+It is sometimes desirable to join to DataFrames on their indexes rather than on a particular column.
+The \li{join} method makes this operation convenient.
+\begin{lstlisting}
+>>> #create new DataFrame
+>>> sibs = [0, 1, 0, 5, 2, 9]
+>>> sibInfo = pd.DataFrame({'Siblings':sibs})
+>>> sibInfo
+   Siblings
+0         0
+1         1
+2         0
+3         5
+4         2
+5         9
+[6 rows x 1 columns]
+
+>>> #now join studentInfo with sibInfo
+>>> studentInfo.join(sibInfo)
+   Age Class  ID    Name Sex  Siblings
+0   20    Sp   0    Mylan   M         0
+1   21    Se   1   Regan   F         1
+2   18    Fr   2     Justin   M         0
+3   22    Se   3   Jess   F         5
+4   19    Sp   4     Jason   M         2
+5   20     J   5  Remi   F         9
+6   20     J   6   Matt   M       NaN
+7   19     J   7  Alexander   M       NaN
+8   20    Se   8     JeanMarie   F       NaN
+[9 rows x 6 columns]
+\end{lstlisting}
+The default is a left join, but this can be altered.
+When attempting to join to DataFrames that share common columns on their indexes,
+we must rename the columns to avoid contradictions.
+We do this by simply appending
+characters to the existing column names, specified by the \li{lsuffix} and \li{rsuffix}
+parameters (for the left and right DataFrames, respectively).
+\begin{lstlisting}
+>>> #join studentInfo and mathInfo on indexes
+>>> studentInfo.join(mathInfo, lsuffix='_left', rsuffix='_right', how='inner')
+   Age Class  ID_left   Name Sex  Grade  ID_right Math_Major
+0   20    Sp        0   Mylan   M    4.0         0          y
+1   21    Se        1  Regan   F    3.0         1          n
+2   18    Fr        2    Justin   M    3.5         5          y
+3   22    Se        3  Jess   F    3.0         6          n
+4   19    Sp        4    Jason   M    4.0         3          n
+[5 rows x 8 columns]
+\end{lstlisting}
+
+The final SQL-like operation we will discuss is the UNION, or concatenation of DataFrames.
+In the simplest setting, this operation is useful when we have two DataFrames that have the
+same columns but possibly different rows.
+\begin{lstlisting}
+>>> #create another df holding more math info
+>>> mathID2 = [0, 5, 2, 4]
+>>> mathGd2 = [4.0, 3.5, 2.0, 3.0]
+>>> major2 = ['y', 'y', 'n', 'y']
+>>> mathInfo2 = pd.DataFrame({'Grade':mathGd2, 'ID':mathID2, 'Math_Major':major2})
+>>> pd.concat([mathInfo, mathInfo2], ignore_index=True).drop_duplicates()
+   Grade  ID Math_Major
+0    4.0   0          y
+1    3.0   1          n
+2    3.5   5          y
+3    3.0   6          n
+4    4.0   3          n
+7    2.0   2          n
+8    3.0   4          y
+[7 rows x 3 columns]
+\end{lstlisting}
+The \li{ignore_index=True} argument means we discard the indexes of the two input DataFrames and create
+a new one for the concatenated DataFrame.
+The \li{drop_duplicates} method simply drops duplicate rows.
+\end{comment}
+
+Be aware that other types of SQL-like operations are also possible, such as UNION.
+When you find yourself unsure of how to carry out a more involved SQL-like operation, the online
+pandas documentation will be of great service.
+
+\section*{Analyzing Data}
+Although pandas does not provide built-in support for heavy-duty statistical analysis of data, there
+are nevertheless many features and functions that facilitate basic data manipulation and computation,
+even when the data is in a somewhat messy state.
+We will now explore some of these features.
+
+\subsection*{Basic Data Manipulation}
+Because the primary pandas data structures are subclasses of the \li{ndarray}, they are valid input
+to most NumPy functions, and can often be treated simply as NumPy arrays.
+For example, basic
+vectorized operations work just fine:
+\begin{lstlisting}
+>>> x = pd.Series(np.random.randn(4), index=['a', 'b', 'c', 'd'])
+>>> y = pd.Series(np.random.randn(5), index=['a', 'b', 'd', 'e', 'f'])
+>>> x**2
+a    1.710289
+b    0.157482
+c    0.540136
+d    0.202580
+dtype: float64
+>>> z = x + y
+>>> z
+a    0.123877
+b    0.278435
+c         NaN
+d   -1.318713
+e         NaN
+f         NaN
+dtype: float64
+>>> np.log(z)
+a   -2.088469
+b   -1.278570
+c         NaN
+d         NaN
+e         NaN
+f         NaN
+dtype: float64
+\end{lstlisting}
+Notice that pandas automatically aligns the indexes when adding two \li{Series} (or \li{DataFrames}),
+so that the the index of the output is simply the union of the indexes of the two inputs.
+The default
+missing value \li{NaN} is given for labels that are not shared by both inputs.
+
+It may also be useful to transpose \li{DataFrames}, re-order the columns or rows, or sort according to a
+given column.
+Here we demonstrate these capabilities:
+\begin{lstlisting}
+>>> df = pd.DataFrame(np.random.randn(4,2), index=['a', 'b', 'c', 'd'], columns=['I', 'II'])
+>>> df
+          I        II
+a -0.154878 -1.097156
+b -0.948226  0.585780
+c  0.433197 -0.493048
+d -0.168612  0.999194
+
+[4 rows x 2 columns]
+
+>>> df.transpose()
+           a         b         c         d
+I  -0.154878 -0.948226  0.433197 -0.168612
+II -1.097156  0.585780 -0.493048  0.999194
+
+[2 rows x 4 columns]
+
+>>> # switch order of columns, keep only rows 'a' and 'c'
+>>> df.reindex(index=['a', 'c'], columns=['II', 'I'])
+         II         I
+a -1.097156 -0.154878
+c -0.493048  0.433197
+
+[2 rows x 2 columns]
+
+>>> # sort descending according to column 'II'
+>>> df.sort_values('II', ascending=False)
+          I        II
+d -0.168612  0.999194
+b -0.948226  0.585780
+c  0.433197 -0.493048
+a -0.154878 -1.097156
+
+[4 rows x 2 columns]
+\end{lstlisting}
+
+\begin{comment}
+\subsection*{Basic Statistical Functions}
+
+The pandas library allows us to easily calculate basic summary statistics of our data,
+useful when we want a quick description of the data.
+The \li{describe()} function
+outputs several such summary statistics for each column in a \li{DataFrame}:
+\begin{lstlisting}
+>>> df.describe()
+              I        II
+count  4.000000  4.000000
+mean  -0.209630 -0.001308
+std    0.566696  0.964083
+min   -0.948226 -1.097156
+25%   -0.363516 -0.644075
+50%   -0.161745  0.046366
+75%   -0.007859  0.689133
+max    0.433197  0.999194
+
+[8 rows x 2 columns]
+\end{lstlisting}
+
+Functions for calculating means and variances, the covariance and correlation matrices, and other
+basic statistics are also available.
+Below, we calculate the means of each row, as well as the
+covariance matrix:
+\begin{lstlisting}
+>>> df.mean(axis=1)
+a   -0.626017
+b   -0.181223
+c   -0.029925
+d    0.415291
+dtype: float64
+
+>>> df.cov()
+           I        II
+I   0.321144 -0.256229
+II -0.256229  0.929456
+
+[2 rows x 2 columns]
+\end{lstlisting}
+\end{comment}
+
+\subsection*{Dealing with Missing Data} % -------------------------------------
+
+Missing data is a ubiquitous problem in data science.
+Fortunately, pandas is particularly well-suited to
+handling missing and anomalous data.
+As we have already seen, the pandas default for a missing value is \li{NaN}.
+In basic arithmetic operations, if one of the operands is \li{NaN}, then the output is also \li{NaN}.
+The following example illustrates this concept:
+\begin{lstlisting}
+>>> x = pd.Series(np.arange(5))
+>>> y = pd.Series(np.random.randn(5))
+>>> x.iloc[3] = np.nan
+>>> x + y
+0    0.731521
+1    0.623651
+2    2.396344
+3         NaN
+4    3.351182
+dtype: float64
+\end{lstlisting}
+
+If we are not interested in the missing values, we can simply drop them from the data altogether:
+
+\begin{lstlisting}
+>>> (x + y).dropna()
+0    0.731521
+1    0.623651
+2    2.396344
+4    3.351182
+dtype: float64
+\end{lstlisting}
+
+This is not always the desired behavior, however.
+It may well be the case that missing data actually corresponds to
+some default value, such as zero.
+In this case, we can replace all instances of \li{NaN} with a specified value:
+\begin{lstlisting}
+>>> # fill missing data with 0, add
+>>> x.fillna(0) + y
+0    0.731521
+1    0.623651
+2    2.396344
+3    1.829400
+4    3.351182
+dtype: float64
+\end{lstlisting}
+
+Other functions, such as \li{<<sum()>>} and \li{mean()} ignore NaN values in the computation.
+When dealing with missing data, make sure you are aware of the behavior of the pandas functions you are using.
+
+\section*{Data I/O} % =========================================================
+
+Being able to import and export data is a fundamental skill in data science.
+Unfortunately, with the multitude of data formats and conventions, importing data can often be a painful task.
+The pandas library seeks to reduce some of the difficulty by providing file readers for various types of formats,
+including CSV, Excel, HDF5, SQL, JSON, HTML, and pickle files.
+
+\begin{table}[H]
+\begin{tabular}{r|l}
+Method & Description \\ \hline
+\li{describe()}  & Return a \li{Series} describing the data structure \\
+\li{head()}      & Return the first $n$ rows, defaulting to 5 \\
+\li{tail()}      & Return the last $n$ rows, defaulting to 5 \\
+\li{to_csv()}    & Write the index and entries to a CSV file \\
+\li{to_json()}   & Convert the object to a JSON string \\
+\li{to_pickle()} & Serialize the object and store it in an external file \\
+\li{to_sql()}    & Write the object data to an open SQL database \\
+\end{tabular}
+\caption{Methods for viewing or exporting data in a pandas \li{Series} or \li{DataFrame}.}
+\label{table:pandas-view-or-export}
+\end{table}
+
+The CSV (comma separated values) format is a simple way of storing tabular data
+in plain text.
+Because CSV files are one of the most popular file formats for
+exchanging data, we will explore the \li{read_csv()} function in more detail.
+To learn to read other types of file formats, see the online pandas
+documentation.
+To read a CSV data file into a \li{DataFrame}, call the
+\li{read_csv()} function with the path to the CSV file, along with the
+appropriate keyword arguments.
+Below we list some of the most important keyword
+arguments:
+\begin{itemize}
+\item \li{delimiter}:
+This argument specifies the character that separates data fields, often a
+comma or a whitespace character.
+
+\item \li{header}:
+The row number (starting at 0) in the CSV file that contains the column names.
+
+\item \li{index_col}:
+If you want to use one of the columns in the CSV file as the index for the
+\li{DataFrame}, set this argument to the desired column number.
+
+\item \li{skiprows}:
+If an integer $n$, skip the first $n$ rows of the file, and then start reading
+in the data.
+If a list of integers, skip the specified rows.
+
+\item \li{names}:
+If the CSV file does not contain the column names, or you wish to use other
+column names, specify them in a list assigned to this argument.
+
+\end{itemize}
+There are several other keyword arguments, but this should be enough to get you
+started.
+
+When you need to save your data, pandas allows you to write to several different
+file formats.
+A typical example is the \li{to_csv()} function method attached to
+\li{Series} and \li{DataFrame} objects, which writes the data to a CSV file.
+Keyword arguments allow you to specify the separator character, omit writing the
+columns names or index, and specify many other options.
+The code below
+demonstrates its typical usage:
+\begin{lstlisting}
+>>> df.to_csv("my_df.csv")
+\end{lstlisting}
+
+\begin{problem} % Crime data.
+The file \texttt{crime\_data.csv} contains data on types of crimes committed in the United States from 1960 to 2016.
+\begin{itemize}
+\item Load the data into a pandas \li{DataFrame}, using the column names in the file and the column titled
+``Year'' as the index.
+Make sure to skip lines that don't contain data.
+
+\item Insert a new column into the data frame that contains the crime rate by year (the ratio of ``Total'' column
+to the ``Population'' column).
+
+\item Plot the crime rate as a function of the year.
+
+\item List the 5 years with the highest crime rate in descending order.
+
+\item Calculate the average number of total crimes as well as burglary crimes between 1960 and 2012.
+
+\item Find the years for which the total number of crimes was below average, but the number of burglaries
+was above average.
+
+\item Plot the number of murders as a function of the population.
+
+\item Select the Population, Violent, and Robbery columns for all years in the 1980s, and save
+this smaller data frame to a CSV file \texttt{crime\_subset.csv}.
+\end{itemize}
+\end{problem}
+
+\begin{problem}
+In 1912 the RMS \emph{Titanic} sank after colliding with an iceberg.
+The file \texttt{titanic.csv} contains data on the incident.
+Each row represents a different passenger, and the columns describe various features of the passengers (age, sex, whether or not they survived, etc.)
+
+Start by cleaning the data.
+\begin{itemize}
+    \item Read the data into a \li{DataFrame}.
+    Use the first row of the file as the column labels, but do not use any of the columns as the index.
+    \item Drop the columns \li{"Sibsp"}, \li{"Parch"}, \li{"Cabin"}, \li{"Boat"}, \li{"Body"}, and \li{"home.dest"}.
+    \item Drop any entries without data in the \li{"Survived"} column, then change the remaining entries to \li{True} or \li{False} (they start as 1 or 0).
+    \item Replace null entries in the \li{"Age"} column with the average age.
+    \item Save the new \li{DataFrame} as \texttt{titanic\_clean.csv}.
+\end{itemize}
+Next, answer the following questions.
+\begin{itemize}
+    \item How many people survived? What percentage of passengers survived?
+    \item What was the average price of a ticket? How much did the most expensive ticket cost?
+    \item How old was the oldest survivor? How young was the youngest survivor? What about non-survivors?
+\end{itemize}
+
+
+
+\end{problem}

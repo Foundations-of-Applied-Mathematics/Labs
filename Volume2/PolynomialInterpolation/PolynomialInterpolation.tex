@@ -30,7 +30,7 @@ One approach to finding the unique interpolating polynomial of degree $n$ is Lag
     \caption{Interpolation using 11 equally spaced points.}
     \label{fig:bad2}
 \end{subfigure}
-\caption{Example of polynomial interpolation. Interpolation of Runge's function $f(x)=\frac{1}{1+25x^2}$ with differing numbers of equally spaced interpolating points.}
+\caption{Interpolations of Runge's function $f(x)=\frac{1}{1+25x^2}$ with equally spaced interpolating points.}
 \label{fig:badinterp}
 \end{figure}
 
@@ -55,11 +55,11 @@ L_j(x) = \frac{\displaystyle\prod_{k=1, k \neq j}^n (x-x_k)}{\displaystyle\prod_
 Each of these Lagrange basis functions is of degree $n-1$ and has the necessary properties as given above.
 \emph{Lagrange interpolation} consists of computing the Lagrange basis functions then combining them with the y-values.
 
-Since polynomials are typically represented in their expanded form with coefficients on each of the terms, it may seem like the best option when working with polynomials would be to use Sympy, or Numpy's
+Since polynomials are typically represented in their expanded form with coefficients on each of the terms, it may seem like the best option when working with polynomials would be to use Sympy, or NumPy's
 \li{poly1d} class to compute the coefficients of the interpolating polynomial individually.
-This is rarely the best approach, however, since expanding out the large polynomials that are required can quickly lead to instability (especially when using large 
+This is rarely the best approach, however, since expanding out the large polynomials that are required can quickly lead to instability (especially when using large
 numbers of interpolating points).
-Instead, it is usually best just to leave the polynomials in unexpanded form (which is still a polynomial, just not a pretty-looking one), and compute values of the polynomial directly from this unexpanded form. 
+Instead, it is usually best just to leave the polynomials in unexpanded form (which is still a polynomial, just not a pretty-looking one), and compute values of the polynomial directly from this unexpanded form.
 
 \begin{lstlisting}
 # Evaluate the polynomial (x-2)(x+1) at 10 points without expanding the expression.
@@ -72,9 +72,9 @@ Although the coefficients of the interpolating polynomials will not be explicitl
 
 \begin{problem}
 Write a function that uses the Lagrange method to find an interpolating polynomial for a set of data points and evaluates the calculated polynomial at specified values.
-This function should accept two Numpy arrays which contain the $x$ and $y$ values of the interpolation points as well as a Numpy array of values (of length $m$) at which the interpolating polynomial 
+This function should accept two NumPy arrays which contain the $x$ and $y$ values of the interpolation points as well as a NumPy array of values (of length $m$) at which the interpolating polynomial
 will be evaluated.
-Your function should return a Numpy array of the evaluated points.
+Your function should return a NumPy array of the evaluated points.
 The following steps will help in writing your function:
 \begin{enumerate}
 \item Compute the denominator of each $L_j$ (as in Equation \ref{equa:lagrange}) .
@@ -84,26 +84,26 @@ The following steps will help in writing your function:
 Note that steps one and two can be done in the same loop.
 You may find the function \li{np.delete()} to be useful while writing this method.
 
-You can test your function by plotting Runge's function $f(x)=\frac{1}{1+25x^2}$ and your interpolating polynomial on the same plot for different values of $n$ equally spaced interpolating values then comparing 
+You can test your function by plotting Runge's function $f(x)=\frac{1}{1+25x^2}$ and your interpolating polynomial on the same plot for different values of $n$ equally spaced interpolating values then comparing
 your plot to the plots given in Figure \ref{fig:badinterp}.
 \label{prob:lagrange}
 \end{problem}
 
-The Lagrange form of polynomial interpolation is useful in some theoretical contexts and is easier to understand than other methods, however, it has some serious drawbacks that prevent it from being a 
+The Lagrange form of polynomial interpolation is useful in some theoretical contexts and is easier to understand than other methods, however, it has some serious drawbacks that prevent it from being a
 useful method of interpolation.
-First, Lagrange interpolation is $O(n^2)$ where other interpolation methods are $O(n^2)$ (or faster) at startup but only $O(n)$ at run-time, 
+First, Lagrange interpolation is $O(n^2)$ where other interpolation methods are $O(n^2)$ (or faster) at startup but only $O(n)$ at run-time,
 Second, Lagrange interpolation is an unstable algorithm which causes it to return innacurate answers when larger numbers of interpolating points are used.
 Thus, while useful in some situations, Lagrange interpolation is not desirable in most instances.
 
 \subsection*{Barycentric Lagrange interpolation}
-Barycentric Lagrange interpolation is simple variant of Lagrange interpolation that performs much better than plain Lagrange interpolation.  
+Barycentric Lagrange interpolation is simple variant of Lagrange interpolation that performs much better than plain Lagrange interpolation.
 It is essentially just a rearrangement of the order of operations in Lagrange multiplication which results in vastly improved perfomance, both in speed and stability.
 
 Barycentric Lagrange interpolation relies on the observation that each basis function $L_j$ can be rewritten as
 \[
 L_j(x) = \frac{w(x)}{(x-x_j)}w_j
 \]
-where 
+where
 \[
 w(x) = \prod_{j=1}^n (x-x_j)
 \]
@@ -132,7 +132,7 @@ The following adjustments will improve the algorithm so that it is numerically s
 
 The second barycentric form makes it clear that any factors that are common to the $w_k$ can be ignored (since they will show up in both the numerator and denominator).
 This allows for an important improvement to the formula that will prevent overflow error in the arithmetic.
-When computing the barycentric weights, each element of the product $\prod_{k=1, k \neq j}^n (x_j-x_k)$ should be multiplied by $C^{-1}$, where $4C$ is the width of the interval being interpolated 
+When computing the barycentric weights, each element of the product $\prod_{k=1, k \neq j}^n (x_j-x_k)$ should be multiplied by $C^{-1}$, where $4C$ is the width of the interval being interpolated
 (C is known as the \emph{capacity} of the interval).
 In effect, this scales each barycentric weight by $C^{1-n}$ which helps to prevent overflow during computation.
 Thus, the new barycentric weights are given by
@@ -143,12 +143,12 @@ Once again, this change is possible since the extra factor $C^{1-n}$ is cancelle
 This process is summed up in the following code:
 
 \begin{lstlisting}
-# Given a Numpy array xint of interpolating x-values, calculate the weights.
+# Given a NumPy array xint of interpolating x-values, calculate the weights.
 >>> n = len(xint)                   # Number of interpolating points.
 >>> w = np.ones(n)                  # Array for storing barycentric weights.
 # Calculate the capacity of the interval.
->>> C = (np.max(xint) - np.min(xint)) / 4
-    
+>>> C = (np.<<max>>(xint) - np.<<min>>(xint)) / 4
+
 >>> shuffle = np.random.permutation(n-1)
 >>> for j in range(n):
 >>>     temp = (xint[j] - np.delete(xint, j)) / C
@@ -156,27 +156,26 @@ This process is summed up in the following code:
 >>>     w[j] /= np.product(temp)
 \end{lstlisting}
 
-The order of \li{temp} was randomized so that the arithmetic does not overflow due to poor ordering (if standard ordering is used, overflow errors can be encountered since all 
+The order of \li{temp} was randomized so that the arithmetic does not overflow due to poor ordering (if standard ordering is used, overflow errors can be encountered since all
 of the points of similar magnitude are multiplied together at once).
 When these two fixes are combined, the Barycentric Algorithm becomes numerically stable.
 
 \begin{problem}
 \label{prob:barycentric}
 Create a class that performs Barycentric Lagrange interpolation.
-The constructor of your class should accept two Numpy arrays which contain the $x$ and $y$ values of the interpolation points.
-Store these arrays as class attributes.
-The constructor should compute the corresponding barycentric weights and store the resulting array as a class attribute.
-When storing the arrays as class attributes be sure that the relative ordering of the arrays remains unchanged.
+The constructor of your class should accept two NumPy arrays which contain the $x$ and $y$ values of the interpolation points.
+Store these arrays as attributes.
+In the constructor, compute the corresponding barycentric weights and store the resulting array as a class attribute.
+Be sure that the relative ordering of the arrays remains unchanged.
 
-Write the \li{__call__} method of your class so that it accepts a Numpy array of values at which to evaluate the interpolating polynomial and returns an array of the evaluated points.
+Implement the \li{__call__()} method so that it accepts a NumPy array of values at which to evaluate the interpolating polynomial and returns an array of the evaluated points.
 Your class can be tested in the same way as the Lagrange function written in Problem \ref{prob:lagrange}
 \end{problem}
 
 \begin{warn}
-As currently explained and implemented, the Barycentric class from Problem \ref{prob:barycentric} will fail when a point to be evaluated exactly matches one of the x-values of the interpolating points.
+As currently explained and implemented, the Barycentric class from Problem \ref{prob:barycentric} will fail when a point to be evaluated exactly matches one of the $x$-values of the interpolating points.
 This happens because a divide by zero error is encountered in the final step of the algorithm.
-The fix for this, although not required here, is quite easy.
-To repair this error, just keep track of any problem points and replace the final computed value with the corresponding y-value (since this is a point that is exactly interpolated).
+The fix for this, although not required here, is quite easy: keep track of any problem points and replace the final computed value with the corresponding y-value (since this is a point that is exactly interpolated).
 If you do not implement this fix, just be sure not to pass in any points that exactly match your interpolating values.
 \end{warn}
 
@@ -190,7 +189,7 @@ In addition to calculating the new barycentric weight, all existing weights shou
 \begin{problem}
 \label{prob:add weights}
 Include a method in the class written in Problem \ref{prob:barycentric} that allows for the addition of new interpolating points by updating the barycentric weights.
-Your function should accept two Numpy arrays which contain the $x$ and $y$ values of the new interpolation points.
+Your function should accept two NumPy arrays which contain the $x$ and $y$ values of the new interpolation points.
 Update and store the old weights then extend the class attribute arrays that store the weights, and the $x$ and $y$ values of the interpolation points with the new data.
 When updating all class attributes, make sure to maintain the same relative order.
 \end{problem}
@@ -217,7 +216,7 @@ The following code will produce a figure similar to Figure \ref{fig:bad2}.
 >>> poly.set_yi(f(pts))           # Set the y values.
 
 >>> plt.plot(domain, f(domain))
->>> plt.plot(domain, poly.eval(domain))
+>>> plt.plot(domain, poly.<<eval>>(domain))
 \end{lstlisting}
 
 \begin{comment} # Potential timing problem comparing student written barycentr, lagrange and Scipy's Lagrange.  Superceded by later problem which also includes Chebyshev.
@@ -272,19 +271,22 @@ The $n+1$ Chebyshev extremal points on the interval $[a,b]$ are given by the for
 These points are shown in Figure \ref{fig:extrema}.
 One important feature of these points is that they are clustered near the endpoints of the interval, this is key to preventing Runge's phenomenon.
 
-\begin{problem}
-Compare the error of interpolation using equally spaced points and interpolation using the Chebyshev extrema by writing a function that does the following:
-\begin{itemize}
-\item Interpolates Runge's function six times on the interval $[-1,1]$, three times using equally spaced points and three using the Chebyshev extrema.
-\item Performs the interpolations with $n=[10,50,100]$ (note that for the Chebyshev extrema, the given definition uses $n+1$ interpolating values).
-\item Plots each of the interpolating polynomial (for a total of six plots).
-\item Prints the error of the interpolation on a domain using 500 equally spaced points.  When printing the error, it should be clear which error belongs to which value of $n$ and to which method.
-\end{itemize}
-Use Scipy's BarycentricLagrange class to perform all of the interpolation.
-When calculating the error, use \li{scipy.linalg.norm()} with \li{ord=np.inf}.
+\begin{problem} % Compare error.
+% Compare the error of interpolation using equally spaced points and interpolation using the Chebyshev extrema by writing a function that performs the following experiment.
+Write a function that defines a domain $\x$ of $400$ equally spaced points on the interval $[-1, 1]$.
+For $n=2^2,2^3,\ldots,2^8$, repeat the following experiment.
+\begin{enumerate}
+    \item Interpolate Runge's function $f(x) = 1/(1+25x^2)$ with $n$ equally spaced points over $[-1,1]$ using SciPy's \li{BarycentricInterpolator} class, resulting in an approximating function $\tilde{f}$.
+    Compute the absolute error $\|f(\x) - \tilde{f}(\x)\|_\infty$ of the approximation using \li{la.norm()} with \li{<<ord>>=np.inf}.
+    \item Interpolate Runge's function with $n+1$ Chebyshev extremal points, also via SciPy, and compute the absolute error.
+    % Note that the definition for Chebyshev extremal points uses $n+1$ interpolating values.
+\end{enumerate}
+Plot the errors of each method against the number of interpolating points $n$ in a log-log plot.
+
+To verify that your figure make sense, try plotting the interpolating polynomials with the original function for a few of the larger values of $n$.
 \end{problem}
 
-\begin{figure}
+\begin{figure}[H]
 \centering
 \includegraphics{figures/extrema.pdf}
 \caption{The Chebyshev extremal points.  The $n$ points where the Chebyshev polynomial of degree $n$ reaches its local extrema.
@@ -302,21 +304,21 @@ such that
 p(x) = \sum_{k=0}^n a_kT_k.
 \]
 
-Finding the Chebyshev representation of an interpolating polynomial is a slow process (dominated by matrix multiplication or solving a linear system), but when the interpolating values are the 
+Finding the Chebyshev representation of an interpolating polynomial is a slow process (dominated by matrix multiplication or solving a linear system), but when the interpolating values are the
 Chebyshev extrema, there exists a fast algorithm for computing the Chebyshev coefficients of the interpolating polynomial.
 This algorithm is based on the Fast Fourier transform which has temporal complexity $O(n\log n)$.
 Given the $n+1$ Chebyshev extremal points $y_j=\cos(\frac{j\pi}{n})$ for $j=0,1,\dots,n$ and a function $f$, the unique n-degree interpolating polynomial $p(x)$ is given by
 \[
 p(x)=\sum_{k=0}^na_kT_k
 \]
-where 
+where
 \[
 a_k = \gamma_k \Re \left[ DFT(f(y_0), f(y_1),\dots, f(y_{2n-1}))\right]_k.
 \]
 Note that although this formulation includes $y_j$ for $j>n$, there are really only $n+1$ distinct values being used since $y_{n-k}=y_{n+k}$.
 Also, $\Re$ denotes the real part of the Fourier transform and $\gamma_k$ is defined as
 \[
-\gamma_k = 
+\gamma_k =
 \begin{cases}
 1 & k\in \{0,n\} \\
 2 & \text{otherwise.}
@@ -324,21 +326,33 @@ Also, $\Re$ denotes the real part of the Fourier transform and $\gamma_k$ is def
 \]
 
 \begin{problem}
-Write a funtion that finds the Chebyshev coefficients for the degree $n$ interpolating polynomial of a function \li{f}.
-Your function should accept a callable function \li{f} and an integer $n$ which denotes the degree of the interpolating polynomial.
-Make the function return a Numpy array of the Chebyshev coefficients.
-The functions \li{np.real()} and \li{np.fft.fft()} will be helpful in writing your function.
-When using Numpy's \li{fft()} function, you will need to divide every entry of the resulting array by the scaling factor $\frac{1}{2n}$ since it is missing from Numpy's implementation.
+Write a function that accepts a function $f$ and an integer $n$.
+Compute the $n+1$ Chebyshev coefficients for the degree $n$ interpolating polynomial of $f$ using the Fourier transform (\li{np.real()} and \li{np.fft.fft()} will be helpful).
+When using NumPy's \li{fft()} function, multiply every entry of the resulting array by the scaling factor $\frac{1}{2n}$ to match the derivation given above.
+
+Validate your function with \li{np.polynomial.chebyshev.poly2cheb()}.
+The results should be exact for polynomials.
+\begin{lstlisting}
+# Define f(x) = -3 + 2x^2 - x^3 + x^4 by its (ascending) coefficients.
+>>> f = lambda x: -3 + 2*x**2 - x**3 + x**4
+>>> pcoeffs = [-3, 0, 2, -1, 1]
+>>> ccoeffs = np.polynomial.chebyshev.poly2cheb(pcoeffs)
+
+# The following callable objects are equivalent to f().
+>>> fpoly = np.polynomial.Polynomial(pcoeffs)
+>>> fcheb = np.polynomial.Chebyshev(ccoeffs)
+\end{lstlisting}
 \end{problem}
 
-Once the coefficients of the Chebyshev polynomial have been computed, there exists a fast algorithm (discussed in Additional Materials) for evaluating the polynomials.
-Numpy's \li{chebyshev} module contains a method for doing this.
+\begin{comment}
+Once the coefficients of the Chebyshev polynomial have been computed, there exists a fast algorithm (discussed in the Additional Material section) for evaluating the polynomials.
+NumPy's \li{polynomial.chebyshev} module contains a method for doing this.
 \begin{lstlisting}
-from numpy.polynomial.chebyshev import chebval
+>>> from NumPy.polynomial.chebyshev import chebval
 
 >>> domain = np.linspace(-1, 1, 5)
 >>> f = lambda x: x**4              # Function to interpolate.
->>> coeffs = chebyshv_coeffs(f, 4)  # Function from Problem 6.
+>>> coeffs = chebyshv_coeffs(f, 4)  # Function from Problem 5.
 >>> print(coeffs)
 [  3.75000000e-01  -5.88784672e-17   5.00000000e-01   5.88784672e-17
    1.25000000e-01]
@@ -347,21 +361,22 @@ from numpy.polynomial.chebyshev import chebval
 [ 1.      0.0625  0.      0.0625  1.    ]
 \end{lstlisting}
 
-Although not covered here, Numpy's \li{chebyshev} module has a lot of useful functions for working with Chebyshev polynomials.
-Some of the methods include fast implementations of polynomial operations such as addition and division plus methods for integration and multiplication.
+NumPy's \li{polynomial.chebyshev} module has many useful functions for working with Chebyshev polynomials.
+Some of the methods include fast implementations of polynomial operations such as addition, division, multiplication, and integration.
+\end{comment}
 
 \section*{Lagrange vs. Chebyshev}
-As was previously stated, Barycentric Lagrange interpolation is $O(n^2)$ at startup and $O(n)$ at runtime while Chebyshev interpolation is $O(n\log n)$, this improved speed is one of the greatest
-advantages of Chebyshev interpolation.
+
+As was previously stated, Barycentric Lagrange interpolation is $O(n^2)$ at startup and $O(n)$ at runtime while Chebyshev interpolation is $O(n\log n)$.
+This improved speed is one of the greatest advantages of Chebyshev interpolation.
 Chebyshev interpolation is also more accurate than Barycentric interpolation, even when using the same points.
-Despite these significant advantages in accuracy and temporal complexity, Barycentric Lagrange interpolation has one very important advantage over Chebyshev interpolation.
-Barycentric interpolation can be used on any set of interpolating points while Chebyshev is restricted to the Chebyshev nodes.
-In general, because of their better accuracy, the Chebyshev nodes are more desirable for interpolation, but there are situations when the Chebyshev nodes are not available or when specific 
-points are needed in an interpolation.
+Despite these significant advantages in accuracy and temporal complexity, Barycentric Lagrange interpolation has one very important advantage over Chebyshev interpolation: Barycentric interpolation can be used on any set of interpolating points while Chebyshev is restricted to the Chebyshev nodes.
+In general, because of their better accuracy, the Chebyshev nodes are more desirable for interpolation, but there are situations when the Chebyshev nodes are not available or when specific points are needed in an interpolation.
 In these cases, Chebyshev interpolation is not possible and Barycentric Lagrange interpolation must be used.
 
+\begin{comment} % Too confusing and too much of a repeat of a previous problem.
 \begin{problem}
-Investigate the claims made in the previous section by writing two different functions, one to compare error and the other to compare time.
+Investigate the claims made in the previous section by writing two different functions, one to compare error and the other to compare speed.
 This function should accomplish this by doing the following:
 \begin{itemize}
 \item Interpolate Runge's function on the interval $[-1,1]$ using your Lagrange function, your Barycentric Lagrange class, Scipy's Barycentric class and Chebyshev interpolation.
@@ -373,9 +388,11 @@ Be sure to clearly label the method and value of $n$ being used for each value p
 Use \li{scipy.linalg.norm()} with \li{ord=np.inf} and the Chebyshev extremal points.
 Note that if \li{inf} appears in any of your compuatations \li{scipy.linalg.norm()} will raise an error, in this case print the error as \li{inf} (you may need to use a \li{try} \li{except} block for some of the methods).
 \end{problem}
+\end{comment}
 
 
 \section*{Utah Air Quality}
+
 The Utah Department of Environmental Quality has air quality stations throughout the state of Utah that measure the concentration of particles found in the air.
 One particulate of particular interest is $PM_{2.5}$ which is a set of extremely fine particles known to cause tissue damage to the lungs.
 The file \texttt{airdata.npy} has the hourly concentration of $PM_{2.5}$ in micrograms per cubic meter for a particular measuring station in Salt Lake County for the year 2016.
@@ -390,7 +407,7 @@ The following code will take the $n+1$ Chebyshev extrema and find the closest ma
 >>> a, b = 0, 366 - 1/24
 >>> domain = np.linspace(0, b, 8784)
 >>> points = fx(a, b, n)
->>> temp = np.abs(points - domain.reshape(8784, 1))
+>>> temp = np.<<abs>>(points - domain.reshape(8784, 1))
 >>> temp2 = np.argmin(temp, axis=0)
 
 >>> poly = barycentric(domain[temp2], data[temp2])
@@ -398,17 +415,18 @@ The following code will take the $n+1$ Chebyshev extrema and find the closest ma
 
 \begin{problem}
 Write a function that interpolates the given data along the whole interval at the closest approximations to the $n+1$ Chebyshev extremal nodes.
-The function should accept $n$, perform the Barycentric interpolation then plot the original data and the approximating polynomial on the same domain on two seperate subplots.
+The function should accept $n$, perform the Barycentric interpolation then plot the original data and the approximating polynomial on the same domain on two separate subplots.
 Your interpolating polynomial should give a fairly good approximation starting at around 50 points.
 Note that beyond about 200 points, the given code will break down since it will attempt to return multiple of the same points causing a divide by 0 error.
-If you did not perform the fix suggested in the Warning box, make sure not to pass in any points that exactly match the interpolating values.
+If you did not perform the fix suggested in the \texttt{ACHTUNG} box, make sure not to pass in any points that exactly match the interpolating values.
 \end{problem}
-\pagebreak
 
+\newpage
 
-\section*{Additional Materials}
-The Clenshaw Algorithm is a fast algorithm commonly used to evaluate a polynomial given its representation in Chebyshev coefficients.
-This algorithm is based on the recursive relation between Chebyshev polynomials and is the algorithm used by Numpy's \li{chebyshev} package.
+\section*{Additional Material}
+
+The \emph{Clenshaw Algorithm} is a fast algorithm commonly used to evaluate a polynomial given its representation in Chebyshev coefficients.
+This algorithm is based on the recursive relation between Chebyshev polynomials and is the algorithm used by NumPy's \li{polynomial.chebyshev} module.
 
 \begin{algorithm}
 \begin{algorithmic}[1]
@@ -427,9 +445,8 @@ This algorithm is based on the recursive relation between Chebyshev polynomials 
 \label{alg:clenshaw_recursion}
 \end{algorithm}
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% The following is some unincluded material from the old Chebyshev Polynomial lab that expands on the material contained in the current lab, some of it may be useful for future iterations of this lab.
+% Some material from the old Chebyshev Polynomial lab that expands on the material contained in the current lab. Some of it may be useful for future iterations of this lab.
 
 \begin{comment} %This section gives a more complete introduction to Chebyshev polynomials including their orthogonality.
 This sort of interpolation is also related to what are called the Chebyshev polynomials.
@@ -491,7 +508,7 @@ When you compute the Chebyshev coefficients for the interpolatng polynomial thro
 \end{warn}
 \end{comment}
 
-\begin{comment} %Potential problem and discussion exploring convergence of polynomial interpolation.
+\begin{comment} % Potential problem and discussion exploring convergence of polynomial interpolation.
 \begin{problem}
 \label{prob:cheb_interpolations}
 We will briefly consider the rate of convergence of these polynomial approximations.

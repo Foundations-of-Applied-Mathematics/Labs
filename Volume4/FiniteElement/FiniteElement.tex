@@ -15,7 +15,7 @@ This can be modelled by adding an advection or transport term to the heat equati
 \begin{align*}
 y_t + ay_x = \epsilon y_{xx} + f(x).
 \end{align*}
-We consider a fluid flowing through a pipe from $x = 0$ to $x = 1$ at with  speed $a = 1$, and as it travels it is warmed at a constant rate $f= 1$.
+We consider a fluid flowing through a pipe from $x = 0$ to $x = 1$ with  speed $a = 1$, and as it travels it is warmed at a constant rate $f= 1$.
 We will impose the condition that $y = 2$ at $x = 0$, so that the fluid is already at a constant temperature as it enters the pipe. 
 
 These conditions yield 
@@ -40,8 +40,6 @@ Physically we expect this extra heat that is introduced at $x = 1$ to diffuse ba
 	\end{split}\label{eqn:FEM_steady_state}
 \end{align}
 
-% We will use the finite element method to solve this boundary value problem numerically.
-
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{FEM_solution.pdf}
@@ -59,8 +57,6 @@ Consider the equation
 \end{align}
 To find the solution $y$ using the finite element method, we reframe the problem and look at what is known as its weak formulation.
 
-%We may assume that the solution $y$ of \eqref{eqn:FEM_eqn1} lies in some appropriate function space $V$.
-%; in any case, we can approximate it arbitrarily well in $C^0[0,1]$ by a piecewise linear function.
 Let $w$ be a smooth function on $[0,1]$ satisfying $w(0) = w(1) = 0$.
 Multiplying \eqref{eqn:FEM_eqn1} by $w$ and integrating over $[0,1]$ yields
 \begin{align*}
@@ -179,24 +175,16 @@ where $\alpha = 2, \beta = 4$, and $\epsilon = 0.02$.
 Use $N = 100$ finite elements ($101$ grid points).
 Compare your solution with the analytic solution
 \[y(x) = \alpha + x + (\beta - \alpha - 1 ) \frac{e^{x/\epsilon} -1}{e^{1/\epsilon} -1}.\]
-
-This boundary value problem has a singularly perturbed ODE, because the parameter $\epsilon$ is a coefficient of the highest order derivative in the equation.
-The character of the problem changes dramatically when $\epsilon = 0$: since the limit equation $y' = 1$ is first-order, it only allows for one boundary condition.
-Thus as $\epsilon$ gets smaller, the rightmost boundary condition is satisfied at the `last moment',  and cannot be satisfied when $\epsilon = 0$.
 \end{problem}
 
 \begin{problem}
 One of the strengths of the finite element method is the ability to generate grids that better suit the problem.
-In two dimensions the finite elements are quadrilaterals and triangles, and can be used to approximate irregular domains.
-The finite element method can also be used to solve PDEs where the shape and size of the domain changes over time.
-
 The solution of \eqref{eqn:FEM_exercise} changes most rapidly near $x = 1$.
 Compare the numerical solution when the grid points are unevenly spaced versus when the grid points are clustered in the area of greatest change; see Figure \ref{fig:FEM_compare_methods}. Specifically, use the grid points defined by
 \begin{lstlisting}
 even_grid = np.linspace(0,1,15)
 clustered_grid = np.linspace(0,1,15)**(1./8)
 \end{lstlisting}
-What is the difference in accuracy?
 \end{problem}
 
 \begin{figure}[ht]
@@ -227,43 +215,40 @@ Use a log-log plot to graph the error; see Figure \ref{fig:FEM_error_2nd_order}.
 \caption{Error for the second order finite element method, as the number of subintervals $n$ grows. Round-off error eventually overwhelms the approximation. }
 \label{fig:FEM_error_2nd_order}
 \end{figure}
-% \begin{align}
-% \left[\begin{array}{cccccc}1 & 0 & 0 & 0 & 0 & 0 \\-\epsilon/h_1 & \epsilon/h_1 + \epsilon/h_2 & -\epsilon/h_2 & 0 & 0 & 0 \\0 & -1/h_2 & a(\phi_2,\phi_2) & a(\phi_3,\phi_2) & 0 & 0 \\0 & 0 & a(\phi_2,\phi_3) & a(\phi_3,\phi_3) & a(\phi_4,\phi_3) & 0 \\0 & 0 & 0 & a(\phi_3,\phi_4) & a(\phi_4,\phi_4) & a(\phi_5,\phi_4) \\0 & 0 & 0 & 0 & 0 &1\end{array}\right]
-% \left[\begin{array}{c}k_0 \\k_1 \\k_2 \\k_3 \\k_4 \\k_5\end{array}\right] = \left[\begin{array}{c}\alpha \\l(\phi_1) \\l(\phi_2) \\l(\phi_3) \\l(\phi_4) \\\beta\end{array}\right] \label{FE:linear_system}
-% \end{align}
-\newpage
-\section*{A Comparison of Numerical Methods}
 
-\begin{table}[t]
-  \begin{tabular}{ l |l l }
-    % \hline
-     & Finite Element & Finite Difference  \\ \hline
-    Linear System& sparse& sparse  \\
-   Derivative & approximated locally & approximated locally \\
-Domain & irregular domains & fairly regular\\
-% Problem Formulation & integral & derivative & derivative & integral \\
-Convergence & polynomial & polynomial \\
-Strengths & adaptive mesh & easier to understand \\
-& refinement & and implement \\
-& complex geometries & easier for higher dimensions \\
-    \hline
-  \end{tabular}
-\end{table}
-
-\begin{table}
-  \begin{tabular}{ l |l l }
-    % \hline
-      & Pseudospectral & Finite Volume \\ \hline
-    Linear System & dense & sparse \\
-   Derivative & global & local\\
-Domain  & very nice & fairly regular\\
-Convergence  & exponential & polynomial\\
-Strengths  & fast convergence & handling discontinuities in \\
-& accurate to high precisions &the initial conditions \\
-& & dealing with shock formation \\
-& & and propagation \\
-    \hline
-  \end{tabular}
-\end{table}
-
-It is important to note that these methods are often mixed, so, for example, it is common to work with a finite element mesh in space and a finite differencing scheme in time.
+%\newpage
+%\section*{A Comparison of Numerical Methods}
+%
+%\begin{table}[t]
+%  \begin{tabular}{ l |l l }
+%    % \hline
+%     & Finite Element & Finite Difference  \\ \hline
+%    Linear System& sparse& sparse  \\
+%   Derivative & approximated locally & approximated locally \\
+%Domain & irregular domains & fairly regular\\
+%% Problem Formulation & integral & derivative & derivative & integral \\
+%Convergence & polynomial & polynomial \\
+%Strengths & adaptive mesh & easier to understand \\
+%& refinement & and implement \\
+%& complex geometries & easier for higher dimensions \\
+%    \hline
+%  \end{tabular}
+%\end{table}
+%
+%\begin{table}
+%  \begin{tabular}{ l |l l }
+%    % \hline
+%      & Pseudospectral & Finite Volume \\ \hline
+%    Linear System & dense & sparse \\
+%   Derivative & global & local\\
+%Domain  & very nice & fairly regular\\
+%Convergence  & exponential & polynomial\\
+%Strengths  & fast convergence & handling discontinuities in \\
+%& accurate to high precisions &the initial conditions \\
+%& & dealing with shock formation \\
+%& & and propagation \\
+%    \hline
+%  \end{tabular}
+%\end{table}
+%
+%It is important to note that these methods are often mixed, so, for example, it is common to work with a finite element mesh in space and a finite differencing scheme in time.

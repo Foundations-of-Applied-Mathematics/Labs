@@ -25,22 +25,23 @@ If $u$ and $J$ are sufficiently smooth functions, then we have
 and
 \[ \int_{\partial V} \vec{J}\cdot \vec{n}\, dA = \int_V \nabla \cdot \vec{J}\, d\vec{x} .\]
 Since this holds for all nice subsets $V \subset \Omega$ with $V$ arbitrarily small, we obtain the differential form of the conservation law for $u$:
-\[ u_t + \nabla \cdot \vec{J} = g(\vec{x},t,u) .\]
+\[ u_t + \nabla \cdot \vec{J} = g(\vec{x},t,u) ,\]
+where $\nabla$ is the gradient function and $\nabla \cdot \vec{J} = \frac{\partial J_1}{\partial x_1} + \dots + \frac{\partial J_n}{\partial x_n}$
 
 \section*{Constitutive Relations}
 Currently our conservation law appears in the form
-\[u_t + \nabla \vec{J} = g(\vec{x},t,u).\]
+\[u_t + \nabla \cdot \vec{J} = g(\vec{x},t,u).\]
 Thus the conservation law consists of one equation and 2 unknowns ($u$ and $J$).
 To this equation we add other equations, called constitutive relations, which are used to fully determine the system.
 
 For example, suppose we wish to describe the flow of heat.
 Since heat flows from warmer regions to colder regions, and the rate of heat flow depends on the difference in temperature between regions, we usually assume that the flux vector $\vec{J}$ is given by
 \[\vec{J}(x,t) = -\nu \nabla u(x,t),\]
-where $\nu$ is a diffusion constant and $\nabla$ is the gradient function.
+where $\nu$ is a diffusion constant and $\nabla u(x,t) = \left[ \partial_{x_1}u \dots \partial_{x_n}u\right]^T$.
 This constitutive relation is called Fick's law, and is the basic model for any diffusive process.
 Substituting into the conservation law we obtain
 \[u_t -\nu \Delta u(x,t) = g(\vec{x},t,u)\]
-where $\Delta$ is the Laplacian operator.
+where $\Delta$ is the Laplacian operator, and $\Delta u(x,t) = \frac{\partial ^2 u}{\partial x_1^2}+\dots+ \frac{\partial ^2 u}{\partial x_n^2}$.
 The function $g$ represents heat sources/sinks within the region.
 
 \section*{Numerically modeling heat flow}
@@ -81,14 +82,6 @@ we obtain a second-order centered difference approximation to $u_{xx}(x_i,t)$:
 \label{fig:heatexercise1a}
 \end{figure}
 
-% A simple explicit method for numerically approximating the solution of this problem is to use a forward difference approximation in time and a centered difference approximation in space.
-% Recall that
-% \[u_t(x_i,t_j) = \frac{u(x_i,t_j + k) - u(x_i,t_j)}{k} + \mathcal{O}(k)
-% \]
-%  and
-% \[u_{xx}(x_i,t_j) = \frac{u(x_i + h,t_j )-2 u(x_i,t_j)- u(x_i - h,t_j)}{h^2} + \mathcal{O}(h^2).
-% \]
-% Let $U_{i,j}$ represent our approximation to $u(x_i,t_j)$.
 These difference approximations give us the $\mathcal{O}(h^2 + k)$ explicit method
 \begin{align}
 	\begin{split}
@@ -135,10 +128,6 @@ The graphs for $U^0$ and $U^{4}$ are given in Figures \ref{fig:heatexercise1a} a
 
 For the next problem, we need to show how Matplotlib can be used to create a 2D animation.
 The following is a simple working example that animates a sine wave.
-
-% Note: If an animation is running slowly, consider using the \li{blit=True} option when creating the animation.
-% If you do this, also define an initialization function that sets the line's data to empty lists and returns a 1-tuple containing the line object.
-% Pass the initialization function to the \li{FuncAnimation} function using the \li{init_func} keyword argument.
 
 \begin{lstlisting}
 import numpy as np
@@ -193,9 +182,8 @@ Animate your results.
 Explicit methods usually have a stability condition, called a CFL condition (for Courant-Friedrichs-Lewy).
 For method \ref{eqn:firstorder_explicit} the CFL condition that must be satisfied is that
 \[\lambda \leq \frac{1}{2}.\]
-Repeat your computations using 140 subintervals in the $x$ dimension and 66 subintervals in time.
+Repeat your computations using 140 subintervals in the $x$ dimension and 66 subintervals in time. Animate the results.
 For these values the CFL condition is broken; you should easily see the result of this instability in the approximation $U^{66}$.
-% Then the graphs for $U^0$ and $U^{70}$ are given in \eqref{heatexercise2a} and \ref{heatexercise2b}.
 \end{problem}
 
 \begin{figure}
@@ -250,33 +238,6 @@ Thus on a log-log plot of $E(h)$ vs. $h,$ these values should be on a straight l
 \label{fig:heatexercise3}
 \end{figure}
 
-% If dgtsv is ever included in SciPy, it would probably be better to use that here instead of a custom routine.
-%When implementing the Crank-Nicolson method, you will need some way to solve a tridiagonal system.
-%The following is a simple function that performs a tridiagonal solve.
-%\li{a}, \li{b}, and \li{c} are assumed to contain the first subdiagonal, main diagonal, and first superdiagonal of the tridiagonal matrix.
-%\li{x} is assumed to be the right hand side of the equation.
-%This function overwrites \li{x} with the solution to the system.
-%As has been shown in earlier labs, this function is better implemented in Cython, C, Fortran, or some other language with less overhead for array accesses and loops.
-%\begin{lstlisting}
-%def tridiag(a, b, c, x):
-%    # Overrides c and x.
-%    # The contents of x after computation will be the solution to the system.
-%    size = x.size
-%    temp = 0.
-%    c[0] = c[0] / b[0]
-%    x[0] = x[0] / b[0]
-%    for n in range(size-2):
-%        temp = 1. / (b[n+1] - a[n]*c[n])
-%        c[n+1] *= temp
-%        x[n+1] = (x[n+1] - a[n]*x[n]) * temp
-%    x[size-1] = (x[size-1] - a[size-2]*x[size-2]) / (b[size-1] - a[size-2]*c[size-2])
-%    for n in range(b.size-2, -1, -1):
-%        x[n] = x[n] - c[n] * x[n+1]
-%\end{lstlisting}
-%
-%To account for boundary conditions when using the Crank-Nicolson method, set the boundary points at the beginning of the iteration and leave them constant when applying $A$ like you did before.
-%In the Tridiagonal solve, replace the first row of the matrix $B$ with the first row of the identity and the last row of the matrix $B$ with the last row of the identity.
-
 \begin{problem}
 \label{prob:heat_exercise3}
 Using the Crank Nicolson method, numerically approximate the solution $u(x,t)$ of the problem
@@ -298,44 +259,3 @@ Use the $\infty$-norm on the arrays of values at those points to measure the err
 
 Notice that, since the Crank-Nicolson method is unconditionally stable, there is no CFL condition and we can use the same number of intervals in time and space.
 \end{problem}
-
-% The matrix $A$ is sparse, and so we can use several functions from the package \texttt{scipy.sparse.linalg}.
-% In particular, we use the functions \texttt{spdiags} and \texttt{spsolve}.
-%
-% \begin{verbatim}
-% D1,D2,D3 = -4*np.ones((1,m**2)), np.ones((1,m**2)), np.ones((1,m**2))
-% Dm = np.ones((1,m**2))
-% for j in range(0,D2.shape[1]):
-%     if (j%m)==m-1:
-%         D2[0,j]=0
-%         if (j%m)==0:
-%             D3[0,j]=a0
-% diags = np.array([0,-1,1,-m,m])
-% data = np.concatenate((D1,D2,D3,Dm,Dm),axis=0)
-%
-% A = 1./h**2.*spdiags(data, diags, m**2,m**2).asformat('csr')
-% \end{verbatim}
-%
-% \subsection{2D Heat Equation}
-% Recall that the collection of finite difference equations
-% \[
-% \nabla^2_h U_{ij} = 0, \quad 1 \leq i,j\leq m,
-% \]
-% can be written in matrix form as
-% $$AU + q  = 0$$
-%
-% The Crank-Nicolson method for the 2D heat equation is given by
-% \[U_{i,\,j}^{n+1}- U_{i,\,j}^{n} = \frac{\Delta t}{2}(\nabla_h^2 U_{i,\,j}^{n} + \nabla_h^2 U_{i,\,j}^{n+1}) \text{ for each } 1 \leq i,j \leq m, \]
-% is a second order accurate in both space and time. Basically we're using a midpoint scheme in time,
-% and a trapezoidal scheme in space. The resulting method is implicit, and can be written in matrix form as
-% \begin{align*}
-% 	IU^{n+1} &= IU^n + \frac{\Delta t}{2}(AU^n + q + AU^{n+1} + q),\\
-% 	(I - \frac{\Delta t}{2}A)U^{n+1}&= (I + \frac{\Delta t}{2}A)U^n + \Delta t q.	
-% \end{align*}
-%
-% TODO: What size must the time step be to ensure stability?
-%
-% We will need to take many time steps, where many equations must be solved with the matrix $(I - \frac{\Delta t}{2}A)$.
-% The function \texttt{factorized} from \texttt{scipy.sparse.linalg} computes the LU decomposition of the matrix.
-% This decomposition reduces the time required for solving consecutive time steps.
-% 

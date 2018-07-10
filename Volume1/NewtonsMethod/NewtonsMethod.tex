@@ -11,7 +11,7 @@ The general idea behind any iterative method is to make an initial guess at the 
 More precisely, let $F$ be some function used to approximate the solution to a problem.
 Starting with an initial guess of $x_0$, compute
 \begin{equation}x_{k+1} = F(x_k)\label{eq:iter-summary}\end{equation}
-for successive values of $k$ to generate a sequence $\{x_k\}_{k=0}^\infty$ that hopefully converges to the true solution.
+for successive values of $k$ to generate a sequence $(x_k)_{k=0}^\infty$ that hopefully converges to the true solution.
 If the terms of the sequence are vectors, they are denoted by $\x_k$.
 
 In the best case, the iteration converges to the true solution $x$, written $\lim_{k\rightarrow\infty} x_k = x$ or $x_k\rightarrow x$.
@@ -27,7 +27,7 @@ k > N.
 \end{equation}
 
 The choices for $\epsilon$ and $N$ are significant: a ``large'' $\epsilon$ (such as $10^{-6}$) produces a less accurate result than a ``small'' $\epsilon$ (such $10^{-16}$), but demands less computations; a small $N$ (10) also potentially lowers accuracy, but detects and halts nonconvergent iterations sooner than a large $N$ (10,000).
-In code, $\epsilon$ and $N$ are often named \li{tol} and \li{maxiters}, respectively (or similar).
+In code, $\epsilon$ and $N$ are often named \li{tol} and \li{maxiter}, respectively (or similar).
 
 While there are many ways to structure the code for an iterative method, probably the cleanest way is to combine a \li{for} loop with a \li{break} statement.
 As a very simple example, let $F(x) = \frac{x}{2}$.
@@ -35,8 +35,8 @@ This method converges to $x = 0$ independent of starting point.
 
 \begin{lstlisting}
 >>> F = lambda x: x / 2
->>> x0, tol, maxiters = 10, 1e-9, 8
->>> for k in range(maxiters):           # Iterate at most N times.
+>>> x0, tol, maxiter = 10, 1e-9, 8
+>>> for k in range(maxiter):           # Iterate at most N times.
 ...     print(x0, end='  ')
 ...     x1 = F(x0)                      # Compute the next iteration.
 ...     if abs(x1 - x0) < tol:          # Check for convergence.
@@ -123,9 +123,9 @@ To test your function, if $N_1 =30, N_2 =20, P_1 =2000$, and $P_2 =8000$, then $
 Newton's method may not converge for a variety of reasons.
 One potential problem occurs when the step from $x_k$ to $x_{k+1}$ is so large that the zero is stepped over completely.
 \emph{Backtracking} is a strategy that combats the problem of overstepping by moving only a fraction of the full step from $x_k$ to $x_{k+1}$.
-This suggests a slight modification to (\ref{eq:newton-1d-def}).
+This suggests a slight modification to (\ref{eq:newton-1d-def}),
 \begin{equation}
-x_{k+1} = x_k - \alpha\frac{f(x_k)}{f'(x_k)},\qquad\alpha\in(0,1]
+x_{k+1} = x_k - \alpha\frac{f(x_k)}{f'(x_k)},\qquad\alpha\in(0,1].
 \label{eq:newton-backtracking-1d}
 \end{equation}
 Note that setting $\alpha = 1$ results in the exact same method defined in (\ref{eq:newton-1d-def}), but for $\alpha \in (0,1)$, only a fraction of the step is taken at each iteration.
@@ -180,14 +180,14 @@ The derivative $Df:\mathbb{R}^n\rightarrow\mathbb{R}^{n\times n}$ is the $n\time
 \[
 Df =
 \left[\begin{array}{ccc}
-\frac{\partial f_1}{\partial x_1} & \cdots & \frac{\partial f_1}{\partial x_n} \\
+\frac{\partial f_1}{\partial x_1} & \cdots & \frac{\partial f_1}{\partial x_k} \\
 \vdots & \ddots & \vdots \\
-\frac{\partial f_n}{\partial x_1} & \cdots & \frac{\partial f_n}{\partial x_n} \\
+\frac{\partial f_n}{\partial x_1} & \cdots & \frac{\partial f_n}{\partial x_k} \\
 \end{array}\right]
 \]
 
 In this setting, Newton's method seeks a vector $\bar{\x}$ such that $f(\bar{\x}) = \0$, the vector of $n$ zeros.
-With backtracking incorporated, (\ref{eq:newton-backtracking-1d}) becomes the following.
+With backtracking incorporated, (\ref{eq:newton-backtracking-1d}) becomes
 \begin{equation}
 \x_{k+1} = \x_k - \alpha{Df(\x_k)}^{-1}{f(\x_k)}.
 \label{eq:newton-nd}
@@ -207,13 +207,14 @@ In other words, $f$ and $Df$ are callable functions, but $f(\x)$ is a vector and
 \item \li{np.isscalar()} may be useful for determining whether or not $n > 1$.
 
 \item Instead of computing $Df(\x_k)^{-1}$ directly at each step, solve the system $Df(\x_k)\y_k = f(\x_k)$ and set $\x_{k+1} = \x_k - \alpha\y_k$.
-Always avoid taking matrix inverses when possible.
+In other words, use \li{la.solve()} instead of \li{la.inv()}.
+% Always avoid taking matrix inverses when possible.
 
 \item The stopping criterion now requires using a norm function instead of \li{abs()}.
 \end{itemize}
 
 After your modifications, carefully verify that your function still works in the case that $n=1$, and that your functions from Problems \ref{prob:newton-interest} and \ref{prob:newton-backtracking-search} also still work correctly.
-In addition, your function from Problem \ref{prob:newton-backtracking-search} should also work for any $n \in N$.
+In addition, your function from Problem \ref{prob:newton-backtracking-search} should also work for any $n \in \mathbb{N}$.
 \label{prob:newton-nd-implementation}
 \end{problem}
 
@@ -224,14 +225,13 @@ At a steady state, the bacterial density $x$ and the nutrient concentration $y$ 
 \gamma xy - x(1 + y) &= 0 \\
 -xy + (\delta - y)(1 + y) &= 0,
 \end{align*}
-where $\gamma$ and $\delta$ are parameters that depend on various physical features of the system.
+where $\gamma$ and $\delta$ are parameters that depend on various physical features of the system.%
+\footnote{This problem is adapted from exercise 5.19 of \cite{heath2002scientific} and the notes of Homer Walker).}
 
 For this problem, assume the typical values $\gamma = 5$ and $\delta = 1$, for which the system has solutions at $(x, y) = (0, 1), (0, -1)$, and $(3.75, .25)$.
 Write a function that finds an initial point $\x_0 = (x_0,y_0)$ such that Newton's method converges to either $(0, 1)$ or $(0, -1)$ with $\alpha = 1$, and to $(3.75, .25)$ with $\alpha = 0.55$.
 As soon as a valid $\x_0$ is found, return it (stop searching).
 \\(Hint: search within the rectangle $[-\frac{1}{4},0]\times[0,\frac{1}{4}]$.)
-
-(Adapted from problem 5.19 of M. T. Heath, Scientific Computing, an Introductory Survey, 2nd edition, McGraw Hill, 2002 and the Notes of Homer Walker). % TODO: a better citation.
 \end{problem}
 
 \subsection*{Basins of Attraction} % ------------------------------------------
@@ -331,7 +331,7 @@ Compute and plot the basins of attraction of $f$ in the complex plane over the s
 \begin{enumerate}
 \item Construct a \li{res}$\times$\li{res} grid $X_0$ over the domain $\{a+bi \mid a \in [r_{\text{min}},r_{\text{max}}], b \in [i_{\text{min}},i_{\text{max}}]\}$.
 
-\item Run Newton's method (without backtracking) on $X_0$ \li{iters} times, obtaining the \li{res}$\times$\li{res} array $X_{k}$.
+\item Run Newton's method (without backtracking) on $X_0$ \li{iters} times, obtaining the \li{res}$\times$\li{res} array $x_{k}$.
 To avoid the additional computation of checking for convergence at each step, do not use your function from Problem \ref{prob:newton-nd-implementation}.
 
 \item $X_k$ cannot be directly visualized directly because its values are complex.
@@ -347,7 +347,7 @@ Set \li{cmap="brg"} to get the same color scheme as in Figure \ref{fig:newton-ba
 \end{enumerate}
 
 Test your function using $f(x) = x^3-1$ and $f(x)=x^3-x$.
-The resulting plots should resemble Figures \ref{fig:fractal_hw} and \ref{fig:fractal_ex}, respectively.
+The resulting plots should resemble Figures \ref{fig:fractal_hw} and \ref{fig:fractal_ex}, respectively (perhaps with the colors permuted).
 \end{problem}
 
 \begin{comment} % No Additional Material for now.

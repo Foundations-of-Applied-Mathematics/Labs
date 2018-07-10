@@ -15,8 +15,7 @@ A map $L:V\rightarrow W$ is a linear transformation from $V$ into $W$ if
 Every linear transformation $L$ from an $m$-dimensional vector space into an $n$-dimensional vector space can be represented by an $m\times n$ matrix $A$, called the \emph{matrix representation} of $L$.
 To apply $L$ to a vector $\x$, left multiply by its matrix representation.
 This results in a new vector $\x^\prime$, where each component is some linear combination of the elements of $\x$.
-For linear transformations from $\mathbb{R}^2$ to $\mathbb{R}^2$, this process has the following form.
-%
+For linear transformations from $\mathbb{R}^2$ to $\mathbb{R}^2$, this process has the form
 \begin{align*}
 A\x =
 \left[\begin{array}{cc}
@@ -34,13 +33,13 @@ ax + by \\cx + dy
 \left[\begin{array}{cc}
 x^\prime \\y^\prime
 \end{array}\right]
-= \x^\prime
+= \x^\prime.
 \end{align*}
 
 Linear transformations can be interpreted geometrically.
 To demonstrate this, consider the array of points $H$ that collectively form a picture of a horse, stored in the file \texttt{horse.npy}.
 The coordinate pairs $\x_i$ are organized by column, so the array has two rows: one for $x$-coordinates, and one for $y$-coordinates.
-Matrix multiplication on the left transforms each coordinate pair, resulting in another matrix $H'$ whose columns are the transformed coordinate pairs.
+Matrix multiplication on the left transforms each coordinate pair, resulting in another matrix $H'$ whose columns are the transformed coordinate pairs:
 \begin{align*}
 AH = A\left[\begin{array}{cccc}
 x_1 & x_2 & x_3 & \ldots \\
@@ -72,10 +71,10 @@ A\x_1 & A\x_2 & A\x_3 & \ldots \\
 x_1' & x_2' & x_3' & \ldots \\
 y_1' & y_2' & y_3' & \ldots \\
 \end{array}\right]
-= H'
+= H'.
 \end{align*}
 
-To begin, use \li{np.load()} to extract the array from the \texttt{.npy} file, then plot the unaltered points as individual pixels.
+To begin, use \li{np.load()} to extract the array from the \texttt{npy} file, then plot the unaltered points as individual pixels.
 See Figure \ref{fig:linearly-transformed-horses} for the result.
 
 \begin{lstlisting}
@@ -108,34 +107,26 @@ The matrix representation is diagonal:
 \left[\begin{array}{rr}
 a & 0  \\
 0 & b
-\end{array}\right]
+\end{array}\right].
 \end{align*}
 %
 If $a=b$, the transformation is called a \emph{dilation}.
 The stretch in Figure \ref{fig:linearly-transformed-horses} uses $a = \frac{1}{2}$ and $b = \frac{6}{5}$ to compress the $x$-axis and stretch the $y$-axis.
 
 \item \textbf{Shear}: %$L(x,y) \mapsto (x + ay, y + bx)$.
-Slants the vector by a scalar factor horizontally or vertically.
-There are two matrix representations:
+Slants the vector by a scalar factor horizontally or vertically (or both simultaneously).
+The matrix representation is
 % The corresponding matrix is a Type III elementary matrix.
 %
 \begin{align*}
-\text{horizontal shear:\ }
 \left[\begin{array}{cc}
 1 & a\\
-0 & 1
-\end{array}\right]
-&&
-\text{vertical shear:\ }
-\left[\begin{array}{cc}
-1 & 0\\
 b & 1
-\end{array}\right]
+\end{array}\right].
 \end{align*}
 %
-Horizontal shears skew the $x$-coordinate of the vector while vertical shears skew the $y$-coordinate.
-% Horizontal and vertical shears can be combined into a single matrix by specifying both nonzero $a$ and $b$.
-Figure \ref{fig:linearly-transformed-horses} has a horizontal shear with $a=\frac{1}{2}$.
+Pure horizontal shears ($b = 0$) skew the $x$-coordinate of the vector while pure vertical shears ($a = 0$) skew the $y$-coordinate.
+Figure \ref{fig:linearly-transformed-horses} has a horizontal shear with $a=\frac{1}{2},b=0$.
 
 \item \textbf{Reflection}: Reflects the vector about a line that passes through the origin.
 % Also sometimes called a \emph{Householder transformation}.
@@ -293,19 +284,19 @@ Assuming circular orbits, we can compute the trajectories of both the earth and 
 
 Assume an orientation where both the earth and moon travel counterclockwise, with the sun at the origin.
 Let $\p_e(t)$ and $\p_m(t)$ be the positions of the earth and the moon at time $t$, respectively, and let $\omega_e$ and $\omega_m$ be each celestial body's angular momentum.
-For a particular time $t$, we calculate $\p_e(t)$ and $\p_m(t)$ with the following steps:
-
+For a particular time $t$, we calculate $\p_e(t)$ and $\p_m(t)$ with the following steps.
 \begin{enumerate}
 \item Compute $\p_e(t)$ by rotating the initial vector $\p_e(0)$ counterclockwise about the origin by $t\omega_e$ radians.
 \item Calculate the position of the moon relative to the earth at time $t$ by rotating the vector $\p_m(0) - \p_e(0)$ counterclockwise about the origin by $t\omega_m$ radians.
 \item To compute $\p_m(t)$, translate the vector resulting from the previous step by $\p_e(t)$.
 \end{enumerate}
 
-Write a function that accepts a final time $T$ and the angular momenta $\omega_e$ and $\omega_m$.
-Assuming initial positions $\p_e(0) = (10,0)$ and $\p_m(0) = (11,0)$, plot $\p_e(t)$ and $\p_m(t)$ over the time interval $t \in [0, T]$.
+Write a function that accepts a final time $T$, initial positions $x_e$ and $x_m$, and the angular momenta $\omega_e$ and $\omega_m$.
+Assuming initial positions $\p_e(0) = (x_e,0)$ and $\p_m(0) = (x_m,0)$, plot $\p_e(t)$ and $\p_m(t)$ over the time interval $t \in [0, T]$.
 
-The moon travels around the earth approximately 13 times every year.
-With $T = \frac{3\pi}{2}$, $\omega_e = 1$, and $\omega_m = 13$, your plot should resemble the following figure (fix the aspect ratio with \li{ax.set_aspect("equal")}).
+% The moon travels around the earth approximately 13 times every year.
+Setting $T = \frac{3\pi}{2}$, $x_e=10$, $x_m=11$, $\omega_e = 1$, and $\omega_m = 13$, your plot should resemble the following figure (fix the aspect ratio with \li{ax.set_aspect("equal")}).
+Note that a more celestially accurate figure would use $x_e=400$, $x_m=401$ (the interested reader should see \url{http://www.math.nus.edu.sg/aslaksen/teaching/convex.html}).
 
 \begin{figure}[H]
     \includegraphics[width=.65\textwidth]{figures/SolarSystem.pdf}
@@ -402,7 +393,7 @@ The result is displayed below on the left.
 The figure on the left shows that the execution time for \li{random_matrix(n)} increases quadratically in $n$.
 In fact, the blue dotted line in the figure on the right is the parabola $y = an^2$, which fits nicely over the timed observations. Here $a$ is a small constant, but it is much less significant than the exponent on the $n$.
 To represent this algorithm's growth, we ignore $a$ altogether and write \li{random_matrix(n)} $\sim n^2$.
-% \footnote{In precise mathematical terms, we might write \li{random_matrix(n)} $\in O(n^2)$. See Chapter 1 of Volume II for more details on Big-O notation.}
+% \footnote{In precise mathematical terms, we might write \li{random_matrix(n)} $\in O(n^2)$. See Volume 2 for more details on Big-O notation.}
 
 \begin{info} % Big O notation.
 An algorithm like \li{random_matrix(n)} whose execution time increases quadratically with $n$ is called $O(n^2)$, notated by \li{random_matrix(n)} $\in O(n^2)$.
@@ -562,7 +553,7 @@ NumPy is more efficient for several reasons:
     \item Iterating through loops is very expensive.
     Many of NumPy's operations are implemented in C, which are much faster than Python loops.
     \item Arrays are designed specifically for matrix operations, while Python lists are general purpose.
-    \item NumPy takes careful advantage of computer hardware, efficiently using different levels of computer memory.
+    \item NumPy carefully takes advantage of computer hardware, efficiently using different levels of computer memory.
 \end{enumerate}
 
 However, in Problem \ref{prob:numpy-is-awesome}, the execution times for matrix multiplication with NumPy seem to increase somewhat inconsistently.
@@ -618,11 +609,11 @@ def solar_system_animation(earth, moon):
     fig, ax = plt.subplots(1,1)                     # Make a figure explicitly.
     plt.axis([-15,15,-15,15])                       # Set the window limits.
     ax.set_aspect("equal")                          # Make the window square.
-    earth_dot,  = ax.plot([],[], 'bo', ms=10)       # Blue dot for the earth.
-    earth_path, = ax.plot([],[], 'b-')              # Blue line for the earth.
-    moon_dot,   = ax.plot([],[], 'go', ms=5)        # Green dot for the moon.
-    moon_path,  = ax.plot([],[], 'g-')              # Green line for the moon.
-    ax.plot([0],[0],'y*', ms=30)                    # Yellow star for the sun.
+    earth_dot,  = ax.plot([],[], 'C0o', ms=10)      # Blue dot for the earth.
+    earth_path, = ax.plot([],[], 'C0-')             # Blue line for the earth.
+    moon_dot,   = ax.plot([],[], 'C2o', ms=5)       # Green dot for the moon.
+    moon_path,  = ax.plot([],[], 'C2-')             # Green line for the moon.
+    ax.plot([0],[0],'y*', ms=20)                    # Yellow star for the sun.
 
     def animate(index):
         earth_dot.set_data(earth[0,index], earth[1,index])

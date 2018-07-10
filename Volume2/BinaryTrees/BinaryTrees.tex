@@ -1,0 +1,1108 @@
+\lab{Binary Search Trees}{Binary Search Trees}
+
+\objective{A tree is link-based data structure where each node may refer to more than one other node.
+This structure makes trees more useful and efficient than regular linked lists in many applications.
+Many trees are constructed recursively, so we begin with an overview of recursion.
+We then implement a recursively structured doubly linked binary search tree (BST).
+Finally, we compare the standard linked list, our BST, and an AVL tree to illustrate the relative strengths and weaknesses of each data structure.}
+
+\section*{Recursion} % ========================================================
+
+A \emph{recursive} function is one that calls itself.
+When the function is executed, it continues calling itself until reaching a \emph{base case} where the value of the function is known.
+The function then exits without calling itself again, and each previous function call is resolved.
+The idea is to solve large problems by first solving smaller problems, then combining their results.
+% In other words, recursion solves a multi-step problem backwards instead of forwards.
+
+As a simple example, consider the function $f:\mathbb{N}\rightarrow\mathbb{N}$ that sums all positive integers from $1$ to some integer $n$.
+\[
+f(n) = \sum_{i=1}^ni = n + \sum_{i=1}^{n-1}i = n + f(n-1)
+\]
+Since $f(n-1)$ appears in the formula for $f(n)$, $f$ can be implemented recursively.
+Calculating $f(n)$ requires the value of $f(n - 1)$, which requires $f(n - 2)$, and so on.
+The base case is $f(1) = 1$, at which point the recursion halts and unwinds.
+For example, $f(4)$ is calculated as follows.
+% \begin{align*}
+% f(4) &= 4 + f(3)\\
+%      &= 4 + (3 + f(2))\\
+%      &= 4 + (3 + (2 + f(1)))\\
+%      &= 4 + (3 + (2 + 1)) \\% & \textrm{This is the base case, }f(1) = 1.\\
+%      &= 4 + (3 + 3)\\
+%      &= 4 + 6\\
+%      &= 10
+% \end{align*}
+
+\begin{align*}
+f(4) &= 4 + \textcolor{blue}{f(3)}\\
+     &= 4 + \textcolor{blue}{(}3 + \textcolor{red}{f(2)}\textcolor{blue}{)}\\
+     &= 4 + \textcolor{blue}{(}3 + \textcolor{red}{(}2 + \textcolor{green}{f(1)}\textcolor{red}{)}\textcolor{blue}{)}\\
+     &= 4 + \textcolor{blue}{(}3 + \textcolor{red}{(}2 + \textcolor{green}{1}\textcolor{red}{)}\textcolor{blue}{)} \\%& \textrm{This is the base case, }f(1) = 1.\\
+     &= 4 + \textcolor{blue}{(}3 + \textcolor{red}{3}\textcolor{blue}{)}\\
+     &= 4 + \textcolor{blue}{6}\\
+     &= 10
+\end{align*}
+The implementation accounts separately for the base case and the recursive case.
+
+% def iter_sum(n):
+%     """Calculate the sum of all positive integers in [1, n] iteratively."""
+%     return sum(i for i in range(1,n))
+
+
+\begin{lstlisting}
+def recursive_sum(n):
+    """Calculate the sum of all positive integers in [1, n] recursively."""
+    if n <= 1:          # Base case: f(1) = 1.
+        return 1
+    else:               # Recursive case: f(n) = n + f(n-1).
+        return n + recursive_sum(n-1)
+\end{lstlisting}
+
+Many problems that can be solved iteratively can also be solved with a recursive approach.
+Consider the function $g:\mathbb{N}\rightarrow\mathbb{N}$ that calculates the $n$th Fibonacci number.
+\[
+g(n) = g(n-1) + g(n-2),\quad g(0)=0,\quad g(1)=1.
+\]
+This function is doubly recursive since $g(n)$ calls itself twice, and there are two different base cases to deal with.
+On the other hand, $g(n)$ could be computed iteratively by calculating  $g(0),g(1),\ldots,g(n)$ in that order.
+Compare the iterative and recursive implementations for $g$ given below.
+
+\begin{lstlisting}
+def iterative_fib(n):
+    """Calculate the nth Fibonacci number iteratively."""
+    if n <= 0:                  # Special case: g(0) = 0.
+        return 0
+    g0, g1 = 0, 1               # Initialize g(0) and g(1).
+    for i in range(1, n):       # Calculate g(2), g(3), ..., g(n).
+        g0, g1 = g1, g0 + g1
+    return g1
+
+def recursive_fib(n):
+    """Calculate the nth Fibonacci number recursively."""
+    if n <= 0:                  # Base case 1: g(0) = 0.
+        return 0
+    elif n == 1:                # Base case 2: g(1) = 1.
+        return 1
+    else:                       # Recursive case: g(n) = g(n-1) + g(n-2).
+        return recursive_fib(n-1) + recursive_fib(n-2)
+\end{lstlisting}
+
+\begin{figure}[H]
+\begin{tikzpicture}[thick,minimum width=1cm,edge from parent/.style={draw,->,>=stealth'},
+    level 1/.style={sibling distance=2.5cm,  level distance=1.25cm},
+    level 2/.style={sibling distance=1.25cm, level distance=1.25cm},
+    level 3/.style={sibling distance=1.25cm, level distance=1.25cm}]
+    % Left tree
+    \begin{scope}[xshift=-3.5cm]
+    % One node for whole tree
+    % Level 0
+    \node [draw=none](1){g(4)}
+    % Level 1 - L
+    child {node[draw=none](2a){g(3)}
+        % Level 2 - LL
+        child {node[draw=none](3a){g(2)}
+            % Level 3 - LLL
+            child {node[draw=none,text=blue](4a){g(1)}}
+            % Level 3 - LLR
+            child {node[draw=none,text=red](4b){g(0)}}}
+        % Level 2 - LR
+        child {node[draw=none,text=blue](3b){g(1)}}}
+    % Level 1 - R
+    child {node[draw=none](2b){g(2)}
+        % Level 2 - RL
+        child {node[draw=none,text=blue](3c){g(1)}}
+        % Level 2 - RR
+        child {node[draw=none,text=red](3d){g(0)}}
+    };
+    \end{scope}
+    \begin{scope}[xshift=3.5cm]
+    % One node for whole tree
+    % Level 0
+    \node [draw=none](1){3}
+    % Level 1 - L
+    child {node[draw=none](2a){2} edge from parent[<-]
+        % Level 2 - LL
+        child {node[draw=none](3a){1} edge from parent[<-]
+            % Level 3 - LLL
+            child {node[draw=none,text=blue](4a){1} edge from parent[<-]}
+            % Level 3 - LLR
+            child {node[draw=none,text=red](4b){0} edge from parent[<-]}}
+        % Level 2 - LR
+        child {node[draw=none,text=blue](3b){1} edge from parent[<-]}}
+    % Level 1 - R
+    child {node[draw=none](2b){1} edge from parent[<-]
+        % Level 2 - RL
+        child {node[draw=none,text=blue](3c){1} edge from parent[<-]}
+        % Level 2 - RR
+        child {node[draw=none,text=red](3d){0} edge from parent[<-]}
+    };
+    \end{scope}
+\end{tikzpicture}
+\caption{To calculate $g(n)$ recursively, call $g(n-1)$ and $g(n-2)$, down to the base cases $g(0)$ and $g(1)$.
+As the recursion unwinds, the values from the base cases are passed up to previous calls and combined, eventually giving the value for $g(n)$.
+}
+\end{figure}
+
+\begin{problem}
+\label{prob:recursive-linked-list-find}
+Consider the following class for singly linked lists.
+\begin{lstlisting}
+class SinglyLinkedListNode:
+    """A node with a value and a reference to the next node."""
+    def __init__(self, data):
+        self.value, self.<<next>> = data, None
+
+class SinglyLinkedList:
+    """A singly linked list with a head and a tail."""
+    def __init__(self):
+        self.head, self.tail = None, None
+
+    def append(self, data):
+        """Add a node containing the data to the end of the list."""
+        n = SinglyLinkedListNode(data)
+        if self.head is None:
+            self.head, self.tail = n, n
+        else:
+            self.tail.<<next>> = n
+            self.tail = n
+
+    def iterative_find(self, data):
+        """Search iteratively for a node containing the data."""
+        current = self.head
+        while current is not None:
+            if current.value == data:
+                return current
+            current = current.<<next>>
+        raise ValueError(str(data) + " is not in the list")
+\end{lstlisting}
+% The method \li{iterative_find()} searches the list iteratively for given data.
+Write a method that does the same task as \li{iterative_find()}, but with the following recursive approach.
+Define a function within the method that checks a single node for the data.
+There are two base cases: if the node is \li{None}, meaning the data could not be found, raise a \li{ValueError}; if the node contains the data, return the node.
+Otherwise, call the function on the next node in the list.
+Start the recursion by calling this inner function on the head node.
+\\(Hint: see \li{BST.find()} in the next section for a similar idea.)
+% Check that your method gives the same results as \li{iterative_find()}.
+\end{problem}
+
+\begin{warn} % Iterative methods > Recursive methods, usually.
+It is usually \textbf{not} better to rewrite an iterative method recursively, partly because recursion results in an increased number of function calls.
+Each call requires a small amount of memory so the program remembers where to return to in the program.
+% In Python, a function may only call itself 999 times by default.
+By default, Python raises a \li{RuntimeError} after $1000$ calls to prevent a stack overflow.
+On the other hand, recursion lends itself well to some problems; in this lab, we use a recursive approach to construct a few data structures, but it is possible to implement the same structures with iterative strategies.
+% Whether or not recursion is appropriate depends on the problem to be solved and the algorithm used to solve it.
+% \cite{dijkstra1976discipline}: Recursion is like swatting flies with a sledgehammer: it is not a good idea, even when the sledgehammer does a really good job at it. NOTE: Get exact quote.
+\end{warn}
+
+\section*{Binary Search Trees} % ==============================================
+
+Mathematically, a \emph{tree} is a directed graph with no cycles.
+Trees can be implemented with link-based data structures that are similar to a linked list.
+The first node in a tree is called the \emph{root}, like the \li{head} of a linked list.
+The root node points to other nodes, which are called its children.
+A node with no children is called a \emph{leaf node}.
+
+A \emph{binary search tree} (BST) is a tree that allows each node to have up to two children, usually called \li{left} and \li{right}.
+The left child of a node contains a value that is less than its parent node's value; the right child's value is greater than its parent's value.
+This specific structure makes it easy to search a BST: while the computational complexity of finding a value in a linked list is $O(n)$ where $n$ is the number of nodes, a well-built tree finds values in $O(\log{n})$ time.
+% Therefore a linked list qualifies as a tree, albeit a boring one.
+% The head node is the root node, and it has one child node.
+% That child node also has one child node, which in turn has one child.
+% The last node in the list is the only leaf node.
+% However, other kinds of trees may be more complicated.
+
+\begin{figure}[H]
+\begin{tikzpicture}[
+    level 1/.style={sibling distance=2cm},
+    level 2/.style={sibling distance=20mm}]
+
+    \node [thick,circle,draw](4){4}
+        child {node[thick,draw, circle](5){5} edge from parent[draw=none]}
+        child {node[thick,circle,draw](3){3} edge from parent[draw=none]
+        child {node[thick,draw,circle](2){2} edge from parent[draw=none]}
+        child {node[thick,circle,draw](7){7} edge from parent[draw=none]}
+        };
+    \node [draw=none, node distance=.1cm](4a)[above of=4]{}
+        child {node[draw=none](5a){} edge from parent[draw=none]}
+        child {node[draw=none](3a){} edge from parent[draw=none]
+        child {node[draw=none](2a){} edge from parent[draw=none]}
+        child {node[draw=none](7a){} edge from parent[draw=none]}
+        };
+    \node [draw=none, node distance=.1cm](4b)[below of=4]{}
+        child {node[draw=none](5b){} edge from parent[draw=none]}
+        child {node[draw=none](3b){} edge from parent[draw=none]
+        child {node[draw=none](2b){} edge from parent[draw=none]}
+        child {node[draw=none](7b){} edge from parent[draw=none]}
+        };
+\foreach \s/\t in {4a/5a, 4a/3a, 5a/2a, 3a/7a}
+    {\draw[->, >=stealth', shorten <=.23cm, shorten >=.1cm,thick](\s)--(\t);}
+\end{tikzpicture}
+\qquad\qquad
+\begin{tikzpicture}[
+    auto,
+    level 1/.style={sibling distance=2cm},
+    level 2/.style={sibling distance=20mm}]
+
+    \node [thick,circle,draw](5a){5}
+        child {node[thick,circle,draw](2a){2} edge from parent[draw=none]
+            child {node[thick,circle,draw](1a){1} edge from parent[draw=none]}
+            child {node[draw = none](invs){} edge from parent[draw=none]}
+        }
+        child {node[thick,circle,draw](7a){7} edge from parent[draw=none]
+        child {node[thick,circle,draw](6a){6} edge from parent[draw=none]}
+        child {node[thick,circle,draw](8a){8} edge from parent[draw=none]}
+        };
+    \node [draw=none, node distance=.1cm](i5a)[above of=5a]{}
+        child {node[draw=none](i2a){} edge from parent[draw=none]
+            child {node[draw=none](i1a){} edge from parent[draw=none]}
+            child {node[draw = none](invsA){} edge from parent[draw=none]}
+        }
+        child {node[draw=none](i7a){} edge from parent[draw=none]
+        child {node[draw=none](i6a){} edge from parent[draw=none]}
+        child {node[draw=none](i8a){} edge from parent[draw=none]}
+        };
+\foreach \s/\t in {i5a/i2a, i5a/i7a}
+    {\draw[->, >=stealth', shorten <=.23cm, shorten >=.1cm,thick](\s)--(\t);}
+\foreach \s/\t in {i2a/i1a, i7a/i6a, i7a/i8a}
+    {\draw[->, >=stealth', shorten <=.27cm, shorten >=.1cm,thick](\s)--(\t);}
+\end{tikzpicture}
+\caption{Both of these graphs are trees, but the tree on the left is not a binary search tree because $5$ is to the left of $4$.
+Swapping $5$ and $3$ in the graph on the left would result in a BST.}
+\label{fig:trees-binary-and-not}
+\end{figure}
+
+Binary search tree nodes have attributes that keep track of their value, their children, and (in doubly linked trees) their parent.
+The actual binary search tree has an attribute to keep track of its root node.
+% Compare the following classes to the linked list classes given in Problem \ref{prob:recursive-linked-list-find}.
+
+\begin{lstlisting}
+class BSTNode:
+    """A node class for binary search trees. Contains a value, a
+    reference to the parent node, and references to two child nodes.
+    """
+    def __init__(self, data):
+        """Construct a new node and set the value attribute. The other
+        attributes will be set when the node is added to a tree.
+        """
+        self.value = data
+        self.prev = None        # A reference to this node's parent node.
+        self.left = None        # self.left.value < self.value
+        self.right = None       # self.value < self.right.value
+
+class BST:
+    """Binary search tree data structure class.
+    The root attribute references the first node in the tree.
+    """
+    def __init__(self):
+        """Initialize the root attribute."""
+        self.root = None
+\end{lstlisting}
+
+\begin{info}
+Conceptually, each node of a BST partitions the data of its subtree into two halves: the data that is less than the parent, and the data that is greater.
+% Conceptually, a BST node containing $x$ partitions $\mathbb{R}$ into two halves: $\{y\in\mathbb{R}\mid y < x\}$ and $\{y\in\mathbb{R}\mid y > x\}$.
+We will extend this concept to higher dimensions in the next lab.
+\end{info}
+
+\subsection*{Locating Nodes} % ------------------------------------------------
+
+Finding a node in a binary search tree can be done recursively.
+Starting at the root, check if the target data matches the current node.
+If it does not, then if the data is less than the current node's value, search again on the left child; if the data is greater, search on the right child.
+Continue the process until the data is found or until hitting a dead end.
+This method illustrates the advantage of the binary structure---if a value is in a tree, then we know where it ought to be based on the other values in the tree.
+
+\begin{lstlisting}
+class BST:
+    # ...
+    def find(self, data):
+        """Return the node containing the data. If there is no such node
+        in the tree, including if the tree is empty, raise a ValueError.
+        """
+
+        # Define a recursive function to traverse the tree.
+        def _step(current):
+            """Recursively step through the tree until the node containing
+            the data is found. If there is no such node, raise a Value Error.
+            """
+            if current is None:                     # Base case 1: dead end.
+                raise ValueError(str(data) + " is not in the tree.")
+            if data == current.value:               # Base case 2: data found!
+                return current
+            if data < current.value:                # Recursively search left.
+                return _step(current.left)
+            else:                                   # Recursively search right.
+                return _step(current.right)
+
+        # Start the recursion on the root of the tree.
+        return _step(self.root)
+\end{lstlisting}
+
+\subsection*{Insertion} % -----------------------------------------------------
+
+New elements are always added to a BST as leaf nodes.
+To insert a new value, recursively step through the tree as if searching for the value until locating an empty slot.
+The node with the empty child slot becomes the parent of the new node; connect it to the new node by modifying the parent's \li{left} or \li{right} attribute (depending on which side the child should be on) and the child's \li{prev} attribute.
+% See Figure \ref{fig:BST.insertion}.
+
+\begin{figure} % BST.insert()
+\begin{tikzpicture}[auto,level 1/.style={sibling distance=2cm},
+                         level 2/.style={sibling distance=20mm}]
+    \node [circle,draw,fill=blue!20!,draw=blue,thick](5a){5}
+        child {node[thick,circle,draw](2a){2} edge from parent[draw=none]
+            child {node[thick,circle,draw](1a){1} edge from parent[draw=none]}
+            child {node[draw = none](invs){} edge from parent[draw=none]}
+        }
+        child {node[thick,circle,draw](7a){7} edge from parent[draw=none]
+        child {node[thick,circle,draw=yellow,fill=yellow!20!](3a){3} edge from parent[draw=none]}
+        child {node[thick,circle,draw](8a){8} edge from parent[draw=none]}
+        };
+    \node [draw=none, node distance=.1cm](i5a)[above of=5a]{}
+        child {node[draw=none](i2a){} edge from parent[draw=none]
+            child {node[draw=none](i1a){} edge from parent[draw=none]}
+            child {node[draw = none](invsA){} edge from parent[draw=none]}
+        }
+        child {node[draw=none](i7a){} edge from parent[draw=none]
+        child {node[draw=none](i3a){} edge from parent[draw=none]}
+        child {node[draw=none](i8a){} edge from parent[draw=none]}
+        };
+    \node [draw=none, node distance=.1cm](i5b)[below of=5a]{}
+        child {node[draw=none](i2b){} edge from parent[draw=none]
+            child {node[draw=none](i1b){} edge from parent[draw=none]}
+            child {node[draw = none](invsB){} edge from parent[draw=none]}
+        }
+        child {node[draw=none](i7b){} edge from parent[draw=none]
+        child {node[draw=none](i3b){} edge from parent[draw=none]}
+        child {node[draw=none](i8b){} edge from parent[draw=none]}
+        };
+\node [draw=none, node distance=1.5cm](root)[above right of=5a]{\li{root}};
+\draw[blue, ->, >=stealth', shorten >= .1cm, thick](root)--(5a);
+\foreach \s/\t in {i5a/i2a, i2b/i5b, i5a/i7a, i7b/i5b}
+    {\draw[->, >=stealth', shorten <=.23cm, shorten >=.1cm,thick](\s)--(\t);}
+\foreach \s/\t in {i2a/i1a, i1b/i2b, i7a/i8a, i8b/i7b}
+    {\draw[->, >=stealth', shorten <=.27cm, shorten >=.1cm,thick](\s)--(\t);}
+\end{tikzpicture}
+\qquad\qquad
+\begin{tikzpicture}[auto, level 1/.style={sibling distance=2cm},
+                          level 2/.style={sibling distance=20mm}]
+    \node [thick,circle,draw](5a){5}
+        child {node[thick,circle,draw=blue,fill=blue!20!](2a){2} edge from parent[draw=none]
+            child {node[thick,circle,draw](1a){1} edge from parent[draw=none]}
+            child {node[draw = none](invs){} edge from parent[draw=none]}
+        }
+        child {node[thick,circle,draw](7a){7} edge from parent[draw=none]
+        child {node[thick,circle,draw](3a){3} edge from parent[draw=none]}
+        child {node[thick,circle,draw](8a){8} edge from parent[draw=none]}
+        };
+    \node [draw=none, node distance=.1cm](i5a)[above of=5a]{}
+        child {node[draw=none](i2a){} edge from parent[draw=none]
+            child {node[draw=none](i1a){} edge from parent[draw=none]}
+            child {node[draw = none](invsA){} edge from parent[draw=none]}
+        }
+        child {node[draw=none](i7a){} edge from parent[draw=none]
+        child {node[draw=none](i3a){} edge from parent[draw=none]}
+        child {node[draw=none](i8a){} edge from parent[draw=none]}
+        };
+    \node [draw=none, node distance=.1cm](i5b)[below of=5a]{}
+        child {node[draw=none](i2b){} edge from parent[draw=none]
+            child {node[draw=none](i1b){} edge from parent[draw=none]}
+            child {node[draw = none](invsB){} edge from parent[draw=none]}
+        }
+        child {node[draw=none](i7b){} edge from parent[draw=none]
+        child {node[draw=none](i3b){} edge from parent[draw=none]}
+        child {node[draw=none](i8b){} edge from parent[draw=none]}
+        };
+% \node [draw=none, node distance=1.5cm](root)[above right of=5a]{\li{root}};
+% \draw[blue, ->, >=stealth', shorten >= .1cm, thick](root)--(5a);
+\node [draw=none, node distance=1.5cm](parent)[above left of=2a]{parent};
+\draw[blue, ->, >=stealth', shorten >= .1cm, thick](parent)--(2a);
+\foreach \s/\t in {i5a/i2a, i2b/i5b, i5a/i7a, i7b/i5b}
+    {\draw[->, >=stealth', shorten <=.23cm, shorten >=.1cm,thick](\s)--(\t);}
+\foreach \s/\t in {i2a/i1a, i1b/i2b, i2a/i3a, i3b/i2b, i7a/i8a, i8b/i7b}
+    {\draw[->, >=stealth', shorten <=.27cm, shorten >=.1cm,thick](\s)--(\t);}
+\foreach \s/\t in {i2a/i3a, i3b/i2b}
+    {\draw[green, ->, >=stealth', shorten <=.27cm, shorten >=.1cm,thick](\s)--(\t);}
+\end{tikzpicture}
+\caption{To insert $3$ to the BST on the left, start at the root and recurse down the tree as if searching for $3$: since $3 < 5$, step left to $2$; since $2 < 3$, step right.
+However, $2$ has no right child, so $2$ becomes the parent of a new node containing $3$.
+}
+% Connect the parent to the child, then the child to its new parent.}
+\label{fig:BST.insertion}
+\end{figure}
+
+\begin{problem} % BST.insert()
+\label{prob:bst-insert}
+Write an \li{insert()} method for the \li{BST} class that accepts some data.
+\begin{enumerate}
+\item If the tree is empty, assign the \li{root} attribute to a new \li{BSTNode} containing the data.
+\item If the tree is nonempty, create a new \li{BSTNode} containing the data and find the existing node that should become its parent.
+Determine whether the new node will be the parent's \li{left} or \li{right} child, then double link the parent to the new node accordingly.
+\\(Hint: write a recursive function like \li{_step()} to find and link the parent).
+\item Do not allow duplicates in the tree: if there is already a node in the tree containing the insertion data, raise a \li{ValueError}.
+\end{enumerate}
+To test your method, use the \li{__str__()} and \li{draw()} methods provided in the Additional Materials section.
+Try constructing the binary search trees in Figures \ref{fig:trees-binary-and-not} and \ref{fig:BST.insertion}.
+\end{problem}
+
+\subsection*{Removal} % -------------------------------------------------------
+
+Node removal is much more delicate than node insertion.
+While insertion always creates a new leaf node, a remove command may target the root node, a leaf node, or anything in between.
+There are three main requirements for a successful removal.
+\begin{enumerate}
+    \item The target node is no longer in the tree.
+    \item The former children of the removed node are still accessible from the root.
+    In other words, if the target node has children, those children must be adopted by other nodes in the tree.
+    \item The tree still has an ordered binary structure.
+\end{enumerate}
+When removing a node from a linked list, there are three possible cases that must each be accounted for separately: the target node is the head, the target node is the tail, or the target node is in the middle of the list.
+For BST node removal, we must similarly account separately for the removal of a leaf node, a node with one child, a node with two children, and the root node.
+
+\subsubsection*{Removing a Leaf Node} % - - - - - - - - - - - - - - - - - - - -
+
+Recall that Python's garbage collector automatically deletes objects that cannot be accessed by the user.
+If the node to be removed---called the \emph{target node}---is a leaf node, then the only way to access it is via the target's parent.
+Locate the target with \li{find()}, get a reference to the parent node (using the \li{prev} attribute of the target), and set the parent's \li{right} or \li{left} attribute to \li{None}.
+
+\begin{figure}[H]
+\begin{tikzpicture}[auto, level 1/.style={sibling distance=2cm},
+                          level 2/.style={sibling distance=20mm}]
+\node [thick,circle,draw](5){5}
+  child {node[thick,circle,draw](2){3} edge from parent[draw=none]
+    child {node[thick,circle,draw](1){1} edge from parent[draw=none]
+      child {node[thick,draw=none](invs){} edge from parent[draw=none]}
+      child {node[thick,draw,circle](3){2} edge from parent[draw=none]}}
+    child {node[thick,draw, circle](4){4} edge from parent[draw=none]}}
+  child {node[thick,circle,draw](9a){9} edge from parent[thick,draw=none]
+    child {node[thick,draw=none](8){} edge from parent[thick,draw=none]}};
+\node [thick,draw=none, node distance=.1cm](5a)[above of=5]{}
+  child {node[thick,draw=none](2a){} edge from parent[thick,draw=none]
+    child {node[thick,draw=none](1a){} edge from parent[thick,draw=none]
+      child {node[thick,draw=none](invsA){} edge from parent[thick,draw=none]}
+      child {node[thick,draw=none](3a){} edge from parent[thick,draw=none]}}
+    child {node[thick,draw = none](4a){} edge from parent[thick,draw=none]}}
+  child {node[thick,draw=none](9a){} edge from parent[thick,draw=none]
+    child {node[thick,draw=none](8a){} edge from parent[thick,draw=none]}};
+\node [thick,draw=none, node distance=.1cm](5b)[below of=5]{}
+  child {node[thick,draw=none](2b){} edge from parent[thick,draw=none]
+    child {node[thick,draw=none](1b){} edge from parent[thick,draw=none]
+      child {node[thick,draw=none](invsB){} edge from parent[thick,draw=none]}
+      child {node[thick,draw=none](3b){} edge from parent[thick,draw=none]}}
+    child {node[thick,draw = none](4b){} edge from parent[thick,draw=none]}}
+  child {node[thick,draw=none](9b){} edge from parent[thick,draw=none]
+    child {node[thick,draw=none](8b){} edge from parent[thick,draw=none]}};
+\node[draw=none, node distance=2cm](parent)[left of=1a]{parent};
+\draw[blue, ->, >=stealth', shorten >= .2cm, thick](parent)--(1a);
+\node[draw=none, node distance=2cm](target)[left of=3a]{target};
+\draw[blue, ->, >=stealth', shorten >= .2cm, thick](target)--(3a);
+\foreach \s/\t in {2a/1a, 1b/2b, 2a/4a, 4b/2b, 5a/2a, 2b/5b, 5a/9a, 9b/5b, 1a/3a, 3b/1b}
+    {\draw[->, >=stealth', shorten <=.23cm, shorten >=.1cm,thick](\s)--(\t);}
+\end{tikzpicture}
+\qquad\qquad
+\begin{tikzpicture}[auto,level 1/.style={sibling distance=2cm},
+                         level 2/.style={sibling distance=20mm}]
+\node [thick,circle,draw](5){5}
+  child {node[thick,circle,draw](2){3} edge from parent[thick,draw=none]
+    child {node[thick,circle,draw](1){1} edge from parent[draw=none]
+      child {node[draw=none](invs){} edge from parent[draw=none]}
+      child {node[thick,draw=red,circle,fill=red!20!](3){2} edge from parent[draw=none]}}
+    child {node[draw, circle](4){4} edge from parent[draw=none]}}
+  child {node[thick,circle,draw](9a){9} edge from parent[draw=none]
+    child {node[draw=none](8){} edge from parent[draw=none]}};
+\node [draw=none, node distance=.1cm](5a)[above of=5]{}
+  child {node[draw=none](2a){} edge from parent[draw=none]
+    child {node[draw=none](1a){} edge from parent[draw=none]
+      child {node[draw=none](invsA){} edge from parent[draw=none]}}
+    child {node[draw = none](4a){} edge from parent[draw=none]}}
+  child {node[draw=none](9a){} edge from parent[draw=none]
+    child {node[draw=none](8a){} edge from parent[draw=none]}};
+\node [draw=none, node distance=.1cm](5b)[below of=5]{}
+  child {node[draw=none](2b){} edge from parent[draw=none]
+    child {node[draw=none](1b){} edge from parent[draw=none]
+      child {node[draw=none](invsB){} edge from parent[draw=none]}}
+    child {node[draw = none](4b){} edge from parent[draw=none]}}
+  child {node[draw=none](9b){} edge from parent[draw=none]
+    child {node[draw=none](8b){} edge from parent[draw=none]}};
+% \node[draw=none, node distance=2cm](parent)[left of=1a]{parent};
+% \draw[blue, ->, >=stealth', shorten >= .2cm, thick](parent)--(1a);
+% \node[draw=none, node distance=2cm](target)[left of=3a]{target};
+% \draw[blue, ->, >=stealth', shorten >= .2cm, thick](target)--(3a);
+\foreach \s/\t in {2a/1a, 1b/2b, 2a/4a, 4b/2b, 5a/2a, 2b/5b, 5a/9a, 9b/5b}
+    {\draw[->, >=stealth', shorten <=.23cm, shorten >=.1cm,thick](\s)--(\t);}
+\draw[gray, ->, >=stealth', shorten <= .24cm, shorten >=.1cm, thick](3b)--(1b);
+\end{tikzpicture}
+\caption{To remove $2$, get a reference to its parent.
+Then set the parent's \li{right} attribute to \li{None}.
+Even though $2$ still points to $1$, $2$ is deleted since nothing in the tree points to it.
+}
+\label{fig:BST.remove_Leaf}
+\end{figure}
+
+\subsubsection*{Removing a Node with One Child} % - - - - - - - - - - - - - - -
+
+If the target node has one child, the child must be adopted by the target's parent in order to remain in the tree. % avoid deletion by the garbage collector.
+That is, the parent's \li{left} or \li{right} attribute should be set to the child, and the child's \li{prev} attribute should be set to the parent.
+This requires checking which side of the target the child is on and which side of the parent the target is on.
+
+\begin{figure}[H]
+\begin{tikzpicture}[auto,level 1/.style={sibling distance=2cm},
+                         level 2/.style={sibling distance=20mm}]
+\node[thick,circle,draw](5){5}
+  child {node[thick,circle,draw](2){3} edge from parent[draw=none]
+    child {node[thick,circle,draw](1){1} edge from parent[draw=none]
+      child {node[draw=none](invs){} edge from parent[draw=none]}
+      child {node[thick,circle,draw](3){2} edge from parent[draw=none]}}
+    child {node[thick,circle,draw](4){4} edge from parent[draw=none]}}
+  child {node[thick,circle,draw](9a){9} edge from parent[draw=none]
+    child {node[draw=none](8){} edge from parent[draw=none]}};
+\node[draw=none, node distance=.1cm](5a)[above of=5]{}
+  child {node[draw=none](2a){} edge from parent[draw=none]
+    child {node[draw=none](1a){} edge from parent[draw=none]
+      child {node[draw=none](invsA){} edge from parent[draw=none]}
+      child {node[draw=none](3a){} edge from parent[draw=none]}}
+    child {node[draw = none](4a){} edge from parent[draw=none]}}
+  child {node[draw=none](9a){} edge from parent[draw=none]
+    child {node[draw=none](8a){} edge from parent[draw=none]}};
+\node[draw=none, node distance=.1cm](5b)[below of=5]{}
+  child {node[draw=none](2b){} edge from parent[draw=none]
+    child {node[draw=none](1b){} edge from parent[draw=none]
+      child {node[draw=none](invsB){} edge from parent[draw=none]}
+      child {node[draw=none](3b){} edge from parent[draw=none]}}
+    child {node[draw = none](4b){} edge from parent[draw=none]}}
+  child {node[draw=none](9b){} edge from parent[draw=none]
+    child {node[draw=none](8b){} edge from parent[draw=none]}};
+\node[draw=none, node distance=2cm](parent)[left of=2a]{parent};
+\draw[blue, ->, >=stealth', shorten >= .2cm, thick](parent)--(2a);
+\node[draw=none, node distance=2cm](target)[left of=1a]{target};
+\draw[blue, ->, >=stealth', shorten >= .2cm, thick](target)--(1a);
+\node [draw=none, node distance=2cm](child)[left of=3a]{child};
+\draw[blue, ->, >=stealth', shorten >= .2cm, thick](child)--(3a);
+\foreach \s/\t in {2a/1a, 1b/2b, 2a/4a, 4b/2b, 5a/2a, 2b/5b, 5a/9a, 9b/5b, 1a/3a, 3b/1b}
+    {\draw[->, >=stealth', shorten <=.23cm, shorten >=.1cm,thick](\s)--(\t);}
+\end{tikzpicture}
+\qquad\qquad
+\begin{tikzpicture}[auto,level 1/.style={sibling distance=2cm},
+                         level 2/.style={sibling distance=20mm}]
+\node[thick,circle,draw](5){5}
+  child {node[thick,circle,draw](2){3} edge from parent[draw=none]
+    child {node[thick,circle,draw=red,fill=red!20!](1){1} edge from parent[draw=none]
+      child {node[draw=none](invs){} edge from parent[draw=none]}
+      child {node[thick,circle,draw](3){2} edge from parent[draw=none]}}
+    child {node[thick,circle,draw](4){4} edge from parent[draw=none]}}
+  child {node[thick,circle,draw](9a){9} edge from parent[draw=none]
+    child {node[draw=none](8){} edge from parent[draw=none]}};
+\node[draw=none, node distance=.1cm](5a)[above of=5]{}
+  child {node[draw=none](2a){} edge from parent[draw=none]
+    child {node[draw=none](1a){} edge from parent[draw=none]
+      child {node[draw=none](invsA){} edge from parent[draw=none]}
+      child {node[draw=none](3a){} edge from parent[draw=none]}}
+    child {node[draw = none](4a){} edge from parent[draw=none]}}
+  child {node[draw=none](9a){} edge from parent[draw=none]
+    child {node[draw=none](8a){} edge from parent[draw=none]}};
+\node[draw=none, node distance=.1cm](5b)[below of=5]{}
+  child {node[draw=none](2b){} edge from parent[draw=none]
+    child {node[draw=none](1b){} edge from parent[draw=none]
+      child {node[draw=none](invsB){} edge from parent[draw=none]}
+      child {node[draw=none](3b){} edge from parent[draw=none]}}
+    child {node[draw = none](4b){} edge from parent[draw=none]}}
+  child {node[draw=none](9b){} edge from parent[draw=none]
+    child {node[draw=none](8b){} edge from parent[draw=none]}};
+\node[draw=none, node distance=.1cm](2r)[right of=2b]{};
+\node[draw=none, node distance=.1cm](3r)[right of=3a]{};
+% \node[draw=none, node distance=2cm](parent)[left of=2a]{parent};
+% \draw[blue, ->, >=stealth', shorten >= .2cm, thick](parent)--(2a);
+% \node[draw=none, node distance=2cm](target)[left of=1a]{target};
+% \draw[blue, ->, >=stealth', shorten >= .2cm, thick](target)--(1a);
+% \node [draw=none, node distance=2cm](child)[left of=3a]{child};
+% \draw[blue, ->, >=stealth', shorten >= .2cm, thick](child)--(3a);
+\foreach \s/\t in {2a/4a, 4b/2b, 5a/2a, 2b/5b, 5a/9a, 9b/5b}
+    {\draw[->, >=stealth', shorten <=.23cm, shorten >=.1cm, thick](\s)--(\t);}
+\foreach \s/\t in {1b/2b, 1a/3a}
+    {\draw[->, >=stealth', shorten <=.24cm, shorten >=.1cm, thick, gray](\s)--(\t);}
+\foreach \s/\t in {3r/2r, 2b/3a}
+    {\draw[->, >=stealth', shorten <=.09cm, shorten >=.1cm, thick, green](\s)--(\t);}
+\end{tikzpicture}\caption{To remove $1$, locate its parent ($3$) and its child ($2$).
+Set the parent's \li{left} attribute to the child and the child's \li{prev} attribute to the parent.
+Even though $1$ still points to other nodes, it is deleted since nothing in the tree points to it.}
+\label{fig:BST.remove_OneChild}
+\end{figure}
+
+\subsubsection*{Removing a Node with Two Children} % - - - - - - - - - - - - -
+
+Removing a node with two children requires a slightly different approach in order to preserve the ordering in the tree.
+The \emph{immediate predecessor} of a node with value $x$ is the node in the tree with the largest value that is still smaller than $x$.
+Replacing a target node with its immediate predecessor preserves the order of the tree because the predecessor's value is greater than the values in the target's left branch, but less than the values in the target's right branch.
+%\footnote{Replacing a node with its \emph{immediate successor}---the value just greater than the node's value---also preserves the order.}
+Note that because of how the predecessor is chosen, any immediate predecessor can only have at most one child. %, so we already know how to remove the predecessor.
+
+To remove a target with two children, find its immediate predecessor by stepping to the left of the target (so that it's value is less than the target's value), and then to the right for as long as possible (so that it has the largest such value).
+Remove the predecessor, recording its value.
+Then overwrite the value of the target with the predecessor's value.
+
+\begin{figure}[H] % BST.remove() for removing a node with two children.
+\begin{tikzpicture}[auto,level 1/.style={sibling distance=2cm},
+                         level 2/.style={sibling distance=20mm}]
+\node[thick,circle,draw](5){5}
+  child {node[thick,circle,draw](2){3} edge from parent[draw=none]
+    child {node[thick,circle,draw](1){1} edge from parent[draw=none]
+      child {node[draw=none](invs){} edge from parent[draw=none]}
+      child {node[thick,circle,draw](3){2} edge from parent[draw=none]}}
+    child {node[thick,circle,draw](4){4} edge from parent[draw=none]}}
+  child {node[thick,circle,draw](9a){9} edge from parent[draw=none]
+    child {node[draw=none](8){} edge from parent[draw=none]}};
+\node[draw=none, node distance=.1cm](5a)[above of=5]{}
+  child {node[draw=none](2a){} edge from parent[draw=none]
+    child {node[draw=none](1a){} edge from parent[draw=none]
+      child {node[draw=none](invsA){} edge from parent[draw=none]}
+      child {node[draw=none](3a){} edge from parent[draw=none]}}
+    child {node[draw = none](4a){} edge from parent[draw=none]}}
+  child {node[draw=none](9a){} edge from parent[draw=none]
+    child {node[draw=none](8a){} edge from parent[draw=none]}};
+\node[draw=none, node distance=.1cm](5b)[below of=5]{}
+  child {node[draw=none](2b){} edge from parent[draw=none]
+    child {node[draw=none](1b){} edge from parent[draw=none]
+      child {node[draw=none](invsB){} edge from parent[draw=none]}
+      child {node[draw=none](3b){} edge from parent[draw=none]}}
+    child {node[draw = none](4b){} edge from parent[draw=none]}}
+  child {node[draw=none](9b){} edge from parent[draw=none]
+    child {node[draw=none](8b){} edge from parent[draw=none]}};
+\node[draw=none, node distance=2cm](target)[left of=2a]{target};
+\draw[blue, ->, >=stealth', shorten >= .2cm, thick](target)--(2a);
+\node [draw=none, node distance=2cm](predecessor)[left of=3a]{predecessor};
+\draw[blue, ->, >=stealth', shorten >= .2cm, thick](predecessor)--(3a);
+\foreach \s/\t in {2a/1a, 1b/2b, 2a/4a, 4b/2b, 5a/2a, 2b/5b, 5a/9a, 9b/5b, 1a/3a, 3b/1b}
+    {\draw[->, >=stealth', shorten <=.23cm, shorten >=.1cm,thick](\s)--(\t);}
+\end{tikzpicture}
+\qquad\qquad
+\begin{tikzpicture}[auto,level 1/.style={sibling distance=2cm},
+                         level 2/.style={sibling distance=20mm}]
+\node [thick,circle,draw](5){5}
+  child {node[thick,circle,draw=green,fill=green!20!](2){2} edge from parent[draw=none]
+    child {node[thick,circle,draw](1){1} edge from parent[draw=none]
+      child {node[draw=none](invs){} edge from parent[draw=none]}
+      child {node[thick,draw=red,circle,fill=red!20!](3){3} edge from parent[draw=none]}}
+    child {node[thick,draw, circle](4){4} edge from parent[draw=none]}}
+  child {node[thick,circle,draw](9a){9} edge from parent[draw=none]
+    child {node[draw=none](8){} edge from parent[draw=none]}};
+\node [draw=none, node distance=.1cm](5a)[above of=5]{}
+  child {node[draw=none](2a){} edge from parent[draw=none]
+    child {node[draw=none](1a){} edge from parent[draw=none]
+      child {node[draw=none](invsA){} edge from parent[draw=none]}
+      child {node[draw=none](3a){} edge from parent[draw=none]}}
+    child {node[draw = none](4a){} edge from parent[draw=none]}}
+  child {node[draw=none](9a){} edge from parent[draw=none]
+    child {node[draw=none](8a){} edge from parent[draw=none]}};
+\node [draw=none, node distance=.1cm](5b)[below of=5]{}
+  child {node[draw=none](2b){} edge from parent[draw=none]
+    child {node[draw=none](1b){} edge from parent[draw=none]
+      child {node[draw=none](invsB){} edge from parent[draw=none]}
+      child {node[draw=none](3b){} edge from parent[draw=none]}}
+    child {node[draw = none](4b){} edge from parent[draw=none]}}
+  child {node[draw=none](9b){} edge from parent[draw=none]
+    child {node[draw=none](8b){} edge from parent[draw=none]}};
+% \node [draw=none, node distance=2cm](target)[right of=3a]{target};
+% \draw[blue, ->, >=stealth', shorten >= .2cm, thick](target)--(3a);
+% \node [draw=none, node distance=2cm](predecessor)[left of=2a]{predecessor};
+% \draw[blue, ->, >=stealth', shorten >= .2cm, thick](predecessor)--(2a);
+\foreach \s/\t in {2a/1a, 1b/2b, 2a/4a, 4b/2b, 5a/2a, 2b/5b, 5a/9a, 9b/5b}
+    {\draw[->, >=stealth', shorten <=.23cm, shorten >=.1cm, thick](\s)--(\t);}
+\end{tikzpicture}
+\caption{To remove $3$, locate its immediate predecessor $2$ by stepping left to $1$, then right as far as possible.
+% As another example, $4$ is the immediate predecessor of $5$.
+Since it is a leaf node, the predecessor can be deleted using the process in Figure \ref{fig:BST.remove_Leaf}.
+Delete the predecessor, and replace the value of the target with the predecessor's value.
+If the predecessor has a left child, it can be deleted with the procedure from Figure \ref{fig:BST.remove_OneChild}.
+}
+\label{fig:BST.remove_twoChild}
+\end{figure}
+
+\subsubsection*{Removing the Root Node} % - - - - - - - - - - - - - - - - - - -
+
+If the target is the root node, the \li{root} attribute may need to be reassigned after the target is removed.
+This adds two extra cases to consider:
+\begin{enumerate}
+\item If the root has no children, meaning it is the only node in the tree, set the root to \li{None}.
+\item If the root has one child, that child becomes the new root of the tree.
+The new root's \li{prev} attribute should be set to \li{None} so the garbage collector deletes the target.
+\end{enumerate}
+When the targeted root has two children, the node stays where it is (only its value is changed), so \li{root} does not need to be reassigned.
+% For example, to remove the root $5$ in Figure \ref{fig:BST.remove_twoChild}, delete the node containing $4$, then set the value of the root node as $4$.
+
+\begin{problem} % BST.remove()
+\label{prob:bst-remove}
+Write a \li{remove()} method for the \li{BST} class that accepts some data.
+If the tree is empty, or if there is no node in the tree containing the data, raise a \li{ValueError}.
+Otherwise, remove the node containing the specified data using the strategies described in Figures \ref{fig:BST.remove_Leaf}--\ref{fig:BST.remove_twoChild}.
+Test your solutions thoroughly.
+\\(Hint: \textbf{Before coding anything}, outline the entire method with comments and \li{if}-\li{else} blocks.
+Consider using the following control flow to account for all possible cases.)
+\newpage
+\begin{enumerate}
+    \item The target is a leaf node.
+    \begin{enumerate}
+        \item The target is the root.
+        \item The target is to the left of its parent.
+        \item The target is to the right of its parent.
+    \end{enumerate}
+    \item The target has two children.
+    \\(Hint: use \li{remove()} on the predecessor's value).
+    \item The target has one child.
+    \\(Hint: start by getting a reference to the child.)
+    \begin{enumerate}
+        \item The target is the root.
+        \item The target is to the left of its parent.
+        \item The target is to the right of its parent.
+    \end{enumerate}
+\end{enumerate}
+\end{problem}
+
+\section*{AVL Trees} % ========================================================
+
+The advantage of a BST is that it organizes its data so that values can be located, inserted, or removed in $O(\log{n})$ time.
+However, this efficiency is dependent on the \emph{balance} of the tree.
+In a well-balanced tree, the number of descendants in the left and right subtrees of each node is about the same.
+An unbalanced tree has some branches with many more nodes than others.
+Finding a node at the end of a long branch is closer to $O(n)$ than $O(\log{n})$.
+This is a common problem; inserting ordered data, for example, results in a ``linear'' tree, since new nodes always become the right child of the previously inserted node (see Figure \ref{fig:avl_balance}).
+The resulting structure is essentially a linked list without a \li{tail} attribute.
+
+\begin{comment}
+\begin{lstlisting}
+# Sequentially adding ordered data destroys the efficiency of a BST.
+>>> unbalanced_tree = BST()
+>>> for i in range(10):
+...     unbalanced_tree.insert(i)
+...
+# The tree is perfectly flat, so it loses its search efficiency.
+>>> print(unbalanced_tree)
+[0]
+[1]
+[2]
+[3]
+[4]
+[5]
+[6]
+[7]
+[8]
+[9]
+
+>>> balanced_tree = AVL()
+>>> for i in range(10):
+...     balanced_tree.insert(i)
+...
+# The AVL tree is balanced, so it retains its search efficiency.
+>>> print(balanced_tree)
+[3]
+[1, 7]
+[0, 2, 5, 8]
+[4, 6, 9]
+\end{lstlisting}
+\end{comment}
+
+An \emph{Adelson-Velsky Landis tree} (AVL) is a BST that prevents any one branch from getting longer than the others by recursively ``balancing'' the branches as nodes are added or removed.
+Insertion and removal thus become more expensive, but the tree is guaranteed to retain its $O(\log{n})$ search efficiency.
+The AVL's balancing algorithm is beyond the scope of this lab, but the Volume 2 text includes details and exercises on the algorithm.
+
+\begin{figure}[H] % BST vs AVL Tree
+\begin{tikzpicture}[auto,
+                level 1/.style={sibling distance=2.6cm, level distance=.62cm},
+                level 2/.style={sibling distance=2.6cm, level distance=.62cm},
+                level 3/.style={sibling distance=2.6cm, level distance=.62cm},
+                level 4/.style={sibling distance=2.6cm, level distance=.62cm},
+                level 5/.style={sibling distance=2.6cm, level distance=.62cm},
+                level 6/.style={sibling distance=2.6cm, level distance=.62cm}]
+\node [thick,circle,draw](1){1}
+  child {node[thick,circle,draw=none](2l){}edge from parent[draw=none]}
+  child {node[thick,circle,draw](2){2}
+    child {node[thick,circle,draw=none](3l){}edge from parent[draw=none]}
+    child {node[thick,circle,draw](3){3}
+      child {node[thick,circle,draw=none](4l){}edge from parent[draw=none]}
+      child {node[thick,circle,draw](4){4}
+        child {node[thick,circle,draw=none](5l){}edge from parent[draw=none]}
+        child {node[thick,circle,draw](5){5}
+          child {node[thick,circle,draw=none](6l){}edge from parent[draw=none]}
+          child {node[thick,circle,draw](6){6}}}}}};
+\foreach \s/\t in {1/2, 2/3, 3/4, 4/5, 5/6}
+    {\draw[->, >=stealth', thick](\s)--(\t);}
+\node [draw=none, node distance=1.5cm](root)[above left of=1]{\li{root}};
+\draw[blue, ->, >=stealth', thick](root)--(1);
+\end{tikzpicture}
+\qquad\quad
+\begin{tikzpicture}[auto,level 1/.style={sibling distance=2cm},
+                         level 2/.style={sibling distance=20mm}]
+\node [thick,circle,draw](4){4}
+  child {node[thick,draw, circle](2){2} edge from parent[draw=none]
+    child {node[thick,draw, circle](1){1} edge from parent[draw=none]}
+    child {node[thick,draw, circle](3){3} edge from parent[draw=none]}}
+  child {node[thick,draw,circle](5){5} edge from parent[draw=none]
+    child {node[draw=none](invs){} edge from parent[draw=none]}
+    child {node[thick,draw, circle](6){6} edge from parent[draw=none]}};
+\node [draw=none, node distance=.1cm](4a)[above of=4]{}
+  child {node[draw=none](2a){} edge from parent[draw=none]
+    child {node[draw=none](1a){} edge from parent[draw=none]}
+    child {node[draw=none](3a){} edge from parent[draw=none]}}
+  child {node[draw=none](5a){} edge from parent[draw=none]
+    child {node[draw=none](invsA){} edge from parent[draw=none]}
+    child {node[draw=none](6a){} edge from parent[draw=none]}};
+\foreach \s/\t in {4a/2a, 2a/1a, 2a/3a, 4a/5a, 5a/6a}
+    {\draw[->, >=stealth', shorten <=.23cm, shorten >=.1cm,thick](\s)--(\t);}
+\node [draw=none, node distance=1.5cm](root)[above right of=4a]{\li{root}};
+\draw[blue, ->, >=stealth', shorten >= .1cm, thick](root)--(4);
+\end{tikzpicture}
+\caption{On the left, the unbalanced BST resulting from inserting 1, 2, 3, 4, 5, and 6, in that order.
+On the left, the balanced AVL tree that results from the same insertion.
+After each insertion, the AVL tree rebalances if necessary.}
+\label{fig:avl_balance}
+\end{figure}
+
+\begin{problem} % Compare build and search times.
+\label{prob:binary-trees-compare-times}
+Write a function to compare the build and search times of the \li{SinglyLinkedList} from Problem \ref{prob:recursive-linked-list-find}, the \li{BST} from Problems \ref{prob:bst-insert} and \ref{prob:bst-remove}, and the \li{AVL} provided in the Additional Materials section.
+Begin by reading the file \texttt{english.txt}, storing the contents of each line in a list.
+For $n=2^3,2^4,\ldots,2^{10}$, repeat the following experiment.
+\begin{enumerate}
+\item Get a subset of $n$ \textbf{random} items from the data set.
+\\(Hint: use a function from the \li{random} or \li{np.random} modules.)
+\item Time (separately) how long it takes to load a new \li{SinglyLinkedList}, a \li{BST}, and an \li{AVL} with the $n$ items.
+\item Choose 5 \textbf{random} items from the subset, and time how long it takes to find all 5 items in each data structure.
+Use the \li{find()} method for the trees, but to avoid exceeding the maximum recursion depth, use the provided \li{iterative_find()} method from Problem \ref{prob:recursive-linked-list-find} to search the \li{SinglyLinkedList}.
+\end{enumerate}
+Report your findings in a single figure with two subplots: one for build times, and one for search times.
+Use log scales where appropriate.
+% You should be able to see that the \li{AVL} takes the longest to construct but does searching the fastest.
+
+\begin{comment} % Problem 4 correct answers.
+Your figure should resemble the following plots.
+%
+\begin{figure}[H] % Solution to problem 4.
+    \centering
+    \begin{subfigure}[b]{.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/BuildTimes.pdf}
+    \end{subfigure}%
+    \begin{subfigure}[b]{.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/SearchTimes.pdf}
+    \end{subfigure}
+    % \caption{The \li{SinglyLinkedList} has the fastest build times, but the \li{AVL} has the fastest search times. How would the graphs be different if the data had been sorted to begin with?}
+\end{figure}
+\end{comment}
+\end{problem}
+
+% \begin{info}
+% Every data structure has advantages and disadvantages.
+% Recognizing when an application may take advantage of a certain structure, especially when that structure is more complicated than a Python list or set, is an important skill.
+% Choosing structures wisely often results in huge speedups and easier data maintenance.
+% \end{info}
+
+\newpage
+
+\section*{Additional Material} % ==============================================
+
+\subsection*{Possible Improvements to the BST Class} % ------------------------
+
+The following are a few ideas for expanding the functionality of the \li{BST} class.
+
+\begin{enumerate}
+\item Add a keyword argument to the constructor so that if an iterable is provided, each element of the iterable is immediately added to the tree.
+This makes it possible to cast other iterables as a \li{BST} the same way that an iterable can be cast as one of Python's standard data structures.
+\item Add an attribute that keeps track of the number of items in the tree.
+Use this attribute to implement the \li{__len__()} magic method.
+\item Add a method for translating the \li{BST} into a sorted Python list.
+\\(Hint: examine the provided \li{__str__()} method carefully.)
+\item Add methods \li{<<min>>()} and \li{<<max>>()} that return the smallest or largest value in the tree, respectively.
+Consider adding \li{head} and \li{tail} attributes that point to the minimal and maximal elements; this would make inserting new minima and maxima $O(1)$.
+\end{enumerate}
+
+\subsection*{Other Kinds of Binary Trees} % -----------------------------------
+
+In addition to the AVL tree, there are many other variations on the binary search tree, each with its own advantages and disadvantages.
+Consider writing classes for the following structures.
+%
+\begin{enumerate}
+\item A \href{https://en.wikipedia.org/wiki/B-tree}{\emph{B-tree}} is a tree whose nodes can contain more than one piece of data and point to more than one other node.
+See the Volume 2 text for details.
+
+\item The nodes of a \href{https://en.wikipedia.org/wiki/Red%E2%80%93black_tree}{\emph{red-black tree}} are labeled either red or black.
+The tree satisfies the following rules to maintain a balanced structure.
+%
+\begin{enumerate}
+    \item Every leaf node is black.
+    \item Red nodes only have black children.
+    \item Every (directed) path from a node to any of its descendent leaf nodes contains the same number of black nodes.
+\end{enumerate}
+%
+When a node is added that violates one of these constraints, the tree is rebalanced and recolored.
+% This can sometimes be a cheap alternative to an AVL tree.
+
+\item A \href{https://en.wikipedia.org/wiki/Splay_tree}{\emph{Splay Tree}} includes an additional operation, called splaying, that makes a specified node the root of the tree.
+Splaying several nodes of interest makes them easier to access because they are placed close to the root.
+
+\item A \href{https://en.wikipedia.org/wiki/Heap_(data_structure)}{\emph{heap}} is similar to a BST but uses a different binary sorting rule: the value of every parent node is greater than each of the values of its children.
+This data structure is particularly useful for sorting algorithms; see the Volume 2 text for more details.
+\end{enumerate}
+
+\subsection*{Additional Code: Tree Visualization} % ---------------------------
+
+The following methods may be helpful for visualizing instances of the \li{BST} and \li{AVL} classes.
+Note that the \li{draw()} method uses NetworkX's \li{graphviz_layout}, which requires the \li{pygraphviz} module (install it with \li{pip install pygraphviz}).
+
+\begin{lstlisting}
+import networkx as nx
+from matplotlib import pyplot as plt
+from networkx.drawing.nx_agraph import graphviz_layout
+
+class BST:
+    # ...
+    def __str__(self):
+        """String representation: a hierarchical view of the BST.
+
+        Example:  (3)
+                  / \     '[3]          The nodes of the BST are printed
+                (2) (5)    [2, 5]       by depth levels. Edges and empty
+                /   / \    [1, 4, 6]'   nodes are not printed.
+              (1) (4) (6)
+        """
+        if self.root is None:
+            return "[]"
+        out, current_level = [], [self.root]
+        while current_level:
+            next_level, values = [], []
+            for node in current_level:
+                values.append(node.value)
+                for child in [node.left, node.right]:
+                    if child is not None:
+                        next_level.append(child)
+            out.append(values)
+            current_level = next_level
+        return "\n".join([str(x) for x in out])
+
+    def draw(self):
+        """Use NetworkX and Matplotlib to visualize the tree."""
+        if self.root is None:
+            return
+        # Build the directed graph.
+        G = nx.DiGraph()
+        G.add_node(self.root.value)
+        nodes = [self.root]
+        while nodes:
+            current = nodes.pop(0)
+            for child in [current.left, current.right]:
+                if child is not None:
+                    G.add_edge(current.value, child.value)
+                    nodes.append(child)
+        # Plot the graph. This requires graphviz_layout (pygraphviz).
+        nx.draw(G, pos=graphviz_layout(G, prog="dot"), arrows=True,
+                with_labels=True, node_color="C1", font_size=8)
+        plt.show()
+\end{lstlisting}
+
+\subsection*{Additional Code: AVL Tree} % -------------------------------------
+
+Use the following class for Problem \ref{prob:binary-trees-compare-times}.
+Note that it inherits from the \li{BST} class, so its functionality is dependent on the \li{insert()} method from Problem \ref{prob:bst-insert}.
+Note that the \li{remove()} method is disabled, though it is possible for an AVL tree to rebalance itself after removing a node.
+
+\begin{lstlisting}
+class AVL(BST):
+    """Adelson-Velsky Landis binary search tree data structure class.
+    Rebalances after insertion when needed.
+    """
+    def insert(self, data):
+        """Insert a node containing the data into the tree, then rebalance."""
+        BST.insert(self, data)      # Insert the data like usual.
+        n = self.find(data)
+        while n:                    # Rebalance from the bottom up.
+            n = self._rebalance(n).prev
+
+    def remove(*args, **kwargs):
+        """Disable remove() to keep the tree in balance."""
+        raise NotImplementedError("remove() is disabled for this class")
+
+    def _rebalance(self,n):
+        """Rebalance the subtree starting at the specified node."""
+        balance = AVL._balance_factor(n)
+        if balance == -2:                                   # Left heavy
+            if AVL._height(n.left.left) > AVL._height(n.left.right):
+                n = self._rotate_left_left(n)                   # Left Left
+            else:
+                n = self._rotate_left_right(n)                  # Left Right
+        elif balance == 2:                                  # Right heavy
+            if AVL._height(n.right.right) > AVL._height(n.right.left):
+                n = self._rotate_right_right(n)                 # Right Right
+            else:
+                n = self._rotate_right_left(n)                  # Right Left
+        return n
+
+    @staticmethod
+    def _height(current):
+        """Calculate the height of a given node by descending recursively until
+        there are no further child nodes. Return the number of children in the
+        longest chain down.
+        """
+        if current is None:     # Base case: the end of a branch.
+            return -1           # Otherwise, descend down both branches.
+        return 1 + max(AVL._height(current.right), AVL._height(current.left))
+
+    @staticmethod
+    def _balance_factor(n):
+        return AVL._height(n.right) - AVL._height(n.left)
+
+    def _rotate_left_left(self, n):
+        temp = n.left
+        n.left = temp.right
+        if temp.right:
+            temp.right.prev = n
+        temp.right = n
+        temp.prev = n.prev
+        n.prev = temp
+        if temp.prev:
+            if temp.prev.value > temp.value:
+                temp.prev.left = temp
+            else:
+                temp.prev.right = temp
+        if n is self.root:
+            self.root = temp
+        return temp
+
+    def _rotate_right_right(self, n):
+        temp = n.right
+        n.right = temp.left
+        if temp.left:
+            temp.left.prev = n
+        temp.left = n
+        temp.prev = n.prev
+        n.prev = temp
+        if temp.prev:
+            if temp.prev.value > temp.value:
+                temp.prev.left = temp
+            else:
+                temp.prev.right = temp
+        if n is self.root:
+            self.root = temp
+        return temp
+
+    def _rotate_left_right(self, n):
+        temp1 = n.left
+        temp2 = temp1.right
+        temp1.right = temp2.left
+        if temp2.left:
+            temp2.left.prev = temp1
+        temp2.prev = n
+        temp2.left = temp1
+        temp1.prev = temp2
+        n.left = temp2
+        return self._rotate_left_left(n)
+
+    def _rotate_right_left(self, n):
+        temp1 = n.right
+        temp2 = temp1.left
+        temp1.left = temp2.right
+        if temp2.right:
+            temp2.right.prev = temp1
+        temp2.prev = n
+        temp2.right = temp1
+        temp1.prev = temp2
+        n.right = temp2
+        return self._rotate_right_right(n)
+\end{lstlisting}

@@ -64,7 +64,7 @@ Define
 &&
 \q_{k} = \frac{\x_k - \p_{k-1}}{\|\x_k - \p_{k-1}\|},\quad k=2,\ \ldots,\ n,
 \\ \\
-\p_0 = \0,\quad \text{and}
+\p_0 = \0,
 &&
 \p_{k-1} = \sum_{j=1}^{k-1} \langle \q_j, \x_k\rangle \q_j,\quad k=2,\ \ldots,\ n.
 \end{align*}
@@ -73,7 +73,7 @@ Each $\p_{k-1}$ is the projection of $\x_k$ onto the span of $\{\q_j\}_{j=1}^{k-
 Thus $\q_k'$ is orthogonal to each of the vectors in $\{\q_j\}_{j=1}^{k-1}$.
 Therefore, normalizing each $\q_k'$ produces an orthonormal set $\{\q_j\}_{j=1}^n$.
 
-To construct the reduced QR decomposition, let $\widehat{Q}$ be the matrix with columns $\{\q_j\}_{j=1}^n$, and let $\widehat{R}$ be the upper triangular matrix with the following entries:
+To construct the reduced QR decomposition, let $\widehat{Q}$ be the matrix with columns $\{\q_j\}_{j=1}^n$, and let $\widehat{R}$ be the upper triangular matrix with entries
 %
 \begin{align*}
 r_{kk} = \|\x_k-\p_{k-1}\|,
@@ -94,7 +94,7 @@ If the columns of $A$ are close to being linearly dependent, the classical Gram-
 The \emph{modified Gram-Schmidt algorithm} is a slight variant of the classical algorithm which more consistently produces a set of vectors that are ``very close'' to orthonormal.
 
 Let $\q_1$ be the normalization of $\x_1$ as before.
-Instead of making just $\x_2$ orthogonal to $\q_1$, make \emph{each} of the vectors $\{\x_j\}_{j=2}^n$ orthogonal to $\q_1$:
+Instead of making just $\x_2$ orthogonal to $\q_1$, make \textbf{each} of the vectors $\{\x_j\}_{j=2}^n$ orthogonal to $\q_1$:
 \[\x_k = \x_k - \langle \q_1,\x_{k} \rangle \q_1,\quad k=2,\ \ldots,\ n.\]
 Next, define $\q_2 = \frac{\x_2}{\|\x_2\|}$.
 Proceed by making each of $\{\x_j\}_{j=3}^n$ orthogonal to $\q_2$:
@@ -205,7 +205,7 @@ However, the QR decomposition avoids the potential numerical issues that come wi
 Since $Q$ is orthonormal, $Q^{-1}= Q\trp$.
 Therefore, solving $A\x = \b$ is equivalent to solving the system $R\x = Q\trp\b$.
 Since $R$ is upper-triangular, $R\x = Q\trp\b$ can be solved quickly with back substitution.%
-\footnote{See Problem 3 of the Linear Systems lab for details on back substitution.}
+\footnote{See the Linear Systems lab for details on back substitution.}
 
 \begin{problem} % Use the QR decomposition to solve Ax = b quickly.
 Write a function that accepts an invertible $n \times n$ matrix $A$ and a vector $\b$ of length $n$.
@@ -302,8 +302,7 @@ Applying the Householder transformation $H_{\mathbf{v}}$ to $\x$ reflects $\x$ a
 
 The \emph{Householder algorithm} uses Householder transformations for the orthonormal transformations in the QR decomposition process described on the previous page.
 The goal in choosing $Q_k$ is to send $\x_k$, the $k$th column of $A$, to the span of $\{\e_j\}_{j=1}^k$.
-In other words, if $Q_k\x_k = \y_k$, the last $m - k$ entries of $\y_k$ should be $0$.
-%
+In other words, if $Q_k\x_k = \y_k$, the last $m - k$ entries of $\y_k$ should be $0$, i.e.,
 \begin{align*}
 Q_k\x_k = Q_k
 \left[\begin{array}{c}
@@ -313,13 +312,13 @@ z_1 \\ \vdots \\ z_k \\ z_{k+1} \\ \vdots \\ z_m
 \left[\begin{array}{c}
 y_1 \\ \vdots \\ y_k \\ 0 \\ \vdots \\ 0
 \end{array}\right]
-= \y_k
+= \y_k.
 \end{align*}
 
 To begin, decompose $\x_k$ into $\x_k = \x_k' + \x_k''$, where $\x_k'$ and $\x_k''$ are of the form
 \[
-\x_k' = \left[z_1\quad \cdots\quad z_{k-1}\quad 0\quad \cdots\quad 0\right]\trp
-\qquad\text{and}\qquad
+\x_k' = \left[z_1\quad \cdots\quad z_{k-1}\quad 0\quad \cdots\quad 0\right]\trp,
+\qquad\qquad
 \x_k'' = \left[0\quad \cdots\quad 0\quad z_k\quad \cdots\quad z_m\right]\trp.
 \]
 Because $\x_k'$ represents elements of $A$ that lie above the diagonal, only $\x_k''$ needs to be altered by the reflection.
@@ -356,8 +355,7 @@ In this illustration, $H_{\v_2}$ is the more stable transformation since it refl
 \end{figure}
 
 After choosing $\v_k$, set $\u_k = \frac{\v_k}{\|\v_k\|}$.
-Then $H_{\v_k} = I - 2\frac{\v_k\v_k\trp}{\|\v_k\|^2} = I - 2\u_k\u_k\trp$, and hence $Q_k$ is given by the following block matrix.
-%
+Then $H_{\v_k} = I - 2\frac{\v_k\v_k\trp}{\|\v_k\|^2} = I - 2\u_k\u_k\trp$, and hence $Q_k$ is given by the block matrix
 \begin{equation*}
 Q_k =
 \left[\begin{array}{cc}
@@ -367,7 +365,7 @@ I_{k-1} & \0 \\
 \left[\begin{array}{cc}
 I_{k-1} & \0 \\
 \0      & I_{m-k+1} - 2 \u_k\u_k\trp \\
-\end{array}\right]
+\end{array}\right].
 \end{equation*}
 
 Here $I_{p}$ denotes the $p \times p$ identity matrix, and thus each $Q_k$ is $m \times m$.
@@ -503,19 +501,13 @@ This implies that $A = Q_1\trp Q_2\trp Q_3\trp H Q_3 Q_2 Q_1$, so setting $Q = Q
 Constructing the $Q_k$ uses the same approach as in the Householder algorithm, but shifted down one element.
 Let $\x_k = \y_k' + \y_k''$ where $\y_k'$ and $\y_k''$ are of the form
 \[
-\y_k' = \left[z_1\quad \cdots\quad z_k\quad 0\quad \cdots\quad 0\right]\trp
-\qquad\text{and}\qquad
+\y_k' = \left[z_1\quad \cdots\quad z_k\quad 0\quad \cdots\quad 0\right]\trp,
+\qquad\qquad
 \y_k'' = \left[0\quad\cdots\quad 0\quad z_{k+1}\quad\cdots\quad z_m\right]\trp.
 \]
 Because $\y_k'$ represents elements of $A$ that lie above the first subdiagonal, only $\y_k''$ needs to be altered.
-This suggests using the following reflection.
-%
-\begin{align*}
-\v_k = \y_k'' + \sign(z_k)\|\y_k''\| \e_k
-&&
-\u_k = \frac{\v_k}{\|\v_k\|}
-\end{align*}
-\[
+This suggests using the reflection
+\begin{gather*}
 Q_k =
 \left[\begin{array}{cc}
 I_k & \0 \\
@@ -524,8 +516,12 @@ I_k & \0 \\
 \left[\begin{array}{cc}
 I_k & \0 \\
 \0      & I_{m-k} - 2 \u_k\u_k\trp \\
-\end{array}\right]
-\]
+\end{array}\right],\textrm{ where}
+\\
+\v_k = \y_k'' + \sign(z_k)\|\y_k''\| \e_k,
+\qquad\qquad
+\u_k = \frac{\v_k}{\|\v_k\|}.
+\end{gather*}
 
 The complete algorithm is given below.
 Note how similar it is to Algorithm \ref{Alg:QR-via-Householder}.
@@ -693,13 +689,13 @@ Conditioning and stability will be discussed more in depth later in the curricul
 
 The Householder algorithm uses reflections to triangularize $A$.
 However, $A$ can also be made upper triangular using rotations.
-To illustrate the idea, recall that the following matrix represents a counterclockwise rotation of $\theta$ radians.
+To illustrate the idea, recall that the matrix for a counterclockwise rotation of $\theta$ radians is given by
 \[
 R_\theta =
 \left[\begin{array}{cc}
 \cos\theta & -\sin\theta \\
 \sin\theta &  \cos\theta
-\end{array}\right]
+\end{array}\right].
 \]
 
 This transformation is orthonormal.
@@ -757,15 +753,15 @@ I & 0 & 0 & 0 & 0 \\
 \]
 
 Here $I$ represents the identity matrix, $c=\cos \theta$, and $s=\sin \theta$.
-The $c$'s appear on the $i^{th}$ and $j^{th}$ diagonal entries.
+The $c$'s appear on the $i$th and $j$th diagonal entries.
 
 \subsubsection*{Givens Triangularization} % - - - - - - - - - - - - - - - - - -
 
 As demonstrated, $\theta$ can be chosen such that $G(i,j,\theta)$ rotates a vector so that its $j$th-component is 0.
-Such a transformation will only affect the $i^{th}$ and $j^{th}$ entries of any vector it acts on (and thus the $i^{th}$ and $j^{th}$ rows of any matrix it acts on).
+Such a transformation will only affect the $i$th and $j$th entries of any vector it acts on (and thus the $i$th and $j$th rows of any matrix it acts on).
 
 To compute the QR decomposition of $A$, iterate through the subdiagonal entries of $A$ in the order depicted by Figure \ref{fig:Givens-iteration-order}.
-Zero out the $ij^{th}$ entry with a rotation in the plane spanned by $\e_{i-1}$ and $\e_i$, represented by the Givens matrix $G(i-1,i,\theta)$.
+Zero out the $ij$th entry with a rotation in the plane spanned by $\e_{i-1}$ and $\e_i$, represented by the Givens matrix $G(i-1,i,\theta)$.
 
 \begin{figure}[H]
 \centering
@@ -832,7 +828,7 @@ On a $2 \times 3$ matrix, the process can be visualized as follows.
 At each stage, the boxed entries are those modified by the previous transformation.
 The final transformation $G(2,3,\theta_3)$ operates on the bottom two rows, but since the first two entries are zero, they are unaffected.
 
-Assuming that at the $ij^{th}$ stage of the algorithm $a_{ij}$ is nonzero, Algorithm \ref{Alg:QR-via-Givens} computes the Givens triangularization of a matrix.
+Assuming that at the $ij$th stage of the algorithm $a_{ij}$ is nonzero, Algorithm \ref{Alg:QR-via-Givens} computes the Givens triangularization of a matrix.
 Notice that the algorithm does not actually form the entire matrices $G(i,j,\theta)$; instead, it modifies only those entries of the matrix that are affected by the transformation.
 
 \begin{algorithm}[H]

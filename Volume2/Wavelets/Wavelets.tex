@@ -1,11 +1,75 @@
-\lab{Introduction to Wavelets}{Intro to Wavelets}
-\objective{Wavelets are useful in a variety of applications because of their ability to represent some types of information in a very sparse manner.
-We will explore both the one- and two-dimensional discrete wavelet transforms using various types of wavelets.
+\lab{Introduction to Wavelets}{Introduction to Wavelets}
+\objective{Wavelets are used to sparsely represent some types of information.
+This makes them useful in a variety of applications.
+We explore both the one- and two-dimensional discrete wavelet transforms using various types of wavelets.
 % HERE (above line): added hyphen after "one"
-We will then use a Python package called PyWavelets for further wavelet analysis including image cleaning and image compression.
+We then use a Python package called PyWavelets for further wavelet analysis including image cleaning and image compression.
 }
 
-\section*{The Discrete Wavelet Transform} % ===================================
+\section*{Wavelet Functions}
+
+\emph{Wavelets families} are sets of orthogonal functions (wavelets) designed to decompose nonperiodic, piecewise continuous functions.
+These families have four types of wavelets: mother, daughter, father, and son functions.
+Father and son wavelets contain information related to the general movement of the function, while mother and daughter wavelets contain information related to the details of the function.
+The father and mother wavelets are the basis of a family of wavelets.
+Son and daughter wavelets are just scaled translates of the father and mother wavelets, respectively.
+
+\subsection*{Haar Wavelets}
+
+The \emph{Haar Wavelet} family is one of the most widely used wavelet families in wavelet analysis.
+This set includes the father, mother, son, and daughter wavelets defined below.
+The Haar father (scaling) function is given by
+\[
+\varphi(x) =
+ \begin{cases}
+ 1 & \text{if } 0 \leq x < 1 \\
+ 0 & \text{otherwise.}
+ \end{cases}
+\]
+The Haar son wavelets are scaled and translated versions of the father wavelet:
+\[
+\varphi_{jk}(x)=\varphi(2^jx-k) =
+ \begin{cases}
+ 1 & \text{if }\frac{k}{2^j} \leq x < \frac{k+1}{2^j} \\
+ 0 & \text{otherwise.}
+ \end{cases}
+\]
+The Haar mother wavelet function is defined as
+\[
+\psi(x) =
+ \begin{cases}
+  1 & \text{if } 0 \leq x < \frac{1}{2} \\
+  -1 & \text{if } \frac{1}{2} \leq x < 1 \\
+  0 & \text{otherwise.}
+ \end{cases}
+\]
+The Haar daughter wavelets are scaled and translated versions of the mother wavelet
+\[
+\psi_{jk}=\psi(2^jx-k)
+\]
+% It might be nice to plot this function and include the image in the lab.
+
+
+Information (such as a mathematical function or image) can be stored and analyzed by considering its \emph{wavelet decomposition}.
+A \emph{wavelet decomposition} is a linear combination of wavelets.
+For example, a mathematical function $f$ can be approximated as a combination of Haar son and daughter wavelets as follows:
+\begin{align*}
+f(x) = \sum_{k=-\infty}^{\infty} a_k\varphi_{m,k}(x) + \sum_{k=-\infty}^{\infty} b_{m,k}\psi_{m,k}(x) + \dots + \sum_{k=-\infty}^{\infty} b_{n,k}\psi_{n,k}(x)
+\end{align*}
+where $m<n$, and all but a finite number of the $a_k$ and $b_{j,k}$ terms are nonzero.
+The $a_k$ terms are often referred to as \emph{approximation coefficients} while the $b_{j,k}$ terms are known as \emph{detail coefficients}.
+The approximation coefficients typically capture the broader, more general features of a signal while the detail coefficients capture smaller details and noise.
+
+A wavelet decomposition can be done with any family of wavelet functions.
+Depending on the properties of the wavelet and the function (or signal) $f$, $f$ can be approximated to an arbitrary level of accuracy.
+Each arbitrary wavelet family has a mother wavelet $\psi$ and a father wavelet $\varphi$ which are the basis of the family.
+A countably infinite set of wavelet functions (daughter and son wavelets) can be generated using dilations and shifts of the first two functions where $m,k \in \mathbb{Z}$:
+\begin{align*}
+\psi_{m,k}(x) &= \psi(2^mx - k)\\
+\varphi_{m,k}(x) &= \varphi(2^mx - k).
+\end{align*}
+
+\subsection*{The Discrete Wavelet Transform} % ===================================
 
 % HERE: remove these comments.
 %In wavelet analysis, information (such as a mathematical function or an image) can be stored and analyzed by considering its \emph{wavelet decomposition}.
@@ -14,30 +78,10 @@ We will then use a Python package called PyWavelets for further wavelet analysis
 %Once a wavelet is chosen, information can then be represented by a sequence of coefficients (called \emph{wavelet coefficients}) that define the linear combination.
 %The mapping from a function to a sequence of wavelet coefficients is called the \emph{discrete wavelet transform}.
 
-In wavelet analysis, information (such as a mathematical function or image) can be stored and analyzed by considering its \emph{wavelet decomposition}.
-The wavelet decomposition is a way of expressing information as a linear combination of a particular set of wavelet functions.
-Once a wavelet is chosen, information can be represented by a sequence of coefficients (called \emph{wavelet coefficients}) that define the linear combination.
 The mapping from a function to a sequence of wavelet coefficients is called the \emph{discrete wavelet transform}.
-
 The discrete wavelet transform is analogous to the discrete Fourier transform.
 Now, instead of using trigonometric functions, different families of basis functions are used.
-A function called the \emph{wavelet} or \emph{mother wavelet}, usually denoted $\psi$, and another function called the \emph{scaling} or \emph{father scaling function}, typically represented by $\phi$,
-are the basis of a wavelet family.
-A countably infinite set of wavelet functions (commonly known as \emph{daughter wavelets}) can be generated using dilations and shifts of the first two functions:
-\begin{align*}
-\psi_{m,k}(x) &= \psi(2^mx - k)\\
-\phi_{m,k}(x) &= \phi(2^mx - k),
-\end{align*}
-where $m,k \in \mathbb{Z}$.
 
-Given a wavelet family, a function $f$ can be approximated as a combination of father and daughter wavelets as follows:
-\begin{align*}
-f(x) = \sum_{k=-\infty}^{\infty} a_k\phi_{m,k}(x) + \sum_{k=-\infty}^{\infty} b_{m,k}\psi_{m,k}(x) + \dots + \sum_{k=-\infty}^{\infty} b_{n,k}\psi_{n,k}(x)
-\end{align*}
-where $m<n$ and all but a finite number of the $a_k$ and $b_{j,k}$ terms are nonzero.
-The $a_k$ terms are often referred to as \emph{approximation coefficients} while the $b_{j,k}$ terms are known as \emph{detail coefficients}.
-The approximation coefficients typically capture the broader, more general features of a signal while the detail coefficients capture smaller details and noise.
-Depending on the properties of the wavelet and the function (or signal), $f$ can be approximated to an arbitrary level of accuracy.
 
 \begin{comment}
 In the case of finitely-sampled signals and images, only finitely many wavelet coefficients are nonzero.
@@ -53,14 +97,49 @@ In particular, we will use an \emph{iterative filter bank} to compute the transf
 In the case of finitely-sampled signals and images, there exists an efficient algorithm for computing the wavelet coefficients.
 Most commonly used wavelets have associated high-pass and low-pass filters which are derived from the wavelet and scaling functions, respectively.
 When the low-pass filter is convolved with the sampled signal, low frequency (also known as approximation) information is extracted.
-This approximation highlights the overall (slower-moving) pattern without paying too much attention to the high frequency details.%, which to the eye (or ear) may be unhelpful noise.
-The high frequency details are extracted by the high-pass filter.
-These detail coefficients highlight the small changes found in the signal.
+This is similar to turning up the bass on a speaker, which extracts the low frequencies of a sound wave.
+This filter highlights the overall (slower-moving) pattern without paying too much attention to the high frequency details and extracts the approximation coefficients.%, which to the eye (or ear) may be unhelpful noise.
+
+When the high-pass filter is convolved with the sampled signal, high frequency information (also known as detail) is extracted.
+This is similar to turning up the treble on a speaker, which extracts the high frequencies of a sound wave.
+This filter highlights the small changes found in the signal and extracts the detail coefficients.
+
 The two primary operations of the algorithm are the discrete convolution and downsampling, denoted $*$ and $DS$, respectively.
 First, a signal is convolved with both filters.
-Then the resulting arrays are downsampled to remove redundant information.
-In the context of this lab, a \emph{filter bank} is the combined process of convolving with a filter then downsampling.
+The resulting arrays will be twice the size of the original signal because the frequency of the sample will have changed by a factor of 2.
+To remove this redundant information, the resulting arrays are \emph{downsampled}.
+Downsampling is the process of removing unimportant entries from an array.
+In the context of this lab, a \emph{filter bank} is the combined process of convolving with a filter, and then downsampling.
+The result will be an array of approximation coefficients $A$ and an array of detail coefficients $D$.
 This process can be repeated on the new approximation to obtain another layer of approximation and detail coefficients.
+See Figure \ref{fig:filter bank}.
+
+A common lowpass filter is the averaging filter.
+Given an array \textbf{x}, the averaging filter produces an array \textbf{y} where $y_n$ is the average of $x_n$ and $x_{n-1}$.
+In other words, the averaging filter convolves an array with the array $L=\begin{bmatrix}\frac{1}{2} & \frac{1}{2}\end{bmatrix}$.
+This filter preserves the main idea of the data.
+The corresponding highpass filter is the distance filter.
+Given an array \textbf{x}, the distance filter produces an array \textbf{y} where $y_n$ is the distance between $x_n$ and $x_{n-1}$.
+In other words, the difference filter convolves an array with the array $H=\begin{bmatrix}-\frac{1}{2}&\frac{1}{2}\end{bmatrix}$.
+This filter preserves the details of the data.
+
+For the Haar Wavelet, we will use these lowpass and highpass filters.
+In order for this filters to have inverses, the filters must be normalized (for more on why this is, see Additional Materials).
+The resulting lowpass and highpass filters for the Haar Wavelets are the following:
+\begin{comment}
+\begin{align*}
+H &= \sqrt{2}\begin{bmatrix}\frac{1}{2} & \frac{1}{2}\\-\frac{1}{2} & \frac{1}{2}\end{bmatrix}\\
+\end{align*}
+
+For the Haar Wavelet, the matrix $H$ represents the Haar transform.
+Each row of the transform represents an array which, when convolved with a vector, produces certain approximation and detail coefficients.
+The first row of the Haar transform corresponds to the low-pass filter for the Haar wavelet, and the second row corresponds to the high-pass filter.
+To fulfill all necessary properties when dealing with wavelets, the columns are orthonormal.
+For more on the Haar Wavelet Transform, see Additional Materials.
+\end{comment}
+\begin{align*}
+L &= \begin{bmatrix}\frac{\sqrt{2}}{2} & \frac{\sqrt{2}}{2}\end{bmatrix}\\H &=\begin{bmatrix}-\frac{\sqrt{2}}{2} & \frac{\sqrt{2}}{2}\end{bmatrix}\\
+\end{align*}
 
 \begin{comment}
 The key operations in the algorithm are the discrete convolution ($*$) and downsampling ($DS$).
@@ -76,26 +155,7 @@ nothing more than unhelpful noise, there are applications where they are the mos
 details are very important if we are sharpening a blurry image or increasing contrast.
 \end{comment}
 
-
-See Algorithm \ref{alg:1d_wavelet} and Figure \ref{fig:filter bank} for the specifications.
-
-\begin{algorithm}
-\begin{algorithmic}[1]
-\Procedure{dwt}{$X, L, H, n$}
-    \State $A_0 \gets X$						\Comment{Initialization.}
-   \For{$i=0 \ldots n-1$}
-        \State $D_{i+1} \gets \,\,DS(A_i * H)$ \Comment{High-pass filter and downsample.}
-        \State $A_{i+1} \gets \,\,DS(A_i * L)$ \Comment{Low-pass filter and downsample.}
-    \EndFor
-    \State \pseudoli{return} $A_n,D_n, D_{n-1},\ldots, D_1$.
-\EndProcedure
-\end{algorithmic}
-\caption{The one-dimensional discrete wavelet transform. $X$ is the signal to be transformed, $L$ is the low-pass filter, $H$ is the high-pass filter and $n$ is the number of
-filter bank iterations.}
-\label{alg:1d_wavelet}
-\end{algorithm}
-
-\begin{figure}
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[auto, node distance=1.5cm, thick, main node/.style={circle, draw}, LoHi/.style={rectangle, draw}, minimum size=.75cm]
     \node[draw=none](Aj){A$_j$};
@@ -148,31 +208,6 @@ represents the low-frequency structure in the signal.
 In fact, $A_n$ can be seen as a smoothed approximation of the original signal, and is called the \emph{approximation}.
 \end{comment}
 
-The \emph{Haar Wavelet} is one of the most widely used wavelets in wavelet analysis. Its wavelet function is defined
-\[
-\psi(x) =
- \begin{cases}
-  1 & \text{if } 0 \leq x < \frac{1}{2} \\
-  -1 & \text{if } \frac{1}{2} \leq x < 1 \\
-  0 & \text{otherwise.}
- \end{cases}
-\]
-% It might be nice to plot this function and include the image in the lab.
-The associated scaling function is given by
-\[
-\phi(x) =
- \begin{cases}
- 1 & \text{if } 0 \leq x < 1 \\
- 0 & \text{otherwise.}
- \end{cases}
-\]
-
-For the Haar Wavelet, the low-pass and high-pass filters are given by
-\begin{align*}
-L &= \begin{bmatrix}\frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}}\end{bmatrix}\\
-H &= \begin{bmatrix}-\frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}}\end{bmatrix}.
-\end{align*}
-
 As noted earlier, the key mathematical operations of the discrete wavelet transform are convolution and downsampling.
 Given a filter and a signal, the convolution can be obtained using \li{scipy.signal.fftconvolve()}.
 \begin{lstlisting}
@@ -191,13 +226,32 @@ Given a filter and a signal, the convolution can be obtained using \li{scipy.sig
 \end{lstlisting}
 
 The convolution operation alone gives redundant information, so it is downsampled to keep only what is needed.
-In the case of the Haar wavelet, the array will be downsampled by a factor of two, which means keeping only every other entry:
+The array will be downsampled by a factor of 2, which means keeping only every other entry:
+
 \begin{lstlisting}
 >>> # Downsample an array X.
->>> sampled = X[1::2]
+>>> sampled = X[1::2] # Keeps odd entries
 \end{lstlisting}
 
 Both the approximation and detail coefficients are computed in this manner.  The approximation uses the low-pass filter while the detail uses the high-pass filter.
+Implementation of a filter bank is found in Algorithm \ref{alg:1d_wavelet}.
+
+\begin{algorithm}[H]
+\begin{algorithmic}[1]
+\Procedure{dwt}{$X, L, H, n$}
+    \State $A_0 \gets X$            \Comment{Initialization.}
+   \For{$i=0 \ldots n-1$}
+        \State $D_{i+1} \gets \,\,DS(A_i * H)$ \Comment{High-pass filter and downsample.}
+        \State $A_{i+1} \gets \,\,DS(A_i * L)$ \Comment{Low-pass filter and downsample.}
+    \EndFor
+    \State \pseudoli{return} $A_n,D_n, D_{n-1},\ldots, D_1$.
+\EndProcedure
+\end{algorithmic}
+\caption{The one-dimensional discrete wavelet transform. $X$ is the signal to be transformed, $L$ is the low-pass filter, $H$ is the high-pass filter and $n$ is the number of
+filter bank iterations.}
+\label{alg:1d_wavelet}
+\end{algorithm}
+
 \begin{problem}
 Write a function that calculates the discrete wavelet transform using Algorithm \ref{alg:1d_wavelet}.
 The function should return a list of one-dimensional NumPy arrays in the following form: $[A_n, D_n, \ldots, D_1]$.
@@ -217,6 +271,7 @@ coeffs = dwt(noisysin, L, H, 4)
 \end{lstlisting}
 
 Plot the original signal with the approximation and detail coefficients and verify that they match the plots in Figure \ref{fig:dwt1D}.
+\\ (Hint: Use array broadcasting)
 \label{prob:dwt1D}
 \end{problem}
 
@@ -229,18 +284,23 @@ Notice how the approximation resembles a smoothed version of the original signal
 \label{fig:dwt1D}
 \end{figure}
 
+\subsection*{Inverse Discrete Wavelet Transform}
+
 The process of the discrete wavelet transform is reversible.
 Using modified filters, a set of detail coefficients and a set of approximation coefficients can be manipulated and added together to recreate a signal.
-The Haar wavelet filters for the inverse transformation are
+The Haar wavelet filters for the inverse transformation are found by reversing the operations for each filter.
+The original lowpass filter found the average of elements, so the inverse filter will find the distance.
+The original highpass filter found the distance of elements, so the inverse filter will find the average.
+The Haar inverse filters are given below:
 \begin{align*}
-L &= \begin{bmatrix}\frac{1}{\sqrt{2}} & \frac{1}{\sqrt{2}}\end{bmatrix}\\
-H &= \begin{bmatrix}\frac{1}{\sqrt{2}} & -\frac{1}{\sqrt{2}}\end{bmatrix}.
+L^{-1} &= \begin{bmatrix}\frac{\sqrt{2}}{2} & -\frac{\sqrt{2}}{2}\end{bmatrix}\\H^{-1}&=\begin{bmatrix}\frac{\sqrt{2}}{2}&\frac{\sqrt{2}}{2}\end{bmatrix}
 \end{align*}
+The first row refers to the inverse high-pass filter and the second row refers to the inverse low-pass filter.
 
 Suppose the wavelet coefficients $A_n$ and $D_n$ have been computed.
-$A_{n-1}$ can be recreated by tracing the schematic in Figure \ref{fig:filter bank} backwards: $A_n$ and $D_n$ are first upsampled, and then are convolved with $L$ and $H$, respectively.
+$A_{n-1}$ can be recreated by tracing the schematic in Figure \ref{fig:filter bank} backwards: $A_n$ and $D_n$ are first upsampled, and then are convolved with the inverse low-pass and high-pass filters, respectively.
 In the case of the Haar wavelet, \emph{upsampling} involves doubling the length of an array by inserting a 0 at every other position.
-To complete the operation, the new arrays are added together to obtain $A_{n-1}$.
+To complete the operation, the new arrays are convolved and added together to obtain $A_{n-1}$.
 
 \begin{lstlisting}
 >>> # Upsample the coefficient arrays A and D.
@@ -261,7 +321,7 @@ This process is continued with the newly obtained approximation coefficients and
 
 \begin{problem} % Inverse wavelet transform
 Write a function that performs the inverse wavelet transform.
-The function should accept a list of arrays (of the same form as the output of the function written in Problem \ref{prob:dwt1D}), a reverse low-pass filter, and a reverse high-pass filter.
+The function should accept a list of arrays (of the same form as the output of Problem \ref{prob:dwt1D}), a reverse low-pass filter, and a reverse high-pass filter.
 The function should return a single array, which represents the recovered signal.
 
 Note that the input list of arrays has length $n+1$ (consisting of $A_n$ together with $D_n, D_{n-1}, \ldots, D_1$), so your code should perform the process given above $n$ times.
@@ -270,12 +330,25 @@ To test your function, first perform the inverse transform on the noisy sine wav
 Then, compare the original signal with the signal recovered by your inverse wavelet transform function using \li{np.allclose()}.
 \end{problem}
 
-\begin{info}
+\begin{warn}
 Although Algorithm \ref{alg:1d_wavelet} and the preceding discussion apply in the general case, the code implementations apply only to the Haar wavelet.
-Because of the nature of the discrete convolution, when convolving with longer filters, the signal to be transformed needs to undergo some type of lengthening in order to avoid
+Because of the nature of the discrete convolution, when convolving with longer filters, the signal to be transformed needs to undergo a different type of lengthening in order to avoid
 information loss during the convolution.
 As such, the functions written in Problems 1 and 2 will only work correctly with the Haar filters and would require modifications to be compatible with more wavelets.
-\end{info}
+\end{warn}
+
+
+
+\section*{The Two-dimensional Wavelet Transform} % ==============================
+
+The generalization of the wavelet transform to two dimensions is similar to one dimensional transforms.
+Again, the two primary operations used are convolution and downsampling.
+The main difference in the two-dimensional case is the number of convolutions and downsamples per iteration.
+First, the convolution and downsampling are performed along the rows of an array.
+This results in two new arrays, as in the one dimensional case.
+Then, convolution and downsampling are performed along the columns of the two new arrays.
+This results in four final arrays that make up the new approximation and detail coefficients.
+See Figure \ref{fig:filter bank2d}.
 
 \begin{figure}[H]
 \begin{center}
@@ -336,25 +409,14 @@ As such, the functions written in Problems 1 and 2 will only work correctly with
 \end{center}
 \end{figure}
 
-\section*{The Two-dimensional Wavelet Transform} % ==============================
-
-The generalization of the wavelet transform to two dimensions is fairly straightforward.
-Once again, the two primary operations are convolution and downsampling.
-The main difference in the two-dimensional case is the number of convolutions and downsamples per iteration.
-First, the convolution and downsampling are performed along the rows of an array.
-This results in two new arrays.
-Then, convolution and downsampling are performed along the columns of the two new arrays.
-This results in four final arrays that make up the new approximation and detail coefficients.
-See Figure \ref{fig:filter bank2d} for an illustration of this concept.
-
-When implemented as an iterative filter bank, each pass through the filter bank yields an approximation plus three sets of detail coefficients rather than just one.
+When implemented as an iterative filter bank, each pass through the filter bank yields one set of approximation coefficients plus three sets of detail coefficients, rather than just one.
 More specifically, if the two-dimensional array $X$ is the input to the filter bank, the arrays $LL$, $LH$, $HL$, and $HH$ are obtained.
-$LL$ is a smoothed approximation of $X$ (similar to $A_n$ in the one-dimensional case) and the other three arrays contain wavelet coefficients capturing high-frequency oscillations in
+$LL$ is a smoothed approximation of $X$ (similar to $A_n$ in the one-dimensional case), and the other three arrays contain detail coefficients that capture high-frequency oscillations in
 vertical, horizontal, and diagonal directions.
 The arrays $LL$, $LH$, $HL$, and $HH$ are known as \emph{subbands}.
 Any or all of the subbands can be fed into a filter bank to further decompose the signal into different subbands.
 This decomposition can be represented by a partition of a rectangle, called a \emph{subband pattern}.
-The subband pattern for one pass of the filter bank is shown in Figure \ref{fig:2dsubbands}, with an example given in Figure \ref{fig:dwt2D}.
+The subband pattern for one pass of the filter bank is shown in Figure \ref{fig:2dsubbands}, with an example of an image decomposition given in Figure \ref{fig:dwt2D}.
 
 \begin{figure}[H]
 \begin{tikzpicture}
@@ -375,7 +437,7 @@ The subband pattern for one pass of the filter bank is shown in Figure \ref{fig:
 \label{fig:2dsubbands}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[H]
 % the Mandrill image used to compute these images is found at http://homepages.cae.wisc.edu/~ece533/images/ (baboon.png)
 \centering
         \begin{subfigure}{0.4\textwidth}\centering
@@ -400,14 +462,13 @@ The subband pattern for one pass of the filter bank is shown in Figure \ref{fig:
     \label{fig:dwt2D}
 \end{figure}
 
-The wavelet coefficients that are obtained from a two-dimensional wavelet transform are very useful in a variety of image processing tasks.
-They allow images to be analyzed and manipulated in terms of both their frequency and spatial properties, and at differing levels of resolution.
-Furthermore, images are often represented in a very sparse manner by wavelets; that is, most of the image information is captured by a small subset of the wavelet coefficients.
+The wavelet coefficients obtained from a two-dimensional wavelet transform are used to analyze and manipulate images at differing levels of resolution.
+Images are often sparsely represented by wavelets; that is, most of the image information is captured by a small subset of the wavelet coefficients.
 This is the key fact for wavelet-based image compression and will be discussed in further detail later in the lab.
 
 \section*{The PyWavelets Module} % ============================================
 
-PyWavelets is a Python package designed for use in wavelet analysis.
+PyWavelets is a Python package designed for wavelet analysis.
 Although it has many other uses, in this lab it will primarily be used for image manipulation.
 PyWavelets can be installed using the following command:
 \begin{lstlisting}
@@ -423,10 +484,10 @@ $ conda install -c ioos pywavelets=0.4.0
 \end{comment}
 
 PyWavelets provides a simple way to calculate the subbands resulting from one pass through the filter bank.
-The following code demonstrates how to find the approximation and detail subbands and plot them in a manner similar to Figure \ref{fig:dwt2D}.
+The following code demonstrates how to find the approximation and detail subbands of an image.
 
 \begin{lstlisting}
->>> from scipy.misc import imread
+>>> from imageio import imread
 >>> import pywt                             # The PyWavelets package.
 # The True parameter produces a grayscale image.
 >>> mandrill = imread('mandrill1.png', True)
@@ -436,11 +497,12 @@ The following code demonstrates how to find the approximation and detail subband
 
 The function \li{pywt.dwt2()} calculates the subbands resulting from one pass through the filter bank.
 The \li{mode} keyword argument sets the extension mode, which determines the type of padding used in the convolution operation.
-For the problems in this lab, always use \li{mode='per'} which is the periodic extension.
+For the problems in this lab, always use \li{mode='per'}, which is the periodic extension.
 The second positional argument specifies the type of wavelet to be used in the transform.
 The function \li{dwt2()} returns a list.
 The first entry of the list is the $LL$, or approximation, subband.
 The second entry of the list is a tuple containing the remaining subbands, $LH$, $HL$, and $HH$ (in that order).
+\begin{comment}
 These subbands can be plotted as follows:
 
 \begin{lstlisting}
@@ -459,7 +521,7 @@ These subbands can be plotted as follows:
 >>> plt.axis('off')
 >>> plt.subplots_adjust(wspace=0, hspace=0)      # Remove space between plots.
 \end{lstlisting}
-
+\end{comment}
 As noted, the second positional argument is a string that gives the name of the wavelet to be used.
 PyWavelets supports a number of different wavelets which are divided into different classes known as families.
 The supported families and their wavelet instances can be listed by executing the following code:
@@ -467,15 +529,17 @@ The supported families and their wavelet instances can be listed by executing th
 \begin{lstlisting}
 >>> # List the available wavelet families.
 >>> print(pywt.families())
-['haar', 'db', 'sym', 'coif', 'bior', 'rbio', 'dmey', 'gaus', 'mexh', 'morl', 'cgau', 'shan', 'fbsp', 'cmor']
+<<['haar', 'db', 'sym', 'coif', 'bior', 'rbio', 'dmey', 'gaus', 'mexh', 'morl', 'cgau', 'shan', 'fbsp', 'cmor']>>
 >>> # List the available wavelets in a given family.
 >>> print(pywt.wavelist('coif'))
-['coif1', 'coif2', 'coif3', 'coif4', 'coif5', 'coif6', 'coif7', 'coif8', 'coif9', 'coif10', 'coif11', 'coif12', 'coif13', 'coif14', 'coif15', 'coif16', 'coif17']
+<<['coif1', 'coif2', 'coif3', 'coif4', 'coif5', 'coif6', 'coif7', 'coif8', 'coif9', 'coif10', 'coif11', 'coif12', 'coif13', 'coif14', 'coif15', 'coif16', 'coif17']>>
 \end{lstlisting}
 
 Different wavelets have different properties; the most suitable wavelet is dependent on the specific application.
-The best wavelet to use in a particular application is rarely known beforehand.
-A choice about which wavelet to use can be partially based on the properties of a wavelet, but since many wavelets share desirable properties, the best wavelet for a particular application is often not known until
+For example, the morlet wavelet is closely related to human hearing and vision.
+Note that not all of these families work with the function \li{pywt.dwt2()}, because they are continuous wavelets.
+%The best wavelet to use in a particular application is rarely known beforehand.
+Choosing which wavelet is used is partially based on the properties of a wavelet, but since many wavelets share desirable properties, the best wavelet for a particular application is often not known until
 some type of testing is done.
 %See Figure \ref{fig:more_wavelets} for the plots of some of additional wavelets.
 
@@ -495,22 +559,26 @@ some type of testing is done.
 \begin{problem}
 Explore the two-dimensional wavelet transform by completing the following:
 \begin{enumerate}
-    \item Plot the subbands of the file \texttt{woman\_darkhair.png} as described above (using the Daubechies 4 wavelet with periodic extension).
+    \item Save a picture of a raccoon with the following code
+\begin{lstlisting}
+>>> from scipy.misc import face
+>>> racoon = face(True)
+\end{lstlisting}
+    \item Plot the subbands of raccoon as described above (using the Daubechies 4 wavelet with periodic extension).
         Compare this with the subbands of the mandrill image shown in Figure \ref{fig:dwt2D}.
-    \item Compare the subband patterns of different wavelets by plotting the $LH$ subband pattern for the Haar wavelet and two other wavelets of your choice using \texttt{woman\_darkhair.png}.
-        Note that not all wavelets included in PyWavelets are compatible with every function.
-        For example, only the first seven families listed by \li{pywt.families()} are compatible with \li{dwt2()}.
+    \item Compare the subband patterns of the haar, symlet, and coiflet wavelets by plotting the $LH$ subband pattern using the picture of the raccoon.
+    The haar subband should have more detail than the symlet subband, and the symlet subband should have more detail than the coiflet wavelet.
 \end{enumerate}
 \end{problem}
 
-The function \li{pywt.wavedec2()} is similar to \li{pywt.dwt2()}; however it also includes a keyword argument \li{level}, which specifies the number of times to pass an image through the filter bank.
+The function \li{pywt.wavedec2()} is similar to \li{pywt.dwt2()}, but it also includes a keyword argument, \li{level}, which specifies the number of times to pass an image through the filter bank.
 It will return a list of subbands, the first of which is the final approximation subband, while the remaining elements are tuples which contain sets of detail subbands ($LH$, $HL$, and $HH$).
 If \li{level} is not specified, the number of passes through the filter bank will be determined at runtime.
 The function \li{pywt.waverec2()} accepts a list of subband patterns (like the output of \li{pywt.wavedec2()} or \li{pywt.dwt2()}), a name string denoting the wavelet, and a keyword argument
 \li{mode} for the extension mode.
 It returns a reconstructed image using the reverse filter bank.
 When using this function, be sure that the wavelet and mode match the deconstruction parameters.
-PyWavelets has many other useful functions including \li{dwt()}, \li{idwt()} and \li{idwt2()} which can be explored further in the documentation for PyWavelets \url{http://pywavelets.readthedocs.io/en/latest/contents.html}.
+PyWavelets has many other useful functions including \li{dwt()}, \li{idwt()} and \li{idwt2()} which can be explored further in the documentation for PyWavelets, \url{http://pywavelets.readthedocs.io/en/latest/contents.html}.
 
 
 
@@ -542,10 +610,10 @@ Reconstruct the image using all subbands except the last set of detail coefficie
 \section*{Applications}
 
 \subsection*{Noise Reduction}
-Noise in an image can be defined as unwanted visual artifacts that obscure the true image.
-Images can acquire noise from a variety of sources, including the camera, data transfer, and image processing algorithms.
+Noise in an image is defined as unwanted visual artifacts that obscure the true image.
+Images acquire noise from a variety of sources, including cameras, data transfer, and image processing algorithms.
 %Noise can be completely random and incoherent (as in Figure \ref{fig:incoherent}), or it can be coherent and display visual patterns (Figure \ref{fig:coherent}).
-This section will focus on reducing a particular type of random noise in images called \emph{Gaussian white noise}.
+This section will focus on reducing a particular type of noise in images called \emph{Gaussian white noise}.
 
 %\begin{figure}[t]
 %\minipage{0.49\textwidth}
@@ -560,10 +628,11 @@ This section will focus on reducing a particular type of random noise in images 
 %\endminipage
 %\end{figure}
 
-An image that is distorted by Gaussian white noise is one in which every pixel has been perturbed by a small amount. % such that the perturbations are normally distributed.
+Gaussian white noise causes every pixel in an image to be perturbed by a small amount. % such that the perturbations are normally distributed.
 Many types of noise, including Gaussian white noise, are very high-frequency.
-Since many images are relatively sparse in the high-frequency domains, noise in an image can be safely removed from the high frequency subbands without distorting the true image very much.
-A basic but effective approach to reducing Gaussian white noise in an image is thresholding.
+Since many images are relatively sparse in high-frequency domains, noise in an image can be safely removed from the high frequency subbands while minimally distorting the true image.
+A basic, but effective, approach to reducing Gaussian white noise in an image is thresholding.
+Thresholding can be done in two ways, referred to as hard and soft thresholding.
 
 Given a positive threshold value $\tau$, hard thresholding sets every wavelet coefficient whose magnitude is less than $\tau$ to zero, while leaving the remaining coefficients untouched.
 Soft thresholding also zeros out all coefficients of magnitude less than $\tau$, but in addition maps the remaining positive coefficients $\beta$ to $\beta - \tau$ and the remaining negative coefficients
@@ -602,13 +671,9 @@ In fact, noise variance estimation in images is a research area in its own right
 %\end{figure}
 
 \begin{problem}
-Write two functions, one of which implements the hard thresholding technique and one of which implements the soft.
-While writing these two functions, remember the following:
-\begin{itemize}
-\item The functions should accept a list of wavelet coefficients in the usual form, as well as a threshold value.
-\item The functions should return the thresholded wavelet coefficients (also in the usual form).
-\item Since only the detail coefficients are thresholded, the first entry of the input coefficient list should remain unchanged.
-\end{itemize}
+Write two functions that accept a list of wavelet coefficients in the usual form, as well as a threshold value. Each function returns the thresholded wavelet coefficients (also in the usual form). The first function should implement hard thresholding and the second should implement soft thresholding.
+While writing these two functions, remember that only the detail coefficients are thresholded, so the first entry of the input coefficient list should remain unchanged.
+
 To test your functions, perform hard and soft thresholding on \texttt{noisy\_darkhair.png} and plot the resulting images together.
 When testing your function, use the Daubechies 4 wavelet and four sets of detail coefficients (\li{level=4} when using \li{wavedec2()}).
 For soft thresholding use $\tau=20$, and for hard thresholding use $\tau=40$.
@@ -634,15 +699,14 @@ a different Wavelet?
 
 \subsection*{Image Compression} % ---------------------------------------------
 
-Numerous image compression techniques have been developed over the years to reduce the cost of storing large quantities of images.
-Transform methods based on Fourier and wavelet analysis have long played an important role in these techniques; for example, the popular JPEG image compression standard is based on the discrete cosine transform.
+Transform methods based on Fourier and wavelet analysis play an important role in image compression; for example, the popular JPEG image compression standard is based on the discrete cosine transform.
 The JPEG2000 compression standard and the FBI Fingerprint Image database, along with other systems, take the wavelet approach.
 
-The general framework for compression is fairly straightforward.
+The general framework for compression is as follows.
 First, the image to be compressed undergoes some form of preprocessing, depending on the particular application.
 Next, the discrete wavelet transform is used to calculate the wavelet coefficients, and these are then \emph{quantized}, i.e. mapped to a set of discrete values (for example, rounded to the nearest integer).
 The quantized coefficients are then passed through an entropy encoder (such as Huffman Encoding), which reduces the number of bits required to store the coefficients.
-What remains is a compact stream of bits that can then be saved or transmitted much more efficiently than the original image.
+What remains is a compact stream of bits that can be saved or transmitted much more efficiently than the original image.
 The steps above are nearly all invertible (the only exception being quantization), allowing the original image to be almost perfectly reconstructed from the compressed bitstream.
 See Figure \ref{tikz:wsqscheme}.
 
@@ -682,8 +746,8 @@ The Wavelet Scalar Quantization (WSQ) algorithm is among the first successful wa
 It solves the problem of storing millions of fingerprint scans efficiently while meeting the law enforcement requirements for high image quality.
 This algorithm is capable of achieving compression ratios in excess of 10-to-1 while retaining excellent image quality; see Figure \ref{fig:finger_compression}.
 This section of the lab steps through a simplified version of this algorithm by writing a Python class that performs both the compression and decompression.
-Some of the difference between this simplified algorithm and the complete algorithm are found in the Additional Material section at the end of this lab.
-Also included in Additional Materials are the methods of the WSQ class that are needed to complete the algorithm.
+Differences between this simplified algorithm and the complete algorithm are found in the Additional Material section at the end of this lab.
+Also included in Additional Materials is a more thorough explanation of all the methods in the WSQ class.
 %Most of the methods of the class have already been implemented, the following problems will detail the methods you will need to implement yourself.
 
 \begin{figure}[H]
@@ -713,6 +777,7 @@ Original image source: \url{http://www.nist.gov/itl/iad/ig/wsq.cfm}.
 \end{figure}
 
 \subsubsection*{WSQ: Preprocessing}
+Preprocessing in this algorithm ensures that roughly half of the new pixel values are negative, while the other half are positive, and all fall in the range $[-128,\,128]$.
 The input to the algorithm is a matrix of nonnegative 8-bit integer values giving the grayscale pixel values for the fingerprint image.
 The image is processed by the following formula:
 \[
@@ -720,7 +785,7 @@ M' = \frac{M-m}{s},
 \]
 where $M$ is the original image matrix, $M'$ is the processed image, $m$ is the mean pixel value, and $s = \max\{\max(M) - m, m - \min(M)\}/128$
 (here $\max(M)$ and $\min(M)$ refer to the maximum and minimum pixel values in the matrix).
-This preprocessing ensures that roughly half of the new pixel values are negative, while the other half are positive, and all fall in the range $[-128,\,128]$.
+
 
 \begin{comment}
 To get the mean, min, and max of an array, and the max of two elements,
@@ -736,9 +801,8 @@ we use the following commands:
 
 \begin{problem}
 Implement the preprocessing step as well as its inverse by implementing the class methods \li{pre_process()} and \li{post_process()}.
-These methods should accept a NumPy array (the image) and return the processed image as a NumPy array.
-In the \li{pre_process()} method, calculate the values of $m$ and $s$ given above.
-These values are needed later on for decompression, so store them in the class attributes \li{_m} and \li{_s}.
+Each method accepts a NumPy array (the image) and returns the processed image as a NumPy array.
+In the \li{pre_process()} method, calculate the values of $m$ and $s$ given above and store them in the class attributes \li{_m} and \li{_s}.
 \end{problem}
 
 \subsubsection*{WSQ: Calculating the Wavelet Coefficients}
@@ -748,7 +812,7 @@ Each of these subbands should be placed into a list in the same ordering as in F
 each level of detail coefficients $[LL_5, LH_5, HL_5, HH_5, LH_4, HL_4,\dots ,HH_1]$).
 
 \begin{problem}
-Implement the subband decomposition as described above by implementing the class method \li{decompose()}.
+Implement the class method \li{decompose()}.
 This function should accept an image to decompose and should return a list of ordered subbands.
 Use the function \li{pywt.wavedec2()} with the \li{'coif1'} wavelet to obtain the subbands.
 These subbands should then be ordered in a single list as described above.
@@ -759,7 +823,7 @@ Use \li{pywt.waverec2()} to reconstruct an image from the subbands.
 Note that you will need to adjust the accepted list in order to adhere to the required input for \li{waverec2()}.
 \end{problem}
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
 \begin{tikzpicture}[scale=.60,thick]
 
@@ -780,7 +844,7 @@ Note that you will need to adjust the accepted list in order to adhere to the re
 \end{figure}
 
 \subsubsection*{WSQ: Quantization}
-Quantization is the process of mapping each wavelet coefficient to an integer value, and is the main source of compression in the algorithm.
+Quantization is the process of mapping each wavelet coefficient to an integer value and is the main source of compression in the algorithm.
 By mapping the wavelet coefficients to a relatively small set of integer values, the complexity of the data is reduced, which allows for efficient encoding of the information in a bit string.
 Further, a large portion of the wavelet coefficients will be mapped to 0 and discarded completely.
 The fact that fingerprint images tend to be very nearly sparse in the wavelet domain means that little information is lost during quantization.
@@ -827,7 +891,7 @@ The function should return a NumPy array of dequantized coefficients.
 
 Masking and array slicing will help keep your code short and fast when implementing both of these methods.
 Remember the case for $Q_k=0$.
-You can check that your functions are working correctly by comparing the output of your functions to a hand calculation on a small matrix.
+Test your functions by comparing the output of your functions to a hand calculation on a small matrix.
 %You may wish to make use of the array slicing techniques demonstrated below:
 %\begin{lstlisting}
 %>>> # assume X, Y are numpy arrays of same shape
@@ -1097,7 +1161,7 @@ Add the \li{decompress()} method to your class.
 The methods of compression and decompression are now fully implemented. The final task is to verify how much compression has taken place.
 The compression ratio is the ratio of the number of bits in the original image to the number of bits in the encoding.
 Assuming that each pixel of the input image is an 8-bit integer, the number of bits in the image is just eight times the number of pixels
-(recall that the number of pixels in the original source image is stored in the class attribute \li{_pixels}).
+(the number of pixels in the original source image is stored in the class attribute \li{_pixels}).
 The number of bits in the encoding can be calculated by adding up the lengths of each of the three bit strings stored in the class attribute \li{_bitstrings}.
 \begin{problem}
 Implement the method \li{get_ratio()} by calculating the ratio of compression.
@@ -1124,7 +1188,17 @@ plt.show()
 
 \section*{Additional Material} %-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 %---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+\subsection*{Haar Wavelet Transform}
+The Haar Wavelet is a general matrix transform used to convolve Haar Wavelets.
+It is found by combining the convolution matrices for a lowpass and highpass filter such that one is directly on top of the other.
+The lowpass filter is taking the average of every two elements in an array and the highpass filter is taking the difference of every two elements in an array.
+Redundant information given in the new matrix is then removed via downsampling.
+However, in order for the transform matrix to have the property $A^T=A^{-1}$, the columns of the matrix must be normalized.
+Thus, each column is normalized (and subsequently the filters) and the resulting matrix is the Haar Wavelet Transform.
 
+For more on the Haar Wavelet Transform, see \emph{Discrete Wavelet Transformations: An Elementary Approach with Applications} by Patrick J. Van Fleet.
+
+\subsection*{WSQ Algorithm}
 The official standard for the WSQ algorithm is slightly different from the version implemented in this lab.
 One of the largest differences is the subband pattern that is used in the official algorithm; this pattern is demonstrated in Figure \ref{fig:subbands2}.
 The pattern used may seem complicated and somewhat arbitrary, but it is used because of the relatively good empirical results when used in compression.
@@ -1251,6 +1325,7 @@ There are also some slight modifications made to the implementation of the discr
 \label{fig:subbands2}
 \end{figure}
 
+\begin{comment}
 The following code box contains the partially implemented WSQ class that is needed to complete the problems in this lab.
 \begin{lstlisting}
 class WSQ:
@@ -1832,7 +1907,7 @@ def huffman(freqs):
     root.makeMap(huff_map, '')
     return huff_map
 \end{lstlisting}
-
+\end{comment}
 
 \begin{comment}
 We don't need a lot of this expository content in the lab.

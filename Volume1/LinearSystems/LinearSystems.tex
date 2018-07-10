@@ -40,7 +40,7 @@ First, use multiples of the first row to get zeros below the diagonal in the fir
 \end{array}\right]
 \end{align*}
 
-Each of these operations is equivalent to left-multiplying by a \emph{type III elementary matrix}, the identity with one non-diagonal non-zero term.
+Each of these operations is equivalent to left-multiplying by a \emph{type III elementary matrix}, the identity with a single non-zero non-diagonal term.
 If row operation $k$ corresponds to matrix $E_k$, the following equation is $E_3E_2E_1A = U$.
 %
 \begin{align*}
@@ -151,15 +151,14 @@ Suppose $A$ has an LU decomposition (not requiring row swaps).
 Then $A$ can be reduced to REF with $k$ row operations, corresponding to left-multiplying the type III elementary matrices $E_1, \ldots, E_k$.
 % Then $U = E_k \ldots E_2E_1A,$ where $U$ is the REF of $A$.
 Because there were no row swaps, each $E_i$ is lower triangular, so each inverse $E_i^{-1}$ is also lower triangular.
-Furthermore, since the product of lower triangular matrices is lower triangular, $L$ is lower triangular.
-%
+Furthermore, since the product of lower triangular matrices is lower triangular, $L$ is lower triangular:
 \begin{align*}
 E_k\ldots E_2E_1 A = U\quad \longrightarrow\quad A &= (E_k \ldots E_2E_1)^{-1} U \\
 &= E_1^{-1}E_2^{-1}\ldots E_k^{-1}U \\
-&= LU
+&= LU.
 \end{align*}
 
-Thus $L$ can be computed by right-multiplying the identity by the matrices used to reduce $U$.
+Thus, $L$ can be computed by right-multiplying the identity by the matrices used to reduce $U$.
 However, in this special situation, each right-multiplication only changes one entry of $L$, matrix multiplication can be avoided altogether.
 The entire process, only slightly different than row reduction, is summarized below. % in Algorithm \ref{alg:LU-Decomposition}.
 %
@@ -198,8 +197,7 @@ This system can be solved by first solving $L\y = P\b$, then $U\x = \y$.
 Since $L$ and $U$ are both triangular, these systems can be solved with backward and forward substitution.
 We can thus compute the $LU$ factorization of $A$ once, then use substitution to efficiently solve $A\x=\b$ for various values of $\b$.
 
-Since the diagonal entries of $L$ are all $1$, the triangular system $L\y = \b$ has the following form.
-%
+Since the diagonal entries of $L$ are all $1$, the triangular system $L\y = \b$ has the form
 \begin{align*}
 \left[\begin{array}{ccccc}
 1      & 0      & 0      & \cdots & 0 \\
@@ -216,18 +214,17 @@ y_1 \\ y_2 \\ y_3 \\ \vdots \\ y_n \\
 b_1 \\ b_2 \\ b_3 \\ \vdots \\ b_n \\
 \end{array}\right].
 \end{align*}
-Matrix multiplication yields the following equations.
+Matrix multiplication yields the equations
 %
 \begin{align}
-\nonumber y_1 &= b_1 & y_1 &= b_1 \\
-\nonumber l_{21}y_1 + y_2 &= b_2 & y_2 &= b_2 - l_{21}y_1 \\
+\nonumber y_1 &= b_1, & y_1 &= b_1, \\
+\nonumber l_{21}y_1 + y_2 &= b_2, & y_2 &= b_2 - l_{21}y_1, \\
 % \nonumber l_{31}y_1 + l_{21}y_2 + y_3 &= b_3 & y_3 &= b_3 - l_{31}y_1 - l_{32}y_2 \\
 \nonumber & \vdots & \vdots & \\
-\sum_{j=1}^{k-1}l_{kj}y_j + y_k &= b_k & y_k &= b_k - \sum_{j=1}^{k-1}l_{kj}y_j
+\sum_{j=1}^{k-1}l_{kj}y_j + y_k &= b_k, & y_k &= b_k - \sum_{j=1}^{k-1}l_{kj}y_j.
 \label{eq:forward-substitution}
 \end{align}
-The triangular system $U\x = \y$ yields similar equations, but in reverse order.
-%
+The triangular system $U\x = \y$ yields similar equations, but in reverse order:
 \begin{align*}
 \left[\begin{array}{ccccc}
 u_{11} & u_{12} & u_{13} & \cdots & u_{1n} \\
@@ -242,14 +239,13 @@ x_1 \\ x_2 \\ x_3 \\ \vdots \\ x_n \\
 =
 \left[\begin{array}{c}
 y_1 \\ y_2 \\ y_3 \\ \vdots \\ y_n \\
-\end{array}\right]
+\end{array}\right],
 \end{align*}
-%
 \begin{align}
-\nonumber u_{nn}x_n &= y_n & x_n &= \frac{1}{u_{nn}}y_n \\
-\nonumber u_{n-1,n-1}x_{n-1} + u_{n-1,n}x_{n} &= y_{n-1} & x_{n-1} &= \frac{1}{u_{n-1,n-1}}\left(y_{n-1} - u_{n-1,n}x_{n}\right)\\
+\nonumber u_{nn}x_n &= y_n, & x_n &= \frac{1}{u_{nn}}y_n, \\
+\nonumber u_{n-1,n-1}x_{n-1} + u_{n-1,n}x_{n} &= y_{n-1}, & x_{n-1} &= \frac{1}{u_{n-1,n-1}}\left(y_{n-1} - u_{n-1,n}x_{n}\right),\\
 \nonumber & \vdots & \vdots & \\
-\sum_{j=k}^{n}u_{kj}x_j &= y_k & x_k &= \frac{1}{u_{kk}}\left(y_k - \sum_{j=k+1}^{n}u_{kj}x_j\right)
+\sum_{j=k}^{n}u_{kj}x_j &= y_k, & x_k &= \frac{1}{u_{kk}}\left(y_k - \sum_{j=k+1}^{n}u_{kj}x_j\right).
 \label{eq:backward-substitution}
 \end{align}
 
@@ -267,7 +263,7 @@ It includes high-level tools for linear algebra, statistics, signal processing, 
 
 SciPy is typically imported with the convention \li{import scipy as sp}.
 However, SciPy is set up in a way that requires its submodules to be imported individually.%
-\footnote{SciPy modules like \li{linalg} are really \emph{packages}, which need to be initialized separately. For example, to import SciPy's \li{linalg} package use \li{from scipy import linalg as la}.}
+\footnote{SciPy modules like \lif{linalg} are really \emph{packages}, which are not initialized when SciPy is imported alone.}
 
 \begin{lstlisting}
 >>> import scipy as sp
@@ -802,8 +798,8 @@ the matrix where $\a_k$ is the $k$th column.
 $\det(A) = \det(P^{-1}LU) = \frac{\det(L)\det(U)}{\det(P)}$.
 The determinant of a triangular matrix is the product of its diagonal entries. Since every diagonal entry of $L$ is 1, $\det(L) = 1$.
 Also, $P$ is just a row permutation of the identity matrix (which has determinant $1$), and a single row swap negates the determinant.
-Then if $S$ is the number of row swaps, the determinant is given by the following equation.
-\[\det(A) = (-1)^S\prod_{i=1}^nu_{ii}\]
+Then if $S$ is the number of row swaps, the determinant is given by
+\[\det(A) = (-1)^S\prod_{i=1}^nu_{ii}.\]
 \end{itemize}
 
 \subsection*{The Cholesky Decomposition} % ------------------------------------

@@ -309,6 +309,7 @@
 \DeclareOption{yellow}{\renewcommand{\@numcolor}{yellow}}
 \DeclareOption{green}{\renewcommand{\@numcolor}{green}}
 \DeclareOption{black}{\renewcommand{\@numcolor}{black}}
+\DeclareOption{grey}{\renewcommand{\@numcolor}{gray!90}}
 
 \DeclareOption{a4paper}
    {\setlength\paperheight {297mm}%

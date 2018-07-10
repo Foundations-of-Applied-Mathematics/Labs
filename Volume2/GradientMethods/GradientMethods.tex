@@ -1,417 +1,378 @@
 \lab{Gradient Descent Methods}{Gradient Descent Methods}
 
-\objective{Many optimization methods fall under the umbrella of descent algorithms.
-The idea is to choose an initial guess, identify a direction from this point along with the objective function decreases, and preform a line search to find a new point where the objective function is smaller than at the initial guess.
-\\ \indent In this lab, we implement two major descent algorithms: the method of steepest descent, which uses the gradient of the objective function as the descent direction, and the conjugate gradient algorithm, which uses a conjugate basis as the descent directions.
-We then apply these techniques to linear and logistic regression problems.}
+\objective{Iterative optimization methods choose a search direction and a step size at each iteration.
+One simple choice for the search direction is the negative gradient, resulting in the method of steepest descent.
+While theoretically foundational, in practice this method is often slow to converge.
+An alternative method, the conjugate gradient algorithm, uses a similar idea that results in much faster convergence in some situations.
+In this lab we implement a method of steepest descent and two conjugate gradient methods, then apply them to regression problems.
+}
 
 \section*{The Method of Steepest Descent} % ===================================
 
-Recall the basic idea of a line search algorithm to optimize: at the $k$th iteration, choose a search direction $\mathbf{p}_k$ and a step size $\alpha_k$, then compute $\x_{k+1} = \x_{k} + \alpha_k\mathbf{p}_k$.
-If $f:\mathbb{R}^n\rightarrow\mathbb{R}$ is a scalar-valued function, its gradient $\nabla f:\mathbb{R}^n\rightarrow\mathbb{R}^n$ points in the direction of steepest increase of $f$.
-It follows that the opposite direction is the direction of steepest decrease, or \emph{descent}.
+Let $f:\mathbb{R}^n \rightarrow \mathbb{R}$ with first derivative $Df:\mathbb{R}^n \rightarrow \mathbb{R}^n$.
+% (by convention, $Df(\x)$ is a row vector).
+The following iterative technique is a common template for methods that aim to compute a local minimizer $\x^*$ of $f$.
+% Many optimization methods fall under the umbrella of descent algorithms.
+% These algorithms utilize an initial guess, a direction on which the objective function decreases, and a step size to perform a line search for the next point in the iteration.
+% This can be mathematically formulated at the $k$th iteration with the following:
+\begin{equation}
+\x_{k+1} = \x_k + \alpha_{k}\mathbf{p}_k
+\label{eq:gradientmethods-linesearch}
+\end{equation}
+Here $\x_k$ is the $k$th approximation to $\x^*$, $\alpha_k$ is the \emph{step size}, and $\mathbf{p}_k$ is the \emph{search direction}.
+Newton's method and its relatives follow this pattern, but they require the calculation (or approximation) of the inverse Hessian matrix $Df^2(\x_k)^{-1}$ at each step.
+The following idea is a simpler and less computationally intensive approach than Newton and quasi-Newton methods.
 
-% TODO: use the Wolfe / Armijo conditions for backtracking the step size.
-The \emph{method of steepest descent} is a line search method that uses $\mathbf{p}_k = -\nabla f(\x_k)$ as the search direction.
-A simple version of the method chooses the step size as follows:
-\begin{enumerate}
-    \item At the $k$th iteration, start with a step size of $\alpha = 1$.
-    \item Check that $f(\x_k - \alpha\nabla f(\x_k)) < f(\x_k)$ (i.e. check that the function decreases in the search direction), and if it does, set $\x_{k+1} = \x_k - \alpha\nabla f(\x_k)$.
-    \item If the function does \emph{not} decrease, set $\alpha = \frac{\alpha}{2}$ and check the search direction again.
-    Repeat this step until the function decreases in the search direction.
-    \item If $\alpha$ is scaled below a given tolerance, terminate the iteration.
-\end{enumerate}
+The derivative $Df(\x)\trp$ (often called the \emph{gradient} of $f$ at $\x$, sometimes notated $\nabla f(\x)$) is a vector that points in the direction of greatest \textbf{increase} of $f$ at $\x$.
+It follows that the negative derivative $-Df(\x)\trp$ points in the direction of steepest \textbf{decrease} at $\x$.
+The \emph{method of steepest descent} chooses the search direction $\p_k = -Df(\x_k)\trp$ at each step of \eqref{eq:gradientmethods-linesearch}, resulting in the following algorithm.
+\begin{equation}
+\x_{k+1} = \x_k - \alpha_{k}Df(\x_k)\trp
+\label{eq:gradientmethods-steepest-descent}
+\end{equation}
 
-\begin{problem}
-Write a function that accepts a convex objective function $f:\mathbb{R}^n\rightarrow\mathbb{R}$, its derivative $Df:\mathbb{R}^n\rightarrow\mathbb{R}^n$, an initial guess $x_0\in\mathbb{R}^n$, a convergence tolerance, and a maximum number of iterations.
-Use the Method of Steepest Descent to compute the minimizer of $f$.
-Continue the algorithm until $\alpha$ is less than the convergence tolerance, or until iterating the maximum number of times.
-Return the minimizer.
+Setting $\alpha_k = 1$ for each $k$ is often sufficient for Newton and quasi-Newton methods.
+However, a constant choice for the step size in \eqref{eq:gradientmethods-steepest-descent} can result in oscillating approximations or even cause the sequence $(\x_k)_{k=1}^\infty$ to travel away from the minimizer $\x^*$.
+To avoid this problem, the step size $\alpha_k$ can be chosen in a few ways.
+\begin{itemize}
+    \item Start with $\alpha_k = 1$, then set $\alpha_k = \frac{\alpha_k}{2}$ until $f(\x_k - \alpha_k Df(\x_k)\trp) < f(\x_k)$, terminating the iteration if $\alpha_k$ gets too small.
+    This guarantees that the method actually descends at each step and that $\alpha_k$ satisfies the Armijo rule, without endangering convergence.
+
+    \item At each step, solve the following one-dimensional optimization problem.
+    \[
+    \alpha_k = \underset{\alpha}{\text{argmin}}\ f(\x_k - \alpha Df(\x_k)\trp)
+    \]
+    Using this choice is called \emph{exact steepest descent}.
+    This option is more expensive per iteration than the above strategy, but it results in fewer iterations before convergence.
+\end{itemize}
+
+\begin{problem} % Implement exact steepest descent.
+Write a function that accepts an objective function $f:\mathbb{R}^n\rightarrow\mathbb{R}$, its derivative $Df:\mathbb{R}^n\rightarrow\mathbb{R}^n$, an initial guess $\x_0\in\mathbb{R}^n$, a convergence tolerance \li{tol} defaulting to $1e^{-5}$, and a maximum number of iterations \li{maxiter} defaulting to $100$.
+Implement the exact method of steepest descent, using a one-dimensional optimization method to choose the step size (use \li{opt.minimize_scalar()} or your own 1-D minimizer).
+Iterate until $\|Df(\x_k)\|_{\infty} < $ \li{tol} or $k > $ \li{maxiter}.
+Return the approximate minimizer $\x^*$, whether or not the algorithm converged (\li{True} or \li{False}), and the number of iterations computed.
+
+Test your function on $f(x,y,z) = x^4 + y^4 + z^4$ (easy) and the Rosenbrock function (hard).
+It should take many iterations to minimize the Rosenbrock function, but it should converge eventually with a large enough choice of \li{maxiter}.
+\label{prob:gradientmethods-steepest-descent}
 \end{problem}
 
-\section*{The Conjugate-Gradient Method} % ====================================
+\section*{The Conjugate Gradient Method} % ====================================
 
-Unfortunately, the method of steepest descent can be very inefficient for certain problems: depending on the geometry of the objective function, the sequence of points can ``zig-zag" back and forth without making significant progress toward the true minimizer.
-In contrast, the \emph{Conjugate-Gradient algorithm} ensures that the true global minimizer is reached in at most $n$ steps. See
-Figure \ref{basis:steepVsConj} for an illustration of this contrast.
+Unfortunately, the method of steepest descent can be very inefficient for certain problems.
+Depending on the nature of the objective function, the sequence of points can zig-zag back and forth or get stuck on flat areas without making significant progress toward the true minimizer.
 
-There are many methods for solving the linear system of equations $A\x = \b$, each with its own pros and cons.
-The Conjugate-Gradient algorithm is one such method for solving large systems of equations where other methods, such as Cholesky factorization and simple Gaussian elimination, are unsuitable.
-However, the algorithm works equally well for optimizing convex quadratic functions, and it can even be extended to more general classes of optimization problems.
+\begin{figure}[H]
+\centering
+\includegraphics[width=.7\textwidth]{figures/steepest.pdf}
+\caption{On this surface, gradient descent takes an extreme number of iterations to converge to the minimum because it gets stuck in the flat basins of the surface.}
+\label{basis:steepest}
+\end{figure}
 
-The type of linear system that Conjugate-Gradient can solve involves a matrix with special structure.
-Given a symmetric positive-definite $n\times n$ matrix $Q$ and an $n$-vector $b$, we wish to find the $n$-vector $x$ satisfying
+Unlike the method of steepest descent, the \emph{conjugate gradient algorithm} chooses a search direction that is guaranteed to be a descent direction, though not the direction of greatest descent.
+These directions are using a generalized form of orthogonality called \emph{conjugacy}.
+
+Let $Q$ be a square, positive definite matrix.
+A set of vectors $\{\x_0, \x_1, \ldots, \x_m\}$ is called \emph{Q-conjugate} if each distinct pair of vectors $\x_i,\x_j$ satisfy $\x_i\trp Q\x_j = 0$.
+A $Q$-conjugate set of vectors is linearly independent and can form a basis that diagonalizes the matrix $Q$.
+This guarantees that an iterative method to solve $Q\x = \b$ only require as many steps as there are basis vectors.
+
+Solve a positive definite system $Q\x = \b$ is valuable in and of itself for certain problems, but it is also equivalent to minimizing certain functions.
+Specifically, consider the quadratic function
 \[
-Qx = b.
+f(\x) = \frac{1}{2}\x\trp Q\x - \b\trp\x + c.
 \]
-A unique solution exists because positive-definiteness implies invertibility.
-For our purposes here, it is useful to recast this problem as an equivalent optimization problem:
+Because $Df(\x)\trp = Q\x - \b$, minimizing $f$ is the same as solving the equation
 \[
-\min_{\x} f(\x) := \frac{1}{2}\x\trp Q\x - \b\trp\x + \c.
+\0 = Df(\x)\trp = Q\x - \b\quad\Rightarrow\quad Q\x = \b,
 \]
-Note that $\nabla f(\x) = Q\x - \b$, so that minimizing $f$ is the same as solving the equation \[ 0 = \nabla f(\x) = Q\x - \b, \]
 which is the original linear system.
+Note that the constant $c$ does not affect the minimizer, since if $\x^*$ minimizes $f(\x)$ it also minimizes $f(\x)+c$.
 
-% TODO: Probably move this method to the introduction.
-%
-% Line Search methods belonging to the class called \emph{descent algorithms} use the following strategy: start with an initial guess $\x_0$, identify a direction from this particular point along which the objective function decreases (called a \emph{descent direction}), and perform a line search to
-% find a new point $x_1$ satisfying $f(x_1) < f(x_0)$. Continue iteratively to produce a sequence of points $\{x_0, x_1, x_2, \ldots \}$
-% that (hopefully) converges to the true minimizer.
-%
+% This technique is very useful for solving large systems of equations in situations where other methods are unsuitable and where the matrix $Q$ is positive definite, which implies invertibility.
+% It works equally well for optimizing convex quadratic functions and can be extended to more general non-linear classes of optimization.
 
-\begin{figure}
+% \subsection*{The Algorithm} % -----------------------------------------------
+
+Using the conjugate directions guarantees an iterative method to converge on the minimizer because each iteration minimizes the objective function over a subspace of dimension equal to the iteration number.
+Thus, after $n$ steps, where $n$ is the number of conjugate basis vectors, the algorithm has found a minimizer over the entire space.
+In certain situations, this has a great advantage over gradient descent, which can bounce back and forth.
+This comparison is illustrated in Figure \ref{basis:steepVsConj}.
+Additionally, because the method utilizes a basis of conjugate vectors, the previous search direction can be used to find a conjugate projection onto the next subspace, saving computational time.
+
+\begin{figure}[H]
 \centering
 \includegraphics[width=.7\textwidth]{figures/steepVsConj.pdf}
-\caption{Paths traced by Steepest Descent (blue) and Conjugate-Gradient (green). Notice the
-zig-zagging nature of the Steepest Descent path, as opposed to the direct Conjugate-Gradient path,
-which finds the minimizer in 2 steps.}
+\caption{Paths traced by Gradient Descent (orange) and Conjugate Gradient (red) on a quadratic surface.
+Notice the zig-zagging nature of the Gradient Descent path, as opposed to the Conjugate Gradient path, which finds the minimizer in 2 steps.}
 \label{basis:steepVsConj}
 \end{figure}
 
-\subsection*{Conjugacy} % -----------------------------------------------------
-Unlike the method of steepest descent, the conjugate gradient algorithm chooses a search direction based off of the matrix $Q$ that is guaranteed to be a direction of descent, though not the direction of greatest descent.
+% Algorithm \ref{Alg:linear-conjugate-gradient} contains these techniques and outlines an iterative process2 for solving the linear system $Q\x = \b$.
 
-Two vectors $\x,\y \in \mathbb{R}^n$ are said to be \emph{conjugate}
-with respect to $Q$ if $\x\trp Q\y = 0$.
-A set of vectors $\{\x_0, \x_1, \ldots, \x_m\}$ is said to be conjugate if each pair of vectors are conjugate to each other.
-Note that if $Q = I$, then conjugacy is the same as orthogonality.
-Thus, the notion of conjugacy is in some ways a generalization
-of orthogonality.
-It turns out that a conjugate set of vectors is linearly independent, and a conjugate basis--which can be constructed in a manner analogous to the Gram-Schmidt orthogonalization process--can be used to diagonalize the matrix $Q$.
-These are some of the theoretical reasons behind the effectiveness of the Conjugate-Gradient algorithm.
-% TODO: Take this section out? Add more to it?
-
-\subsection*{The Algorithm} % -------------------------------------------------
-
-If we are given a set of $n$ $Q$-conjugate vectors, we can simply choose these as our direction vectors and follow the basic descent algorithm.
-Convergence to the minimizer in at most $n$ steps is guaranteed because each iteration in the algorithm minimizes the objective function
-over an expanding affine subspace of dimension equal to the iteration number. Thus, at the $n$-th iteration, we have minimized the function over all of
-$\mathbb{R}^n$.
-
-Unfortunately, we are not often given a set of conjugate vectors in advance, so how do we produce such a set? As mentioned earlier, a
-Gram-Schmidt process could be used, and the set of eigenvectors also works, but both of these options are computationally expensive.
-Built into the algorithm is a way to determine a new conjugate direction based only on the previous direction, which means less memory usage and
-faster computation. We have stated the details of Conjugate-Gradient in Algorithm \ref{alg:conjgrad}.
-\begin{algorithm}
+\begin{algorithm}[H]
 \begin{algorithmic}[1]
-\Procedure{Conjugate-Gradient Algorithm}{}
-    \State \textrm{Choose initial point } $x_0$.
-    \State $r_0 \gets Qx_0 - b, d_0 \gets -r_0, k \gets 0$.
-    \While{$r_k \neq 0$}
-        \State $\alpha_k \gets \frac{r_k^Tr_k}{d_k^TQd_k}$.
-        \State $x_{k+1} \gets x_k + \alpha_kd_k$.
-        \State $r_{k+1} \gets r_k + \alpha_kQd_k$.
-        \State $\beta_{k+1} \gets \frac{r_{k+1}^Tr_{k+1}}{r_k^Tr_k}$.
-        \State $d_{k+1} \gets -r_{k+1} + \beta_{k+1}d_k$.
+\Procedure{Conjugate Gradient}{$\x_0$, $Q$, $\mathbf{b}$, \li{tol}}
+    % \State \textrm{Choose initial point } $\x_0$.
+    \State $\mathbf{r}_0 \gets Q\x_0 - \b$
+    \State $\mathbf{d}_0 \gets -\mathbf{r}_0$
+    \State $k \gets 0$
+    \While{$\|\mathbf{r}_k\| \geq $ \li{tol},\ $k \le n$}
+        \State $\alpha_k \gets \mathbf{r}_k\trp \mathbf{r}_k / \mathbf{d}_k\trp Q\mathbf{d}_k$
+        \State $\x_{k+1} \gets \x_k + \alpha_k \mathbf{d}_k$
+        \State $\mathbf{r}_{k+1} \gets \mathbf{r}_k + \alpha_k Q\mathbf{d}_k$
+        \State $\beta_{k+1} \gets \mathbf{r}_{k+1}\trp \mathbf{r}_{k+1} / \mathbf{r}_k\trp \mathbf{r}_k$
+        \State $\mathbf{d}_{k+1} \gets -\mathbf{r}_{k+1} + \beta_{k+1}\mathbf{d}_k$
         \State $k \gets k+1$.
     \EndWhile
+    \pseudoli{return} $\x_k$
 \EndProcedure
 \end{algorithmic}
-\caption{Conjugate-Gradient Algorithm}
-\label{alg:conjgrad}
+\caption{}
+\label{Alg:linear-conjugate-gradient}
 \end{algorithm}
 
-Note that the points $x_i$ are the successive approximations to the minimizer, the vectors $d_i$ are the conjugate descent
-directions, and the vectors $r_i$, which actually correspond to the steepest descent directions, are used in determining the conjugate directions.
-The constants $\alpha_i$ and $\beta_i$ are used, respectively, in the line search, and in ensuring the $Q$-conjugacy of the descent directions.
+The points $\x_k$ are the successive approximations to the minimizer, the vectors $\mathbf{d}_k$ are the conjugate descent directions, and the vectors $\mathbf{r}_k$ (which actually correspond to the steepest descent directions) are used in determining the conjugate directions.
+The constants $\alpha_k$ and $\beta_k$ are used, respectively, in the line search, and in ensuring the $Q$-conjugacy of the descent directions.
 
-The most numerically expensive computation in the algorithm is matrix-vector multiplication.
-Notice, however, that each iteration of the algorithm only requires one distinct matrix-vector multiplication, $Qd_k$. The rest of the
-operations are simply vector-vector multiplication, addition, and scalar multiplication. This makes for a very fast algorithm.
-As noted earlier, Conjugate-Gradient is especially preferred when $Q$ is large and sparse. In this case, it may be possible to
-design a specialized sub-routine that performs matrix-vector multiplication by $Q$, by taking advantage of its sparseness. Doing so may
-lead to further speed-ups in the overall algorithm.
+\begin{problem} % Conjugate gradient for linear systems.
+Write a function that accepts an $n \times n$ positive definite matrix $Q$, a vector $\b\in\mathbb{R}^n$, an initial guess $\x_0\in\mathbb{R}^n$, and a stopping tolerance.
+Use Algorithm \ref{Alg:linear-conjugate-gradient} to solve the system $Q\x = \b$.
+Continue the algorithm until $\|\mathbf{r}_k\|$ is less than the tolerance, iterating no more than $n$ times.
+Return the solution $\x$, whether or not the algorithm converged in $n$ iterations or less, and the number of iterations computed.
 
-We now have an algorithm that can solve certain $n \times n$ linear systems and minimize quadratic functions on $\mathbb{R}^n$ in at most $n$ steps,
-and sometimes fewer, depending on the spectrum of the matrix $Q$. Further improvements on convergence may be obtained by preconditioning the matrix,
-but we do not go into detail here.
+Test your function on the simple system
+\[
+Q = \left[\begin{array}{cc}2 & 0 \\ 0 & 4\end{array}\right],
+\qquad
+\b = \left[\begin{array}{c}1 \\ 8\end{array}\right],
+\]
+which has solution $\x^* = \left[\frac{1}{2}, 2\right]\trp$.
+This is equivalent to minimizing the quadratic function $f(x,y) = x^2 + 2y^2 - x - 8y$; check that your function from Problem \ref{prob:gradientmethods-steepest-descent} gets the same solution.
 
-\begin{problem}
-Implement the basic Conjugate-Gradient algorithm presented above.
-Write a function \li{conjugateGradient()} that accepts a vector $b$, an initial
-guess $x_0$, a symmetric positive-definite matrix $Q$, and a default tolerance of .0001 as inputs.
-Continue the algorithm until $\|r_k\|$ is less than the tolerance.
-Return the solution $x^*$ to the linear system $Qx = b$.
-\end{problem}
-
-\section*{Example}
-We now work through an example that demonstrates the usage of the Conjugate-Gradient algorithm. We assume that we have already written
-the specified function in the above problem.
-
-We must first generate a symmetric positive-definite matrix $Q$. This can be done by generating a random matrix $A$ and setting $Q = A^TA$.
-So long as $A$ is of full column rank, the matrix $Q$ will be symmetric positive-definite.
+More generally, you can generate a random positive definite matrix $Q$ for testing by setting setting $Q = A\trp A$ for any $A$ of full rank.
 \begin{lstlisting}
 >>> import numpy as np
 >>> from scipy import linalg as la
 
->>> # initialize the desired dimension of the space
+# Generate Q, b, and the initial guess x0.
 >>> n = 10
-
->>> # generate Q, b
 >>> A = np.random.random((n,n))
->>> Q = A.T.dot(A)
->>> b = np.random.random(n)
+>>> Q = A.T @ A
+>>> b, x0 = np.random.random((2,n))
+
+>>> x = la.solve(Q, b)      # Use your function here.
+>>> np.allclose(Q @ x, b)
+<<True>>
 \end{lstlisting}
-At this point, check to make sure that $Q$ is nonsingular by examining its determinant (use \li{scipy.linalg.det()}).
-Provided that the determinant is nonzero, we proceed by writing a function that performs matrix-vector multiplication by $Q$ (we
-will not take advantage of sparseness just now), randomly selecting a starting point (Conjugate-Gradient is not sensitive to the location of
-the starting point), obtaining the answer using our function, and checking it with the answer obtained by \li{scipy.linalg.solve()}.
+\label{prob:gradientmethods-linear-cg}
+\end{problem}
+
+\subsection*{Non-linear Conjugate Gradient}
+The algorithm presented above is only valid for certain linear systems and quadratic functions, but the basic strategy may be adapted to minimize more general convex or non-linear functions.
+Though the non-linear version does not have guaranteed convergence as the linear formulation does, it can still converge in less iterations than the method of steepest descent.
+Modifying the algorithm for more general functions requires new formulas for $\alpha_k$, $\mathbf{r}_k$, and $\beta_k$.
+
+\begin{itemize}
+\item The scalar $\alpha_k$ is simply the result of performing a line-search in the given direction $\mathbf{d}_k$ and is thus defined $\alpha_k = \underset{\alpha}{\text{argmin}}\ f(\x_k + \alpha \mathbf{d}_k)$.
+\item The vector $\mathbf{r}_k$ in the original algorithm was really just the gradient of the objective function, so now define $\mathbf{r}_k = Df(\x_k)\trp$.
+\item The constants $\beta_k$ can be defined in various ways, and the most correct choice depends on the nature of the objective function.
+A well-known formula, attributed to Fletcher and Reeves, is $\beta_{k} = Df(\x_k)Df(\x_{k})\trp / Df(\x_{k-1}) Df(\x_{k-1})\trp$.
+\end{itemize}
+%
+% Inserting these adjustments to Algorithm \ref{Alg:linear-conjugate-gradient} results in the following routine.
+
+\begin{algorithm}[H]
+\begin{algorithmic}[1]
+\Procedure{Non-Linear Conjugate Gradient}{$f$,\ $Df$,\ $\x_0$,\ \li{tol},\ \li{maxiter}}
+    \State $\mathbf{r}_0 \gets -Df(\x_0)\trp$
+    \State $\mathbf{d}_0 \gets \mathbf{r}_0$
+    \State $\alpha_0 \gets \underset{\alpha}{\text{argmin}} f(\x_0 + \alpha\mathbf{d}_0)$
+    \State $\x_{1} \gets \x_0 + \alpha_0 \mathbf{d}_0$
+    \State $k \gets 1$
+    \While{$\|\mathbf{r}_k\| \geq$ \li{tol},\ $k < $ \li{maxiter}}
+        \State $\mathbf{r}_{k} \gets -Df(\x_k)\trp$
+        \State $\beta_{k} = \mathbf{r}_{k}\trp \mathbf{r}_k / \mathbf{r}_{k-1}\trp \mathbf{r}_{k-1}$
+        \State $\mathbf{d}_{k} \gets \mathbf{r}_{k} + \beta_{n}\mathbf{d}_{k-1}$.
+        \State $\alpha_k \gets \underset{\alpha}{\text{argmin}}\ f(\x_k + \alpha\mathbf{d}_k (\x_k))$.
+        \State $\x_{k+1} \gets \x_k + \alpha_k\mathbf{d}_k$.
+        \State $k \gets k+1$.
+    \EndWhile
+\EndProcedure
+\end{algorithmic}
+\caption{}
+\label{Alg:nonlinear-conjugate-gradient}
+\end{algorithm}
+
+\begin{problem}
+Write a function that accepts a convex objective function $f$, its derivative $Df$, an initial guess $\x_0$, a convergence tolerance defaultin to $1e^{-5}$, and a maximum number of iterations defaultin to $100$.
+Use Algorithm \ref{Alg:nonlinear-conjugate-gradient} to compute the minimizer $\x^*$ of $f$.
+Return the approximate minimizer, whether or not the algorithm converged, and the number of iterations computed.
+
+Compare your function to SciPy's \li{opt.fmin_cg()}.
 \begin{lstlisting}
->>> # generate random starting point
->>> x0 = np.random.random(n)
-
->>> # find the solution
->>> x = conjugateGradient(b, x0, mult)
-
->>> # compare to the answer obtained by SciPy
->>> print np.allclose(x, la.solve(Q,b))
+>>> opt.fmin_cg(opt.rosen, np.array([10, 10]), fprime=opt.rosen_der)
+<<Optimization terminated successfully.
+         Current function value: 0.000000
+         Iterations: 44
+         Function evaluations: 102>>  # Much faster than steepest descent!
+         <<Gradient evaluations: 102>>
+array([ 1.00000007,  1.00000015])
 \end{lstlisting}
-The output of the print statement should be \li{True}.
+\label{prob:gradientdescent-nonlinear-cg}
+\end{problem}
 
-Time the performance of your algorithm and of \li{scipy.linalg.solve()} on inputs of size 100.
+\section*{Regression Problems} % ==============================================
 
-\section*{Application: Least Squares and Linear Regression}
-The Conjugate-Gradient method can be used to solve linear least squares problems, which are ubiquitous in applied science.
+A major use of the conjugate gradient method is solving linear least squares problems.
 Recall that a least squares problem can be formulated as an optimization problem:
 \[
-\min_x \|Ax - b\|_2,
+\x^* = \min_\x \|A\x -\textbf{ b}\|_2,
 \]
-where $A$ is an $m \times n$ matrix with full column rank, $x \in \mathbb{R}^n$, and $b \in \mathbb{R}^m$. The solution can
+where $A$ is an $m \times n$ matrix with full column rank, $\x \in \mathbb{R}^n$, and $\b \in \mathbb{R}^m$. The solution can
 be calculated analytically, and is given by
 \[
-x^* = (A^TA)^{-1}A^Tb,
+\x^* = (A\trp A)^{-1}A\trp \b.
 \]
-or in other words, the minimizer solves the linear system
-\[
-A^TAx = A^Tb.
-\]
-Since $A$ has full column rank, we know that $A^TA$ is an $n \times n$ matrix of rank $n$, which means it is invertible. We can
-therefore conclude that $A^TA$ is symmetric positive-definite, so we may use Conjugate-Gradient to solve the linear system
-and obtain the least squares solution.
+In other words, the minimizer solves the linear system
+\begin{equation}
+A\trp A\x = A\trp \b.
+\label{eq:ls}
+\end{equation}
+Since $A$ has full column rank, it is invertible, $A\trp A$ is positive definite, and for any non-zero vector $\textbf{z}$, $A\textbf{z}\neq 0$.
+Therefore, $\textbf{z}\trp A\trp A\textbf{z} = \Vert A\textbf{z} \Vert^2 > 0$.
+As $A\trp A$ is positive definite, conjugate gradient can be used to solve Equation \ref{eq:ls}.
 
-Linear least squares is the mathematical underpinning of linear regression, which is a very common technique in many scientific fields.
-In a typical linear regression problem, we have a set of real-valued data points \{$y_1,\ldots, y_m\}$, where each
+Linear least squares is the mathematical underpinning of \emph{linear regression}.
+Linear regression involves a set of real-valued data points \{$y_1,\ldots, y_m\}$, where each
 $y_i$ is paired with a corresponding set of predictor variables $\{x_{i,1}, x_{i,2}, \ldots, x_{i,n}\}$ with $n < m$.
 The linear regression model posits that
 \[
-y_i = \beta_0 + \beta_1x_{i,1} + \beta_2x_{i,2} + \cdots + \beta_nx_{i,n} + \epsilon_i
+y_i = \beta_0 + \beta_1 x_{i,1} + \beta_2 x_{i,2} + \cdots + \beta_n x_{i,n} + \epsilon_i
 \]
-for $i = 1, 2, \ldots, m$. The real numbers $\beta_0,\ldots,\beta_n$ are known as the parameters of the model, and the
-$\epsilon_i$ are independent normally-distributed error terms. Our task is to calculate the parameters that best fit the data.
-This can be accomplished by posing the problem in terms of linear least squares: Define
+for $i = 1, 2, \ldots, m$.
+The real numbers $\beta_0,\ldots,\beta_n$ are known as the parameters of the model, and the $\epsilon_i$ are independent, normally-distributed error terms.
+The goal of linear regression is to calculate the parameters that best fit the data.
+This can be accomplished by posing the problem in terms of linear least squares.
+Define
 \[
-b = [y_1, \ldots, y_m]^T,
-\]
-\[
+\b = \left[\begin{array}{c}y_1 \\ \vdots \\ y_m\end{array}\right],
+\quad
 A =
-\begin{bmatrix}
+\left[\begin{array}{ccccc}
 1 & x_{1,1} & x_{1,2} & \cdots & x_{1,n}\\
 1 & x_{2,1} & x_{2,2} & \cdots & x_{2,n}\\
 \vdots & \vdots & \vdots & \ddots & \vdots\\
 1 & x_{m,1} & x_{m,2} & \cdots & x_{m,n}
-\end{bmatrix},
+\end{array}\right],
+\quad
+\x = \left[\begin{array}{c}
+    \beta_0 \\ \beta_1 \\ \vdots \\ \beta_n
+\end{array}\right].
 \]
-and
-\[
-x = [\beta_0, \beta_1,\ldots, \beta_n]^T.
-\]
-Now use Conjugate-Gradient to solve the system
-\[
-A^TAx = A^Tb.
-\]
-The solution $x^* = [\beta_0^*, \beta_1^*, \ldots, \beta_n^*]^T$ gives the parameters that best fit the data.
-These values can be understood as defining the hyperplane that best fits the data. See Figure \ref{fig:linregression}.
+The solution $\x^* = [\beta_0^*, \beta_1^*, \ldots, \beta_n^*]\trp$ to the system $A\trp A\x = A\trp\b$ gives the parameters that best fit the data.
+These values can be understood as defining the hyperplane that best fits the data.
 
-\begin{figure}
+\begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{figures/linregression.pdf}
-\caption{Solving the Linear Regression problem results in a best-fit hyperplane.}
+\includegraphics[width=.7\textwidth]{figures/linregression.pdf}
+\caption{Solving the linear regression problem results in a best-fit hyperplane.}
 \label{fig:linregression}
 \end{figure}
 
 \begin{problem}
-Using your Conjugate-Gradient function, solve the linear regression problem specified by the data contained in the file
-\texttt{linregression.txt}. This is a whitespace-delimited text file formatted so that the $i$-th row consists of
-$y_i, x_{i,1}, \ldots, x_{i,n}$. Use the function \li{numpy.loadtxt()} to load in the data. Report your solution.
+Using your function from Problem \ref{prob:gradientmethods-linear-cg}, solve the linear regression problem specified by the data contained in the file\footnote{Source: Statistical Reference Datasets website at \url{http://www.itl.nist.gov/div898/strd/lls/data/LINKS/v-Longley.shtml}.}
+\texttt{linregression.txt}.
+This is a whitespace-delimited text file formatted so that the $i$-th row consists of $y_i, x_{i,1}, \ldots, x_{i,n}$.
+Use \li{np.loadtxt()} to load in the data and return the solution to the normal equations.
 \end{problem}
 
-\section*{Non-linear Conjugate-Gradient Algorithms}
-The algorithm presented above is only valid for certain linear systems and quadratic functions, but the basic strategy may be adapted
-to minimize more general convex or non-linear functions. There are multiple ways to modify the algorithm, and they all involve getting
-rid of $Q$, since there is no such $Q$ for non-quadratic functions. Generally speaking, we need to find new formulas for $\alpha_k$,
-$r_k$, and $\beta_k$.
+\subsection*{Logistic Regression} % -------------------------------------------
 
-The scalar $\alpha_k$ is simply the result of performing a line-search in the given direction $d_k$, so we may define
+\emph{Logistic regression} is another important technique in statistical analysis and machine learning that builds off of the concepts of linear regression.
+As in linear regression, there is a set of predictor variables $\{x_{i, 1}, x_{i, 2}, \dots, x_{i, n}\}_{i = 1}^{m}$ with corresponding outcome variables $\{y_i\}_{i = 1}^{m}$.
+In logistic regression, the outcome variables $y_i$ are binary and can be modeled by a \emph{sigmoidal} relationship.
+The value of the predicted $y_i$ can be thought of as the probability that $y_i = 1$.
+In mathematical terms,
 \[
-\alpha_k = \underset{x}{\arg\min}f(x_k + \alpha d_k).
-\]
-The vector $r_k$ in the original algorithm was really just the gradient of the objective
-function, and so we may define
-\[
-r_k = \nabla f(x_k).
-\]
-There are various ways to define the constants $\beta_k$ in this more general setting, and the
-right choice will depend on the nature of the objective function. A well-known formula, due to Fletcher and Reeves, is
-\[
-\beta_{k+1} = \frac{\nabla f_{k+1}^T \nabla f_{k+1}}{\nabla f_{k}^T \nabla f_{k}}.
-\]
-
-Making these adjustments is not difficult, but we will opt instead to use built-in functions in Python. In particular,
-the SciPy module \li{scipy.optimize} provides a function \li{fmin_cg()}, which uses a non-linear Conjugate-Gradient method
-to minimize general functions. Using this function is easy -- we only need to pass to it the objective function and an
-initial guess.
-
-\section*{Application: Logistic Regression}
-Logistic regression is an important technique in statistical analysis and classification. The core problem in
-logistic regression involves an optimization that we can tackle using nonlinear Conjugate-Gradient.
-
-As in linear regression, we have a set of data points $y_i$ together with predictor variables
-$x_{i,1}, x_{i,2}, \ldots, x_{i,n}$ for $i = 1, \ldots, m$. However, the $y_i$ are binary data points --
-that is, they are either $0$ or $1$. Furthermore, instead of having a linear relationship between the
-data points and the response variables, we assume the following probabilistic relationship:
-\[
-\mathbb{P}(y_i = 1 \, | \, x_{i,1}, \ldots, x_{i,n}) = p_i,
+\mathbb{P}(y_i = 1 \, | \, x_{i,1}, \dots, x_{i,n}) = p_i,
 \]
 where
 \[
-p_i = \frac{1}{1+\exp(-(\beta_0 + \beta_1x_{i,1} + \cdots + \beta_nx_{i,n}))}.
+p_i = \frac{1}{1+\exp(-(\beta_0 + \beta_1x_{i,1} + \dots + \beta_nx_{i,n}))}.
 \]
-The parameters of the model are the real numbers $\beta_0, \beta_1,\ldots, \beta_n$.
-Observe that we have $p_i \in (0, 1)$ regardless of the values of the predictor variables and parameters.
+The parameters of the model are the real numbers $\beta_0, \beta_1,\dots, \beta_n$.
+Note that $p_i \in (0, 1)$ regardless of the values of the predictor variables and parameters.
 
-The probability of observing the data points $y_i$ under this model, assuming they are independent, is given by
-the expression
+The probability of observing the outcome variables $y_i$ under this model, assuming they are independent, is given by
+the \emph{likelihood function} $\mathcal{L}:\mathbb{R}^{n+1} \rightarrow \mathbb{R}$
 \[
-\prod_{i=1}^m p_i^{y_i}(1-p_i)^{1-y_i}.
+\mathcal{L}(\beta_0, \dots, \beta_n) = \prod_{i=1}^m p_i^{y_i}(1-p_i)^{1-y_i}.
 \]
-We seek to choose the parameters $\beta_0, \ldots, \beta_n$ that maximize this probability.
-To this end, define the \emph{likelihood function} $L:\mathbb{R}^{n+1} \rightarrow \mathbb{R}$ by
+The goal of logistic regression is to find the parameters $\beta_0, \dots, \beta_k$ that maximize this likelihood function.
+Thus, the problem can be written as:
 \[
-L(\beta_0, \ldots, \beta_n) = \prod_{i=1}^m p_i^{y_i}(1-p_i)^{1-y_i}.
-\]
-We can now state our core problem as follows:
-\[
-\max_{(\beta_0,\ldots,\beta_n)}L(\beta_0, \ldots, \beta_n).
+\max_{(\beta_0,\dots,\beta_n)}\mathcal{L}(\beta_0, \dots, \beta_n).
 \]
 
-Maximizing this function can be problematic for numerical reasons. By taking the logarithm of the likelihood,
-we have a more suitable objective function whose maximizer agrees with that of the original likelihood function,
-since the logarithm is strictly monotone increasing. Thus, we define the \emph{log-likelihood function}
-$l : \mathbb{R}^{n+1} \rightarrow \mathbb{R}$ by $l = \log \circ L$.
-
-Finally, we multiply by $-1$ to turn our problem into minimization. The final statement of the problem is:
+Maximizing this function is often a numerically unstable calculation.
+Thus, to make the objective function more suitable, the logarithm of the objective function may be maximized because the logarithmic function is strictly monotone increasing.
+Taking the $\log$ and turning the problem into a minimization problem, the final problem is formulated as:
 \[
-\min_{(\beta_0,\ldots,\beta_n)}-l(\beta_0, \ldots, \beta_n).
+\min_{(\beta_0,\dots,\beta_n)} - \log\mathcal{L}(\beta_0, \dots, \beta_n).
 \]
-A few lines of calculation reveal that
+
+A few lines of calculation reveal that this objective function can also be rewritten as
 \begin{align*}
-l(\beta_0,\ldots,\beta_n) = &-\sum_{i=1}^{m}\log(1+\exp(-(\beta_0 + \beta_1x_{i,1} + \cdots +\beta_nx_{i,n}))) +\\
- &\sum_{i=1}^m y_i(\beta_0 + \beta_1x_{i,1} + \cdots + \beta_nx_{i,n}).
+-\log\mathcal{L}(\beta_0,\dots,\beta_n) = &\sum_{i=1}^{m}\log(1+\exp(-(\beta_0 + \beta_1x_{i,1} + \dots +\beta_nx_{i,n}))) +\\
+ &\sum_{i=1}^m (1- y_i)(\beta_0 + \beta_1x_{i,1} + \dots + \beta_nx_{i,n}).
 \end{align*}
-The values for the parameters that we obtain are known collectively as the \emph{maximum likelihood estimate}.
 
-Let's work through a simple example. We will deal with just one predictor variable, and therefore two parameters.
-The data is given in Table \ref{table:data}.
-This is obviously just toy data with no meaning, but one can think of the $y_i$ data points as indicating, for example, the
-presence of absence of a particular disease in subject $i$, with $x_i$ being the subject's weight, or age, or something
-of the sort.
+The values for the parameters  $\{\beta_i\}_{i = 1}^{n}$ that we obtain are known as the \emph{maximum likelihood estimate} (MLE).
+To find the MLE, conjugate gradient can be used to minimize the objective function.
 
-\begin{table}
-  \caption{Data for Logistic Regression Example}
-  \centering
-  \begin{tabular}{c c}
-    \hline\hline
-    $y$ & $x$\\
-    \hline
-    0 & 1 \\
-    0 & 2 \\
-    0 & 3 \\
-    0 & 4 \\
-    1 & 5 \\
-    0 & 6 \\
-    1 & 7 \\
-    0 & 8 \\
-    1 & 9 \\
-    1 & 10\\
-    \hline
-  \end{tabular}
-  \label{table:data}
-\end{table}
+For a one-dimensional binary logistic regression problem, we have predictor data $\{x_i\}_{i=1}^m$ with labels $\{y_i\}_{i=1}^m$ where each $y_i \in \{0, 1\}$.
+The negative log likelihood then becomes the following.
+\begin{equation}
+-\log\mathcal{L}(\beta_0, \beta_1) = \sum_{i=1}^m \log(1 + e^{-(\beta_0 + \beta_1 x_i)}) + (1 - y_i)(\beta_0 + \beta_1 x_i)
+\label{eq:gradientmethods-negative-log-likelihood}
+\end{equation}
 
-In the code below we initialize our data.
-\begin{lstlisting}
->>> y = np.array([0, 0, 0, 0, 1, 0, 1, 0, 1, 1])
->>> x = np.ones((10, 2))
->>> x[:,1] = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-\end{lstlisting}
-Although we have just one predictor variable, we initialized \li{x} with two columns,
-the first of which consists entirely of ones, and the second of which contains the values of the
-predictor variable. This extra column of ones corresponds to the parameter $\beta_0$, which, as you
-will note, is not multiplied by any of the predictor variables in the log-likelihood function.
+\begin{problem}
+Write a class for doing binary logistic regression in one dimension that implement the following methods.
+\begin{enumerate}
+\item \li{fit()}: accept an array $\x\in\mathbb{R}^n$ of data, an array $\y\in\mathbb{R}^n$ of labels ($0$s and $1$s), and an initial guess $\boldsymbol{\beta}_0\in\mathbb{R}^2$.
+Define the negative log likelihood function as given in \eqref{eq:gradientmethods-negative-log-likelihood}, then minimize it (with respect to $\boldsymbol{\beta}$) with your function from Problem \ref{prob:gradientdescent-nonlinear-cg} or \li{opt.fmin_cg()}.
+Store the resulting parameters $\beta_0$ and $\beta_1$ as attributes.
 
-We next need to write a Python function that returns the value of our objective function for any value of the parameters,
-$(\beta_0, \beta_1)$.
-\begin{lstlisting}
->>> def objective(b):
-...     #Return -1*l(b[0], b[1]), where l is the log likelihood.
-...    return (np.log(1+np.exp(x.dot(b))) - y*(x.dot(b))).sum()
-\end{lstlisting}
+\item \li{predict()}: accept a float $x\in\mathbb{R}$ and calculate
+\[\sigma(x) = \frac{1}{1 + \exp(- (\beta_0 + \beta_1 x))},\]
+where $\beta_0$ and $\beta_1$ are the optimal values calculated in \li{fit()}.
+The value $\sigma(x)$ is the probability that the observation $x$ should be assigned the label $y=1$.
+\end{enumerate}
+This class does not need an explicit constructor.
+You may assume that \li{predict()} will be called after \li{fit()}.
+\label{prob:gradientmethods-logistic-regression}
+\end{problem}
 
-Finally, we minimize the objective function using \li{fmin_cg()}.
-\begin{lstlisting}
->>> guess = np.array([1., 1.])
->>> b = fmin_cg(objective, guess)
-Optimization terminated successfully.
-         Current function value: 4.310122
-         Iterations: 13
-         Function evaluations: 128
-         Gradient evaluations: 32
->>> print b
-[-4.35776886  0.66220658]
-\end{lstlisting}
+\begin{problem}
+On January 28, 1986, less than two minutes into the Challenger space shuttle's 10th mission, there was a large explosion that originated from the spacecraft, killing all seven crew members and destroying the shuttle.
+The investigation that followed concluded that the malfunction was caused by damage to O-rings that are used as seals for parts of the rocket engines.
+There were 24 space shuttle missions before this disaster, some of which had noted some O-ring damage.
+Given the data, could this disaster have been predicted?
 
-We can visualize our answer by plotting the data together with the function
-\[
-\phi(x) = \frac{1}{1 + \exp(-\beta_0 - \beta_1x)},
-\]
-using the values $\beta_0, \beta_1$ that we obtained from the minimization.
-\begin{lstlisting}
->>> dom = np.linspace(0, 11, 100)
->>> plt.plot(x, y, 'o')
->>> plt.plot(dom, 1./(1+np.exp(-b[0]-b[1]*dom)))
->>> plt.show()
-\end{lstlisting}
+The file \texttt{challenger.npy} contains data for 23 missions (during one of the 24 missions, the engine was lost at sea).
+The first column ($\x$) contains the ambient temperature, in Fahrenheit, of the shuttle launch.
+The second column ($\y$) contains a binary indicator of the presence of O-ring damage (1 if O-ring damage was present, 0 otherwise).
 
-Using this procedure, we obtain the plot in Figure \ref{fig:logistic_curve}.
-Note that the graph of $\phi$, known as a \emph{sigmoidal curve},
-gives the probability of $y$ taking the value $1$ at a particular value of $x$.
-Observe that as $x$ increases, this probability approaches $1$.
-This is reflected in the data.
+Instantiate your class from Problem \ref{prob:gradientmethods-logistic-regression} and fit it to the data, using an initial guess of $\boldsymbol{\beta}_0 = [20, -1]\trp$.
+Plot the resulting curve $\sigma(x)$ for $x \in [30, 100]$, along with the raw data.
+Return the predicted probability (according to this model) of O-ring damage on the day the shuttle was launched, given that it was $31^\circ$F.
 
 \begin{figure}[H]
 \centering
-    \includegraphics[width=.6\textwidth]{figures/logreg.pdf}
-    \caption{Data from the logistic regression example together with the calculated sigmoidal curve.}
+    \includegraphics[width=.7\textwidth]{figures/logreg.pdf}
+    % \caption{The logistic curve models the probability of O-ring damage on the Challenger shuttle. According to this model, given that the temperature was $31^\circ$ on the day of launch, the shuttle had close to $100\%$ likelihood of O-ring damage. This model had an initial guess of $1.$ and $-1$ for $\beta_0$ and $\beta_1$ respectively.}
     \label{fig:logistic_curve}
 \end{figure}
-
-\begin{problem}
-Following the example given above, find the maximum likelihood estimate of the parameters for the logistic regression data in the file \texttt{logregression.txt}.
-This is a whitespace-delimited text file formatted so that the $i$-th row consists of $y_i, x_{i,1}, x_{i,2}, x_{i,3}.$
-Since there are three predictor variables, there are four parameters in the model.
-Report the calculated values.
-
-You should be able to use much of the code above unchanged.
-In particular, the function \li{objective()} does not need any changes.
-You simply need to set your variables \li{y} and \li{x} appropriately, and choose a new initial guess (an array of length four).
-Note that \li{x} should be an $m \times 4$ array whose first column consists entirely of ones, whose second column contains the values in the second column of the data file, and so forth.
 \end{problem}
-
-Logistic regression can become a bit more tricky when some of the predictor variables take on binary or categorical values.
-In such situations, the data requires a bit of pre-processing before running the minimization.
-
-The values of the parameters that we obtain can be useful in analyzing relationships between the predictor variables and the $y_i$ data points.
-They can also be used to classify or predict values of new data points.
-
-% should I give the Polak-Ribi{e}, Fletcher-Reeves, and Hestenes-Stiefel formulas? Maybe in the exercises?
-% Should I include a discussion of when each choice is appropriate?

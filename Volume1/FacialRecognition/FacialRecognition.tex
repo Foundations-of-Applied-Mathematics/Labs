@@ -2,7 +2,7 @@
 \label{lab:FacialRecognition}
 
 \objective{
-A \emph{facial recognition} algorithm attempts to match a person's portrait to a database of many portraits.
+Facial recognition algorithms attempt to match a person's portrait to a database of many portraits.
 Facial recognition is becoming increasingly important in security, law enforcement, artificial intelligence, and other areas.
 Though humans can easily match pictures to people, computers are beginning to surpass humans at facial recognition.
 In this lab, we implement a basic facial recognition system that relies on eigenvectors and the SVD to efficiently determine the difference between faces.
@@ -32,19 +32,19 @@ then each $\f_i$ is a $mn$-vector representing a single image.
 The following function obtains one image for each person in the \texttt{faces94} dataset and converts the collection of images into an $mn \times k$ matrix $F$ described above.
 
 \begin{lstlisting}
+import os
 import numpy as np
-from os import walk
-from scipy.misc import imread
+from imageio import imread
 
 def get_faces(path="./faces94"):
     # Traverse the directory and get one image per subdirectory.
     faces = []
-    for (dirpath, dirnames, filenames) in walk(path):
+    for (dirpath, dirnames, filenames) in os.walk(path):
         for fname in filenames:
             if fname[-3:]=="jpg":       # Only get jpg images.
                 # Load the image, convert it to grayscale,
                 # and flatten it into a vector.
-                faces.append(np.ravel(imread(dirpath+"/"+fname, flatten=True)))
+                faces.append(np.ravel(imread(dirpath+"/"+fname, as_gray=True)))
                 break
     # Put all the face vectors column-wise into a matrix.
     return np.transpose(faces)
@@ -53,7 +53,7 @@ def get_faces(path="./faces94"):
 \begin{problem} % show_face() function.
 Write a function that accepts an image as a flattened $mn$-vector, along with its original dimensions $m$ and $n$.
 Use \li{np.reshape()} to convert the flattened image into its original $m\times n$ shape and display the result with \li{plt.imshow()}.
-\\ (Hint: use \li{cmap='gray'} in \li{plt.imshow()} to display images in grayscale.)
+\\ (Hint: use \li{cmap="gray"} in \li{plt.imshow()} to display images in grayscale.)
 
 Unzip the \texttt{faces94.zip} archive and use \li{get_faces()} to construct $F$.
 Each \texttt{faces94} image is $200 \times 180$, and there are $153$ people in the dataset, so $F$ should be $36000 \times 153$.
@@ -73,15 +73,15 @@ Because the method ignores less significant facial features, it is also usually 
 The first step of the algorithm is to shift the images by the \emph{mean face}.
 Shifting a set of data by the mean exaggerates the distinguishing features of each entry.
 In the context of facial recognition, shifting by the mean accentuates the unique features of each face.
-For the images vectors stored in $F$, the mean face $\boldsymbol{\mu}$ is the defined to be the element-wise average of the $\f_i$.
+For the images vectors stored in $F$, the mean face $\boldsymbol{\mu}$ is the defined to be the element-wise average of the $\f_i$:
 \[
-\boldsymbol{\mu} = \frac{1}{k}\sum_{i=1}^k \f_i
+\boldsymbol{\mu} = \frac{1}{k}\sum_{i=1}^k \f_i.
 \]
 Hence, the $i$th mean-shifted face vector $\bar{\f}_i$ is given by
 \[
 \bar{\f}_i = \f_i - \boldsymbol{\mu}.
 \]
-Next, define $\bar{F}$ as the $mn \times k$ matrix whose columns are given by the mean-shifted face vectors:
+Next, define $\bar{F}$ as the $mn \times k$ matrix whose columns are given by the mean-shifted face vectors,
 \[
 \bar{F} = \left[\begin{array}{c|c|c|c}
 \arrayrulecolor{lightgray}
@@ -171,8 +171,7 @@ See Figure \ref{fig:facerec-eigenfaces} for visualizations of the some of the ei
 \label{fig:facerec-eigenfaces}
 \end{figure}
 
-In general, the lower eigenfaces provide a more general information of a face and higher-ordered eigenfaces provide the details necessary to distinguish particular faces.%
-\footnote{Neil Muller, Lourenco Magaia, and B. M. Herbst. \textit{Singular Value Decomposition, Eigenfaces, and 3D Reconstructions}. SIAM Review. 2004. 46:3, 518-545.}
+In general, the lower eigenfaces provide a more general information of a face and higher-ordered eigenfaces provide the details necessary to distinguish particular faces \cite{muller2004singular}.
 These eigenfaces will be used to construct the face images in the dataset.
 The more eigenfaces used, the more detailed the resulting image will be.
 
@@ -197,7 +196,7 @@ Likewise, the matrix $\widehat{F}$ that has the projections $\widehat{\f}_i$ as 
 In the constructor of \li{FacialRec}, calculate the compact SVD of $\bar{F}$ and save the matrix $U$ as an attribute.
 Compare the computed eigenfaces (the columns of $U$) to Figure \ref{fig:facerec-eigenfaces}.
 
-Also write a method that accepts a vector of length $mn$ or an $mn\times l$ matrix, as well as an integer $s$.
+Also write a method that accepts a vector of length $mn$ or an $mn\times \ell$ matrix, as well as an integer $s < mn$.
 Construct $U_s$ by taking the first $s$ columns of $U$, then use (\ref{eq:facialrec-projection}) or (\ref{eq:facialrec-projectall}) to calculate the projection of the input vector or matrix onto the span of the first $s$ eigenfaces.
 \\(Hint: this method should be implemented with a single line of code.)
 \label{prob:facialrec-project}
@@ -232,7 +231,8 @@ This $\widetilde{\f}_i$ is called the \emph{reconstruction} of $\f_i$.
     \includegraphics[width=\textwidth]{figures/rebuiltHalf.png}
     \caption{A reconstruction with $s=75$.}
 \end{subfigure}
-\caption{An image rebuilt with various numbers of eigenfaces. The image is already recognizable when it is reconstructed with only 19 eigenfaces---less than an eighth of the 153 eigenfaces! Note the similarities between this method and regular image compression via the truncated SVD.}
+\caption{An image rebuilt with various numbers of eigenfaces. The image is already recognizable when it is reconstructed with only 19 eigenfaces, less than an eighth of the 153 eigenfaces corresponding to nonzero eigenvalues or $\bar{F}\bar{F}\trp$.
+Note the similarities between this method and regular image compression via the truncated SVD.}
 \label{fig:rebuiltImage}
 \end{figure}
 
@@ -248,7 +248,7 @@ Compare your results to Figure \ref{fig:rebuiltImage}
 
 Let $\g$ be a vector representing an unknown face that is not part of the database.
 We determine which image in the database is most like $\g$ by comparing $\widehat{\g}$ to each of the $\widehat{\f}_i$.
-Fist, shift $\g$ by the mean to obtain $\bar{\g}$, then project $\bar{\g}$ using a given number of eigenfaces.
+First, shift $\g$ by the mean to obtain $\bar{\g}$, then project $\bar{\g}$ using a given number of eigenfaces:
 \begin{equation}
     \widehat{\g} = U_s\trp\bar{\g} = U_s\trp(\g - \boldsymbol{\mu})
     \label{eq:facialrec-unknownface}
@@ -289,7 +289,7 @@ The following generator yields random faces from \texttt{faces94} that can be us
 def sample_faces(num_faces, path="./faces94"):
     # Get the list of possible images.
     files = []
-    for (dirpath, dirnames, filenames) in walk(path):
+    for (dirpath, dirnames, filenames) in os.walk(path):
         for fname in filenames:
             if fname[-3:]=="jpg":       # Only get jpg images.
                 files.append(dirpath+"/"+fname)
@@ -297,7 +297,7 @@ def sample_faces(num_faces, path="./faces94"):
     # Get a subset of the image names and yield the images one at a time.
     test_files = np.random.choice(files, num_faces, replace=False)
     for fname in test_files:
-        yield np.ravel(imread(fname, flatten=True))
+        yield np.ravel(imread(fname, as_gray=True))
 \end{lstlisting}
 %
 The \li{yield} keyword is like a \li{return} statement, but the next time the generator is called, it will resume immediately after the last \li{yield} statement.%
@@ -351,7 +351,7 @@ Here are a few ideas.
 \subsection*{Other Methods for Facial Recognition} % --------------------------
 
 The method of facial recognition presented here is more formally called \emph{principal component analysis (PCA) using eigenfaces}.
-Several other machine learning and optimization techniques, such as linear discriminant analysis (LDA), elastic matching, dynamic link matching, and Hidden Markov Models (HMMs) have also been applied to the facial recognition problem.
+Several other machine learning and optimization techniques, such as linear discriminant analysis (LDA), elastic matching, dynamic link matching, and hidden Markov models (HMMs) have also been applied to the facial recognition problem.
 Other techniques focus on getting better information about the faces in the first place, the most prevalent being 3-dimensional recognition and thermal imaging.
 See \url{https://en.wikipedia.org/wiki/Facial_recognition_system} for a good survey of different approaches to the facial recognition problem.
 
