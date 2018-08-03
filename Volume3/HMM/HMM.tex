@@ -317,7 +317,7 @@ The following Python code initializes $M$, $A$, $B$, and $\pi$ using this techni
 \caption{The log probabilities for a HMM trained on the Declaration of Independence
 data with 200 iterations. It takes over 100 iterations for the algorithm to work itself out
 of a poor local maximum.}
-\label{fig:logprobs}
+\label{fig:hmm-logprobs}
 \end{figure}
 
 
@@ -325,7 +325,7 @@ The learning algorithm is essentially an optimization over the parameter space (
 stochastic arrays having the proper dimensions) with respect to the objective function $\mathbb{P}(O |\, \lambda)$.
 The algorithm is guaranteed to increase the objective function at each iteration, so it is sure to converge.
 However, the objective function is riddled with local maxima, and so the outcome depends heavily on the randomly
-selected starting values for $A$, $B$, and $\pi$. Figure \ref{fig:logprobs} illustrates the issues involved.
+selected starting values for $A$, $B$, and $\pi$. Figure \ref{fig:hmm-logprobs} illustrates the issues involved.
 The log probability stays approximately constant for the first 100
 iterations. This indicates that the algorithm is not exploring the parameter space enough, and the parameters
 found at the 100-th iteration are virtually the same as those found at the first or second iteration. After the first
@@ -373,41 +373,41 @@ We provide helper code below to accomplish this task for various files in variou
 >>> import codecs
 
 
->>> def vec_translate(a, my_dict):    
+>>> def vec_translate(a, my_dict):
 
 >>>     # translate numpy array from symbols to state numbers or vice versa
 >>>     return np.vectorize(my_dict.__getitem__)(a)
 
 
 >>> def prep_data(filename):
-    
+
 >>>     # Get the data as a single string
 >>>     with codecs.open(filename, encoding='utf-8') as f:
 >>>         data=f.read().lower()  #and convert to all lower case
-    
+
 >>>     # remove punctuation and newlines
 >>>     remove_punct_map = {ord(char): None for char in string.punctuation+"\n\r"}
 >>>     data = data.translate(remove_punct_map)
 
->>>     # make a list of the symbols in the data 
+>>>     # make a list of the symbols in the data
 >>>     symbols = sorted(list(set(data)))
 
 >>>     # convert the data to a NumPy array of symbols
 >>>     a = np.array(list(data))
-    
+
 >>>     #make a conversion dictionary from symbols to state numbers
 >>>     symbols_to_obsstates = {x:i for i,x in enumerate(symbols)}
 
 >>>     #convert the symbols in a to state numbers
->>>     obs_sequence = vec_translate(a,symbols_to_obsstates)    
-    
+>>>     obs_sequence = vec_translate(a,symbols_to_obsstates)
+
 >>>     return symbols, obs_sequence
 \end{lstlisting}
 
 Now apply this helper code to \texttt{declaration.txt}.
 \begin{lstlisting}
 >>> symbols, obs = prep_data('declaration.txt')
-\end{lstlisting} 
+\end{lstlisting}
 
 \begin{problem}
 You are now ready to train a HMM using the Declaration of Independence data.
@@ -452,7 +452,7 @@ x, 0.0022, 0.0000
 z, 0.0010, 0.0000
 \end{lstlisting}
 What do you notice about the second column of $B$? It seems that the HMM has detected a vowel state and a consonant state, without any prior input from an English speaker.
-Interestingly, the whitespace character is grouped together with the vowels. A HMM can also detect the vowel/consonant distinction in other languages. 
+Interestingly, the whitespace character is grouped together with the vowels. A HMM can also detect the vowel/consonant distinction in other languages.
 \end{problem}
 
 \begin{problem}
@@ -460,14 +460,12 @@ Repeat the previous calculation with 3 hidden states and again with 4 hidden sta
 \end{problem}
 
 
-Now we turn to the Russian file \li{WarAndPeace.txt}, which is a small subset of the book \emph{War and Peace} by Tolstoy. 
+Now we turn to the Russian file \li{WarAndPeace.txt}, which is a small subset of the book \emph{War and Peace} by Tolstoy.
 \begin{lstlisting}
 >>> symbols, obs = prep_data('WarAndPeace.txt')
 \end{lstlisting}
 
 \begin{problem}
 Repeat the calculations for 2, and 3 hidden states for \texttt{WarAndPeace.txt}.
-Interpret/explain your results.  Which Cyrillic characters appear to be vowels? 
+Interpret/explain your results.  Which Cyrillic characters appear to be vowels?
 \end{problem}
-
-

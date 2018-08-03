@@ -10,7 +10,7 @@ Let $a = x_{-1}, x_0, x_1, \ldots x_{n-1}=b$ be a grid of $n+1$ evenly spaced po
 You are used to seeing the derivative $u'(x)$ which can be written as
 \begin{align*}
 u'(x)=\lim_{h\to\infty}\frac{u(x+h)-u(x)}{h}=\lim_{h\to\infty}\frac{u(x+h)-u(x-h)}{2h}.
- \end{align*} 
+ \end{align*}
 Since we are interested in the derivative at certain fixed points $x_i$, we can consider the approximation of $u'(x)$ using finite differences.
 We first write the Taylor polynomial expansion of $u(x+h)$ and $u(x-h)$ centered at $x$. This gives
 
@@ -148,7 +148,7 @@ u''(x_0) \\ u''(x_1)\\ \vdots  \\ u''(x_{n-3}) \\ u''(x_{n-2})
 u(x_0) \\ u(x_1)\\ \vdots  \\ u(x_{n-3}) \\ u(x_{n-2})
 \end{bmatrix}\\
 {\scriptstyle\textcolor{red}{(n-1)\times1}}
-\end{array} + 
+\end{array} +
 \begin{array}{c}
 \begin{bmatrix}
 u(x_{-1})/h^2 \\ 0 \\ \vdots  \\ 0 \\ u(x_{n-1})/h^2
@@ -165,7 +165,7 @@ u''(x_0) \\ u''(x_1)\\ \vdots  \\ u''(x_{n-3}) \\ u''(x_{n-2})
 \end{align}
 
 \begin{problem}
-	Let $u(x) = \sin((x+\pi)^2-1)$. Use \eqref{finitedifference2:up} - \eqref{finitedifference2:upp} to approximate $\frac{1}{2}u'' - u'$ at the grid points where $a=0$, $b=1$, and $n=10$. Graph the result. \label{prob:finitedifference2:prob1}
+	Let $u(x) = \sin((x+\pi)^2-1)$. Use \eqref{finitedifference2:up} - \eqref{finitedifference2:upp} to approximate $\frac{1}{2}u'' - u'$ at the grid points where $a=0$, $b=1$, and $n=10$. Graph the result.
 \end{problem}
 
 Suppose that instead of knowing the function $u(x)$, we know that $\frac{1}{2}u'' - u' = f$, where the function $f(x)$ is given.
@@ -272,14 +272,14 @@ import matplotlib.pyplot as plt
 def bvp(func, epsilon, alpha, beta, N):
 	a,b = 0., 1. 	# Interval for the BVP
 	h = (b-a)/N 	# The length of each subinterval
-	
+
 	# Initialize and define the vector F on the right
-	F = np.empty(N-1.)			
+	F = np.empty(N-1.)
 	F[0] = func(a+1.*h)-alpha*(epsilon+h/2.)*h**(-2.)
 	F[N-2] = func(a+(N-1)*h)-beta*(epsilon-h/2.)*h**(-2.)
 	for j in xrange(1,N-2):
 		F[j] = func(a + (j+1)*h)
-		
+
 	# Here we define the arrays that will go on the diagonals of A
 	data = np.empty((3,N-1))
 	data[0,:] = -2.*epsilon*np.ones((1,N-1)) # main diagonal
@@ -288,7 +288,7 @@ def bvp(func, epsilon, alpha, beta, N):
 	# Next we specify on which diagonals they will be placed, and create A
 	diags = np.array([0,-1,1])
 	A=h**(-2.)*spdiags(data,diags,N-1,N-1).asformat('csr')
-	
+
 	U = np.empty(N+1)
 	U[1:-1] = spsolve(A,F)
 	U[0], U[-1] = alpha, beta
@@ -359,7 +359,7 @@ plt.loglog(h,h**(2.),'-k',label="$h^{\, 2}$")
 plt.xlabel("$h$")
 plt.legend(loc='best')
 plt.show()
-print("The order of the finite difference approximation is about ", 
+print("The order of the finite difference approximation is about ",
     (np.log(max_error[0])-np.log(max_error[-1]))/(np.log(h[0])-np.log(h[-1])),
     ".")
 \end{lstlisting}

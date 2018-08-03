@@ -756,19 +756,16 @@ Also included in Additional Materials is a more thorough explanation of all the 
   \centering
   \includegraphics[width=.7\linewidth]{figures/uncompressed_finger.png}
   \caption{Uncompressed}
-  \label{fig:sub1}
 \end{subfigure}%
 \begin{subfigure}{.32\textwidth}
   \centering
   \includegraphics[width=.7\linewidth]{figures/compressed_finger(30comp).png}
   \caption{12:1 compressed}
-  \label{fig:sub1}
 \end{subfigure}%
 \begin{subfigure}{.32\textwidth}
   \centering
   \includegraphics[width=.7\linewidth]{figures/compressed_finger(60comp).png}
   \caption{26:1 compressed}
-  \label{fig:sub2}
 \end{subfigure}
 \caption{Fingerprint scan at different levels of compression.\\
 Original image source: \url{http://www.nist.gov/itl/iad/ig/wsq.cfm}.
@@ -807,8 +804,8 @@ In the \li{pre_process()} method, calculate the values of $m$ and $s$ given abov
 
 \subsubsection*{WSQ: Calculating the Wavelet Coefficients}
 The next step in the compression algorithm is decomposing the image into subbands of wavelet coefficients.
-In this implementation of the WSQ algorithm, the image is decomposed into five sets of detail coefficients (\li{level=5}) and one approximation subband, as shown in Figure \ref{fig:subbands}.
-Each of these subbands should be placed into a list in the same ordering as in Figure \ref{fig:subbands} (another way to consider this ordering is the approximation subband followed by
+In this implementation of the WSQ algorithm, the image is decomposed into five sets of detail coefficients (\li{level=5}) and one approximation subband, as shown in Figure \ref{fig:wavelets-subbands}.
+Each of these subbands should be placed into a list in the same ordering as in Figure \ref{fig:wavelets-subbands} (another way to consider this ordering is the approximation subband followed by
 each level of detail coefficients $[LL_5, LH_5, HL_5, HH_5, LH_4, HL_4,\dots ,HH_1]$).
 
 \begin{problem}
@@ -839,7 +836,7 @@ Note that you will need to adjust the accepted list in order to adhere to the re
 \end{tikzpicture}
 
 \caption{Subband Pattern for simplified WSQ algorithm.}
-\label{fig:subbands}
+\label{fig:wavelets-subbands}
 \end{center}
 \end{figure}
 
@@ -935,7 +932,7 @@ This gives three lists of quantized coefficients, each having a high degree of h
 This is important for the entropy coding, since we can achieve better compression by separately encoding groups of similar coefficients.
 
 Group quantized subbands $0$ through $18$ together, $19$ through $51$ together, and finally $52$ through $63$ together.
-You may understand the logic of these groupings when glancing back at Figure \ref{fig:subbands2}.
+You may understand the logic of these groupings when glancing back at Figure \ref{fig:wavelets-subbands2}.
 When grouping subbands together, flatten each subband and concatenate their entries together, so that you obtain a simple list of integer values.
 Since we are flattening and then concatenating the subbands, we need to save the shape of the original subbands, so that we can later
 reconstruct the subbands from the groups of coefficients.
@@ -1200,14 +1197,14 @@ For more on the Haar Wavelet Transform, see \emph{Discrete Wavelet Transformatio
 
 \subsection*{WSQ Algorithm}
 The official standard for the WSQ algorithm is slightly different from the version implemented in this lab.
-One of the largest differences is the subband pattern that is used in the official algorithm; this pattern is demonstrated in Figure \ref{fig:subbands2}.
+One of the largest differences is the subband pattern that is used in the official algorithm; this pattern is demonstrated in Figure \ref{fig:wavelets-subbands2}.
 The pattern used may seem complicated and somewhat arbitrary, but it is used because of the relatively good empirical results when used in compression.
 This pattern can be obtained by performing a single pass of the 2-dimensional filter bank on the image then passing each of the resulting subbands through the filter bank resulting in 16 total subbands.
 This same process is then repeated with the $LL$, $LH$ and $HL$ subbands of the original approximation subband creating 46 additional subbands.
-Finally, the subband corresponding to the top left of Figure \ref{fig:subbands2} should be passed through the 2-dimensional filter bank a single time.
+Finally, the subband corresponding to the top left of Figure \ref{fig:wavelets-subbands2} should be passed through the 2-dimensional filter bank a single time.
 
 \begin{comment}
-We need to calculate the subband pattern found in Figure \ref{fig:subbands2}.
+We need to calculate the subband pattern found in Figure \ref{fig:wavelets-subbands2}.
 This subband pattern is somewhat arbitrary, but is used because of its empirically good results in compression.
 While the pattern may appear complicated at first, we can obtain the required subband coefficients rather easily.
 To start, decompose the image into 16 subbands, first by using the \li{dwt2} function to split the image into four subbands, and then applying the function again to each of the four subbands.
@@ -1217,7 +1214,7 @@ Next, split each of the three subbands found in the top left corner of the subba
 You now have a grid of $13 + 3(16) = 61$ subbands.
 
 Finally, take the very top left subband, and split this into four additional subbands.
-You should have 64 subbands. Place them into a list in the order indicated by the numbers in Figure \ref{fig:subbands2}.
+You should have 64 subbands. Place them into a list in the order indicated by the numbers in Figure \ref{fig:wavelets-subbands2}.
 \end{comment}
 
 As in the implementation given above, the subbands of the official algorithm are divided into three groups.
@@ -1322,7 +1319,7 @@ There are also some slight modifications made to the implementation of the discr
 
 \end{tikzpicture}
 \caption{True subband pattern for WSQ algorithm.}
-\label{fig:subbands2}
+\label{fig:wavelets-subbands2}
 \end{figure}
 
 \begin{comment}

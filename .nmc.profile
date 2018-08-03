@@ -3,13 +3,13 @@
 selected_scheme scheme-minimal
 #
 # Environment variables
-TEXDIR /usr/local/texlive/20*
-TEXMFCONFIG ~/.texlive20*/texmf-config
+TEXDIR /usr/local/texlive/foam
+TEXMFCONFIG ~/.texlivefoam/texmf-config
 TEXMFHOME ~/texmf
 TEXMFLOCAL /usr/local/texlive/texmf-local
-TEXMFSYSCONFIG /usr/local/texlive/20*/texmf-config
-TEXMFSYSVAR /usr/local/texlive/20*/texmf-var
-TEXMFVAR ~/.texlive20*/texmf-var
+TEXMFSYSCONFIG /usr/local/texlive/foam/texmf-config
+TEXMFSYSVAR /usr/local/texlive/foam/texmf-var
+TEXMFVAR ~/.texlivefoam/texmf-var
 binary_x86_64-linux 1
 #
 # Desired Collections
