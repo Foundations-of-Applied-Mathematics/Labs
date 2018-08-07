@@ -9,11 +9,5 @@ all: PythonEssentials.pdf DataScienceEssentials.pdf Volume1.pdf Volume2.pdf Volu
 GettingStarted.pdf: GettingStarted.tex Appendices/Setup/SetupStudent.tex
 	$(LATEX) $<
 
-onelab.pdf: onelab.tex ./*/*/*.tex ./*/*/figures/*
-	$(LATEX) $<
-	open $@
-
-one: onelab.pdf
-
 clean:
 	bash .clean.sh
