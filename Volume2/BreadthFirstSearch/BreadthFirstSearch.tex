@@ -1,8 +1,8 @@
 \lab{Breadth-first Search}{Breadth-first Search}
 \objective{
 Shortest path problems are an important part of graph theory and network analysis.
-Applications include finding the fastest way to drive between two points on the map, network routing, genealogy, automated circuit layout, and a variety of other problems.
-In this lab we learn to represent graphs as adjacency dictionaries, implement a shortest-path algorithm based on a breadth-first search, and use the NetworkX package to solve a shortest path problem on a large actor-movie network.}
+Applications include finding the fastest way to drive between two points on a map, network routing, genealogy, automated circuit layout, and a variety of other important problems.
+In this lab we represent graphs as adjacency dictionaries, implement a shortest path algorithm based on a breadth-first search, and use the NetworkX package to solve a shortest path problem on a large network of movies and actors.}
 
 \section*{Adjacency Dictionaries} % ===========================================
 
@@ -12,9 +12,9 @@ More general graphs without structural constraints are usually represented with 
 Adjacency matrices are usually implemented in a sparse matrix format since only the entries corresponding to node connections are nonzero.
 
 Another common graph data structure is an \emph{adjacency dictionary}, a dictionary with a key for each node in the graph.
-The dictionary values list the nodes connected to the key node.
-Adjacency dictionaries automatically gain the advantages of a sparse matrix format since they only store the actual node connections.
-In Python, dictionaries are also much faster for lookup than matrices.
+The dictionary values are the set of nodes connected to the key node.
+Adjacency dictionaries automatically gain the advantages of a sparse matrix format since they only store information on the actual node connections (the nonzero entries of the adjacency matrix).
+% In Python, dictionaries are also much faster for lookup than matrices.
 
 \begin{figure}[H] % simple graph, its adjacency matrix, and its adjacency dict.
 \captionsetup[subfigure]{justification=centering}
@@ -59,31 +59,31 @@ In Python, dictionaries are also much faster for lookup than matrices.
 The graph is undirected, so the adjacency matrix is symmetric.
 Note that the adjacency dictionary also encodes this behavior: since A and B are connected, B is in the set of values corresponding to the key A, and A is in the set of values corresponding to the key B.}
 % There are eight $1$'s in the matrix, corresponding to $8$ total values in the dictionary.}
-\label{fig:bfs-simple-graph_graph}
+\label{fig:bfs-simple-graph}
 \end{figure}
 
 \subsection*{Hash-based Data Structures} % ------------------------------------
 
 A Python \li{set} is an unordered data type with no repeated elements.
-The \li{set} class is implemented as a \emph{hash table}, meaning it uses \emph{hash values}---integers that uniquely identify an object---to organize its elements.
-Roughly speaking, in order to access, add, or remove and object $x$ to a set, Python computes the hash value of $x$, and that value indicates where $x$ is (or should be). % (usually with the built-in \li{hash()} function)
-In other words, there is only one place that $x$ could be; if it isn't in that place, it isn't in the set.
-This implementation results in $O(1)$ lookup, insertion, and removal operations, an enormous improvement over the $O(n)$ search time for lists and the $O(\log{n})$ search time for sorted structures.
+The set class is implemented as a \emph{hash table}, meaning it uses \emph{hash values}---integers that uniquely identify an object---to organize its elements.
+Roughly speaking, in order to access, add, or remove an object \li{x} to a set, Python computes the hash value of \li{x}, and that value indicates where \li{x} is (or should be) in memory. % (usually with the built-in \li{hash()} function)
+In other words, there is only one place in memory that \li{x} could be; if it isn't in that place, it isn't in the set.
+This implementation results in $O(1)$ lookup, insertion, and removal operations, an enormous improvement over the $O(n)$ search time for lists and the $O(\log{n})$ search time for sorted structures like binary search trees.
 It is also why set elements are unique.
 
 \begin{table}[H]
 \begin{tabular}{r|l}
     Method & Description\\
     \hline
-    \li{add()} & Add an element to the set if not already in the set.\\
-    \li{remove()} & Remove the specified element from the set,\\
-    & raising an error if the element is not in the set.\\
-    \li{discard()} & Remove the specified element from the set without \\
-    & raising an error if the element is not in the set.\\
+    \li{add()} & Add an element to the set. This has no effect if the element is already present. \\
+    \li{remove()} & Remove an element from the set, raising\\
+    & a \li{KeyError} if it is not a member of the set.\\
+    \li{discard()} & Remove an element from the set without raising \\
+    & an exception if it is not a member of the set.\\
     \li{pop()} & Remove and return an arbitrary set element.\\
     \li{union()} & Return all elements that are in either set as a new set.\\
     \li{intersection()} & Return all elements that are in both sets as a new set.\\
-    \li{update()} & Perform an in-place union of a set with others.
+    \li{update()} & Add all elements of another set in-place.
 \end{tabular}
 \caption{Basic methods of the \li{set} class.}
 \end{table}
@@ -95,66 +95,62 @@ It is also why set elements are unique.
 <<{'cow', 'dog', 'mouse', 'cat'}>>
 
 >>> animals.add("horse")     # Add an object to the set.
+>>> "horse" in animals
+<<True>>
 >>> animals.remove("emu")    # Attempt to delete an object from the set,
 <<KeyError: 'emu'>>              # resulting in an exception.
-
 >>> animals.pop()            # Delete and return a random object from the set.
-<<'dog'>>
+<<'mouse'>>
 >>> print(animals)
-<<{'cat', 'mouse', 'cow', 'horse'}>>
+<<{'cat', 'horse', 'dog', 'cow'}>>
 
 # Add all of the elements of another set to this one.
->>> animals.update({"mouse", "velociraptor"})
+>>> animals.update({"dog", "velociraptor"})
 >>> print(animals)
-<<{'cat', 'mouse', 'velociraptor', 'cow', 'horse'}>>
+<<{'velociraptor', 'cat', 'horse', 'dog', 'cow'}>>
 
 # Intersect this set with another one.
 >>> animals.intersection({"cat", "cow", "cheetah"})
 <<{'cat', 'cow'}>>
 \end{lstlisting}
 
-\begin{warn} % hashable objects only
-Elements of a \li{set} and keys (but not values) of a \li{dict} must be \emph{hashable}.
-Mutable objects---lists, sets and dictionaries---are not hashable, so they are not allowed as set elements or dictionary key values.
-This means that in order to represent a graph with an adjacency dictionary, each of the node labels should a string, a number, or some other hashable time.
-\end{warn}
-
-Dictionaries are similar to sets, except that elements in a dictionary are key-value pairs.
-Keys in a dictionary must also be hashable, but values can be anything.
-Because, like sets, lookup in a dictionary is very fast, they can be very useful for storing the results of a computation, so that it need only be done once.
-The table below gives a quick review of dictionaries.
+Sets are extremely fast, but they do not support indexing because the elements are unordered.
+A Python \li{dict}, on the other hand, is a hash-based data structure that stores key-value pairs: the keys of a dictionary act like a set (unique and unordered, with $O(1)$ lookup), but each key corresponds to another object, called its value.
+The keys index the dictionary and allow $O(1)$ lookup of the values.
 
 \begin{table}[H]
 \begin{tabular}{r|l}
     Method & Description\\
     \hline
-    \li{keys()} & Return an iterator for the dictionary's keys.\\
-    \li{values()} & Return an iterator for the dictionary's values.\\
-    \li{items()} & Return an iterator for the dictionary's items (key-value pairs).\\
-    \li{pop()} & Remove and return a specified key from the dictionary.\\
-    \li{update()} & Add or overwrite key-value pairs with those from a new dictionary.
+    \li{keys()} & Return a set-like iterator for the dictionary's keys.\\
+    \li{values()} & Return a set-like iterator for the dictionary's values.\\
+    \li{items()} & Return an iterator for the dictionary's key-value pairs.\\
+    \li{pop()} & Remove a specified key and return the corresponding value,\\
+    & raising a \li{KeyError} if the key is not a member of the dictionary.\\
+    \li{update()} & Add or overwrite key-value pairs in-place with those from another dictionary.
 \end{tabular}
+\caption{Basic methods of the \li{dict} class.}
 \end{table}
 
 \begin{lstlisting}
 # Initialize a dictionary.
->>> classes = {"business": "A", "math": "A+", "visual arts": "B"}
->>> print(classes["math"])
-<<A+>>
+>>> grades = {"business": "A", "math": "A+", "visual arts": "B"}
+>>> grades["math"]
+<<'A+'>>                            # The key "math" maps to the value "A+".
 
-# Add a value indexed by 'science' and delete the 'business' keypair.
->>> classes["science"] = "A"
->>> classes.pop("business")  # Use pop() to remove.
-<<A>>
->>> print(classes)
+# Add a "science" key with corresponding value "A".
+>>> grades["science"] = "A"
+
+# Remove the "business" key.
+>>> grades.pop("business")
+<<'A'>>
+>>> print(grades)
 <<{'math': 'A+', 'visual arts': 'B', 'science': 'A'}>>
 
 # Display the keys, values, and items.
->>> list(classes.keys())
-<<['math', 'visual arts', 'science']>>
->>> classes.values()
-<<dict_values(['A+', 'B', 'A'])>>
->>> for key, value in classes.items():
+>>> list(grades.keys()), list(grades.values())
+<<(['math', 'visual arts', 'science'], ['A+', 'B', 'A'])>>
+>>> for key, value in grades.items():
 ...   print(key, "=>", value)
 ...
 <<math => A+
@@ -162,36 +158,44 @@ visual arts => B
 science => A>>
 
 # Add key-value pairs from another dictionary.
->>> classes.update({"cooking":"A+", "math": "C"})
->>> print(classes)
+>>> grades.update({"cooking":"A+", "math": "C"})
+>>> print(grades)
 <<{'math': 'C', 'visual arts': 'B', 'science': 'A', 'cooking': 'A+'}>>
-
-# Save time by pre-computing functions and storing results for quick lookup.
->>> f = lambda x: "My grade is " + x
->>> my_grades = {x:f(classes[x]) for x in ('math','science')}
->>> print(my_grades)
-<<{'math': 'My grade is C', 'science': 'My grade is A'}>>
 \end{lstlisting}
 
-Figure \ref{fig:bfs-simple-graph_graph} is an example of a simple graph. The following code defines its adjacency dictionary.
+Dictionaries are ideal for storing values that need to be accessed often and for representing one-to-one or one-to-many relationships.
+Thus, the \li{dict} class is a natural choice for implementing adjacency dictionaries.
+For example, the following code defines the adjacency dictionary for the graph in Figure \ref{fig:bfs-simple-graph}.
+Note that the dictionary values are sets.
 
 \begin{lstlisting}
->>> adjacency_dictionary = {'A':{'B', 'D'},
-                            'B':{'A', 'D'},
-                            'C':{'D'},
-                            'D':{'A', 'B', 'C'}}
+>>> adjacency = {'A': {'B', 'D'},
+                 'B': {'A', 'D'},
+                 'C': {'D'},
+                 'D': {'A', 'B', 'C'}}
 
-# The nodes are stored as the dictionary keys.
->>> print(adjacency_dictionary.keys())
-<<{'A', 'C', 'B', 'E', 'D'}>>
+# The nodes of the graph are the dictionary keys.
+>>> set(adjacency.keys())
+<<{'B', 'D', 'A', 'C'}>>
 
-# The values are the nodes that the key is connected to.
->>> print(adjacency_dictionary['A'])
-<<{'B', 'D'}>>            # A is connected to B and D.
+# The values are the nodes that the key node is adjacent to.
+>>> adjacency['A']
+<<{'B', 'D'}>>                  # A is adjacent to B and D.
+>>> 'C' in adjacency['B']
+<<False>>                       # B and C are not adjacent.
+>>> 'C' in adjacency['D']
+<<True>>                        # C and D are adjacent.
 \end{lstlisting}
 
-% Problem 1: node, edge methods for Graph class (warmup with dictionaries)
-\begin{problem}
+\begin{warn} % hashable objects only
+Elements of a \li{set} and keys of a \li{dict} must be \emph{hashable}.
+Mutable objects---lists, sets and dictionaries---are not hashable, so they are not allowed as set elements or dictionary keys.
+Thus, in order to represent a graph with an adjacency dictionary, each of the node labels should a string, a number, or some other hashable type.
+\end{warn}
+
+
+\begin{problem} % node, edge methods for Graph class (dictionary warm up).
+\label{prob:bfs-graph-warmup}
 Consider the following \li{Graph} class.
 \begin{lstlisting}
 class Graph:
@@ -200,11 +204,11 @@ class Graph:
     the corresponding node's neighbors.
 
     Attributes:
-        d (dictionary): the adjacency dictionary of the graph.
+        d (dict): the adjacency dictionary of the graph.
     """
-    def __init__(self, adjacency):
+    def __init__(self, adjacency={}):
         """Store the adjacency dictionary as a class attribute"""
-        self.d = adjacency
+        self.d = dict(adjacency)
 
     def __str__(self):
         """String representation: a view of the adjacency dictionary."""
@@ -212,46 +216,54 @@ class Graph:
 \end{lstlisting}
 Add the following methods to this class.
 \begin{enumerate}
-\item \li{add_node(self, n)}: Add a node \li{n} to the graph.
-\item \li{add_edge(self, u, v)}: Add an edge from node \li{u} to node \li{v} in the graph. Make sure to add the nodes if they are not already in the graph.
-\item \li{remove_node(self, n)}: Remove the node \li{n} from the graph. Make sure to remove all connections to \li{n} as well.
-Raise a \li{KeyError} if \li{n} is not in the graph.
-\item \li{remove_edge(self, u, v)}: Remove the edge from node \li{u} to node \li{v} from the graph.
-Raise a \li{KeyError}: if \li{u} or \li{v} are not in the graph, or if there is no edge between \li{u} and \li{v}.
-\\(Hint: Dictionaries and sets already raise errors with certain inputs.)
+\item \li{add_node()}: Add a node (with no initial edges) if it is not already present.
+\\ (Hint: use \li{set()} to create an empty set.)
+\item \li{add_edge()}: Add an edge between two nodes. Add the nodes to the graph if they are not already present.
+\item \li{remove_node()}: Remove a node, including all edges adjacent to it.
+This method should raise a \li{KeyError} if the node is not in the graph.
+\item \li{remove_edge()}: Remove the edge between two nodes.
+This method should raise a \li{KeyError} if either node is not in the graph, or if there is no edge between the nodes.
 \end{enumerate}
 \end{problem}
 
-\section*{Breadth-first Search}
+\section*{Breadth-first Search} % =============================================
 
-Many of the most common problems that arise in graph theory require finding the shortest path between two nodes in the graph.
-Doing so requires a way to strategically search the graph.
-Two common searches are depth-first search (DFS) and breadth-first search (BFS).
-The BFS strategy is typically better at finding shortest paths than the DFS strategy\footnote{\url{https://xkcd.com/761/}}.
+Many common problems that arise in graph theory require finding the shortest path between two nodes in a graph.
+For some highly structured graphs, such as binary search trees, this is a fairly straightforward problem (in the case of a tree, the shortest path is also the only path).
+Finding a path between nodes in a graph of arbitrary structure, however, requires a careful and methodical approach.
+The two most common graph search algorithms are \emph{depth-first search} (DFS) and \emph{breadth-first search} (BFS).
+The breadth-first strategy is almost always better at finding shortest paths than the depth-first strategy,\footnote{See \url{https://xkcd.com/761/}.} though a DFS can be useful for path problems in certain graphs.
 
-To traverse a graph with a BFS, choose a starting node.
-If the starting node is not the target node, explore each of the starting node's neighbors.
-If none of the neighbors are the target, explore each of the neighbors' neighbors.
-If none of those neighbors are the target, explore each of their neighbors.
-Continue the process until the target is found.
-Note that in this way, we explore the \emph{breadth} of the tree before going deeper each time.
+To traverse a graph with a BFS, choose a node to start at, called the \emph{source} node.
+First, visit each of the source node's neighbors.
+Next, visit each of the source node's neighbors' neighbors.
+Then visit each of their neighbors, continuing the process until all nodes have been visited.
+This strategy explores all of the nodes closest to the source node before incrementally moving ``deeper'' (further from the source node) into the tree.
 
-In order to avoid common pitfalls, use the following data structures to keep track of visited and current nodes, as well as those marked to be visited.
+The implementation of a BFS requires the following data structures to keep track of which nodes have already been visited and the order in which to visit nodes in future steps.
+\begin{itemize}
+    \item A list $V$: The nodes that have been \textbf{visited}, in visitation order.
+    \item A \textbf{queue} $Q$: The nodes to be visited, in the order that they were discovered.
+    Recall that a \emph{queue} is a limited-access list where data is inserted to one end, but removed from the other (first-in, first-out).
+    \item A set $M$: The nodes that have been visited, or that are \textbf{marked} to be visited.
+    This is the union of the nodes in $V$ and $Q$.
+\end{itemize}
+To begin the search, add the source node to $Q$ and $M$.
+Then, until $Q$ is empty, repeat the following:
 \begin{enumerate}
-  \item A list V - The nodes that have been visted (in the order that they were visited).
-  \item A queue Q - The order in which to visit nodes.
-  \item A set M (marked) - The nodes marked as visited, and marked for visitation.
+    \item Pop a node off of $Q$; call it the \emph{current} node.
+    \item ``Visit'' the current node by appending it to $V$.
+    \item Add the neighbors of the current node that are not in $M$ to $Q$ and $M$.
+    \label{step:bfs-add-to-queue}
 \end{enumerate}
+The ``that are not in $M$'' clause of step \ref{step:bfs-add-to-queue} prevents nodes from being added to $Q$ more than once.
+Note that step \ref{step:bfs-add-to-queue} could be replaced with ``Add the neighbors of the current node that are not in $V \cup Q$ to $Q$.''
+However, lookup in $M$ (a set) is much faster than lookup in $V$ and $Q$ (arrays or linked lists), so including $M$ greatly speeds up the algorithm.
 
-Recall that a \emph{queue} is a type of limited-access list.
-Data is inserted to the back of the queue, but removed from the front.
-At each level of the search, we add the neighbors of the current node to the back of Q if they aren't in M already.
-This dictates the order in which the nodes are visited.
-Note that Q enforces the 'breadth-first' nature of a BFS.
-Another data structure, or a different order on the nodes, would result in a different search.
-
-By creating M, a set to contain all nodes that have already been visited, or that are marked to be visited, we avoid visiting these nodes again.
-Checking set membership is very fast, so this additional data structure has minimal impact on the program's speed (and is faster than checking the queue).
+\begin{info}
+The first-in, first-out (FIFO) structure of $Q$ enforces the ``breadth-first'' nature of the BFS: nodes that are marked first are visited first.
+Using a a last-in, first-out (LIFO) stack for $Q$ changes the search to a DFS: the next node to visit is the one that was marked last.
+\end{info}
 
 \begin{figure}[H] % Example of a breadth-first search.
 \captionsetup[subfigure]{justification=centering}
@@ -341,38 +353,37 @@ Checking set membership is very fast, so this additional data structure has mini
     $M$ & A B D C \\
     \end{tabular}
 \end{subfigure}
-\caption{To start a breadth-first search from node A to node C, put A in the visit queue $Q$ and mark it by adding it to the set $M$.
+\caption{To start a BFS from node A to node C, put A in the visit queue $Q$ and mark it by adding it to the set $M$.
 Pop A off the queue and ``visit'' it by adding A to the visited list $V$ and the neighboring nodes B and D to $Q$.
 Then visit B, but do not add anything to $Q$ because all of the neighbors of B are already marked.
 Finally, visit D, at which point the target node C is located because it is adjacent to D.
-Visiting C is optional at this point.
 }
 \label{fig:bfs-example}
 \end{figure}
 
-% Problem 2: general BFS
-\begin{problem}
-Write a \li{traverse()} method for the \li{Graph} class that accepts a starting node and (optionally) a target node.
-Start from the specified node and proceed until the target is found.
-If no target is specified, proceed until all nodes in the graph have been visited.
-Return the list of visited nodes.
-If the starting node is not in the graph's adjacency dictionary, raise a \li{KeyError}.
+\begin{problem} % BFS graph traversal.
+\label{prob:bfs-traversal}
+Write a method for the \li{Graph} class that accepts a source node.
+Traverse the graph with a breadth-first search until all nodes have been visited.
+Return the list of nodes in the order that they were visited.
+If the source node is not in the graph, raise a \li{KeyError}.
+\\(Hint: for $Q$, use a \li{deque} from the \li{collections} module, and make sure that nodes are added to one end but popped off of the other.)
 \end{problem}
 
-\section*{Shortest Paths via BFS} % ===========================================
+\subsection*{Shortest Paths via BFS} % ----------------------------------------
 
-In a BFS, as few neighborhoods are explored as possible before finding the target.
-At each neighborhood, the minimal path is marked from the source node, until the target node is encountered.
-Therefore, the path taken to get to the target must be the shortest path.
+Consider the problem of locating a path between two nodes with a BFS.
+The nodes that are directly connected to the source node are all visited before any other nodes; more generally, the nodes that are $n$ nodes away from the source node are all visited before nodes that are $n+1$ or more nodes from the source point.
+Therefore, the search path taken to discover to the target with a BFS must be the shortest path from the source node to the target node.
 
-Examine again the graph in Figure \ref{fig:bfs-example}.
-The shortest path from $A$ to $C$ starts at $A$, goes to $D$, and ends at $C$.
-During a BFS, $D$ is visited because it is one of $A$'s neighbors, and $C$ is visited because it is one of $D$'s neighbors.
-If we knew programmatically that $A$ was the node that visited $D$, and that $D$ was the node that visited $C$, we could retrace our steps to reconstruct the search path.
+Examine again the graph in Figures \ref{fig:bfs-simple-graph} and \ref{fig:bfs-example}.
+The shortest path from A to C starts at A, goes to D, and ends at C.
+During a BFS originating at A, D is placed on the visit queue because it is one of A's neighbors, and C is placed on the queue because it is one of D's neighbors.
+Given that A was the node that visited D, and that D was the node that visited C, the shortest path from A to C can be constructed by stepping backward along the search path.
 
 To implement this idea, initialize a dictionary before starting the BFS.
-When a node is added to the visit queue, add a key-value pair with the visiting node as the key, and the added node as the value.
-When the target node is found, step through the dictionary until arriving at the starting node, recording each step.
+When a node is marked and added to the visit queue, add a key-value pair mapping the \textbf{visited} node to the \textbf{visiting} node (for example, B $\mapsto$ A means B was marked while visiting A).
+When the target node is found, step through the dictionary until arriving at the source node, recording each step.
 
 \begin{figure}[H] % Example of a breadth-first search.
 \centering
@@ -386,26 +397,24 @@ When the target node is found, step through the dictionary until arriving at the
 \draw[thick,-,>=stealth'] (B) edge (D);
 \foreach \a/\b in {C/D,D/A,B/A} \draw[green!80,thick,->,>=stealth',line width=1.5pt] (\a) edge (\b);
 \end{tikzpicture}
-\caption{In the breadth-first search from Figure \ref{fig:bfs-example}, nodes B and D were marked while visiting node A, and node C was marked while visiting node D (this is same as reversing the red arrows in Figure \ref{fig:bfs-example}).
+\caption{In the BFS from Figure \ref{fig:bfs-example}, nodes B and D were marked while visiting node A, and node C was marked while visiting node D (this is same as reversing the red arrows in Figure \ref{fig:bfs-example}).
 Thus the ``visit path'' from C to A is $\text{C}\rightarrow\text{D}\rightarrow\text{A}$, so the shortest path from A to C is $[$A, D, C$]$.}
 \label{fig:bfs-shortest-path}
 \end{figure}
 
 \begin{problem}
-Add a method to the \li{Graph} class that accepts a start node and a target node.
-Begin at the specified starting node and proceed until the target is found.
-Return a list containing the node values in the shortest path from the start to the target (including the endpoints).
-If either of the inputs are not in the graph, raise a \li{KeyError}.
+Add a method to the \li{Graph} class that accepts source and target nodes.
+Begin a BFS at the source node and proceed until the target is found.
+Return a list containing the node values in the shortest path from the source to the target (including the endpoints).
+If either of the input nodes are not in the graph, raise a \li{KeyError}.
+\label{prob:bfs-short-path1}
 \end{problem}
 
 \section*{Shortest Paths via NetworkX} % ======================================
 
-\emph{NetworkX} is a Python package for creating, manipulating, and exploring large graphs.
-It contains a \li{Graph} object constructor as well as methods for adding nodes and edges to the graph.
-It also has methods for interpreting information about the graph and its structure from certain types of Python objects.
-
-A node can be an int, a string, or a Python object, and an edge can be weighted or unweighted.
-There are several ways to add nodes and edges to the graph, some of which are listed below.
+\emph{NetworkX} is a Python package for creating, manipulating, and exploring graphs.
+Its \li{Graph} object represents a graph with an adjacency dictionary, similar to the class from Problems \ref{prob:bfs-graph-warmup}--\ref{prob:bfs-short-path1}, and has many methods for interpreting information about the graph and its structure.
+As before, the nodes must be hashable (a number, string, or another immutable object).
 
 \begin{table}[H]
 \centering
@@ -417,50 +426,59 @@ There are several ways to add nodes and edges to the graph, some of which are li
     \li{add_edge()} & Add an edge between two nodes.\\
     \li{add_edges_from()} & Add a list of edges to the graph.
 \end{tabular}
+\caption{Methods of the \li{nx.Graph} class for adding nodes and edges.}
 \end{table}
 
 \begin{lstlisting}
-# Create a graph object using networkX using a known dictionary.
 >>> import networkx as nx
->>> adjacency_dictionary = {'A':{'B', 'D'}, # The graph from earlier.
-                            'B':{'A', 'D'},
-                            'C':{'D'},
-                            'D':{'A', 'B', 'C'}}
->>> nx_graph = nx.Graph(adjacency_dictionary)
 
-# Access the nodes and edges.
->>> print(nx_graph.nodes())
+# Initialize a NetworkX graph from an adjacency dictionary.
+>>> G = nx.Graph({'A': {'B', 'D'},
+                  'B': {'A', 'D'},
+                  'C': {'D'},
+                  'D': {'A', 'B', 'C'}})
+
+>>> print(G.nodes())            # Print the nodes.
 <<['A', 'B', 'C', 'D']>>
-
->>> print(nx_graph.edges())
+>>> print(G.edges())            # Print the edges as tuples.
 <<[('A', 'D'), ('A', 'B'), ('B', 'D'), ('C', 'D')]>>
 
->>> nx_graph.add_node('A')
->>> nx_graph.add_node('E')
->>> nx_graph.add_edge('A', 'F') # Node 'F' is added to the graph.
->>> nx_graph.add_edges_from([('A', 'E')])
+>>> G.add_node('E')             # Add a new node.
+>>> G.add_edge('A', 'F')        # Add an edge, which also adds a new node 'F'.
+>>> G.add_edges_from([('A', 'C'), ('F', 'G')])  # Add several edges at once.
 
-# Access the nodes and edges.
->>> print(nx_graph.nodes())
-<<['A', 'B', 'C', 'D', 'E', 'F']>>
-
->>> print(nx_graph.edges())
-<<[('A', 'D'), ('A', 'B'), ('A', 'F'), ('A', 'E'), ('B', 'D'), ('C', 'D')]>>
-
-# Small graphs can be visualized with nx.draw().
->>> from matplotlib import pyplot as plt
->>> nx.draw(nx_graph)
->>> plt.show()
+>>> set(G['A'])                 # Get the set of nodes neighboring node 'A'.
+<<{'B', 'C', 'D', 'F'}>>
 \end{lstlisting}
 
 \subsection*{The Kevin Bacon Problem} % ---------------------------------------
 
-\href{http://oracleofbacon.org/help.php}{\emph{The 6 Degrees of Kevin Bacon}} is a vintage parlor game.
-The game is played by naming an actor, then trying to find a chain of actors that have worked with each other leading to Kevin Bacon.
-For example, Samuel L. Jackson was in the film \emph{Captain America: The First Avenger} with Peter Stark, who was in \emph{X-Men: First Class} with Kevin Bacon.
-Thus Samuel L. Jackson has a \emph{Bacon number} of $2$.
-Any actors who have been in a movie with Kevin Bacon have a Bacon number of $1$.
-\begin{figure}
+The vintage parlor game \href{http://oracleofbacon.org/help.php}{\emph{Six Degrees of Kevin Bacon}} is played by naming an actor, then trying to find the shortest chain of actors that have worked with each other leading to Kevin Bacon.
+For example, Samuel L. Jackson was in the film \emph{Pulp Fiction (1994)} with Frank Whaley, who was in \emph{JFK (1991)} with Kevin Bacon.
+In other words, the goal of the game is to solve a shortest path problem on a graph that connects actors to the movies that they have been in.
+
+\begin{problem} % MovieGraph.__init__()
+The file \texttt{movie\_data.txt} contains IMDb data for about 137,000 movies.
+Each line of the file represents one movie: the title is listed first, then the cast members, with entries separated by a \texttt{/} character.
+For example, the line for \emph{The Dark Knight (2008)} starts with
+\begin{center}
+\texttt{The Dark Knight (2008)/Christian Bale/Heath Ledger/Aaron Eckhart/...}
+\end{center}
+Any \li{/} characters in movie titles have been replaced with the vertical pipe character \texttt{|} (for example, \texttt{Frost|Nixon (2008)}).
+
+Write a class whose constructor accepts the name of a file to read.
+Initialize a set for movie titles, a set for actor names, and an empty NetworkX \li{Graph}, and store them as attributes.
+Read the file line by line, adding the title to the set of movies and the cast members to the set of actors.
+Add an edge to the graph between the movie and each cast member.
+\\(Hint: Use the \li{split()} method for strings to parse each line.)
+
+It should take no more than 20 seconds to construct the entire graph.
+Check that there are 137,018 movies and 930,717 actors.
+Compare parts of your graph to Figure \ref{fig:bfs-network-subset}.
+\label{prob:bfs-movie-network-init}
+\end{problem}
+
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}
 % Set styles for Actor and Movie nodes
@@ -486,108 +504,141 @@ Any actors who have been in a movie with Kevin Bacon have a Bacon number of $1$.
                    4/9, 1/10, 4/10, 5/10,4/11,5/11,1/12}
   \draw[thick] (v\i) edge (v\j);
 \end{tikzpicture}
-\caption{A \textbf{very} small subset of the data from \texttt{movieData.txt}.
-Each of the actors shown have a Bacon number of $1$ because they have all been in a movie with Kevin Bacon.
-Every cast member of \emph{The Hunger Games} has a Bacon number of at most $2$ because of the paths through Jennifer Lawrence or Toby Jones.}
+\caption{A subset of the graph in \texttt{movie\_data.txt}.
+Each of these actors have a Bacon number of $1$ because they have all been in a movie with Kevin Bacon.
+Every actor in \emph{The Hunger Games} has a Bacon number of at most $2$ because of the paths through Jennifer Lawrence or Toby Jones.}
+\label{fig:bfs-network-subset}
 \end{figure}
 
-\begin{problem} % MovieGraph.__init__()
-Write a \li{MovieGraph} class to solve the Kevin Bacon problem.
+\begin{info} % Note that the movie-actor graph is bipartite.
+The movie/actor graph of Problem \ref{prob:bfs-movie-network-init} and Figure \ref{fig:bfs-network-subset} has an interesting property: actors are only directly connected to movies, and movies are only directly connected to actors.
+This kind of graph is called \emph{bipartite} because there are two types of nodes, and no node has an edge connecting it to another node of its type.
+\end{info}
 
-The file \texttt{movieData.txt} contains data from about 13,000 movies.
-A single movie is listed on each line, followed by a sequence of actors that starred in it.
-The movie title and actors' names are separated by a \li{/} character.
-The actors are listed by last name first, followed by their first name.
-
-Implement the constructor of \li{MovieGraph}.
-Accept a filename to read data from, and store the collection of values (the actors) as a class attribute, avoiding duplicates.
-Create a networkX \li{Graph} and store it as another class attribute.
-Note that in the graph, actors only have movies as neighbors, and movies only have actors as neighbors.
-\\(Hint: recall the \li{split()} method for strings.)
-
-\end{problem}
-
-\begin{warn}
-Because of the size of the dataset, \textbf{do not} attempt to visualize the graph in Problem 4 with \li{nx.draw()}.
-The visualization tool in NetworkX is only effective on relatively small graphs.
+\begin{warn} % nx.draw() only works on small graphs.
+NetworkX \li{Graph} objects can be visualized with \li{nx.draw()} (followed by \li{plt.show()}).
+However, this visualization tool is only effective on relatively small graphs.
 In fact, graph visualization in general remains a challenging and ongoing area of research.
+Because of the size of the dataset, \textbf{do not} attempt to visualize the graph in Problem \ref{prob:bfs-movie-network-init} with \li{nx.draw()}.
 \end{warn}
 
-NetworkX is equipped with a variety of methods to analyze graphs.
+The Six Degrees of Kevin Bacon game poses an interesting question: can any actor be linked to Kevin Bacon, and if so, in how many steps?
+The game hypothesizes, ``Yes, within $6$ steps'' (hence the title).
+More precisely, let the \emph{Bacon number} of an actor be the number of steps from that actor to Kevin Bacon, only counting actors.
+For example, since Samuel L. Jackson was in a film with Frank Whaley, who was in a film with Kevin Bacon, Samuel L. Jackson has a Bacon number of $2$.
+Actors who have been in a movie with Kevin Bacon have a Bacon number of $1$, and actors with no path to Kevin Bacon have a Bacon number of $\infty$.
+The game asserts that the largest Bacon number is $6$.
 
-\begin{lstlisting}
-# Verify nx_graph has a path from 'C' to 'E'.
->>> nx.has_path(nx_graph, 'C', 'E')
-<<True>>
-
-# The shortest_path method is implemented with a
-# bidirectional BFS (starting from both ends).
->>> nx.shortest_path(nx_graph, 'C', 'E')
-['C', 'A', 'E']
-\end{lstlisting}
-
-\begin{problem}
-Write a method for the \li{MovieGraph} class that accepts source and target values (actors' names).
-Set Kevin Bacon as the default target.
-Return a list with the shortest path from the source to the target, and the number of actors in the list.
-Note that this is different than the number of entries in the shortest path list, since movies do not contribute.
-If either input is not an actor's name, raise a \li{ValueError}.
-\begin{lstlisting}
->>> movie_graph = MovieGraph("movieData.txt")
->>> movie_graph.path_to_actor("Jackson, Samuel L.")
-<<['Jackson, Samuel L.', 'Captain America: The First Avenger', 'Stark,
-Peter', 'X-Men: First Class', 'Bacon, Kevin'], 2>>
-\end{lstlisting}
-\label{prob:actor_path}
-\end{problem}
-
-\begin{problem} % Individual and average Bacon numbers
-Add a method to the \li{MovieGraph} class to calculate the average path length across all of the actors in the collection to the target (not including movies).
-Set Kevin Bacon as the default target.
-Use \li{plt.hist()} to plot the distribution of path lengths and return the average path length.
-\\(Hint: The \li{path_to_actor()} method from Problem \ref{prob:actor_path} is not the most efficient way of doing this.
-Also, consider how \li{bins} affects \li{plt.hist()})
-\end{problem}
-
-As an aside, the prolific \href{https://en.wikipedia.org/wiki/Erd%C5%91s_number}{Paul Erd\H{o}s} is considered the Kevin Bacon \href{https://xkcd.com/599/}{of the mathematical community}.
-Someone with an ``Erd\H{o}s number'' of $2$ co-authored a paper with someone who co-authored a paper with Paul Erd\H{o}s.
-
-\newpage
-
-\section*{Additional Material} % ==============================================
-
-\subsection*{Depth-first Search} % --------------------------------------------
-
-% TODO: Revise this section. Need a (good) picture of a DFS, compared to a BFS.
-
-A \emph{depth-first search} (DFS) takes the opposite approach of a breadth-first search.
-Instead of checking all neighbors of a single node before moving, on, it checks the first neighbor, then their first neighbor, then their first neighbor, and so on until reaching a leaf node.
-Then the algorithm back tracks to the previous node and checks its second neighbor.
-The DFS method was originally developed as a strategy for solving mazes.
-While a DFS is sometimes more useful than a BFS, a BFS is usually better\footnote{\url{https://xkcd.com/761/}} at finding the shortest path.
-
-Consider adding a keyword argument to the \li{traverse()} method of the \li{Graph} class that specifies whether to use a BFS (the default) or a DFS.
-This can be done by changing a single line of the BFS code.
-
-\subsection*{Improvements to the MovieGraph Class} % -------------------------
-% This doesn't really work anymore, since it's not a 'bacon number,' but rather a 'path to actor' or 'average number.'
-Consider adding a \li{center_of_the_universe()} method in the \li{MovieGraph} class.
-This should plot the distribution of average numbers and return the 'center of the universe,' or the actor to whom all other actors are most closely connected.
-This can be found by returning the actor with the lowest average path length from all other actors.
-
-\subsection*{More NetworkX}
-
-The following are interesting methods that may be of use in further graph analysis.
+NetworkX is equipped with a variety of graph analysis tools, including a few for computing paths between nodes (and, therefore, Bacon numbers).
+To compute a shortest path between nodes $u$ and $v$, \li{nx.shortest_path()} starts one BFS from $u$ and another from $v$, switching off between the two searches until they both discover a common node.
+This approach is called a \emph{bidirectional BFS} and is typically faster than a regular, one-sided BFS.
 
 \begin{table}[H]
 \centering
 \begin{tabular}{r|l}
     Function & Description\\
     \hline
-    \li{adjacency_matrix()} & Returns the adjacency matrix as a SciPy sparse matrix.\\
-    \li{dijkstra_path()} & Returns the shortest path from a source to a target in a weighted graph.\\
-    \li{has_path()} & Returns \li{True} if the graph has a path from a source to a target.\\
-    \li{prim_mst()} & Returns a minimum spanning tree for a weighted graph.\\
-    \li{shortest_path()} & Returns the shortest path from a source to a target.
+    \li{has_path()} & Return \li{True} if there is a path between two specified nodes.\\
+    \li{shortest_path()} & Return \textbf{one} shortest path between nodes.\\
+    \li{shortest_path_length()} & Return the length of the shortest path between nodes.\\
+    \li{all_shortest_paths()} & Yield \textbf{all} shortest paths between nodes. \\
+    % \li{average_shortest_path_length()} & Compute the average length of shortest paths from every node to every other node in the graph.
 \end{tabular}
+\caption{NetworkX functions for path problems. Each accepts a \li{Graph}, then a pair of nodes.}
 \end{table}
+
+\begin{lstlisting}
+>>> G = nx.Graph({'A': {'B', 'D'},
+                  'B': {'A', 'D'},
+                  'C': {'D'},
+                  'D': {'A', 'B', 'C'}})
+
+# Compute the shortest path between 'A' and 'D'.
+>>> nx.has_path(G, 'A', 'C')
+<<True>>
+>>> nx.shortest_path(G, 'A', 'C')
+<<['A', 'D', 'C']>>
+>>> nx.shortest_path_length(G, 'A', 'C')
+2
+
+# Compute all possible shortest paths between two nodes.
+>>> G.add_edge('B', 'C')
+>>> list(nx.all_shortest_paths(G, 'A', 'C'))
+<<[['A', 'D', 'C'], ['A', 'B', 'C']]>>
+
+# When the second node is omitted from these functions, the shortest paths
+# from the given node to EVERY node are computed and returned as a dictionary.
+>>> nx.shortest_path(G, 'A')
+<<{'A': ['A'], 'D': ['A', 'D'], 'B': ['A', 'B'], 'C': ['A', 'D', 'C']}>>
+>>> nx.shortest_path_length(G, 'A')     # Path lengths are defined by the
+<<{'A': 0, 'D': 1, 'B': 1, 'C': 2}>>        #  number of edges, not nodes.
+\end{lstlisting}
+
+\begin{problem} % Individual shortest paths / Bacon numbers.
+Write a method for your class from Problem \ref{prob:bfs-movie-network-init} that accepts two actors' names.
+Use NetworkX to compute the shortest path between the actors and the degrees of separation between the two actors (if one of the actors is \li{"Kevin Bacon"}, this is the Bacon number of the other actor).
+Note that this number is different than the number of entries in the actual shortest path list, since movies are just intermediate steps between actors.
+\label{prob:bfs-actor-path}
+\end{problem}
+
+The idea of a Bacon number provides a few ways to analyze the connectivity of the Hollywood network.
+For example, the distribution of all Bacon numbers describes how close Kevin Bacon is to actually knowing all of the actors in Hollywood
+Someone with a lower average number---for instance, the average \emph{Jackson number}, for Samuel L. Jackson---is, on average, ``more connected with Hollywood'' than Kevin Bacon.
+The actor with the lowest average number is sometimes called \emph{the center of the Hollywood universe}.
+
+\begin{problem} % Average Bacon numbers.
+\label{prob:bfs-average-bacon-number}
+Write a method for your class from Problem \ref{prob:bfs-movie-network-init} that accepts one actor's name.
+Calculate the shortest path lengths of every actor in the collection to the specified actor (not including movies).
+Use \li{plt.hist()} to plot the distribution of path lengths and return the average path length.
+\\(Hint: Use a NetworkX function to compute all path lengths simultaneously; this is significantly faster than calling your method from Problem \ref{prob:bfs-actor-path} repeatedly.
+Also, use the keyword argument \li{bins=[i-.5 for i in range(8)]} in \li{plt.hist()} to get the histogram bins to correspond to integers nicely.)
+\end{problem}
+
+As an aside, the prolific \href{https://en.wikipedia.org/wiki/Erd%C5%91s_number}{Paul Erd\H{o}s} is the Kevin Bacon equivalent in the mathematical community.
+Someone with an \emph{Erd\H{o}s number} of $2$ co-authored a paper with someone who co-authored a paper with Paul Erd\H{o}s.
+Having an Erd\H{o}s number of $1$ or $2$ is considered quite an achievement (see \url{https://xkcd.com/599/}).
+
+\newpage
+
+\section*{Additional Material} % ==============================================
+
+\subsection*{Other Hash-based Structures} % -----------------------------------
+
+The standard library has a few specialized alternatives to regular sets and dictionaries.
+\begin{itemize}
+\item \li{frozenset}: an immutable version of the usual set class.
+Frozen sets cannot be altered after creation and therefore lack methods like \li{add()}, \li{pop()}, and \li{remove()}, but they can be placed in other sets and used as dictionary keys.
+
+\item \li{collections.defaultdict}: a dictionary with default values.
+For instance, \li{defaultdict(set)} creates a dictionary that automatically uses an empty set as the value whenever a non-present key is used for indexing.
+See \href{https://docs.python.org/3/library/collections.html\#defaultdict-examples}{\texttt{https://docs.python.org/3/library/collections.html}} for examples.
+
+\item \li{collections.OrderedDict}: a dictionary that remembers insertion order.
+For example, the \li{popitem()} method returns the most recently added key-value pair.
+\end{itemize}
+
+\subsection*{Depth-first Search} % --------------------------------------------
+
+A \emph{depth-first search} (DFS) takes the opposite approach of a BFS.
+Instead of checking all neighbors of a single node before moving on, it checks the first neighbor, then their first neighbor, then their first neighbor, and so on until reaching a leaf node.
+The algorithm then backtracks to the previous node and checks its second neighbor.
+While a DFS is rarely useful for finding shortest paths, it is a common strategy for solving recursively structured problems, such as mazes or Sudoku puzzles.
+
+Consider adding a keyword argument to your method from Problem \ref{prob:bfs-traversal} that specifies whether to use a BFS (the default) or a DFS.
+To change from a BFS to a DFS, change the visit queue $Q$ to a stack.
+You may be able to implement the change in a single line of code.
+
+\subsection*{The Center of the Hollywood Universe} % --------------------------
+
+Computing the center of the universe in a graph amounts to solving Problem \ref{prob:bfs-average-bacon-number} for every node in the graph.
+This is computationally expensive, but since each average number is independent of the others, the problem is a good candidate for \emph{parallel programming}, which divides the computational workload between multiple processes.
+Even with parallelism, however, computing the center of the Hollywood universe may require significant computational time and resources.
+
+\subsection*{Shortest Paths on Weighted Graphs} % -----------------------------
+
+The graphs presented in this lab are \emph{unweighted}, meaning all edges have the same importance.
+A \emph{weighted graph} assigns a weight to each edge, which can usually be thought of as the distance between the two adjacent nodes.
+The shortest path problem becomes much more complicated on weighted graphs, and requires additions to the plain BFS.
+The standard approach is \emph{Dijkstra's algorithm}, which is implemented as \li{nx.dijkstra_path()}.
+Another approach, the \emph{Bellman-Ford algorithm}, is implemented as \li{nx.bellman_ford_path()}.
