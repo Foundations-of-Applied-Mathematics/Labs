@@ -3,37 +3,39 @@
 \objective{
 A Markov chain is a collection of states with specified probabilities for transitioning from one state to another.
 They are characterized by the fact that the future behavior of the system depends only on its current state.
-In this lab, we learn to construct, analyze, and interact with Markov chains, then apply a Markov chain to a natural language processing problem.}
+In this lab, we learn to construct, analyze, and interact with Markov chains, then use a Markov-based approach to simulate natural language.}
 
 \section*{State Space Models} % ===============================================
 
-Many systems can be described by a finite number of states.
-For example, a board game where players move around the board based on die rolls can be modeled by a Markov chain.
+Many systems can be described by a finite number of \emph{states}.
+For example, a board game where players move around the board based on dice rolls can be modeled by a Markov chain.
 Each space represents a state, and a player is said to be in a state if their piece is currently on the corresponding space.
 In this case, the probability of moving from one space to another only depends on the player's current location; where the player was on a previous turn does not affect their current turn.
 
-Finite Markov chains have an associated \emph{transition matrix} that stores the information about the transitions between the states in the chain.
+Markov chains with a finite number of states have an associated \emph{transition matrix} that stores the information about the possible transitions between the states in the chain.
 The $(i,j)$th entry of the matrix gives the probability of moving \textbf{from state $j$ to state $i$}.
-Thus each of the columns of the transition matrix sum to $1$.
+Thus, each of the columns of the transition matrix sum to $1$.
 
-\begin{info} % Generate random row stochastic transitino matrices.
-A transition matrix where the columns sum to 1 is called \emph{column stochastic} (or \emph{left stochastic}).
-The rows of a \emph{row stochastic} (or \emph{right stochastic}) transition matrix each sum to 1 and the $(i,j)$th entry of the matrix is the probability of moving from state $i$ to state $j$.
+\begin{info} % Column stochastic versus row stochastic.
+A transition matrix where the columns sum to $1$ is called \emph{column stochastic} (or \emph{left stochastic}).
+The rows of a \emph{row stochastic} (or \emph{right stochastic}) transition matrix each sum to $1$ and the $(i,j)$th entry of the matrix is the probability of moving from state $i$ to state $j$.
 Both representations are common, but in this lab we exclusively use column stochastic transition matrices for consistency.
 \end{info}
 
-Consider a very simple weather model where the probability of being hot or cold depends on the weather of the previous day.
-If the probability that tomorrow is hot given that today is hot is 0.7, and the probability that tomorrow is cold given that today is cold is 0.4, then by assigning hot to the $0$th row and column, and cold to the $1^{st}$ row and column, this Markov chain has the following transition matrix.
+Consider a very simple weather model in which the weather tomorrow depends only on the weather today.
+For now, we consider only two possible weather states: hot and cold.
+Suppose that if today is hot, then the probability that tomorrow is also hot is 0.7, and that if today is cold, the probability that tomorrow is also cold is 0.4.
+By assigning ``hot'' to the $0$th row and column, and ``cold'' to the $1$st row and column, this Markov chain has the following transition matrix.
 
 \begin{align*}
 \begin{blockarray}{ccc}
 & \text{\textcolor{red}{hot today}} & \text{\textcolor{blue}{cold today}} \\
 \begin{block}{c[cc]}
-\text{\textcolor{red}{hot tomorrow}}   & 0.7 & 0.6 \\
-\text{\textcolor{blue}{cold tomorrow}} & 0.3 & 0.4 \\
+\text{\textcolor{red}{hot tomorrow}}   & 0.7 & 0.6 \topstrut \\
+\text{\textcolor{blue}{cold tomorrow}} & 0.3 & 0.4 \botstrut \\
 \end{block}\end{blockarray}
 \end{align*}
-
+%
 The $0$th column of the matrix says that if it is hot today, there is a $70\%$ chance that tomorrow will be hot ($0$th row) and a $30\%$ chance that tomorrow will be cold ($1$st row).
 The $1$st column says if it is cold today, then there is a $60\%$ chance of heat and a $40\%$ chance of cold tomorrow.
 
@@ -46,112 +48,148 @@ The Markov chain described above has the following state diagram.
 \begin{tikzpicture}[normalcircle/.style={draw, circle, minimum size=1.5cm, thick, node distance=2.5cm}]
     % Place the circles
     \node[normalcircle] (Hot) {};
-    \node[red] at (Hot) {Hot};
+    \node[red] at (Hot) {hot};
 
     \node[normalcircle, right=of Hot] (Cold) {};
-    \node[blue] at (Cold) {Cold};
+    \node[blue] at (Cold) {cold};
 
     % Draw loop, place number, draw line
-    \draw[thick,->,>=stealth',red!50!black] (Hot)+(-.52,.52) arc (325:40:.35 and -.85);
-    \node[left,red!50!black] at (Hot.west) [shift={+(-.5,0)}] {0.7};
-    \draw[thick,->,>=stealth',red!50!black] (Hot.north east) -- node[above] {0.3} (Cold.north west);
+    \draw[thick,->,>=stealth',red!70!black] (Hot)+(-.52,.52) arc (325:40:.35 and -.85);
+    \node[left,red!70!black] at (Hot.west) [shift={+(-.5,0)}] {0.7};
+    \draw[thick,->,>=stealth',red!70!black] (Hot.north east) -- node[above] {0.3} (Cold.north west);
 
-    \draw[thick,->,>=stealth',blue!50!black] (Cold)+(.52,.52) arc (325:40:-.35 and -.85);
-    \node[right,blue!50!black] at (Cold.east) [shift={+(.5,0)}] {0.4};
-    \draw[thick,->,>=stealth',blue!50!black] (Cold.south west) -- node[below] {0.6} (Hot.south east);
-
+    \draw[thick,<-,>=stealth',blue!70!black] (Cold)+(.52,.52) arc (325:40:-.35 and -.85);
+    \node[right,blue!70!black] at (Cold.east) [shift={+(.5,0)}] {0.4};
+    \draw[thick,->,>=stealth',blue!70!black] (Cold.south west) -- node[below] {0.6} (Hot.south east);
 \end{tikzpicture}
 \end{figure}
 
-%
-\begin{problem} % Make a column stochastic matrix.
-Transition matrices for Markov chains are efficiently stored as NumPy arrays.
-Write a function that accepts an integer $n$ and returns the transition matrix for a random Markov chain with $n$ states.
-\\ (Hint: use array broadcasting to avoid looping.)
-\label{prob:random-markov-chain}
+\begin{problem} % MarkovChain.__init__().
+\label{prob:markov-chain-class-constructor}
+Define a \li{MarkovChain} class whose constructor accepts an $n\times n$ transition matrix $A$ and, optionally, a list of state labels.
+If $A$ is not column stochastic, raise a \li{ValueError}.
+Construct a dictionary mapping the state labels to the row/column index that they correspond to in $A$ (given by order of the labels in the list), and save $A$, the list of labels, and this dictionary as attributes.
+If there are no state labels given, use the labels $\begin{bmatrix}0 & 1 & \ldots & n-1\end{bmatrix}$.
+
+For example, for the weather model described above, the transition matrix is
+\begin{align*}
+    A = \left[\begin{array}{cc}0.7 & 0.6 \\ 0.3 & 0.4\end{array}\right],
+\end{align*}
+the list of state labels is \li{["hot", "cold"]}, and the dictionary mapping labels to indices is \li{\{"hot":0, "cold":1\}}.
+This Markov chain could be also represented by the transition matrix
+\begin{align*}
+    \widetilde{A}
+    = \left[\begin{array}{cc}
+        0.4 & 0.3 \\ 0.6 & 0.7
+    \end{array}\right],
+\end{align*}
+the labels \li{["cold", "hot"]}, and the resulting dictionary \li{\{"cold":0, "hot":1\}}.
 \end{problem}
 
 \subsection*{Simulating State Transitions} % ----------------------------------
 
-A single draw from a \emph{binomial distribution} with parameters $n$ and $p$ indicates the number of successes out of $n$ independent experiments, each with probability $p$ of success.
-The classic example is a series of coin flips, where $p$ is the probability that the coin lands heads side up.
-NumPy's \li{random} module has an efficient tool, \li{binomial()}, for drawing from a binomial distribution.
+Simulating the weather model described above requires a programmatic way of choosing between the outgoing transition probabilities of each state.
+For example, if it is cold today, we could flip a weighted coin that lands on tails $60\%$ of the time (guess tomorrow is hot) and heads $40\%$ of the time (guess tomorrow is cold) to predict the weather tomorrow.
+The \emph{Bernoulli distribution} with parameter $p = 0.4$ simulates this behavior: $60\%$ of draws are $0$, and $40\%$ of draws are a $1$.
+
+A \emph{binomial distribution} is the sum several Bernoulli draws: one binomial draw with parameters $n$ and $p$ indicates the number of successes out of $n$ independent experiments, each with probability $p$ of success.
+In other words, $n$ is the number of times to flip the coin, and $p$ is the probability that the coin lands on heads.
+Thus, a binomial draw with $n=1$ is a Bernoulli draw.
+
+NumPy does not have a function dedicated to drawing from a Bernoulli distribution; instead, use the more general \li{np.random.binomial()} with $n=1$ to make a Bernoulli draw.
 
 \begin{lstlisting}
 >>> import numpy as np
 
-# Draw from the binomial distribution with n = 1 and p = .5 (flip 1 coin).
->>> np.random.binomial(1, .5)
+# Draw from the Bernoulli distribution with p = .5 (flip one fair coin).
+>>> np.random.binomial(n=1, p=.5)
 0                             # The coin flip resulted in tails.
+
+# Draw from the Bernoulli distribution with p = .3 (flip one weighted coin).
+>>> np.random.binomial(n=1, p=.3)
+0                             # Also tails.
 \end{lstlisting}
 
-Consider again the simple weather model and suppose that today is hot.
-The column that corresponds to ``hot''in the transition matrix is $[0.7, 0.3]$.
-To determine whether tomorrow is hot or cold, draw from the binomial distribution with $n = 1$ and $p = 0.3$.
-If the draw is 1, which has $30\%$ likelihood, then tomorrow is cold.
-If the draw is 0, which has $70\%$ likelihood, then tomorrow is hot.
-The following function implements this idea.
+For the weather model, if the ``cold'' state corresponds to row and column 1 in the transition matrix, $p$ should be the probability that tomorrow is cold.
+So, if today is cold, select $p=0.4$; if today is hot, set $p=0.3$.
+Then draw from the binomial distribution with $n=1$ and the selected $p$.
+If the result is $0$, transition to the ``hot'' state; if the result is $1$, stay in the ``cold'' state.
+
+% Consider again the simple weather model and suppose that today is hot.
+% The column that corresponds to ``hot''in the transition matrix is $[0.7, 0.3]$.
+% To determine whether tomorrow is hot or cold, draw from the binomial distribution with $n = 1$ and $p = 0.3$.
+% If the draw is 1, which has $30\%$ likelihood, then tomorrow is cold.
+% If the draw is 0, which has $70\%$ likelihood, then tomorrow is hot.
+
+Using Bernoulli draws to determine state transitions works for Markov chains with two states, but larger Markov chains require draws from a \emph{categorical distribution}, a multivariate generalization of the Bernoulli distribution.
+A draw from a categorical distribution with parameters $(p_1,p_2,\ldots,p_k)$ satisfying $\sum_{i=1}^k p_i = 1$ indicates which of $k$ outcomes occurs.
+If $k=2$, a draw simulates a coin flip (a Bernoulli draw); if $k=6$, a draw simulates rolling a six-sided die. %, like rolling a weighted $k$-sided die.
+Just as the Bernoulli distribution is a special case of the binomial distribution, the categorical distribution is a special case of the \emph{multinomial distribution} which indicates how many times each of the $k$ outcomes occurs in $n$ repeated experiments.
+Use \li{np.random.multinomial()} with $n = 1$ to make a categorical draw.
 
 \begin{lstlisting}
-def forecast():
-    """Forecast tomorrow's weather given that today is hot."""
-    transition = np.array([[0.7, 0.6], [0.3, 0.4]])
+# Draw from the categorical distribution (roll a fair four-sided die).
+>>> np.random.multinomial(1, np.array([1./4, 1./4, 1./4, 1./4]))
+array([0, 0, 0, 1])     # The roll resulted in a 3.
 
-    # Sample from a binomial distribution to choose a new state.
-    return np.binomial(1, transition[1, 0])
+# Draw from another categorical distribution (roll a weighted four-sided die).
+>>> np.random.multinomial(1, np.array([.5, .3, .2, 0]))
+array([0, 1, 0, 0])     # The roll resulted in a 1.
 \end{lstlisting}
 
-\begin{problem} % 2-state chain with binomial transitioning.
-Modify \li{forecast()} so that it accepts an integer parameter \li{days} and runs a simulation of the weather for the number of days given.
-Return a list containing the day-by-day weather predictions (0 for hot, 1 for cold).
-Assume the first day is hot, but do not include the data from the first day in the list of predictions.
-The resulting list should therefore have \li{days} entries.
-\label{prob:small-markov-transitions}
-\end{problem}
-
-\subsection*{Larger Chains} % -------------------------------------------------
-
-The \li{forecast()} function makes one random draw from a binomial distribution to simulate a state change.
-Larger Markov chains require draws from a \emph{multinomial distribution}, a multivariate generalization of the binomial distribution.
-A draw from a multinomial distribution parameters $n$ and $(p_1,\ p_2,\ \ldots,\ p_k)$ indicates which of $k$ outcomes occurs in $n$ different experiments.
-In this case the classic example is a series of dice rolls, with $6$ possible outcomes of equal probability.
-
-\begin{lstlisting}
->>> die_probabilities = np.array([1./6, 1./6, 1./6, 1./6, 1./6, 1./6])
-
-# Draw from the multinomial distribution with n = 1 (roll a single die).
->>> np.random.multinomial(1, die_probabilities)
-array([0, 0, 0, 1, 0, 0])     # The roll resulted in a 4.
-\end{lstlisting}
-
-\begin{problem} % 4-state chain with multinomial transitioning.
-Let the following matrix be the transition matrix for a Markov chain modeling weather with four states: hot, mild, cold, and freezing.
-
+Consider a four-state weather model with the transition matrix
+\begin{comment} % The beginnings of the 4-state chain diagram.
+\begin{tikzpicture}[normalcircle/.style={draw,circle,minimum size=1.5cm,fill=none,thick,node distance=3.5cm}]
+% Nodes
+\node[normalcircle] (A) {\textcolor{red}{hot}};
+\node[normalcircle] (B) [above of=A] {\textcolor{green}{mild}};
+\node[normalcircle] (C) [right of=B] {\textcolor{blue}{cold}};
+\node[normalcircle] (D) [below of=C] {\textcolor{cyan}{freezing}};
+% Edges
+\draw[bend right=60,thick,->,>=stealth'] (D) edge (C);
+\draw[bend left=60,thick,->,>=stealth',blue] (B) edge (C);
+\draw[bend right=60,thick,->,>=stealth',blue] (B) edge (A);
+\foreach \a/\b in {A/B,A/C,A/D,C/B,C/D} \draw[thick,->,>=stealth'] (\a) edge (\b);
+\draw[thick,->,>=stealth',blue] (B) edge (D);
+\draw[thick,->,>=stealth',shorten >=1pt,blue] (B) to [out=110,in=170,loop,looseness=4.5] (B);
+\end{tikzpicture}
+\end{comment}
 \begin{align*}
 \begin{blockarray}{ccccc}
 & \text{\textcolor{red}{hot}} & \text{\textcolor[rgb]{0,.6,0}{mild}} & \text{\textcolor{blue}{cold}} & \text{\textcolor{cyan}{freezing}} \\
 \begin{block}{c[cccc]}
-\text{\textcolor{red}{hot}}              & 0.5 & 0.3 & 0.1 & 0   \\
+\text{\textcolor{red}{hot}}              & 0.5 & 0.3 & 0.1 & 0   \topstrut \\
 \text{\textcolor[rgb]{0,.6,0}{mild}}     & 0.3 & 0.3 & 0.3 & 0.3 \\
 \text{\textcolor{blue}{cold}}            & 0.2 & 0.3 & 0.4 & 0.5 \\
-\text{\textcolor{cyan}{freezing}}        &   0 & 0.1 & 0.2 & 0.2 \\
-\end{block}\end{blockarray}
+\text{\textcolor{cyan}{freezing}}        &   0 & 0.1 & 0.2 & 0.2 \botstrut \\
+\end{block}\end{blockarray}.
 \end{align*}
+If today is hot, the probabilities of transitioning to each state are given by the ``hot'' column of the transition matrix.
+Therefore, to choose a new state, draw from the categorical distribution with parameters ($0.5$, $0.3$, $0.2$, $0$).
+The result $\begin{bmatrix}0 & 1 & 0 & 0\end{bmatrix}$ indicates a transition to the state corresponding to the $1$st row and column (tomorrow is mild), while the result $\begin{bmatrix}0 & 0 & 1 & 0\end{bmatrix}$ indicates a transition to the state corresponding to the $2$nd row and column (tomorrow is cold).
+In other words, the position of the $1$ tells which column of the matrix to use as the parameters for the next categorical draw.
 
-Write a new function that accepts an integer parameter and runs the same kind of simulation as \li{forecast()}, but that uses this new four-state transition matrix.
-This time, assume that the first day is mild.
-Return a list containing the day-to-day results (0 for hot, 1 for mild, 2 for cold, and 3 for freezing).
-\label{prob:markov-larger-chain}
+\begin{problem} % MarkovChain.transition()
+Write a method for the \li{MarkovChain} class that accepts a single state label.
+Use the label-to-index dictionary to determine the column of $A$ that corresponds to the provided state label, then draw from the corresponding categorical distribution to choose a state to transition to.
+Return the corresponding label of the new state (not its index).
+\\(Hint: \li{np.argmax()} may be useful.)
+\label{prob:markov-class-transition}
 \end{problem}
 
-% TODO: Turn this into a Note down below?
-% \begin{info}
-% A single experiment with probability $p$ of success is called a \emph{Bernoulli trial}.
-% In general, the binomial distribution is the sum of $n$ repeated Bernoulli trials.
-% Like the Bernoulli is a special case of the binomial, the \emph{categorical distribution} is a special case of the \emph{multinomial distribution}, when n = 1.
-% NumPy only has direct implementations for the binomial and multinomial distributions, since the Bernoulli and categorical distributions are just special cases of these.
-% \end{info}
-
+\begin{problem} % MarkovChain.walk() and MarkovChain.path().
+\label{prob:markov-class-walkers}
+Add the following methods to the \li{MarkovChain} class.
+\begin{itemize}
+\item \li{walk()}: Accept a state label and an interger $N$.
+Starting at the specified state, use your method from Problem \ref{prob:markov-class-transition} to transition from state to state $N-1$ times, recording the state label at each step.
+Return the list of $N$ state labels, including the initial state.
+\item \li{path()}: Accept labels for an initial state and an end state.
+Beginning at the initial state, transition from state to state until arriving at the specified end state, recording the state label at each step.
+Return the list of state labels, including the initial and final states.
+\end{itemize}
+Test your methods on the two-state and four-state weather models described previously.
+\end{problem}
 
 \section*{General State Distributions} % ======================================
 
@@ -165,13 +203,12 @@ Then if $A$ is a transition matrix, $\|A\|_1 = 1$, since each of the entries of 
 The power method with the 1-norm can be used to find the unique stable steady state distribution of $A$.
 \end{comment}
 
-For a Markov chain with $n$ states, the probability of being in each of the states can be encoded by a single $n \times 1$ vector $\x$, called a \emph{state distribution vector}.
-The entries of $\x$ must be nonnegative and sum to 1.
-Then the $i$th entry $x_i$ of $\x$ is the probability of being in state $i$.
-For example, the state distribution vector $\x = [0.8,\ 0.2]\trp$ corresponding to the 2-state weather model of Problem \ref{prob:small-markov-transitions} indicates that there is a $80\%$ chance that today is hot and a $20\%$ chance that today is cold.
-On the other hand, the vector $\x = [0, 1]\trp$ implies that today is, with $100\%$ certainty, cold.
+For a Markov chain with $n$ states, the probability of being in each state can be encoded by a $n$-vector $\x$, called a \emph{state distribution vector}.
+The entries of $\x$ must be nonnegative and sum to 1, and the $i$th entry $x_i$ of $\x$ is the probability of being in state $i$.
+For example, the state distribution vector $\x = \begin{bmatrix}0.8 & 0.2\end{bmatrix}\trp$ corresponding to the 2-state weather model indicates an $80\%$ chance that today is hot and a $20\%$ chance that today is cold.
+On the other hand, the vector $\x = \begin{bmatrix}0 & 1\end{bmatrix}\trp$ implies that today is, with $100\%$ certainty, cold.
 
-If $A$ is an $n\times n$ transition matrix for a Markov chain and $\x$ is a state distribution vector, then $A\x$ is also a state distribution vector.
+If $A$ is a transition matrix for a Markov chain with $n$ states and $\x$ is a corresponding state distribution vector, then $A\x$ is also a state distribution vector.
 % To verify this fact, let $a_{ij}$ be the entries of $A$ and $x_i$ the entries of $\x$.
 % The columns of $A$ sum to $1$, so $\sum_{j=1}^n a_{ij} = 1$ for $i = 1,\ 2,\ \ldots,\ n$.
 % In addition, $\sum_{j=1}^n x_j = 1$ since the entries of $\x$ also sum to $1$.
@@ -180,7 +217,7 @@ If $A$ is an $n\times n$ transition matrix for a Markov chain and $\x$ is a stat
 % = \sum_{j=1}^n\left(x_j\left(\sum_{j=1}^n a_{ij}\right)\right)
 % = \sum_{j=1}^n x_j = 1.\]
 In fact, if $\x_k$ is the state distribution vector corresponding to a certain time $k$, then $\x_{k+1} = A\x_k$ contains the probabilities of being in each state after allowing the system to transition again.
-For the weather model, this means that if there is an $80\%$ chance that it will be hot 5 days from now, written $\x_{5} = [0.8,\ 0.2]\trp$, then since
+For the weather model, this means that if there is an $80\%$ chance that it will be hot 5 days from now, written $\x_{5} = \begin{bmatrix}0.8 & 0.2\end{bmatrix}\trp$, then since
 \[
 \x_{6} = A\x_{5} =
 \left[\begin{array}{cc}
@@ -195,28 +232,30 @@ there is a $68\%$ chance that 6 days from now will be a hot day.
 
 \subsection*{Convergent Transition Matrices} % --------------------------------
 
-Given an initial state distribution vector $\x_{0}$, defining $\x_{k+1} = A\x_k$ yields the following significant relation.
-\[\x_k = A\x_{k-1} = A(A\x_{k-2}) = A(A(A\x_{x-3})) = \cdots = A^k\x_{0}\]
+Given an initial state distribution vector $\x_{0}$, defining $\x_{k+1} = A\x_k$ yields the significant relation
+\[
+\x_k = A\x_{k-1} = A(A\x_{k-2}) = A(A(A\x_{x-3})) = \cdots = A^k\x_{0}.
+\]
 
 This indicates that the $(i,j)$th entry of $A^k$ is the probability of transition from state $j$ to state $i$ in $k$ steps.
-For the transition matrix of the 2-state weather model, something curious happens to $A^k$ for even small values of $k$.
+For the transition matrix of the 2-state weather model, a pattern emerges in $A^k$ for even small values of $k$:
 \[
 A = \left[\begin{array}{cc}
 0.7 & 0.6 \\
 0.3 & 0.4 \\
-\end{array}\right]
+\end{array}\right],
 \quad
 A^2 = \left[\begin{array}{cc}
 0.67 & 0.66 \\
 0.33 & 0.34 \\
-\end{array}\right]
+\end{array}\right],
 \quad
 A^3 = \left[\begin{array}{cc}
 0.667 & 0.666 \\
 0.333 & 0.334 \\
-\end{array}\right]
+\end{array}\right].
 \]
-As $k\rightarrow\infty$, the entries of $A^k$ converge, written as follows.
+As $k\rightarrow\infty$, the entries of $A^k$ converge, written
 \begin{equation}
 \lim_{k \rightarrow \infty} A^k = \left[\begin{array}{ccc}
 2/3 & 2/3 \\
@@ -224,7 +263,7 @@ As $k\rightarrow\infty$, the entries of $A^k$ converge, written as follows.
 \end{array}\right].
 \label{eq:markov-steady-transition}
 \end{equation}
-In addition, for any initial state distribution vector $\x_{0} = [a,\ b]\trp$, $a + b = 1$,
+In addition, for any initial state distribution vector $\x_{0} = [a,\ b]\trp$ (meaning $a,b\ge 0$ and $a + b = 1$),
 \[
 \lim_{k \rightarrow \infty} \x_k = \lim_{k \rightarrow \infty}A^k\x_{0}
 =
@@ -239,13 +278,13 @@ In addition, for any initial state distribution vector $\x_{0} = [a,\ b]\trp$, $
 \left[\begin{array}{c}2/3\\1/3\end{array}\right].
 \]
 
-Thus as $k\rightarrow\infty$, $\x_k \rightarrow \x = [2/3,\ 1/3]\trp$, regardless of the initial state distribution $\x_{0}$.
-So according to this model, no matter the weather today, the probability that it is hot a week from now is approximately $66.67\%$.
+Thus, $\x_k \rightarrow \x = \begin{bmatrix}2/3 & 1/3\end{bmatrix}\trp$ as $k\rightarrow\infty$,  regardless of the initial state distribution $\x_{0}$.
+So, according to this model, no matter the weather today, the probability that it is hot a week from now is approximately $66.67\%$.
 In fact, approximately 2 out of 3 days in the year should be hot.
 
 \subsection*{Steady State Distributions} % ------------------------------------
 
-The state distribution $\x = [2/3,\ 1/3]\trp$ has another important property.
+The state distribution $\x = \begin{bmatrix}2/3 & 1/3\end{bmatrix}\trp$ has another important property:
 \[
 A\x =
 \left[\begin{array}{cc}
@@ -260,18 +299,18 @@ A\x =
 = \x.
 \]
 Any $\x$ satisfying $A\x = \x$ is called a \emph{steady state distribution} or a \emph{stable fixed point} of $A$.
-In other words, a steady state distribution is an eigenvector of $A$ with corresponding eigenvalue $\lambda = 1$.
+In other words, a steady state distribution is an eigenvector of $A$ corresponding to the eigenvalue $\lambda = 1$.
 
 % TODO: Verify this paragraph.
-Every Markov chain has at least one steady state distribution.
+Every finite Markov chain has at least one steady state distribution.
 If some power $A^k$ of $A$ has all positive (nonzero) entries, then the steady state distribution is unique.%
-\footnote{This is a consequence of the \emph{Perron-Frobenius theorem}, which is presented in conjunction with spectral calculus in Volume I.}
+\footnote{This is a consequence of the \emph{Perron-Frobenius theorem}, which is presented in detail in Volume 1.}
 In this case, $\lim_{k\rightarrow\infty}A^k$ is the matrix whose columns are all equal to the unique steady state distribution, as in (\ref{eq:markov-steady-transition}).
 Under these circumstances, the steady state distribution $\x$ can be found by iteratively calculating $\x_{k+1} = A\x_k$, as long as the initial vector $\x_{0}$ is a state distribution vector.
 
 \begin{warn}
 Though every Markov chain has at least one steady state distribution, the procedure described above fails if $A^k$ fails to converge.
-Consider the following example.
+For instance, consider the transition matrix
 \[
 A = \left[\begin{array}{ccc}
 0 & 0 & 1 \\
@@ -281,7 +320,7 @@ A = \left[\begin{array}{ccc}
 ,\quad A^k = \begin{cases}
 A\quad\text{if } k\ \text{is odd}
 \\
-I\quad\text{if } k\ \text{is even}
+I\quad\text{if } k\ \text{is even.}
 \end{cases}
 \]
 In this case as $k\rightarrow\infty$, $A^k$ oscillates between two different matrices.
@@ -290,12 +329,12 @@ Furthermore, the steady state distribution is not always unique; the transition 
 \end{warn}
 
 \begin{problem} % Use the power method (simple) to get the steady state.
-Write a function that accepts an $n\times n$ transition matrix $A$, a convergence tolerance $\epsilon$, and a maximum number of iterations $N$.
-Generate a random state distribution vector $\x_{0}$ and calculate $\x_{k+1} = A\x_k$ until $\|\x_{k-1} - \x_k\| < \epsilon$.
-If $k$ exceeds $N$, raise a \li{ValueError} to indicate that $A^k$ does not converge.
+Write a method for the \li{MarkovChain} class that accepts a convergence tolerance \li{tol} and a maximum number of iterations \li{maxiter}.
+Generate a random state distribution vector $\x_{0}$ and calculate $\x_{k+1} = A\x_k$ until $\|\x_{k-1} - \x_k\|_1 <$ \li{tol}, where $A$ is the transition matrix saved in the constructor.
+If $k$ exceeds \li{maxiter}, raise a \li{ValueError} to indicate that $A^k$ does not converge.
 Return the approximate steady state distribution $\x$ of $A$.
 
-To test your function, use Problem \ref{prob:random-markov-chain} to generate a random transition matrix $A$.
+To test your function, generate a random transition matrix $A$.
 Verify that $A\x = \x$ and that the columns of $A^k$ approach $\x$ as $k\rightarrow\infty$.
 To compute $A^k$, use NumPy's (very efficient) algorithm for computing matrix powers. % (which is not part of \li{scipy.linalg}).
 
@@ -305,54 +344,51 @@ To compute $A^k$, use NumPy's (very efficient) algorithm for computing matrix po
 array([[ 0.66666667,  0.66666667],
        [ 0.33333333,  0.33333333]])
 \end{lstlisting}
-
-Finally, use your function to validate the results of Problems \ref{prob:small-markov-transitions} and \ref{prob:markov-larger-chain}:
+%
+Finally, use your method to validate the results of Problem \ref{prob:markov-class-walkers}:
+for the two-state and four-state weather models,
 \begin{enumerate}
-    \item Calculate the steady state distributions corresponding to the transition matrices for each simulation.
-    \item Run each simulation for a large number of days and verify that the results match the steady state distribution (for example, check that approximately 2/3 of the days are hot for the smaller weather model).
+    \item Calculate the steady state distribution corresponding to the transition matrix.
+    \item Run a weather simulation for a large number of days using \li{walk()} and verify that the results match the steady state distribution (for example, approximately 2/3 of the days should be hot for the two-state model).
 \end{enumerate}
-
 \label{prob:markov-power-method}
 \end{problem}
 
 \begin{info}
 Problem \ref{prob:markov-power-method} is a special case of the \emph{power method}, an algorithm for calculating an eigenvector of a matrix corresponding to the eigenvalue of largest magnitude.
-The general version of the power method, together with a discussion of its convergence conditions, is discussed in another lab.
+The general power method, together with a discussion of its convergence conditions, is discussed in Volume 1.
 \end{info}
 
 \section*{Using Markov Chains to Simulate English} % ==========================
-% TODO: is it okay to make this reference?
-One of the original applications of Markov chains was to study natural languages.
-% \footnote{The term \emph{natural language} refers to a spoken language, like English or Russian. See \url{http://langvillea.people.cofc.edu/MCapps7.pdf} for some details on the early applications of Markov chains, including the study of natural languages.}
+
+One of the original applications of Markov chains was to study \emph{natural languages}, meaning spoken or written languages like English or Russian \cite{von2006five}.
 In the early $20$th century, Markov used his chains to model how Russian switched from vowels to consonants.
 By mid-century, they had been used as an attempt to model English.
-It turns out that Markov chains are, by themselves, insufficient to model very good English.
+It turns out that plain Markov chains are, by themselves, insufficient to model or produce very good English.
 However, they can approach a fairly good model of bad English, with sometimes amusing results.
 
-By nature, a Markov chain is only concerned with its current state.
-Thus a Markov chain simulating transitions between English words is completely unaware of context or even of previous words in a sentence.
-For example, a Markov chain's current state may be the word ``continuous.''
-Then the chain would say that the next word in the sentence is more likely to be ``function'' rather than ``raccoon.''
-However, without the context of the rest of the sentence, even two likely words stringed together may result in gibberish.
+By nature, a Markov chain is only concerned with its current state, not with previous states.
+A Markov chain simulating transitions between English words is therefore completely unaware of context or even of previous words in a sentence.
+For example, if a chain's current state is the word ``continuous,'' the chain may say that the next word in a sentence is more likely to be ``function'' rather than ``raccoon.''
+However the phrase ``continuous function'' may be gibberish in the context of the rest of the sentence.
 
-We restrict ourselves to a subproblem of modeling the English of a specific file.
-The transition probabilities of the resulting Markov chain reflect the sort of English that the source authors speak.
-Thus the Markov chain built from \emph{The Complete Works of William Shakespeare} differs greatly from, say, the Markov chain built from a collection of academic journals.
-We call the source collection of works in the next problems the \emph{training set}.
+% The transition probabilities of the resulting Markov chain should reflect the sort of English that the source authors speak.
+% Thus, the Markov chain built from \emph{The Complete Works of William Shakespeare} differs greatly from the Markov chain built from a collection of academic journals.
+% The source collection of works in the next problems is called the \emph{training set}.
 
-\subsection*{Making the Chain} % ----------------------------------------------
+\subsection*{Generating Random Sentences} % -----------------------------------
 
-With the weather models of the previous sections, we chose a fixed number of days to simulate.
-However, English sentences are of varying length, so we do not know beforehand how many words to choose (how many state transitions to make) before ending the sentence.
-To capture this feature, we include two extra states in our Markov model: a \emph{start state} (\textcolor[rgb]{0,.6,0}{\$tart}) marking the beginning of a sentence, and a \emph{stop state} (\textcolor{red}{\$top}) marking the end.
-Thus a training set with $N$ unique words has an $(N+2)\times (N+2)$ transition matrix.
+Consider the problem of generating English sentences that are similar to the text contained in a specific file, called the \emph{training set}.
+The goal is to construct a Markov chain whose states and transition probabilities represent the vocabulary and---hopefully---the style of the source material.
+There are several ways to approach this problem, but one simple strategy is to assign each unique word in the training set to a state, then construct the transition probabilities between the states based on the ordering of the words in the training set.
+To indicate the beginning and end of a sentence requires two extra states: a \emph{start state}, \textcolor[rgb]{0,.6,0}{\$tart}, marking the beginning of a sentence; and a \emph{stop state}, \textcolor{red}{\$top}, marking the end.
+The start state should only transitions to words that appear at the beginning of a sentence in the training set, and only words that appear at the end a sentence in the training set should transition to the stop state.
 
-The start state only transitions to words that appear at the beginning of a sentence in the training set, and only words that appear at the end a sentence in the training set transition to the stop state.
-The stop state is called an \emph{absorbing state} because once we reach it, we cannot transition back to another state.
-% Because every state has a possible path to the stop state, this model is called an \emph{absorbing Markov chain}.
+% English sentences are of varying length, so it is unknown beforehand how many words to choose (how many state transitions to make) before ending the sentence.
+% To capture this feature, include two extra states in the chain: a \emph{start state}, \textcolor[rgb]{0,.6,0}{\$tart}, marking the beginning of a sentence; and a \emph{stop state}, \textcolor{red}{\$top}, marking the end.
+% Thus, a training set with $n$ unique words has an $(n+2)\times (n+2)$ transition matrix.
 
-After determining the states in the Markov chain, we need to determine the transition probabilities between the states and build the corresponding transition matrix.
-Consider the following small training set from Dr. Seuss as an example.
+Consider the following small training set, paraphrased from Dr. Seuss \cite{geisel1960green}.
 
 \begin{lstlisting}
 <<I am Sam Sam I am.
@@ -361,18 +397,17 @@ I do not like them, Sam I am.
 I do not like green eggs and ham.>>
 \end{lstlisting}
 
-If we include punctuation (so ``ham?'' and ``ham.'' are counted as distinct words) and do not alter the capitalization (so ``Do'' and ``do'' are also different), there are 15 unique words in this training set:
+There are 15 unique words in this training set, including punctuation (so ``ham?'' and ``ham.'' are counted as distinct words) and capitalization (so ``Do'' and ``do'' are also different):
 %
 \begin{align*}
 \text{I\quad am\quad Sam\quad am.\quad Do\quad you\quad like\quad green}
 \\
 \text{eggs\quad and\quad ham?\quad do\quad not\quad them,\quad ham.}
 \end{align*}
-
+%
 With start and stop states, the transition matrix should be $17 \times 17$.
-Each state must be assigned a row and column index in the transition matrix.
-As easy way to do this is to assign the states an index based on the order that they appear in the training set.
-Thus our states and the corresponding indices will be as follows:
+Each state must be assigned a row and column index in the transition matrix, for example,
+% An easy way to do this is to assign the states an index based on the order that they appear in the training set.
 %
 \begin{align*}
 \begin{array}{ccccccc}
@@ -381,64 +416,62 @@ Thus our states and the corresponding indices will be as follows:
 0 & 1 & 2 & 3 & \ldots & 15 & 16
 \end{array}
 \end{align*}
+%
+The $(i,j)$th entry of the transition matrix $A$ should be the probability that word $j$ is followed by word $i$.
+For instance, the word ``Sam'' is followed by the words ``Sam'' once and ``I'' twice in the training set, so the state corresponding to ``Sam'' (index 3) should transition to the state for ``Sam'' with probability $1/3$, and to the state for ``I'' (index 1) with probability $2/3$.
+That is, $A_{3,3} = 1/3$, $A_{1,3} = 2/3$, and $A_{i,3} = 0$ for $i \notin\{1,3\}$.
+Similarly, the start state should transition to the state for ``I'' with probability $3/4$, and to the state for ``Do'' with probability $1/4$; the states for ``am.'', ``ham?'', and ``ham.'' should each transition to the stop state.
 
-The start state should transition to the words ``I'' and ``Do'', and the words ``am.'', ``ham?'', and ``ham.'' should each transition to the stop state.
-We first count the number of times that each state transitions to another state:
-
+To construct the transition matrix, parse the training set and add $1$ to $A_{i,j}$ every time word $j$ is followed by word $i$, in this case arriving at the matrix
+%
 \begin{align*}
 \begin{blockarray}{cccccccc}
-& \text{\textcolor[rgb]{.3,.6,.1}{\$tart}} & \text{I} & \text{am} & \text{Sam} & & \text{ham.} & \text{\textcolor[rgb]{1,0,0}{\$top}} \\
+& \text{\textcolor[rgb]{.3,.6,.1}{\$tart}} & \textcolor{gray}{\text{I}} & \textcolor{gray}{\text{am}} & \textcolor{gray}{\text{Sam}} & & \textcolor{gray}{\text{ham.}} & \text{\textcolor[rgb]{1,0,0}{\$top}} \\
 \begin{block}{c[ccccccc]}
-\text{\textcolor[rgb]{.3,.6,.1}{\$tart}}    & 0 & 0 & 0 & 0 & \ldots & 0 & 0\\
-\text{I}        & 3 & 0 & 0 & 2 & \ldots & 0 & 0\\
-\text{am}       & 0 & 1 & 0 & 0 & \ldots & 0 & 0\\
-\text{Sam}      & 0 & 0 & 1 & 1 & \ldots & 0 & 0\\
+\text{\textcolor[rgb]{.3,.6,.1}{\$tart}}    & 0 & 0 & 0 & 0 & \ldots & 0 & 0 \topstrut \\
+\textcolor{gray}{\text{I}}        & 3 & 0 & 0 & 2 & \ldots & 0 & 0\\
+\textcolor{gray}{\text{am}}       & 0 & 1 & 0 & 0 & \ldots & 0 & 0\\
+\textcolor{gray}{\text{Sam}}      & 0 & 0 & 1 & 1 & \ldots & 0 & 0\\
 & \vdots & \vdots & \vdots & \vdots & \ddots & \vdots & \vdots\\
-\text{ham.}     & 0 & 0 & 0 & 0 & \ldots & 0 & 0\\
-\text{\textcolor[rgb]{1,0,0}{\$top}}        & 0 & 0 & 0 & 0 & \ldots & 1 & 1\\
-\end{block}\end{blockarray}
+\textcolor{gray}{\text{ham.}}     & 0 & 0 & 0 & 0 & \ldots & 0 & 0\\
+\text{\textcolor[rgb]{1,0,0}{\$top}}        & 0 & 0 & 0 & 0 & \ldots & 1 & 0 \botstrut \\
+\end{block}\end{blockarray}.
 \end{align*}
-
-Now divide each column by its sum so that each column sums to 1.
-
+To avoid a column of zeros, set $A_{j,j} = 1$ where j is the index of the stop state (so the stop state always transitions to itself).
+Next, divide each column by its sum so that each column sums to 1:
 \begin{align*}
 \begin{blockarray}{cccccccc}
-& \text{\textcolor[rgb]{.3,.6,.1}{\$tart}} & \text{I} & \text{am} & \text{Sam} & & \text{ham.} & \text{\textcolor[rgb]{1,0,0}{\$top}} \\
+& \text{\textcolor[rgb]{.3,.6,.1}{\$tart}} & \textcolor{gray}{\text{I}} & \textcolor{gray}{\text{am}} & \textcolor{gray}{\text{Sam}} & & \textcolor{gray}{\text{ham.}} & \text{\textcolor[rgb]{1,0,0}{\$top}} \\
 \begin{block}{c[ccccccc]}
-\text{\textcolor[rgb]{.3,.6,.1}{\$tart}} & 0 & 0 & 0 & 0 & \ldots & 0 & 0\\
-\text{I}        & 3/4 & 0 & 0 & 2/3 & \ldots & 0 & 0\\
-\text{am}       & 0 & 1/5 & 0 & 0 & \ldots & 0 & 0\\
-\text{Sam}      & 0 & 0 & 1 & 1/3 & \ldots & 0 & 0\\
+\text{\textcolor[rgb]{.3,.6,.1}{\$tart}} & 0 & 0 & 0 & 0 & \ldots & 0 & 0 \topstrut\\
+\textcolor{gray}{\text{I}}        & 3/4 & 0 & 0 & 2/3 & \ldots & 0 & 0\\
+\textcolor{gray}{\text{am}}       & 0 & 1/5 & 0 & 0 & \ldots & 0 & 0\\
+\textcolor{gray}{\text{Sam}}      & 0 & 0 & 1 & 1/3 & \ldots & 0 & 0\\
 & \vdots & \vdots & \vdots & \vdots & \ddots & \vdots & \vdots\\
-\text{ham.}     & 0 & 0 & 0 & 0 & \ldots & 0 & 0\\
-\text{\textcolor[rgb]{1,0,0}{\$top}}    & 0 & 0 & 0 & 0 & \ldots & 1 & 1\\
-\end{block}\end{blockarray}
+\textcolor{gray}{\text{ham.}}     & 0 & 0 & 0 & 0 & \ldots & 0 & 0\\
+\text{\textcolor[rgb]{1,0,0}{\$top}}    & 0 & 0 & 0 & 0 & \ldots & 1 & 1 \botstrut\\
+\end{block}\end{blockarray}.
 \end{align*}
 
 The $3/4$ indicates that 3 out of 4 times, the sentences in the training set start with the word ``I''.
-Similarly, the $2/3$ and $1/3$ tell us that ``Sam'' is followed by ``I'' twice and by ``Sam'' once in the training set.
+Similarly, the $2/3$ and $1/3$ says that ``Sam'' is followed by ``I'' twice and by ``Sam'' once in the training set.
 Note that ``am'' (without a period) always transitions to ``Sam'' and that ``ham.'' (with a period) always transitions the stop state.
-Finally, to avoid a column of zeros, we place a 1 in the bottom right hand corner of the matrix (so the stop state always transitions to itself).
 
 The entire procedure of creating the transition matrix for the Markov chain with words from a file as states is summarized below.
 
-\begin{algorithm} % Read a file and convert it into a Markov chain.
+\begin{algorithm}[H] % Read a file and convert it into a Markov chain.
 \begin{algorithmic}[1]
-\Procedure{MakeTransitionMatrix}{}
-\State Count the number of unique words in the training set.
-\State Initialize a square array of zeros of the appropriate size to be the transition \par\quad matrix (remember to account for the start and stop states).
-\State Initialize a list of states, beginning with \li{"\$tart"}.
+\Procedure{MakeTransitionMatrix}{\texttt{filename}}
+\State Read the training set from the file \texttt{filename}.
+\State Get the set of unique words in the training set (the state labels).
+\State Add labels \li{"\$tart"} and \li{"\$top"} to the set of states labels.
+\State Initialize an appropriately sized square array of zeros to be the transition matrix.
 \For {each sentence in the training set}
     \State Split the sentence into a list of words.
-    \State Add each \textbf{new} word in the sentence to the list of states.
-    \State Convert the list of words into a list of indices indicating which row and \par\qquad\enspace column of the transition matrix each word corresponds to.
-    \State Add 1 to the entry of the transition matrix corresponding to
-    \par\qquad\enspace transitioning from the start state to the first word of the sentence.
+    \State Prepend \li{"\$tart"} and append \li{"\$top"} to the list of words.
     \For {each consecutive pair $(x, y)$ of words in the list of words}
-        \State Add 1 to the entry of the transition matrix corresponding to \par\qquad\qquad transitioning from state $x$ to state $y$.
+    \State Add 1 to the entry of the transition matrix that corresponds to \par\qquad\qquad transitioning from state $x$ to state $y$.
     \EndFor
-    \State Add 1 to the entry of the transition matrix corresponding to
-    \par\qquad\enspace transitioning from the last word of the sentence to the stop state.
 \EndFor
 \State Make sure the stop state transitions to itself.
 \State Normalize each column by dividing by the column sums.
@@ -448,21 +481,29 @@ The entire procedure of creating the transition matrix for the Markov chain with
 \label{alg:MarkovSentencesTransitionMatrix}
 \end{algorithm}
 
-\begin{problem} % Class that makes a Markov chain from a file.
-Write a class called \li{SentenceGenerator}.
+\begin{problem} % SentenceGenerator.__init__()
+\label{prob:markov-random-sentences-init}
+Write a class called \li{SentenceGenerator} that inherits from the \li{MarkovChain} class.
 The constructor should accept a filename (the training set).
 Read the file and build a transition matrix from its contents as described in Algorithm \ref{alg:MarkovSentencesTransitionMatrix}.
-
-You may assume that the file has one complete sentence written on each line, and your implementation may be either column- or row-stochastic.
-\label{problem:markov-random-sentences-init}
+Save the same attributes as the constructor of \li{MarkovChain} does so that inherited methods work correctly.
+Assume that the training set has one complete sentence written on each line.
+\\(Hint: if the contents of the file are in the string \li{s}, then \li{s.split()} is the list of words and \li{s.split('\n')} is the list of sentences.)
 \end{problem}
 
+\begin{info} % The steady state is the stop state.
+The Markov chains that result from the procedure in Problem \ref{prob:markov-random-sentences-init} have a few interesting structural characteristics.
+The stop state is a \emph{sink}, meaning it only transitions to itself.
+Because of this, and since every node has a path to the stop state, any traversal of the chain will end up in the stop state forever.
+The stop state is therefore called an \emph{absorbing state}, and the chain as a whole is called an \emph{absorbing Markov chain}.
+Furthermore, the steady state is the vector with a $1$ in the entry corresponding to the stop state and $0$s everywhere else.
+\end{info}
+
 \begin{problem} % Create random sentences.
+\label{prob:markov-random-sentences-babble}
 Add a method to the \li{SentenceGenerator} class called \li{babble()}.
-Begin at the start state and use the strategy from Problem \ref{prob:markov-larger-chain} to repeatedly transition through the object's Markov chain.
-Keep track of the path through the chain and the corresponding sequence of words.
-When the stop state is reached, stop transitioning to terminate the simulation.
-Return the resulting sentence as a single string.
+Use the \li{path()} method from Problem \ref{prob:markov-class-walkers} to generate a random sentence based on the training document.
+That is, generate a path from the start state to the stop state, remove the \li{"\$tart"} and \li{"\$top"} labels from the path, and join the resulting list together into a single, space-separated string.
 
 For example, your \li{SentenceGenerator} class should be able to create random sentences that sound somewhat like Yoda speaking.
 
@@ -475,17 +516,36 @@ For example, your \li{SentenceGenerator} class should be able to create random s
 For eight hundred years old to enter the dark side of Congress there is.
 But beware of the Wookiees, I have.>>
 \end{lstlisting}
-
-\label{prob:markov-random-sentences-babble}
 \end{problem}
 
 \newpage
 
 \section*{Additional Material} % ==============================================
 
+\subsection*{Other Applications of Markov Chains} % ---------------------------
+
+Markov chains are a useful way to study many probabilistic phenomena, so they have a wide variety of applications.
+The following are just a few that are covered in other parts of this lab manual series.
+\begin{itemize}
+\item \textbf{PageRank}: Google's PageRank algorithm uses a Markov chain-based approach to rank web pages.
+The main idea is to use the entries of the steady state vector as a measure of importance for the corresponding states.
+For example, the steady state $\x = \begin{bmatrix}2/3 & 1/3\end{bmatrix}\trp$ for the two-state weather model means that the hot state is ``more important'' (occurs more frequently) than the cold state.
+See the PageRank lab in Volume 1.
+
+\item \textbf{MCMC Sampling}: A \emph{Monte Carlo Markov Chain} (MCMC) method constructs a Markov chain whose steady state is a probability distribution that is difficult to sample from directly.
+This provides a way to sample from nontrivial or abstract distributions.
+Many MCMC methods are used in various fields, from machine learning to physics.
+See the Volume 3 lab on the Metropolis-Hastings algorithm.
+
+\item \textbf{Hidden Markov Models}: The Markov chain simulations in this lab use an initial condition (a state distribution vector $\x_0$) and known transition probabilities to make predictions forward in time.
+Converseyl, a \emph{hidden Markov model} (HMM) assumes that a given set of observations are the result of a Markov process, then uses those observations to infer the corresponding transition probabilities.
+Hidden Markov models are used extensively in modern machine learning, especially for speech and language processing.
+See the Volume 3 lab on Speech Recognition.
+\end{itemize}
+
 \subsection*{Large Training Sets} % -------------------------------------------
 
-The approach in Problems \ref{problem:markov-random-sentences-init} and \ref{prob:markov-random-sentences-babble} begins to fail as the training set grows larger.
+The approach in Problems \ref{prob:markov-random-sentences-init} and \ref{prob:markov-random-sentences-babble} begins to fail as the training set grows larger.
 For example, a single Shakespearean play may not be large enough to cause memory problems, but \emph{The Complete Works of William Shakespeare} certainly will.
 
 To accommodate larger data sets, consider use a sparse matrix from \li{scipy.sparse} for the transition matrix instead of a regular NumPy array.
@@ -496,19 +556,19 @@ How are the resulting sentences different if a very large training set is used i
 \subsection*{Variations on the English Model} % -------------------------------
 
 Choosing a different state space for the English Markov model produces different results.
-Consider modifying your \li{SentenceGenerator} class so that it can determine the state space in a few different ways.
+Consider modifying the \li{SentenceGenerator} class so that it can determine the state space in a few different ways.
 The following ideas are just a few possibilities.
 
 \begin{itemize}
 \item Let each punctuation mark have its own state.
-In the example training set, instead of having two states for the words ``ham?'' and ``ham.'', there would be three states: ``ham'', ``?'', and ``.'', with ``ham'' transitioning to both punctuation states.
+In the Dr. Seuss training set, instead of having two states for the words ``ham?'' and ``ham.'', there would be three states: ``ham'', ``?'', and ``.'', with ``ham'' transitioning to both punctuation states.
 
 \item Model paragraphs instead of sentences.
-Add a \textcolor[rgb]{0,.6,0}{\$tartParagraph} state that always transitions to \textcolor[rgb]{0,.6,0}{\$tartSentence} and a \textcolor{red}{\$topParagraph} state that is sometimes transitioned to from \textcolor{red}{\$topSentence}.
+Add a \textcolor[rgb]{0,.6,0}{\$tartParagraph} state that always transitions to \textcolor[rgb]{0,.6,0}{\$tartSentence} and a \textcolor{red}{\$topParagraph} state that is sometimes transitioned to by \textcolor{red}{\$topSentence}.
 
 \item Let the states be individual letters instead of individual words.
 Be sure to include a state for the spaces between words.
-We will explore this particular state space choice more in Volume III together with hidden Markov models.
+% We will explore this particular state space choice more in Volume 3 with hidden Markov models.
 
 \item Construct the state space so that the next state depends on both the current and previous states.
 This kind of Markov chain is called a \emph{Markov chain of order 2}.
@@ -522,9 +582,10 @@ Then use $C$ to determine the next speaker, generate a random sentence using the
 
 \subsection*{Natural Language Processing Tools} % -----------------------------
 
-The Markov model of Problems \ref{problem:markov-random-sentences-init} and \ref{prob:markov-random-sentences-babble} is a \emph{natural language processing} application.
-Python's \li{nltk} module (natural language toolkit) has many tools for parsing and analyzing text for these kinds of problems.
+The Markov model of Problems \ref{prob:markov-random-sentences-init} and \ref{prob:markov-random-sentences-babble} is a \emph{natural language processing} application.
+Python's \li{nltk} module (natural language toolkit) has many tools for parsing and analyzing text for these kinds of problems \cite{bird2004nltk}.
 For example, \li{nltk.sent_tokenize()} reads a single string and splits it up into sentences.
+This could be useful, for example, in making the \li{SentenceGenerator} class compatible with files that do not have one sentence per line.
 
 \begin{lstlisting}
 >>> from nltk import sent_tokenize

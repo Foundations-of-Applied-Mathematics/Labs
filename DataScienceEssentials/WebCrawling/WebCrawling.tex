@@ -1,8 +1,8 @@
-\lab{Web Scraping II: Advanced Web Scraping Techniques}{Advanced Web Scraping Techniques}
+\lab{Web Crawling}{Web Crawling}
 
 \objective{Gathering data from the internet often requires information from several web pages.
-In this lab, we present two methods for crawling through multiple web pages without violating copyright laws or straining the load a server.
-We also demonstrate how to scrape data from asynchronously loaded web pages, and how to interact programmatically with web pages when needed.}
+In this lab, we present two methods for crawling through multiple web pages without violating copyright laws or straining the load on a server.
+We also demonstrate how to scrape data from asynchronously loaded web pages and how to interact programmatically with web pages when needed.}
 
 \section*{Scraping Etiquette} % ===============================================
 
@@ -11,25 +11,28 @@ We also demonstrate how to scrape data from asynchronously loaded web pages, and
 % There may be no suitable, accessible web API, and doing the job manually is often impractical and slow, sometimes impossible.
 
 There are two main ways that web scraping can be problematic for a website owner.
-First, if the scraper doesn't respect the website's terms and conditions or gathers private or proprietary data.
-Second, if the scraper imposes too much extra server load by making requests too often or in quick succession.
+\begin{enumerate}
+\item The scraper doesn't respect the website's terms and conditions, or it gathers private or proprietary data.
+\item The scraper imposes too much extra server load by making requests too often or in quick succession.
+\end{enumerate}
 These are extremely important considerations in any web scraping program.
-
-\begin{warn} % Don't scrape illegally.
 Scraping copyrighted information without the consent of the copyright owner can have severe legal consequences.
 Many websites, in their terms and conditions, prohibit scraping parts or all of the site.
-Websites that do allow scraping usually have a file called \texttt{robots.txt} (for example, \url{www.google.com/robots.txt}) that specifies which parts of the website are off-limits and how often requests can be made according to the \emph{robots exclusion standard}.%
+Websites that do allow scraping usually have a file called \texttt{robots.txt} (for example, \url{www.google.com/robots.txt}) that specifies which parts of the website are off-limits, and how often requests can be made according to the \emph{robots exclusion standard}.%
 \footnote{See \href{http://www.robotstxt.org/orig.html}{\texttt{www.robotstxt.org/orig.html}} and \href{https://en.wikipedia.org/wiki/Robots_exclusion_standard}{\texttt{en.wikipedia.org/wiki/Robots\_exclusion\_standard}}.}
 
+
+\begin{warn} % Don't scrape illegally.
 Be careful and considerate when doing any sort of scraping, and take care when writing and testing code to avoid unintended behavior.
-It is up to the programmer to create a scraper that respects the rules found in the terms and conditions and in \texttt{robots.txt}.%
+It is up to the programmer to create a scraper that respects the rules found in the terms and conditions and in \texttt{robots.txt}.
+Make sure to scrape websites legally.
 \footnote{Python provides a parsing library called \texttt{urllib.robotparser} for reading \texttt{robot.txt} files.
 For more information, see \url{https://docs.python.org/3/library/urllib.robotparser.html}.
 }
 \end{warn}
 
 The standard way to get the HTML source code of a website using Python is via the \li{requests} library.\footnote{Though \texttt{requests} is not part of the standard library, it is recognized as a standard tool in the data science community. See \url{http://docs.python-requests.org/}.}
-Calling \li{requests.get()} sends an HTTP GET request to a specified website; the result is an object with a response code to indicate whether or not the request was responded to, and access to the website source code.
+Calling \li{requests.get()} sends an HTTP GET request to a specified website; the result is an object with a response code that indicates whether or not the request was successful and if so, access to the website source code.
 
 \begin{lstlisting}
 >>> import requests
@@ -51,8 +54,7 @@ Calling \li{requests.get()} sends an HTTP GET request to a specified website; th
 # ...
 \end{lstlisting}
 
-\begin{warn} % Pause between requests!
-Consecutive GET requests without pauses can strain a website's server and provoke retaliation.
+Recall that consecutive GET requests without pauses can strain a website's server and provoke retaliation.
 Most servers are designed to identify such scrapers, block their access, and sometimes even blacklist the user.
 This is especially common in smaller websites that aren't built to handle enormous amounts of traffic.
 To briefly pause the program between requests, use \li{time.sleep()}.
@@ -64,64 +66,60 @@ To briefly pause the program between requests, use \li{time.sleep()}.
 The amount of necessary wait time depends on the website.
 Sometimes, \texttt{robots.txt} contains a \li{Request-rate} directive which gives a ratio of the form \li{<requests>/<seconds>}.
 If this doesn't exist, pausing for a half-second to a second between requests is typically sufficient.
-An email to the site's webmaster is always the safest approach, and may be necessary for large scraping operations.
-\end{warn}
+An email to the site's webmaster is always the safest approach and may be necessary for large scraping operations.
+
 
 \section*{Crawling Through Multiple Pages} % ==================================
 
 While web \emph{scraping} refers to the actual gathering of web-based data, web \emph{crawling} refers to the navigation of a program between webpages.
 Web crawling allows a program to gather related data from multiple web pages and websites.
 
-Consider \href{https://www.wunderground.com}{\texttt{www.wunderground.com}}, a site that records weather data in various cities.
-The page \url{https://www.wunderground.com/history/airport/KSAN/2012/7/1/DailyHistory.html} records\\the weather in San Diego on July 1, 2012.
-Data for previous or subsequent days can be accessed by clicking on the \texttt{Previous Day} and \texttt{Next Day} links, so gathering data for an entire month or year requires crawling through several pages.
-The following example gathers temperature data for July 1 through July 4 of 2012.
+Consider \href{http://books.toscrape.com}{\texttt{books.toscrape.com}}, a site to practice web scraping that mimics a bookstore.
+The page \url{http://books.toscrape.com/catalogue/category/books/mystery_3/index.html} lists mystery books with overall ratings and review.
+More mystery books can be accessed by clicking on the \texttt{next} link.
+The following example demonstrates how to navigate between webpages to collect all of the mystery book titles.
 
 \begin{lstlisting}
-import re
-import time
-import requests
-from bs4 import BeautifulSoup
 
+def scrape_books(start_page = "index.html"):
+    """ Crawl through http://books.toscrape.com and extract mystery titles"""
 
-def wunder_temp(day="/history/airport/KSAN/2012/7/1/DailyHistory.html"):
-    """Crawl through Weather Underground and extract temperature data."""
-    # Initialize variables, including a regex for finding the 'Next Day' link.
-    actual_mean_temp = []
-    next_day_finder = re.<<compile>>(r"Next Day")
-    base_url = "https://www.wunderground.com"       # Web page base URL.
-    page = base_url + day                           # Complete page URL.
+    # Initialize variables, including a regex for finding the 'next' link.
+    base_url="http://books.toscrape.com/catalogue/category/books/mystery_3/"
+    titles = []
+    page = base_url + start_page                # Complete page URL.
+    next_page_finder = re.compile(r"next")      # We need this button.
+
     current = None
 
-    for _ in range(4):
-        while current is None:  # Try downloading until it works.
+    for _ in range(2):
+        while current == None:  # Try downloading until it works.
             # Download the page source and PAUSE before continuing.
             page_source = requests.get(page).text
-            time.sleep(1)           # PAUSE before continuing.
+            time.sleep(1)       # PAUSE before continuing.
             soup = BeautifulSoup(page_source, "html.parser")
-            current = soup.find(string="Mean Temperature")
+            current = soup.find_all(class_="product_pod")
 
-        # Navigate to the relevant tag, then extract the temperature data.
-        temp_tag = current.parent.parent.next_sibling.next_sibling.span.span
-        actual_mean_temp.append(int(temp_tag.string))
+        # Navigate to the correct tag and extract title
+        for book in current:
+            titles.append(book.h3.a["title"])
 
-        # Find the URL for the page with the next day's data.
-        new_day = soup.find(string=next_day_finder).parent["href"]
-        page = base_url + new_day                   # New complete page URL.
-        current = None
+        # Find the URL for the page with the next data.
+        if "page-2" not in page:
+            new_page = soup.find(string=next_page_finder).parent["href"]
+            page = base_url + new_page      # New complete page URL.
+            current = None
+    return titles
 
-    return actual_mean_temp
 \end{lstlisting}
 
-In this example, the \li{for} loop cycles through the days, and the \li{while} loop ensures that each website page loads properly: if the downloaded \li{page_source} doesn't have a tag whose string is ``Mean Temperature'', the request is sent again.
-Later, after locating and recording the Actual Mean Temperature, the function locates the link to the next day's page.
-This link is stored in the HTML as a relative website path (\texttt{/history/airport/...}); the complete URL to the next day's page is the concatenation of the base URL \url{https://www.wunderground.com} with this relative link.
+In this example, the \li{for} loop cycles through the pages of books, and the \li{while} loop ensures that each website page loads properly: if the downloaded \li{page_source} doesn't have a tag whose class is ``product\_prod'', the request is sent again.
+After recording all of the titles, the function locates the link to the next page.
+This link is stored in the HTML as a relative website path (\texttt{page-2.html}); the complete URL to the next day's page is the concatenation of the base URL \url{http://books.toscrape.com/catalogue/category/books/mystery_3/} with this relative link.
 
-\begin{problem} % Plot July temperatures from Weather Underground.
-Modify \li{wunder_temp()} so that it gathers the Actual Mean Temperature, Actual Max Temperature, and Actual Min Temperature for every day in July of 2012.
-Plot these three measurements against time on the same plot.
+\begin{problem} % Collect the average price of fiction books.
+Modify \li{scrape_books()} so that it gathers the price for each fiction book and returns the mean price, in $\pounds$, of a fiction book.
 
-Consider printing information at each iteration of the outer loop to keep track of the program's progress.
 \end{problem}
 
 An alternative approach that is often useful is to first identify the links to relevant pages, then scrape each of these page in succession.
@@ -167,10 +165,9 @@ Be careful to keep the data sorted by date.
 \end{problem}
 
 \begin{problem} % Crawl through sports data.
-ESPN hosts data on NBA athletes at \url{http://www.espn.go.com/nba/statistics}.
-Each player has their own page with detailed performance statistics.
-For each of the five offensive leaders in points and each of the five defensive leaders in rebounds, extract the player's career minutes per game (MPG) and career points per game (PPG).
-Make a scatter plot of MPG against PPG for these ten players.
+The Basketball Reference website at \url{https://www.basketball-reference.com} contains data on NBA athletes, including which player led different categories for each season.
+For the past ten seasons, identify which player had the most season points and find how many points they scored during that season.
+Return a list of triples consisting of the season, the player, and the points scored, ("season year", "player name", points scored).
 \end{problem}
 
 \begin{comment} % Old problem options.
@@ -226,7 +223,7 @@ It also has BeautifulSoup-esque tools for searching the HTML source of the curre
 \begin{info} % Get the driver file.
 Selenium requires an executable \emph{driver} file for each kind of browser.
 The following examples use Google Chrome, but Selenium supports Firefox, Internet Explorer, Safari, Opera, and PhantomJS (a special browser without a user interface).
-See \url{https://seleniumhq.github.io/selenium/docs/api/py} or \url{http://selenium-python.readthedocs.io/installation.html} for installation instructions.
+See \url{https://seleniumhq.github.io/selenium/docs/api/py} or \url{http://selenium-python.readthedocs.io/installation.html} for installation instructions and driver download instructions.
 \end{info}
 
 To use Selenium, start up a browser using one of the drivers in \li{selenium.webdriver}.
@@ -324,8 +321,8 @@ Notice that there is now a tag containing \li{"Chicago"}.
 The arXiv (pronounced ``archive'') is an online repository of scientific publications, hosted by Cornell University.
 Write a function that accepts a string to serve as a search query.
 Use Selenium to enter the query into the search bar of \url{https://arxiv.org} and press Enter.
-The resulting page has up to 25 links to the PDFs of technical papers that match the query.
-Gather these URLs, then continue to the next page (if there are more results) and continue gathering links until obtaining at most 100 URLs.
+The resulting page has up to 50 links to the PDFs of technical papers that match the query.
+Gather these URLs, then continue to the next page (if there are more results) and continue gathering links until obtaining at most 150 URLs.
 Return the list of URLs.
 \end{problem}
 

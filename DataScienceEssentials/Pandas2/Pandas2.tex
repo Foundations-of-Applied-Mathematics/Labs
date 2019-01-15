@@ -1,12 +1,11 @@
 \lab{Pandas 2: Plotting}{Pandas 2: Plotting}
 \objective{Clear, insightful visualizations are a crucial part of data analysis.
 To facilitate quick data visualization, pandas includes several tools that wrap around matplotlib.
-These tools make it easy to compare different parts of a data set and explore the data as a whole.
-}
+These tools make it easy to compare different parts of a data set, explore the data as a whole, and spot patterns and correlations the data.}
 
 \section*{Overview of Plotting Tools} % =======================================
 
-The main tool for visualization in pandas is the \li{plot()} method of the \li{Series} and \li{DataFrame}.
+The main tool for visualization in pandas is the \li{plot()} method for \li{Series} and \li{DataFrames}.
 The method has a keyword argument \li{kind} that specifies the type of plot to draw.
 The valid options for \li{kind} are detailed below.
 
@@ -21,14 +20,14 @@ Histogram & \li{"hist"} & Show frequencies of one set of values, independent of 
 Box plot & \li{"box"} & Display min, median, max, and quartiles; compare data distributions \\
 Hexbin plot & \li{"hexbin"} & 2D histogram; reveal density of cluttered scatter plots \\
 \end{tabular}
-\caption{Uses for the \li{plot()} method of the pandas \li{Series} and \li{DataFrame}.
+\caption{Types of plots in pandas.
 The plot ID is the value of the keyword argument \li{kind}.
 That is, \li{df.plot(kind="scatter")} creates a scatter plot.
 The default \li{kind} is \li{"line"}.}
 \label{table:pandas-plot-options}
 \end{table}
 
-The \li{plot()} method calls \li{plt.plot()}, \li{plt.hist()}, \li{plt.scatter()}, or another matplotlib plotting function, but it also assigns axis labels, tick marks, legends, and a few other things based on the index and the data.
+The \li{plot()} method calls \li{plt.plot()}, \li{plt.hist()}, \li{plt.scatter()}, and other matplotlib plotting function, but it also assigns axis labels, tick marks, legends, and a few other things based on the index and the data.
 Most calls to \li{plot()} specify the \li{kind} of plot and which \li{Series} to use as the \li{x} and \li{y} axes.
 By default, the \li{index} of the \li{Series} or \li{DataFrame} is used for the \li{x} axis.
 
@@ -68,12 +67,10 @@ For more customizations, see \url{https://pandas.pydata.org/pandas-docs/stable/g
 
 A good way to start analyzing an unfamiliar data set is to visualize as much of the data as possible to determine which parts are most important or interesting.
 For example, since the columns in a \li{DataFrame} share the same index, the columns can all be graphed together using the index as the $x$-axis.
-In fact, the \li{plot()} method attempts by default to plot \textbf{every} \li{Series} (column) in the \li{DataFrame}.
-This is especially useful with sequential data, like the crime data set.
+The \li{plot()} method attempts by default to plot \textbf{every} \li{Series} (column) in a \li{DataFrame}.
+The \li{plot()} method attempts by default to plot \textbf{every} \li{Series} in a \li{DataFrame}.
 
-The crime data set has 11 columns, so the resulting figure, Figure \ref{fig:crime-all}, is fairly cluttered.
-However, it does shows that the \li{"Population"} column is on a completely different scale than the others.
-Dropping a few columns gives a better overview of the data, shown in Figure \ref{fig:crime-all-v2}.
+This is especially useful with sequential data, like the crime data set.
 
 \begin{lstlisting}
 # Plot all columns together against the index.
@@ -100,13 +97,23 @@ Dropping a few columns gives a better overview of the data, shown in Figure \ref
 \caption{}
 \end{figure}
 
+While plotting every \li{Series} at once can give an overview of all the data, the resulting plot is often difficult for the reader to understand.
+For example, the crime data set has 11 columns, so the resulting figure, Figure \ref{fig:crime-all}, is fairly cluttered.
+
+One way to declutter a visualization is to examine less data.
+Notice that the \li{Population} column has values much bigger than the other columns.
+This is because the \li{"Population"} column is on a completely different scale than the others.
+Dropping this column, as well as \li{'Total'}, gives a better overview of the data, shown in Figure \ref{fig:crime-all-v2}.
+
 \begin{warn}
-The \li{"Population"} column differs from the other columns because it is has \textbf{different units of measure}: population is measured by ``number of people,'' but all other columns are measured in ``number of crimes.''
+The \li{"Population"} column radically differs from the other columns because it is has \textbf{different units of measure}: population is measured by ``number of people,'' but all other columns are measured in ``number of crimes.''
 Be careful not to plot parts of a data set together if those parts don't have the same units or are otherwise incomparable.
 \end{warn}
 
+Another way to declutter a plot is to use subplots.
 To quickly plot several columns in separate subplots, use \li{subplots=True} and specify a shape tuple as the \li{layout} for the plots.
-Subplots automatically share the same $x$-axis; set \li{sharey=True} to force them to share the same $y$-axis as well.
+Subplots automatically share the same $x$-axis.
+Set \li{sharey=True} to force them to share the same $y$-axis as well.
 
 \begin{lstlisting}
 >>> crime.plot(y=["Property", "Larceny", "Burglary", "Violent"],
@@ -118,10 +125,37 @@ Subplots automatically share the same $x$-axis; set \li{sharey=True} to force th
     \includegraphics[width=.7\textwidth]{figures/line_subplots.pdf}
 \end{figure}
 
-The \li{plot()} method can generate subplots of any kind of plot.
-However, since subplots share an $x$-axis by default, histograms turn out poorly whenever there are columns with very different data ranges.
+As mentioned previously, the \li{plot()} method can be used to plot different kinds of plots.
+One possible kind of plot is a histogram.
+Since plots made by the \li{plot()} method share an $x$-axis by default, histograms turn out poorly whenever there are columns with very different data ranges or when more than one column is plotted at once.
+
+\begin{lstlisting}
+# Plot three histograms together.
+>>> crime.plot(kind="hist", y=["Violent", "Vehicle Theft", "Burglary"],
+...            bins=20, alpha=.7, rot=30)
+
+# Plot three histograms, stacking one on top of the other.
+>>> crime.plot(kind="hist", y=["Violent", "Vehicle Theft", "Burglary"],
+...            bins=20, stacked=True, rot=30)
+\end{lstlisting}
+
+\begin{figure}[H] % Try to compare histograms.
+\centering
+\begin{subfigure}{.49\textwidth}
+    \includegraphics[width=\textwidth]{figures/bad_hist_unstacked.pdf}
+\end{subfigure}
+%
+\begin{subfigure}{.49\textwidth}
+    \includegraphics[width=\textwidth]{figures/bad_hist_stacked.pdf}
+\end{subfigure}
+\caption{Two examples of histograms that are difficult to understand because multiple columns are plotted.}
+\end{figure}
+
+Thus, histograms are good for examining the distribution of a \textbf{single} column in a data set.
 For histograms, use the \li{hist()} method of the \li{DataFrame} instead of the \li{plot()} method.
 Specify the number of bins with the \li{bins} parameter.
+Choose a number of bins that accurately represents the data; the wrong number of bins can create a misleading or uninformative visualization.
+
 
 \begin{lstlisting}
 >>> crime[["Violent","Murder","Robbery","Property"]].hist(grid=False, bins=20)
@@ -131,9 +165,10 @@ Specify the number of bins with the \li{bins} parameter.
     \includegraphics[width=.7\textwidth]{figures/hist_subplots.pdf}
 \end{figure}
 
-Finally, the function \li{pd.plotting.scatter_matrix()} produces a table of plots where each column is plotted against each other column in separate scatter plots.
+Another useful visualization to begin to understand a data set is a scatter matrix. 
+The function \li{pd.plotting.scatter_matrix()} produces a table of plots where each column is plotted against each other column in separate scatter plots.
 The plots on the diagonal, instead of plotting a column against itself, displays a histogram of that column.
-This provides a way to very quickly do an initial analysis of the correlation between different columns.
+This provides a very quick method for an initial analysis of the correlation between different columns.
 
 \begin{lstlisting}
 >>> pd.plotting.scatter_matrix(crime[["Population", "Total", "Violent"]])
@@ -143,9 +178,18 @@ This provides a way to very quickly do an initial analysis of the correlation be
     \includegraphics[width=.7\textwidth]{figures/scatter_table.pdf}
 \end{figure}
 
+% Problem 1
+\begin{problem}
+Create 3 visualizations for the data in \li{final_accidents2.pickle} and \linebreak \li{final_drivers.pickle}. 
+Make one of the visualizations a histogram and one visualization a scatter matrix.
+The visualizations should be well labeled and easy to understand.
+Include a short description of your plots.
+\end{problem}
+
 \section*{Patterns and Correlations} % ========================================
 
-After visualizing the entire data set initially, the next step is usually to closely compare related parts of the data.
+After visualizing the entire data set initially, a good next step is to closely compare related parts of the data.
+This can be done with different types of visualizations.
 For example, Figure \ref{fig:crime-all-v2} suggests that the \li{"Murder"} and \li{"Forcible Rape"} columns are roughly on the same scale.
 Since this data is sequential (indexed by time), start by plotting these two columns against the index.
 Next, create a scatter plot of one of the columns versus the other to investigate correlations that are independent of the index.
@@ -171,9 +215,8 @@ Unlike other types of plots, using \li{kind="scatter"} requires both an \li{x} a
 \end{subfigure}
 \end{figure}
 
-What does these graphs show about the data?
-First of all, rape is more common than murder.
-Second, rates of rape appear to be steadily increased from the mid 1960's to the mid 1990's before leveling out, while murder rates stay relatively constant.
+The first plot shows us that rape is more common than murder.
+It also indicates that rates of rape steadily increased from the mid 1960's to the mid 1990's before leveling out, while murder rates stay relatively constant.
 The disparity between rape and murder is confirmed in the scatter plot: the clump of data points at about 15,000 murders and 90,000 rapes shows that there have been many years where rape was relatively high while murder was somewhat low.
 
 \begin{warn}
@@ -182,14 +225,21 @@ What lurking variables could have influenced the data measurements as they were 
 
 The crime data set is somewhat suspect in this regard.
 The murder rate is likely accurate, since murder is conspicuous and highly reported, but what about the rape rate?
-Are the number of rapes increasing, or is the percentage of rapes being reported increasing? (It's probably both!)
+Are the number of rapes increasing, or is the percentage of rapes being reported increasing? 
+It's probably both!
 Be careful about drawing conclusions for sensitive or questionable data.
 \end{warn}
 
-Figure \ref{fig:crime-all-v2} also reveals some general patterns relative to time.
+\subsection*{Bar Graphs}
+
+Different types of graphs help to identify different patterns.
+Note that Figure \ref{fig:crime-all-v2} reveals some general patterns relative to time.
 For instance, there seems to be a small bump in each type of crime in the early 1980's.
 Slicing the entries from 1980 to 1985 provides a closer look.
 Since there are only a few entries, we can treat the data as categorical and make a bar chart.
+
+As a general rule, horizontal bar charts (\li{kind="hbar"}) are better than the default vertical bar charts (\li{kind="bar"}) because most humans can detect horizontal differences more easily than vertical differences.
+If the labels are too long to fit on a normal figure, use \li{plt.tight_layout()} to adjust the plot boundaries to fit the labels in.
 
 \begin{lstlisting}
 # Plot 'Property' and 'Larceny' rates from 1980 to 1985.
@@ -214,41 +264,24 @@ Since there are only a few entries, we can treat the data as categorical and mak
 \end{subfigure}
 \end{figure}
 
-\begin{info} % Use horizontal bar charts.
-As a general rule, horizontal bar charts (\li{kind="hbar"}) are better than the default vertical bar charts (\li{kind="bar"}) because most humans can detect horizontal differences more easily than vertical differences.
-If the labels are too long to fit on a normal figure, use \li{plt.tight_layout()} to adjust the plot boundaries to fit the labels in.
-\end{info}
+% Problem 2
+\begin{problem}
+Using the accident data from the previous problem, identify if a trend exists between \li{FATALS} and the following variables:
+\begin{enumerate}
+\item \li{WEATHER}
+\item \li{DRINKING}
+\item \li{SP}
+\end{enumerate}
+
+Support each claim with a clear, labeled visualization and a short description of how the visualization supports your claim.
+\end{problem}
 
 \section*{Distributional Visualizations} % ====================================
 
-Histograms are good for examining the distribution of a \textbf{single} column in a data set.
-While pandas is capable of plotting several histograms on the same plot, the results are usually hard to read.
-
-\begin{lstlisting}
-# Plot three histograms together.
->>> crime.plot(kind="hist", y=["Violent", "Vehicle Theft", "Burglary"],
-...            bins=20, alpha=.7, rot=30)
-
-# Plot three histograms, stacking one on top of the other.
->>> crime.plot(kind="hist", y=["Violent", "Vehicle Theft", "Burglary"],
-...            bins=20, stacked=True, rot=30)
-\end{lstlisting}
-
-\begin{figure}[H] % Try to compare histograms.
-\captionsetup[subfigure]{justification=centering}
-\centering
-\begin{subfigure}{.49\textwidth}
-    \includegraphics[width=\textwidth]{figures/bad_hist_unstacked.pdf}
-\end{subfigure}
-%
-\begin{subfigure}{.49\textwidth}
-    \includegraphics[width=\textwidth]{figures/bad_hist_stacked.pdf}
-\end{subfigure}
-\end{figure}
-
-Instead of using histograms to compare distributions of data, use box plots.
-A \emph{box plot} (sometimes called a ``cat-and-whisker'' plot) shows the five number summary: the minimum, first quartile, median, third quartile, and maximum of the data.
-While not quite the same as a histogram, box plots are much better suited to quickly compare relatable distributions.
+While histograms are good at displaying the distributions for one column, a different visualization is needed to show the distribution of an entire set.
+A \emph{box plot}, sometimes called a ``cat-and-whisker'' plot, shows the five number summary: the minimum, first quartile, median, third quartile, and maximum of the data.
+Box plots are useful for comparing the distributions of relatable data.
+However, box plots are a basic summary, meaning that they are susceptible to  miss important information such as how many points were in each distribution.
 
 \begin{lstlisting}
 # Compare the distributions of three columns.
@@ -360,22 +393,38 @@ A hexbin plot of the same data, Figure \ref{fig:pandas-act-hexbin}, reveals the 
 Just as choosing a good number of \li{bins} is important for a good histogram, choosing a good \li{gridsize} is crucial for an informative hexbin plot.
 A large \li{gridsize} creates many small bins and a small \li{gridsize} creates fewer, larger bins.
 
+\begin{info}
+Since Hexbins are based on frequencies, they are prone to being misleading fi the dataset is not understood well. For example, when plotting information that deals with geographic position, increases in frequency may be results in higher populations rather than the actual information being plotted.
+
+\end{info}
+
 See \url{http://pandas.pydata.org/pandas-docs/stable/visualization.html} for more types of plots available in Pandas and further examples.
+
+% Problem 3
+\begin{problem}
+Using distributional visualizations, display a distributional visualization, and provide a brief description and analysis on the following distributions:
+\begin{enumerate}
+\item The distribution of accidents across the United States
+\item The distribution of age in all accidents
+\item The distribution of fatalities by the hour which the accident occurs
+\end{enumerate}
+
+As usual, all plots should be labeled and easy to read.
+\end{problem}
 
 \section*{Principles of Good Data Visualization} % ============================
 
-Visualization is much more than a set of pretty pictures scattered throughout a paper for the sole purpose of providing contrast to the text.
-When properly implemented, data visualization is a powerful tool for analysis and communication.
+Data visualization is a powerful tool for analysis and communication.
 When writing a paper or report, the author must make many decisions about how to use graphics effectively to convey useful information to the reader.
 Here we will go over a simple process for making deliberate, effective, and efficient design decisions.
 
 \subsection*{Attention to Detail} % -------------------------------------------
 
 Consider the plot in Figure \ref{fig:nolabels}.
-What does it depict?
-We can tell from a simple glance that it is a scatter plot of positively correlated data of some kind, with \li{temp}--likely temperature--on the $x$ axis and \li{cons} on the $y$ axis.
+It is a scatter plot of positively correlated data of some kind, with \li{temp}--likely temperature--on the $x$ axis and \li{cons} on the $y$ axis.
 However, the picture is not really communicating anything about the dataset.
-We have not specified the units for the $x$ or the $y$ axis, we have no idea what \li{cons} is, there is no title, and we don't even know where the data came from in the first place.
+It has not specified the units for the $x$ or the $y$ axis, nor does it tell what \li{cons} is. 
+There is no title, and the source of the data is unknown.
 
 \begin{figure}[H]
     \centering
@@ -388,7 +437,7 @@ We have not specified the units for the $x$ or the $y$ axis, we have no idea wha
 
 In a homework or lab setting, we sometimes (mistakenly) think that it is acceptable to leave off appropriate labels, legends, titles, and sourcing.
 In a published report or presentation, this kind of carelessness is confusing at best and, when the source is not included, even plagiaristic.
-Clearly, we need to explain our data in a useful manner that includes all of the vital information.
+Data needs to be explained in a useful manner that includes all of the vital information.
 
 Consider again Figure \ref{fig:nolabels}.
 This figure comes from the \li{Icecream} dataset within the \li{pydataset} package, which we store here in a dataframe and then plot:
@@ -398,7 +447,8 @@ This figure comes from the \li{Icecream} dataset within the \li{pydataset} packa
 >>> icecream.plot(kind="scatter", x="temp", y="cons")
 \end{lstlisting}
 
-We have at this point reproduced the rather substandard plot in Figure \ref{fig:nolabels}.
+This code produces the rather substandard plot in Figure \ref{fig:nolabels}.
+However, the method \li{data()} from the \li{pydataset} module has a boolean parameter \li{show_doc}, which displays information about the data being accessed..
 Using \li{data('Icecream', show\_doc=True)} we find the following information:
 \begin{enumerate}
     \item The dataset details ice cream consumption via four-weekly observations from March 1951 to July 1953 in the United States.
@@ -407,9 +457,9 @@ Using \li{data('Icecream', show\_doc=True)} we find the following information:
     \item The listed source is: ``Hildreth, C. and J. Lu (1960) \emph{Demand relations with autocorrelated disturbances}, Technical Bulletin No 2765, Michigan State University.''
 \end{enumerate}
 
-We add these important details using the following code.
-As we have seen in previous examples, pandas automatically generates legends when appropriate.
-However, although pandas also automatically labels the $x$ and $y$ axes, our data frame column titles may be insufficient.
+This information gives important details that can be used in the following code.
+As seen in previous examples, pandas automatically generates legends when appropriate.
+Pandas also automatically labels the $x$ and $y$ axes, however our data frame column titles may be insufficient.
 Appropriate titles for the $x$ and $y$ axes must also list appropriate units.
 For example, the $y$ axis should specify that the consumption is in units of \emph{pints per head}, in place of the ambiguous label \li{cons}.
 
@@ -422,7 +472,7 @@ For example, the $y$ axis should specify that the consumption is in units of \em
 >>> plt.ylabel("Consumption per head (pints)")
 \end{lstlisting}
 
-To arbitrarily add the necessary text to the figure, use either \li{plt.annotate()} or \li{plt.text()}.
+To add the necessary text to the figure, use either \li{plt.annotate()} or \li{plt.text()}.
 Alternatively, add text immediately below wherever the figure is displayed.
 
 \begin{lstlisting}
@@ -431,9 +481,8 @@ Alternatively, add text immediately below wherever the figure is displayed.
 ...     "2765, Michigan State University.", fontsize=7)
 \end{lstlisting}
 
-Both of these methods are imperfect, however, and can normally be just as easily replaced by a caption attached to the figure in your presentation or document setting.
-We again reiterate how important it is that you source any data you use.
-Failing to do so is plagiarism.
+Both of these methods are imperfect but can normally be easily replaced by a caption attached to the figure.
+Again, we reiterate how important it is that you source any data you use; failing to do so is plagiarism.
 
 Finally, we have a clear and demonstrative graphic in Figure \ref{fig:labels}.
 
@@ -444,45 +493,40 @@ Finally, we have a clear and demonstrative graphic in Figure \ref{fig:labels}.
     \label{fig:labels}
 \end{figure}
 
+\begin{warn}
+Visualizing data can inherit many biases of the visualizer and as a result can be intentionally misleading.
+Examples of this include, but are not limited to, visualizing subsets of data that do not represent the whole of the data and having purposely misconstrued axes.
+Every data visualizer has the responsibility to avoid including biases in their visualizations to ensure data is being represented informatively and accurately.
+\end{warn}
+% Problem 4
 \begin{problem}
-The \li{pydataset} module\footnote{Run \texttt{pip install pydataset} if needed.} contains numerous data sets, each stored as a pandas \li{DataFrame}.
+The \li{pydataset} module contains numerous data sets, each stored as a pandas \li{DataFrame}.
+Read data on road accident deaths in the United States using the data set \li{road} in the \li{pydataset} module.
+Using this data, answer the following questions:
 
-\begin{lstlisting}
->>> from pydataset import data
+\begin{enumerate}
+\item Does higher population density indicate higher fuel consumption?
+\item Does a correlation exist between number of drivers and number of deaths in a state?
+\item Does the temperature of a state in January affect its population density?
+\end{enumerate}
 
-# Call data() to see the entire list of data sets.
-# To load a particular data set, enter its ID as an argument to data().
->>> titanic = data("Titanic")
-# To see the information about a data set, call data() with show_doc=True.
->>> data("Titanic", show_doc=True)
-<<Titanic
+Support each claim with a visualization and make sure the visualizations are clearly labeled and easy to understand.
+Include any citations provided by the data set.
 
-PyDataset Documentation (adopted from R Documentation. The displayed
-examples are in R)
+(Hint: Consider how outliers may be skewing the data.)
+\end{problem}
 
-## Survival of passengers on the Titanic>>
-\end{lstlisting}
+% Problem 5
+\begin{problem}
+The file \li{new_york_crime_clean.csv} contains data on New York City crimes and felonies from 2000-2017 taken from \url{https://www1.nyc.gov/site/nypd/stats/crime-statistics/historical.page}.
+Use this data to answer the following questions and give visualizations supporting each claim:
+\begin{enumerate}
+\item What are the most common and least common crimes?
+\item Does a trend exist between robbery and drug felonies? If so, what is the trend?
+\item Which crimes have had the largest distributions?
+\end{enumerate}
+Use a different style of visualization for each question. 
+Make sure that each plot is well labeled and contains citations.
 
-Visualize and describe at least 5 of the following data sets with 2 or 3 figures each.
-Comment on the implications and significance of each visualization and give a comprehensive summary of the data set.
-
-\begin{itemize}
-\item \li{"Arbuthnot"}: Ratios of male to female births in London from 1629-1710
-\item \li{"trees"}: Girth, height and volume for black cherry trees
-\item \li{"road"}: Road accident deaths in the United States
-\item \li{"birthdeathrates"}: Birth and death rates by country
-\item \li{"bfeed"}: Child breast feeding records
-\item \li{"heart"}: Survival of patients on the waiting list for the Stanford heart transplant program
-\item \li{"lung"}: Survival in patients with advanced lung cancer from the North Central Cancer Treatment group
-\item \li{"birthwt"}: Risk factors associated with low infant birth weight
-\item A data set of your choice
-\end{itemize}
-Include each of the following in each visualization.
-\begin{itemize}
-\item A clear title, with relevant information for the period or region the data was collected in.
-\item Axis labels that specify units.
-\item A legend (if appropriate).
-\item The source.
-You may include the source information in your plot or print it after the plot.
-\end{itemize}
+(Hint: Use plt.axis('scaled') or plt.axis('square') to make sure x- and y-axis are the same.)
 \end{problem}

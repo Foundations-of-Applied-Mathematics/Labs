@@ -1,12 +1,71 @@
-\lab{Web Scraping I: Introduction to BeautifulSoup}{Introduction to Beautiful Soup}
+\lab{Web Scraping}{Web Scraping}
 \objective{Web Scraping is the process of gathering data from websites on the internet.
 Since almost everything rendered by an internet browser as a web page uses HTML, the first step in web scraping is being able to extract information from HTML.
-In this lab, we introduce BeautifulSoup, Python's canonical tool for efficiently and cleanly navigating and parsing HTML.}
+In this lab, we introduce the requests library for scraping web pages, and BeautifulSoup, Python's canonical tool for efficiently and cleanly navigating and parsing HTML.}
+
+\section*{HTTP and Requests} % =============================================================
+
+HTTP stands for Hypertext Transfer Protocol, which is an application layer networking protocol.
+It is a higher level protocol than TCP, which we used to build a server in the Web Technologies lab, but uses TCP protocols to manage connections and provide network capabilities.
+The HTTP protocol is centered around a request and response paradigm, in which a client makes a request to a server and the server replies with a response.
+There are several methods, or \emph{requests}, defined for HTTP servers, the three most common of which are GET, POST, and PUT.
+GET requests request information from the server, POST requests modify the state of the server, and PUT requests add new pieces of data to the server.
+
+The standard way to get the source code of a website using Python is via the \li{requests} library.\footnote{Though \texttt{requests} is not part of the standard library, it is recognized as a standard tool in the data science community. See \url{http://docs.python-requests.org/}.}
+Calling \li{requests.get()} sends an HTTP GET request to a specified website.
+The website returns a response code, which indicates whether or not the request was received, understood, and accepted.
+If the response code is good, typically \li{200}, then the response will also include the website source code as an HTML file.
+
+\begin{lstlisting}
+>>> import requests
+
+# Make a request and check the result. A status code of 200 is good.
+>>> response = requests.get("http://www.byu.edu")
+>>> print(response.status_code, response.ok, response.reason)
+<<200 True OK>>
+
+
+
+# The HTML of the website is stored in the 'text' attribute.
+>>> print(response.text)
+<<<!DOCTYPE html>
+<html lang="en" dir="ltr" prefix="content: http://purl.org/rss/1.0/modules/content/  dc: http://purl.org/dc/terms/  foaf: http://xmlns.com/foaf/0.1/  og: http://ogp.me/ns#  rdfs: http://www.w3.org/2000/01/rdf-schema#  schema: http://schema.org/  sioc: http://rdfs.org/sioc/ns#  sioct: http://rdfs.org/sioc/types#  skos: http://www.w3.org/2004/02/skos/core#  xsd: http://www.w3.org/2001/XMLSchema# " class=" ">
+
+  <head>
+    <meta charset="utf-8" />>>
+# ...
+\end{lstlisting}
+
+Note that some websites aren't built to handle large amounts of traffic or many repeated requests.
+Most are built to identify web scrapers or crawlers that initiate many consecutive GET requests without pauses, and retaliate or block them.
+When web scraping, always make sure to store the data that you receive in a file and include error checks to prevent retrieving the same data unnecessarily.
+This is especially important in larger applications.
+
+\begin{problem}
+Use the \li{requests} library to get the HTML source for the website \url{http://www.example.com}.
+Save the source as a file called example.html.
+If the file already exists, make sure not to scrape the website, or overwrite the file.
+You will use this file later in the lab.
+\label{prob:get-example.com}
+\end{problem}
+
+\begin{warn} % Don't scrape illegally.
+Scraping copyrighted information without the consent of the copyright owner can have severe legal consequences.
+Many websites, in their terms and conditions, prohibit scraping parts or all of the site.
+Websites that do allow scraping usually have a file called \texttt{robots.txt} (for example, \url{www.google.com/robots.txt}) that specifies which parts of the website are off-limits and how often requests can be made according to the \emph{robots exclusion standard}.%
+\footnote{See \href{http://www.robotstxt.org/orig.html}{\texttt{www.robotstxt.org/orig.html}} and \href{https://en.wikipedia.org/wiki/Robots_exclusion_standard}{\texttt{en.wikipedia.org/wiki/Robots\_exclusion\_standard}}.}
+
+Be careful and considerate when doing any sort of scraping, and take care when writing and testing code to avoid unintended behavior.
+It is up to the programmer to create a scraper that respects the rules found in the terms and conditions and in \texttt{robots.txt}.%
+\footnote{Python provides a parsing library called \texttt{urllib.robotparser} for reading \texttt{robot.txt} files.
+For more information, see \url{https://docs.python.org/3/library/urllib.robotparser.html}.
+}
+\end{warn}
 
 \section*{HTML} % =============================================================
 
 \emph{Hyper Text Markup Language}, or \emph{HTML}, is the standard \emph{markup language}---a language designed for the processing, definition, and presentation of text---for creating webpages.
-It provides a document with structure and is composed of pairs of \emph{tags} to surround and define various types of content.
+It structures a document using pairs of \emph{tags} that surround and define content.
 Opening tags have a tag name surrounded by angle brackets (\li{<tag-name>}).
 The companion closing tag looks the same, but with a forward slash before the tag name (\li{</tag-name>}).
 A list of all current HTML tags can be found at \url{http://htmldog.com/reference/htmltags}.
@@ -33,7 +92,7 @@ Click \href{http://www.example.com}{here} for more information.
 \end{center}
 
 Unlike Python, HTML does not enforce indentation (or any whitespace rules), though indentation generally makes HTML more readable.
-The previous example can even be written equivalently in a single line.
+The previous example can be written in a single line.
 
 \begin{lstlisting}[language=HTML]
 <html><body><p>Click <a id='info' href='http://www.example.com/info'>here</a>
@@ -45,10 +104,7 @@ A forward slash is included between the name and the closing bracket.
 Examples of these include \li{<hr/>}, which describes a horizontal line, and \li{<img/>}, the tag for representing an image.
 
 \begin{problem} % Use View Page Source to see HTML source of a simple website.
-The HTML of a website is easy to view in most browsers.
-In Google Chrome, go to \url{http://www.example.com}, right click anywhere on the page that isn't a picture or a link, and select \li{View Page Source}.
-This will open the HTML source code that defines the page.
-Examine the source code.
+Using the output from Problem \ref{prob:get-example.com}, examine the HTML source code for \url{http://www.example.com}.
 What tags are used?
 What is the value of the \li{<<type>>} attribute associated with the \li{style} tag?
 
@@ -63,7 +119,7 @@ BeautifulSoup (\li{bs4}) is a package%
 \footnote{BeautifulSoup is not part of the standard library; install it with \li{conda install beautifulsoup4} or with \li{pip install beautifulsoup4}.} that makes it simple to navigate and extract data from HTML documents.
 See \url{http://www.crummy.com/software/BeautifulSoup/bs4/doc/index.html} for the full documentation.
 
-The \li{bs4.BeautifulSoup} class accepts two parameters to its constructor: a string of HTML code, and an HTML parser to use under the hood.
+The \li{bs4.BeautifulSoup} class accepts two parameters to its constructor: a string of HTML code and an HTML parser to use under the hood.
 The HTML parser is technically a keyword argument, but the constructor prints a warning if one is not specified.
 The standard choice for the parser is \li{"html.parser"}, which means the object uses the standard library's \li{html.parser} module as the engine behind the scenes.
 
@@ -73,6 +129,7 @@ A couple of other options are \li{"lxml"}, an extremely fast parser written in C
 Both must be installed independently; see \url{https://www.crummy.com/software/BeautifulSoup/bs4/doc/\#installing-a-	parser} for more information.
 \end{info}
 
+\vspace{5mm}
 A \li{BeautifulSoup} object represents an HTML document as a tree.
 In the tree, each tag is a \emph{node} with nested tags and strings as its \emph{children}.
 The \li{prettify()} method returns a string that can be printed to represent the BeautifulSoup object in a readable format that reflects the tree structure.
@@ -146,7 +203,7 @@ The \li{BeautifulSoup} class has a \li{find_all()} method that, when called with
 
 Write a function that accepts a string of HTML code as an argument.
 Use BeautifulSoup to return a list of the \textbf{names} of the tags in the code.
-Use your function and the source code from \url{http://www.example.com} (see \texttt{example.html}) to check your answers from Problem \ref{prob:look-at-example.com}.
+Use your function and the source code from \url{http://www.example.com} (use the output from Problem \ref{prob:get-example.com}) to check your answers from Problem \ref{prob:look-at-example.com}.
 \end{problem}
 
 \subsection*{Navigating the Tree Structure} % ---------------------------------
@@ -180,7 +237,7 @@ Since the HTML in this example has several \li{<p>} and \li{<a>} tags, only the 
 The other tags can be accessed by manually navigating through the HTML tree.
 
 Every HTML tag (except for the topmost tag, which is usually \li{<html>}) has a \emph{parent} tag.
-Each tag also has and zero or more \emph{sibling} and \emph{children} tags or text.
+Each tag also has zero or more \emph{sibling} and \emph{children} tags or text.
 Following a true tree structure, every \li{bs4.element.Tag} in a soup has multiple attributes for accessing or iterating through parent, sibling, or child tags.
 
 \begin{table}[H]
@@ -191,7 +248,7 @@ Attribute & Description \\ \hline
 \li{parents} & Generator for the parent tags up to the top level \\
 \li{next_sibling} & The tag immediately after to the current tag \\
 \li{next_siblings} & Generator for sibling tags after the current tag \\
-\li{previous_sibling} & The tag immediately before to the current tag \\
+\li{previous_sibling} & The tag immediately before the current tag \\
 \li{previous_siblings} & Generator for sibling tags before the current tag \\
 \li{contents} & A list of the immediate children tags\\
 \li{children} & Generator for immediate children tags\\
@@ -201,42 +258,7 @@ Attribute & Description \\ \hline
 \label{table:bs4-tag-attributes-2}
 \end{table}
 
-\begin{lstlisting}
->>> print(pig_soup.prettify())
-<<<html>
- <head>>>                     # <head> is the parent of the <title>
-  <<<title>
-   Three Little Pigs
-  </title>
- </head>
- <body>>>                     # <body> is the sibling of <head>
-  <<<p class="title">>>         # and the parent of two <p> tags (title and story).
-   <<<b>
-    The Three Little Pigs
-   </b>
-  </p>
-  <p class="story">
-   Once upon a time, there were three little pigs named
-   <a class="pig" href="http://example.com/larry" id="link1">
-    Larry,
-   </a>
-   <a class="pig" href="http://example.com/mo" id="link2">
-    Mo
-   </a>
-   , and
-   <a class="pig" href="http://example.com/curly" id="link3">
-    Curly.>>                  # The preceding <a> tags are siblings with each
-   </a>                     # other and the following two <p> tags.
-   <<<p>
-    The three pigs had an odd fascination with experimental construction.
-   </p>
-   <p>
-    ...
-   </p>
-  </p>
- </body>
-</html>>>
-\end{lstlisting}
+
 
 \begin{lstlisting}
 # Start at the first <a> tag in the soup.
@@ -255,17 +277,17 @@ Attribute & Description \\ \hline
 >>> a_tag.next_sibling.next_sibling         # The second sibling is a tag.
 <<<a class="pig" href="http://example.com/mo" id="link2">Mo</a>>>
 
-# Alternatively, get all siblings past <a> at once.
->>> list(a_tag.next_siblings)
-<<['\n',
- <a class="pig" href="http://example.com/mo" id="link2">Mo</a>,
- ', and\n',
- <a class="pig" href="http://example.com/curly" id="link3">Curly.</a>,
- '\n',
- <p>The three pigs had an odd fascination with experimental construction.</p>,
- '\n',
- <p>...</p>,
- '\n']>>
+%# Alternatively, get all siblings past <a> at once.
+%>>> list(a_tag.next_siblings)
+%<<['\n',
+% <a class="pig" href="http://example.com/mo" id="link2">Mo</a>,
+% ', and\n',
+% <a class="pig" href="http://example.com/curly" id="link3">Curly.</a>,
+% '\n',
+% <p>The three pigs had an odd fascination with experimental construction.</p>,
+% '\n',
+% <p>...</p>,
+% '\n']>>
 \end{lstlisting}
 
 Note carefully that newline characters are considered to be children of a parent tag.
@@ -289,7 +311,6 @@ http://example.com/curly>>
 Note that the \li{"class"} attribute of the \li{<p>} tag is a list.
 This is because the \li{"class"} attribute can take on several values at once; for example, the tag \li{<p class="story book">} is of class \li{'story'} and of class \li{'book'}.
 
-\begin{info}
 The behavior of the \li{string} attribute of a \li{bs4.element.Tag} object depends on the structure of the corresponding HTML tag.
 \begin{enumerate}
     \item If the tag has a string of text and no other child elements, then \li{string} is just that text.
@@ -324,12 +345,10 @@ Curly.
 The three pigs had an odd fascination with experimental construction.
 ...>>
 \end{lstlisting}
-\end{info}
 
 \begin{problem}
-The file \texttt{example.html} contains the HTML source for \url{http://www.example.com}.
-Write a function that reads the file and loads the code into BeautifulSoup.
-Find the only \li{<a>} tag with a hyperlink and return its text.
+Using the output from Problem \ref{prob:get-example.com}, write a function that reads the file and loads the code into BeautifulSoup.
+Find the only \li{<a>} tag with a hyperlink, and return its text.
 \end{problem}
 
 \begin{comment}
@@ -372,13 +391,13 @@ Tags can be matched by name, attributes, and/or text.
 
 # Find the first tag whose text is 'Mo'.
 >>> pig_soup.find(string='Mo')
-<<'Mo'>>                                # The result is the actual string,
->>> soup.find(string='Mo').parent       # so go up one level to get the tag.
+<<'Mo'>>                                    # The result is the actual string,
+>>> pig_soup.find(string='Mo').parent   # so go up one level to get the tag.
 <<<a class="pig" href="http://example.com/mo" id="link2">Mo</a>>>
 \end{lstlisting}
 
 \begin{problem}
-The file \texttt{san\_diego\_weather.html} contains the HTML source for an old page from Weather Underground.\footnote{See \url{http://www.wunderground.com/history/airport/KSAN/2015/1/1/DailyHistory.html?req_city=San+Diego&req_state=CA&req_statename=California&reqdb.zip=92101&reqdb.magic=1&reqdb.wmo=99999&MR=1}}.
+The file \texttt{san\_diego\_weather.html} contains the HTML source for an old page from Weather Underground.\footnote{See \url{http://www.wunderground.com/history/airport/KSAN/2015/1/1/DailyHistory.html?req_city=San+Diego&req_state=CA&req_statename=California&reqdb.zip=92101&reqdb.magic=1&reqdb.wmo=99999&MR=1}}
 Write a function that reads the file and loads it into BeautifulSoup.
 Return a list of the following tags:
 \begin{enumerate}
@@ -395,7 +414,7 @@ This opens the HTML source at the element that the mouse clicked on.
 
 \subsection*{Advanced Search Techniques} % ------------------------------------
 
-Consider the problem of finding the tag that is a link the URL \url{http://example.com/curly}.
+Consider the problem of finding the tag that is a link to the URL \url{http://example.com/curly}.
 
 \begin{lstlisting}
 >>> pig_soup.find(href="http://example.com/curly")
@@ -403,7 +422,7 @@ Consider the problem of finding the tag that is a link the URL \url{http://examp
 \end{lstlisting}
 
 This approach works, but it requires entering in the entire URL.
-To perform generalized searches, the \li{find()} and \li{find_all()} method also accept compile regular expressions from the \li{re} module.
+To perform generalized searches, the \li{find()} and \li{find_all()} method also accept compiled regular expressions from the \li{re} module.
 This way, the methods locate tags whose name, attributes, and/or string matches a pattern.
 
 \begin{lstlisting}

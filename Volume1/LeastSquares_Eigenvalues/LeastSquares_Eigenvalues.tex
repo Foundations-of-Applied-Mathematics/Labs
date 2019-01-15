@@ -37,10 +37,10 @@ Thus $\widehat{\x}$ is the least squares solution to $A\x=\b$ if and only if $\w
 Since $\widehat{R}$ is upper triangular, this equation can be solved quickly with back substitution.
 
 \begin{problem} % Solve the normal equations with QR.
-Write a function that accepts an $m \times n$ matrix $A$ of rank $n$ and a vector $\b$ of length $n$.
-Use the QR decomposition and (\ref{eq:normal-equation-via-qr}) to solve the normal equations corresponding to $A\x = \b$.
+Write a function that accepts an $m \times n$ matrix $A$ of rank $n$ and a vector $\b$ of length $m$.
+Use the reduced QR decomposition of $A$ and (\ref{eq:normal-equation-via-qr}) to solve the normal equations corresponding to $A\x = \b$.
 
-You may use either SciPy's QR routine or one of your own QR routines.
+You may use either SciPy's reduced QR routine (\li{la.qr()} with \li{mode="economic"}) or one of your own reduced QR routines.
 In addition, you may use \li{la.solve_triangular()}, SciPy's optimized routine for solving triangular systems.
 \label{prob:lstsq-via-qr}
 \end{problem}
@@ -348,6 +348,7 @@ To plot the circle, solve the least squares system for $c_1$, $c_2$, and $r$, de
 \end{figure}
 
 \begin{problem}
+\label{prob:lstsq-ellipse-fit}
 The general equation for an ellipse is \[ax^2 + bx + cxy + dy + ey^2 = 1.\]
 Write a function that calculates the parameters for the ellipse that best fits the data in the file \texttt{ellipse.npy}.
 Plot the original data points and the ellipse together, using the following function to plot the ellipse.
@@ -379,30 +380,33 @@ Instead, eigenvalues must be computed with iterative methods.
 The \emph{dominant eigenvalue} of the $n \times n$ matrix $A$ is the unique eigenvalue of greatest magnitude, if such an eigenvalue exists.
 The \emph{power method} iteratively computes the dominant eigenvalue of $A$ and its corresponding eigenvector.
 
-Begin by choosing a vector $\x_0$ such that $\|\x_0\|=1$, and define
-\[\x_{k+1}=\frac{A\x_k}{\|A\x_k\|}.\]
+Begin by choosing a vector $\x_0$ such that $\|\x_0\|_2=1$, and define
+\[
+\x_{k+1} = \frac{A\x_k}{\|A\x_k\|_2}.
+\]
 If $A$ has a dominant eigenvalue $\lambda$, and if the projection of $\x_0$ onto the subspace spanned by the eigenvectors corresponding to $\lambda$ is nonzero, then the sequence of vectors $(x_k)_{k=0}^\infty$ converges to an eigenvector $\x$ of $A$ corresponding to $\lambda$.
 
 Since $\x$ is an eigenvector of $A$, $A\x = \lambda \x$.
-Left multiplying by $\x\trp$ on each side gives $\x\trp A\x = \lambda \x\trp\x$, and hence $\lambda = \frac{\x\trp A\x}{\x\trp\x}$.
+Left multiplying by $\x\trp$ on each side results in $\x\trp A\x = \lambda \x\trp\x$, and hence $\lambda = \frac{\x\trp A\x}{\x\trp\x}$.
 This ratio is called the \emph{Rayleigh quotient}.
-However, since each $\x_k$ is normalized, $\x\trp\x = \|\x\|^2 = 1$, so $\lambda = \x\trp A\x$.
+However, since each $\x_k$ is normalized, $\x\trp\x = \|\x\|_2^2 = 1$, so $\lambda = \x\trp A\x$.
 
 The entire algorithm is summarized below.
 
 \begin{algorithm}[H] % The Power Method
 \begin{algorithmic}[1]
-\Procedure{Power Method}{$A$}
+\Procedure{PowerMethod}{$A$}
     \State $m, n \gets \shape{A}$
         \Comment{$A$ is square so $m = n$.}
     \State $\x_0 \gets \text{random}(n)$
         \Comment{A random vector of length $n$}
-    \State $\x_0 \gets \x_0/\|\x_0\|$
+    \State $\x_0 \gets \x_0/\|\x_0\|_2$
         \Comment{Normalize $\x_0$}
-    \For{$k = 1,\ 2,\ \ldots,\ N-1$}
+    \For{$k = 0,\ 1,\ \ldots,\ N-1$}
         \label{step:power-method-stopping-criterion}
         \State $\x_{k+1} \gets A\x_k$
-        \State $\x_{k+1} \gets \x_{k+1}/\|\x_{k+1}\|$
+        \label{step:power-method-main-step}
+        \State $\x_{k+1} \gets \x_{k+1}/\|\x_{k+1}\|_2$
     \EndFor
     \State \pseudoli{return} $\x_N\trp A \x_N,\ \x_N$
 \EndProcedure
@@ -421,7 +425,7 @@ Even with these assumptions, a rigorous proof that the power method converges is
 \begin{problem} % Implement the power method.
 Write a function that accepts an $n \times n$ matrix $A$, a maximum number of iterations $N$, and a stopping tolerance \li{tol}.
 Use Algorithm \ref{Alg:power-method} to compute the dominant eigenvalue of $A$ and a corresponding eigenvector.
-Continue the loop in step \ref{step:power-method-stopping-criterion} until either $\|\x_{k+1} - \x_k\|$ is less than the tolerance \li{tol}, or until iterating the maximum number of times $N$.
+Continue the loop in step \ref{step:power-method-stopping-criterion} until either $\|\x_{k+1} - \x_k\|_2$ is less than the tolerance \li{tol}, or until iterating the maximum number of times $N$.
 
 Test your function on square matrices with all positive entries, verifying that $A\x = \lambda\x$.
 Use SciPy's eigenvalue solver, \li{scipy.linalg.eig()}, to compute all of the eigenvalues and corresponding eigenvectors of $A$ and check that $\lambda$ is the dominant eigenvalue of $A$.
@@ -517,14 +521,14 @@ Putting a matrix in upper Hessenberg form before applying the QR algorithm is ca
 
 With preconditioning in mind, the entire QR algorithm is as follows.
 
-\begin{algorithm}[H] % The Power Method
+\begin{algorithm}[H] % A Simple QR Algorithm
 \begin{algorithmic}[1]
-\Procedure{QR Algorithm}{$A$, $N$}
+\Procedure{QR\_Algorithm}{$A$, $N$}
     \State $m, n \gets \shape{A}$
     \State $S \gets \text{hessenberg}(A)$ \label{step:qr-alg-hessenberg}
         \Comment{Put $A$ in upper Hessenberg form.}
     \For{$k = 0,\ 1,\ \ldots,\ N-1$} \label{step:qr-alg-niters}
-        \State $Q, R \gets \text{qr}(S)$ \label{step:qr-alg-qr-S}
+        \State $Q, R \gets S$ \label{step:qr-alg-qr-S}
             \Comment{Get the QR decomposition of $A_k$.}
         \State $S \gets RQ$
             \Comment{Recombine $R_k$ and $Q_k$ into $A_{k+1}$.}
@@ -586,66 +590,146 @@ They include the Arnoldi iteration, the Jacobi method, the Rayleigh quotient met
 % We will return to this subject after studying spectral calculus and Krylov subspaces.
 \end{info}
 
-\begin{comment} % TODO: WLS, other norms?, QR alg improvements
+% \begin{comment} % TODO: WLS, other norms?, inverse iteration, QR algorithm improvements
 \newpage
 
 \section*{Additional Material} % ==============================================
 
-\subsection*{Weighted Least Squares} % ----------------------------------------
+\subsection*{Variations on the Linear Least Squares Problem} % ----------------
 
-A \emph{weighted 2-norm} $\|\cdot\|_W$ is defined by the nonsingular matrix $W$ as follows.
-\[\|\x\|_W = \|W\x\|_2 = \sqrt{\x\trp W\trp W\x}\]
-Typically $W$ is chosen to be a diagonal matrix, in which case the product $W\trp W$ is also diagonal.
-Given the overdetermined system $A\x = \b$, the problem of choosing $\widehat\x$ to minimize $\|A\widehat\x - \b\|_W$ is called a \emph{weighted least squares} problem.
-This problem has a slightly different set of normal equations.
-\[A\trp W\trp W A \widehat{\x} = A\trp W\trp W \b\]
-
-Letting $C = W A$ and $\z = W \b$, this equation reduces to the usual normal equations.
-\[C\trp C \widehat{\x} = C\trp \z\]
-
-Left multiplying $A$ by the diagonal matrix $W$ multiplies the rows of $A$ by the diagonal entries of $W$.
-Thus the weighted least squares problem can be solved efficiently by representing $W$ as a 1-D array of its diagonal entries and using array broadcasting.
-
-\begin{lstlisting}
->>> C = np.vstack(w) * A
->>> z = w * b
->>> x = la.lstsq(C, z)[0]
-\end{lstlisting}
-
-Weighted least squares is useful when some points in a data set are considered more important than others.
-Consider the problem of fitting data to an exponential curve $y = ae^{kx}$ where points $(x_k,y_k)$ are known.
-Taking the natural log of both sides gives $\log(y) = \log(a) + kx$, so the least squares problem is as follows.
+If $W$ is an $n\times n$ is symmetric positive-definite matrix, then the function $\|\cdot\|_{W^2}:\mathbb{R}^n\rightarrow\mathbb{R}$ given by
 \[
-A\x =
-\left[\begin{array}{cc}
-x_1 & 1 \\
-x_2 & 1 \\
-\vdots & \vdots \\
-x_m & 1
-\end{array}\right]
-\left[\begin{array}{c} k \\ \log(a) \end{array}\right]
-=
-\left[\begin{array}{c}
-\log(y_1) \\ \log(y_2) \\ \vdots \\ \log(y_m)
-\end{array}\right]
-= \b
+\|\x\|_{W^2} = \|W\x\|_2 = \sqrt{\x\trp W\trp W\x}
 \]
+defines a norm and is called a \emph{weighted 2-norm}.
+Given the overdetermined system $A\x = \b$, the problem of choosing $\widehat\x$ to minimize $\|A\widehat\x - \b\|_{W^2}$ is called a \emph{weighted least squares} (WLS) problem.
+This problem has a slightly different set of normal equations,
+\[
+A\trp W\trp W A \widehat{\x} = A\trp W\trp W \b.
+\]
+However, letting $C = W A$ and $\z = W \b$, this equation reduces to the usual normal equations,
+\[
+C\trp C \widehat{\x} = C\trp \z,
+\]
+so a WLS problem can be solved in the same way as an ordinary least squares (OLS) problem.
 
-% TODO: Finish this section with some exponential data and showing how WLS works better than OLS in this case.
+Weighted least squares is useful when some points in a data set are more important than others.
+Typically $W$ is chosen to be a diagonal matrix, and each positive diagonal entry $W_{i,i}$ indicate how much weight should be given to the $i$th data point.
+For example, Figure \ref{fig:lstsq-ols-vs-wls} shows OLS and WLS fits of an exponential curve $y = ae^{kx}$ to data that gets more sparse as $x$ increases, where the matrix $W$ is chosen to give more weight to the data with larger $x$ values.
 
-\subsection*{Using other Norms} % ---------------------------------------------
+Alternatively, the least squares problem can be formulated with other common vector norms, but such problems cannot be solved via the normal equations.
+For example, minimizing $\|A\x - \mathbf{b}\|_1$ or $\|A\x - \mathbf{b}\|_\infty$ is usually done by solving an equivalent \emph{linear program}, a type of constrained optimization problem.
+These norms may be better suited to a particular application than the regular $2$-norm.
+Figure \ref{fig:lstsq-different-norms} illustrates how different norms give slightly different results in the context of Problem \ref{prob:lstsq-ellipse-fit}.
 
-In these Least Squares problems, we have found best fit lines and ellipses relative to the 2-norm.
-It is possible to generalize the idea of best fit curves relative to other norms.
-See Figure \ref{fig:lstsq-many-norms} for an illustration of this.
-
-\begin{figure}[h]
+\begin{figure}[H] % Variations on least squares.
+\captionsetup[subfigure]{justification=centering}
+\centering
+\begin{subfigure}{.49\textwidth}
     \centering
-    \includegraphics[width=.7\textwidth]{figures/ellipsefit.pdf}
-    % TODO: where did this picture come from? CVXOPT?
-    \label{fig:lstsq-many-norms}
+    \includegraphics[width=.7\textwidth]{figures/weighted_least_squares.pdf}
+    \caption{Ordinary and weighted least squares fits for exponential data.}
+    \label{fig:lstsq-ols-vs-wls}
+\end{subfigure}
+%
+\begin{subfigure}{.49\textwidth}
+    \centering
+    \includegraphics[width=.7\textwidth]{figures/various_norm_ellipse.pdf}
+    \caption{Best fits for elliptical data with respect to different vector norms.}
+    \label{fig:lstsq-different-norms}
+\end{subfigure}
+\caption{Variations on the ordinary least squares problem.}
 \end{figure}
 
+\subsection*{The Inverse Power Method} % --------------------------------------
+
+The major drawback of the power method is that it only computes a single eigenvector-eigenvalue pair, and it is always the eigenvalue of largest magnitude.
+The \emph{inverse power method}, sometimes simply called the \emph{inverse iteration}, is a way of computing an eigenvalue that is closest in magnitude to an initial guess.
+They key observation is that if $\lambda$ is an eigenvalue of $A$, then $1/(\lambda - \mu)$ is an eigenvalue of $(A - \mu I)^{-1}$, so applying the power method to $(A - \mu I)^{-1}$ yields the eigenvalue of $A$ that is closest in magnitude to $\mu$.
+
+The inverse power method is more expensive than the regular power method because at each iteration, instead of a matrix-vector multiplication (step \ref{step:power-method-main-step} of Algorithm \ref{Alg:power-method}), a system of the form $(A - \mu I)\x = \b$ must be solved.
+To speed this step up, start by taking the LU or QR factorization of $A - \mu I$ before the loop, then use the factorization and back substitution to solve the system quickly within the loop.
+For instance, if $QR = A - \mu I$, then since $Q^{-1} = Q\trp$,
+\begin{align*}
+    \b
+    = (A-\mu I)\x
+    = QR\x
+    \quad\Leftrightarrow\quad
+    R\x = Q\trp\b,
+\end{align*}
+which is a triangular system.
+This version of the algorithm is described below.
+
+\begin{algorithm}[H] % The Inverse Power Method
+\begin{algorithmic}[1]
+\Procedure{InversePowerMethod}{$A$, $\mu$}
+    \State $m, n \gets \shape{A}$
+        % \Comment{$A$ is square so $m = n$.}
+    \State $\x_0 \gets \text{random}(n)$
+        % \Comment{A random vector of length $n$}
+    \State $\x_0 \gets \x_0/\|\x_0\|$
+        % \Comment{Normalize $\x_0$}
+    \State $Q,R \gets A-\mu I$
+        \Comment{Factor $A-\mu I$ with \li{la.qr()}.}
+    \For{$k = 0,\ 1,\ 2,\ \ldots,\ N-1$}
+        % \label{step:power-method-stopping-criterion}
+        \State Solve $R\x_{k+1} = Q\trp\x_{k}$
+            \Comment{Use \li{la.solve_triangular()}}.
+        \State $\x_{k+1} \gets \x_{k+1}/\|\x_{k+1}\|$
+    \EndFor
+    \State \pseudoli{return} $\x_N\trp A \x_N,\ \x_N$
+\EndProcedure
+\end{algorithmic}
+\caption{}
+\label{Alg:inverse-power-method}
+\end{algorithm}
+
+It is worth noting that the QR algorithm can be improved with a similar technique: instead of computing the QR factorization of $A_k$, factor the shifted matrix $A_{k} - \mu_k I$, where $\mu_k$ is a guess for an eigenvalue of $A$, and unshift the recombined factorization accordingly.
+That is, compute
+\begin{align*}
+    Q_k R_k &= A_k - \mu_k I,\\
+    A_{k+1} &= R_k Q_k + \mu_k I.
+\end{align*}
+This technique yields the \emph{single-shift QR algorithm}.
+Another variant, the \emph{practical QR algorithm}, uses intelligent shifts and recursively operates on smaller blocks of $A_{k+1}$ where possible.
+See \cite{quarteroni2010numerical,Trefethen1997} for further discussion.
+
+\begin{comment}
 \subsection*{Improvements to the QR Algorithm} % ------------------------------
 
+Algorithm \ref{Alg:qr-algorithm} is a good base for a general eigenvalue solver, but it can markedly improved with two adjustments.
+First, use a shifting strategy similar to the inverse power method: instead of computing the QR factorization of $A_k$, factor the shifted matrix $A_{k} - \mu_k I$, where $\mu_k$ is a guess for an eigenvalue of $A$, and unshift the recombined factorization accordingly.
+Second, if $A$ is symmetric then its Hessenberg form is tridiagonal.
+In this case, instead of recombining the shifted factorization a set number of times, at each iteration check the off-diagonal elements of $A_{k+1}$ for sufficiently small elements.
+If there are any, split the tridiagonal $A_{k+1}$ into two smaller tridiagonal blocks and perform the iteration on each of the smaller blocks.
+This recursive approach is called a \emph{deflation} strategy because it shrinks the size of the problem wherever possible.
+
+\begin{algorithm}[H] % A Better QR Algorithm
+\begin{algorithmic}[1]
+\Procedure{QR\_Algorithm2}{$A$, $N$}
+    \State $m, n \gets \shape{A}$
+    \If{$n \le 2$}
+        \State \pseudoli{return} eigenvalues of $A$
+    \EndIf
+    \State $S \gets \text{hessenberg}(A)$
+        \Comment{Put $A$ in (tridiagonal) upper Hessenberg form.}
+    \For{$k = 0,\ 1,\ \ldots,\ N-1$}
+        \State $\mu \gets S_{mm}$
+            \Comment{Pick a diagonal element as the shift.}
+        \State $Q, R \gets S - \mu I$
+        \State $S \gets RQ + \mu I$
+        \For{$j = 0,\ 1,\ \ldots,\ m-1$}
+            \If{$S_{j,j+1} <$\li{tol}}
+                \State Set $S_{j,j+1} = S_{j+1,j} = 0$ so that
+                $S = \left[\begin{array}{cc}A_1 & 0 \\ 0 & A_2\end{array}\right]$
+                \State \pseudoli{return} \li{QR\_Algorithm2(A_1)}, \li{QR\_Algorithm2(A_2)}
+            \EndIf
+        \EndFor
+    \EndFor
+    \State Do steps \ref{}--\ref{} of Algorithm \ref{} to get the eigenvalues of $S$.
+\EndProcedure
+\end{algorithmic}
+\caption{}
+\label{Alg:qr-algorithm2}
+\end{algorithm}
 \end{comment}

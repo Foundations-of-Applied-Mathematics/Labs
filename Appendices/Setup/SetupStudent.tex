@@ -193,8 +193,57 @@ Use \li{git status} to see the files that have been changed since the last commi
 These changes are then moved to the \emph{staging area}, a list of files to save during the next commit, with \li{git add <filename(s)>}.
 Save the changes in the staging area with \li{git commit -m "<A brief message describing the changes>"}.
 
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+    % Define styles
+    \tikzstyle{Box}=[rectangle,draw=black!35,font=\sffamily\footnotesize,align=center,minimum height=.8cm,minimum width=2.75cm]
+    \tikzstyle{Command}=[rectangle,draw=none,fill=none,font=\sffamily\footnotesize,align=center]
+    % Rectangles
+    \node[Box,fill=green!20!white,text=black!70!green] at (0,2.35) (B1) {\textbf{Staged}: the files with changes\\to be saved at commit time};
+    \node[Box,fill=red!20!white,text=black!70!red] at (0,-.35) (B2) {\textbf{Modified}: the files with\\changes since the last commit};
+    \node[Box,fill=blue!20!white,text=black!70!blue] at (2.85,-2.85) (B3) {\textbf{Tracked}: the files that have\\been added to git, but with no\\changes since the last commit};
+    \node[Box,fill=black!10!white,text=red!70!black] at (-2.85,-2.85) (B4) {\textbf{Untracked}: the files that have\\never been added to git};
+    \node[Box,minimum height=5cm,minimum width=1cm,align=left,fill=black!10!white,text=black] at (9,-.5) (B5) {\lif{git log}:\\a record of all\\commit messages\\\\\texttt{New Commit}\\\texttt{Previous Commit}\\\\...\\\\\texttt{Second Commit}\\\texttt{First Commit}\\\\\\\\};
+    % Words (commands)
+    \node[draw=none] at (6.25,.275) (Aux1) {};
+    \node[draw=none] at (7.9,.55) (Aux2) {};
+    \node[Command] at (-3.5,0.25) (C1) {\lif{git add "<filename>"}\\(stage changes)};
+    \node[Command] at (0,1) (C2) {\lif{git reset HEAD -- "<filename>"}\\(unstage changes)};
+    \node[Command] at (2.85,-1.5) (C3) {\lif{git checkout -- "<filename>"}\\(\textbf{discard} changes)};
+    \node[Command] at (5.25,0) (C4) {\lif{git commit -m "<message>"}\\(save changes)};
+    \node[Command] at (0,-1.75) (C5) {Modify file};
+    % Lines
+    \foreach \o/\i/\a/\b in {90/270/B4/C1,180/310/B2/C1,270/90/B1/C2,0/110/B1/C4,0/90/B2/C3,180/270/B3/C5} \draw[help lines,line width=.75pt,shorten >=-.1cm] (\a) to [out=\o,in=\i] (\b);
+    % Arrows
+    \foreach \o/\i/\a/\b in {90/180/C1/B1,270/90/C2/B2,90/270/C5/B2,270/0/C4/B3,270/90/C3/B3,90/180/Aux1/Aux2} \draw[->,>=stealth',help lines,line width=.75pt,shorten <=-.1cm] (\a) to [out=\o,in=\i] (\b);
+\end{tikzpicture}
+\caption{Git commands to stage, unstage, save, or discard changes.
+Commit messages are recorded in the log.}
+\end{figure}
+
 All of these commands are done within a clone of the repository, stored somewhere on a computer.
 This repository must be manually synchronized with the online repository via two other git commands: \li{git pull origin master}, to pull updates from the web to the computer; and \li{git push origin master}, to push updates from the computer to the web.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+    % Define styles
+    \tikzstyle{Box}=[rectangle,draw=black!35,font=\sffamily\footnotesize,align=center,minimum height=.8cm,minimum width=2.75cm]
+    \tikzstyle{Command}=[rectangle,draw=none,fill=none,font=\sffamily\footnotesize,align=center]
+    % Rectangles
+    \node[Box,fill=black!10!white,text=black!80!white] at (0,1.5) (B1) {Online Repository};
+    \node[Box,fill=black!10!white,text=black!80!white] at (0,-1.5) (B2) {Computer};
+    % Words (commands)
+    \node[Command] at (-2.5,0) (C1) {\lif{git push origin master}};
+    \node[Command] at (2.5,0) (C2) {\lif{git pull origin master}};
+    % Lines
+    \foreach \o/\i/\a/\b in {0/90/B1/C2,180/270/B2/C1} \draw[help lines,line width=.75pt,shorten >=-.1cm] (\a) to [out=\o,in=\i] (\b);
+    % Arrows
+    \foreach \o/\i/\a/\b in {270/0/C2/B2,90/180/C1/B1} \draw[->,>=stealth',help lines,line width=.75pt,shorten <=-.1cm] (\a) to [out=\o,in=\i] (\b);
+\end{tikzpicture}
+\caption{Exchanging git commits between the repository and a local clone.}
+\end{figure}
 
 \begin{table}[H]
 \begin{tabular}{l|l}
@@ -234,33 +283,26 @@ To close this screen and create the merge commit, type \li{:wq} and press \li{en
 
 % TODO: git staging area diagram.
 
-\subsection*{Example Work Session}
+\subsection*{Example Work Sessions}
 
-Short version:
 \begin{lstlisting}
 $ <b<cd>b> ~/Desktop/Student-Materials/
-$ git pull origin master                           # Pull updates.
-
-# Make changes to a file.
-
-# Record the changes in git.
-$ git add -u                                       # Track changes.
-$ git commit -m "Made some changes."               # Commit changes.
-$ git push origin master                           # Push updates.
+$ git pull origin master                            # Pull updates.
+### Make changes to a file.
+$ git add -u                                        # Track changes.
+$ git commit -m "Made some changes."                # Commit changes.
+$ git push origin master                            # Push updates.
 \end{lstlisting}
 
-Long version:
 \begin{lstlisting}
-# Navigate to the clone of the repository.
-$ <b<cd>b> ~/Desktop/Student-Materials/
-
 # Pull any updates from the online repository (such as TA feedback).
+$ <b<cd>b> ~/Desktop/Student-Materials/
 $ git pull origin master
 From https://bitbucket.org/username/repo
  * branch            master     -> FETCH_HEAD
 Already up-to-date.
 
-# Work on the labs. For example, modify PythonIntro/python_intro.py.
+### Work on the labs. For example, modify PythonIntro/python_intro.py.
 
 $ git status
 <<On branch master
@@ -296,7 +338,6 @@ Total 3 (delta 0), reused 0 (delta 0)
 To https://username@bitbucket.org/username/repo.git
    5742a1b..fed9b34  master -> master>>
 
-# The changes have been saved and the online repository updated.
 $ git status
 <<On branch master
 Your branch is up-to-date with 'origin/master'.

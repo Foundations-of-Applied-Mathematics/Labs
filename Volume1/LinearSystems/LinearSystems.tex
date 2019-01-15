@@ -258,7 +258,7 @@ You may again assume that no row swaps are required ($P = I$ in this case).
 
 \section*{SciPy} % ============================================================
 
-SciPy is a powerful scientific computing library built upon NumPy.
+SciPy \cite{scipy} is a powerful scientific computing library built upon NumPy.
 It includes high-level tools for linear algebra, statistics, signal processing, integration, optimization, machine learning, and more.
 
 SciPy is typically imported with the convention \li{import scipy as sp}.
@@ -560,7 +560,7 @@ Beware that row-based operations on a \li{csc_matrix} are very slow, and similar
 
 % SciPy's \li{sparse} methods work on NumPy arrays and dense matrices, but they take longer than using the usual methods for handling full matrices.
 
-\begin{warn} % Scipy.sparse matrices act differently than NumPy arrays.
+\begin{warn} % scipy.sparse matrices act differently than NumPy arrays.
 Many familiar NumPy operations have analogous routines in the \li{sparse} module.
 These methods take advantage of the sparse structure of the matrices and are, therefore, usually significantly faster.
 However, SciPy's \li{sparse} matrices behave a little differently than NumPy arrays.
@@ -776,11 +776,11 @@ This format saves an entire array of memory, and is how \li{scipy.linalg.lu_fact
 
 \subsection*{More Applications of the LU Decomposition} % ---------------------
 
-The LU decomposition can also be used to compute inverses and determinants.
+The LU decomposition can also be used to compute inverses and determinants with relative efficiency.
 
 \begin{itemize}
 \item \textbf{Inverse}:
-$(PA)^{-1} = (LU)^{-1} \longrightarrow A^{-1}P^{-1} = U^{-1}L^{-1} \longrightarrow LUA^{-1} = P$.
+$(PA)^{-1} = (LU)^{-1} \ \Longrightarrow\ A^{-1}P^{-1} = U^{-1}L^{-1} \ \Longrightarrow\ LUA^{-1} = P$.
 Solve $LU\a_i = \p_i$ with forward and backward substitution (as in Problem \ref{prob:substitute-solve}) for every column $\p_i$ of $P$.
 Then
 \begin{align*}
@@ -798,7 +798,7 @@ the matrix where $\a_k$ is the $k$th column.
 $\det(A) = \det(P^{-1}LU) = \frac{\det(L)\det(U)}{\det(P)}$.
 The determinant of a triangular matrix is the product of its diagonal entries. Since every diagonal entry of $L$ is 1, $\det(L) = 1$.
 Also, $P$ is just a row permutation of the identity matrix (which has determinant $1$), and a single row swap negates the determinant.
-Then if $S$ is the number of row swaps, the determinant is given by
+Then if $S$ is the number of row swaps, the determinant is
 \[\det(A) = (-1)^S\prod_{i=1}^nu_{ii}.\]
 \end{itemize}
 
@@ -811,14 +811,15 @@ This is the matrix equivalent to taking the square root of a positive real numbe
 
 The Cholesky decomposition takes advantage of the conjugate symmetry of $A$ to simultaneously reduce the columns \emph{and} rows of $A$ to zeros (except for the diagonal).
 It thus requires only half of the calculations and memory of the LU decomposition.
-Furthermore, the algorithm is \emph{numerically stable}, which means that round-off errors do not propagate throughout the computation.
-This decomposition is used when possible to solve least squares, optimization, and state estimation problems.
+Furthermore, the algorithm is \emph{numerically stable}, which means, roughly speaking, that round-off errors do not propagate throughout the computation.
+% This decomposition is used when possible to solve least squares, optimization, and state estimation problems.
 
 \begin{algorithm}[H]
 \begin{algorithmic}[1]
 \Procedure{Cholesky Decomposition}{$A$}
-\State $U \gets A$
-    \Comment{Copy $A$ if desired.}
+\State $n,n \gets \shape{A}$
+\State $U \gets$ \li{np.triu(}$A$\li{)}
+    \Comment{Get the upper-triangular part of $A$.}
 \For{$i=0 \ldots n-1$}
     \For{$j=i+1 \ldots n-1$}
         \State $U_{j,j:} \gets U_{j,j:} - U_{i,j:}\overline{U_{ij}}/U_{ii}$
@@ -830,7 +831,7 @@ This decomposition is used when possible to solve least squares, optimization, a
 \end{algorithmic}
 \caption{}
 \end{algorithm}
-
+%
 As with the LU decomposition, SciPy's \li{linalg} module has optimized routines,\\\li{la.cho_factor()} and \li{la.cho_solve()}, for using the Cholesky decomposition.
 
 \begin{comment} % This uses the decomposition A = LL^H.

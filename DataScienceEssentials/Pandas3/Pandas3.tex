@@ -69,7 +69,7 @@ Since the \li{"vore"} column has only a few unique values, we start by grouping 
 82  Red fox    Vulpes  carni  Carnivora          9.8        2.4        0.350>>
 \end{lstlisting}
 
-For starters, \li{groupby()} is useful for filtering a \li{DataFrame} by column values:
+As shown above, \li{groupby()} is useful for filtering a \li{DataFrame} by column values;
 the command \li{df.groupby(col).get_group(value)} returns the rows of \li{df} where the entry of the \li{col} column is \li{value}.
 The real advantage of \li{groupby()}, however, is how easy it makes it to compare groups of data.
 Standard \li{DataFrame} methods like \li{describe()}, \li{mean()}, \li{std()}, \li{<<min>>()}, and \li{<<max>>()} all work on \li{GroupBy} objects to produce a new data frame that describes the statistics of each group.
@@ -107,11 +107,24 @@ In this case, the \li{get_group()} method of the \li{GroupBy} object requires a 
 79  Bottle-nosed dolphin       Tursiops  carni  Cetacea          5.2>>
 \end{lstlisting}
 
+\begin{problem}
+The data \li{time_usage.txt} contains data on how Americans spend their time from 2007-2017.
+Read in the data as a \li{DataFrame} object and use \li{groupby()} to filter through the \li{DataFrame} and answer the following questions:
+
+\begin{enumerate}
+\item How did the mean amount of time spent on all activities change over 2007 to 2017?
+
+\item On average (using the mean), did Americans spend more time doing exercise or watching TV over the past ten years? What was the difference?
+\end{enumerate}
+
+(Hint: The column \li{Estimate} gives the amount of hours spent on an activity. The activity \li{Watching TV} contains data on Americans watching TV and the activity \li{Participating in Sports Exercise and Rec Activity} contains data on Americans exercising.)
+\end{problem}
+
 \subsection*{Visualizing Groups} % --------------------------------------------
 
-There are a few ways that \li{groupby()} or similar techniques can simplify the process of visualizing groups of data.
-First of all, \li{groupby()} makes it easy to visualize one group at a time.
-The following visualization improve on Figure \ref{fig:pandas-mammals-sleep-all} by grouping mammals by their diets.
+There are a few ways that \li{groupby()} can simplify the process of visualizing groups of data.
+First of all, \li{groupby()} makes it easy to visualize one group at a time using the \li{plot} method.
+The following visualization improves on Figure \ref{fig:pandas-mammals-sleep-all} by grouping mammals by their diets.
 
 \begin{lstlisting}
 # Plot histograms of 'sleep_total' for two separate groups.
@@ -194,6 +207,7 @@ Specify the \li{by} keyword to group the data appropriately.
 Like \li{groupby()}, the \li{by} argument can be a single column label or a list of column labels.
 Similar methods exist for creating histograms (\li{GroupBy.hist()} and \li{DataFrame.hist()} with \li{by} keyword), but generally box plots are better for comparing multiple distributions.
 
+\begin{comment}
 \begin{problem} % More dataset visualizations.
 Examine the following data sets from \li{pydataset} and answer the corresponding questions.
 Use visualizations to support your conclusions.
@@ -218,6 +232,16 @@ Use visualizations to support your conclusions.
         What other factors could explain this unintuitive statistic?
     \end{enumerate}
 \end{itemize}
+\end{problem}
+\end{comment}
+
+\begin{problem}
+Use the time usage data to answer the following questions. Support your claims with readable, labeled visualizations.
+\begin{enumerate}
+\item In what activity did Americans spend most of their time in 2017?
+
+\item In what year did Watching TV increase the most? What about Volunteering?
+\end{enumerate}
 \end{problem}
 
 \section*{Pivot Tables} % =====================================================
@@ -274,20 +298,20 @@ Red   Blue        7    10
 Listing the data in this way makes it easy to locate data and compare the female and male groups.
 For example, it is easy to see that brown hair is more common than red hair and that about twice as many females have blond hair and blue eyes than males.
 
-Unlike \li{"HairEyeColor"}, many data sets have more than one entry in the data for each grouping (for example, if there were two or more rows in the original data for females with blond hair and blue eyes).
+Unlike \li{"HairEyeColor"}, many data sets have more than one entry in the data for each grouping;
+An example in the previous dataset would be if there were two or more rows in the original data for females with blond hair and blue eyes.
 To construct a pivot table, data of similar groups must be \emph{aggregated} together in some way.
 By default entries are aggregated by averaging the non-null values.
 Other options include taking the min, max, standard deviation, or just counting the number of occurrences.
 
-As an example, consider again the Titanic data set found in \texttt{titanic.csv}\footnote{There is a \lif{"Titanic"} data set in \lif{pydataset}, but it does not contain as much information as the data in \texttt{titanic.csv}.}.
+Consider the Titanic data set found in \texttt{titanic.csv}\footnote{There is a \lif{"Titanic"} data set in \lif{pydataset}, but it does not contain as much information as the data in \texttt{titanic.csv}.}.
 For this analysis, take only the \li{"Survived"}, \li{"Pclass"}, \li{"Sex"}, \li{"Age"}, \li{"Fare"}, and \li{"Embarked"} columns, replace null age values with the average age, then drop any rows that are missing data.
 To begin, we examine the average survival rate grouped by sex and passenger class.
 
 \begin{lstlisting}
 >>> titanic = pd.read_csv("titanic.csv")
 >>> titanic = titanic[["Survived", "Pclass", "Sex", "Age", "Fare", "Embarked"]]
->>> titanic["Age"].fillna(titanic["Age"].mean(), inplace=True)
->>> titanic.dropna(inplace=True)
+>>> titanic["Age"].fillna(titanic["Age"].mean(),)
 
 >>> titanic.pivot_table(values="Survived", index="Sex", columns="Pclass")
 <<Pclass    1.0    2.0    3.0
@@ -297,8 +321,8 @@ male    0.341  0.146  0.152>>
 \end{lstlisting}
 
 \begin{info} % pivot_table() is a shortcut for a complicated groupby().
-The \li{pivot_table()} method is just a convenient way of performing a potentially complicated \li{groupby()} operation with aggregation and some reshaping.
-For example, the following code is equivalent to the previous example.
+The \li{pivot_table()} method is a convenient way of performing a potentially complicated \li{groupby()} operation with aggregation and some reshaping.
+The following code is equivalent to the previous example.
 
 \begin{lstlisting}
 >>> titanic.groupby(["Sex", "Pclass"])["Survived"].mean().unstack()
@@ -332,23 +356,40 @@ female  137.0  94.0  106.0
 male     61.0  25.0   75.0>>
 \end{lstlisting}
 
+\begin{problem}
+The file \li{Ohio_1999.csv} contains data on workers in Ohio in the year 1999. Use pivot tables to answer the following questions:
+
+\begin{enumerate}
+\item What was the highest paid race/sex combination? What was the lowest paid?
+\item What race/sex combination worked the least amount of hours? What from the data explains why?
+\item What race/sex combination works the most hours per week per person?
+\end{enumerate}
+
+Some useful keys in understand the data are as follows:
+\begin{enumerate}
+\item In column \li{Sex}, \{1: \li{male}, 2: \li{female}\}.
+\item In column \li{Race}, \{1: \li{White}, 2: \li{African-American}, 3: \li{Native American/Eskimo}, 4: \li{Asian}\}.
+\end{enumerate}
+\end{problem}
+
 \subsection*{Discretizing Continuous Data} % ----------------------------------
 
-So far we have examined survival rates based on sex and passenger class.
+In the Titanic data, we examined survival rates based on sex and passenger class.
 Another factor that could have played into survival is age.
 Were male children as likely to die as females in general?
-We can investigate this question by \emph{multi-indexing}, or pivoting on more than just two variables, by adding in another index.
+We can investigate this question by \emph{multi-indexing}, or pivoting, on more than just two variables, by adding in another index.
 
 In the original dataset, the \li{"Age"} column has a floating point value for the age of each passenger.
-If we just added \li{"Age"} as another pivot, then the table would create a new row for \textbf{each} age present.
+If we add \li{"Age"} as another pivot, then the table would create a new row for \textbf{each} age present.
 Instead, we partition the \li{"Age"} column into intervals with \li{pd.cut()}, thus creating a categorical that can be used for grouping.
+Notice that when creating the pivot table, the index uses the categorical \li{age} instead of the column name \li{"Age"}.
 
-\newpage
+%\newpage
 
 \begin{lstlisting}
 # pd.cut() maps continuous entries to discrete intervals.
->>> pd.cut([6, 1, 2, 3, 4, 5, 6, 7], [0, 4, 8])
-<<[(0, 4], (0, 4], (0, 4], (0, 4], (4, 8], (4, 8], (4, 8], (0, 4]]
+>>> pd.cut([1, 2, 3, 4, 5, 6, 7], [0, 4, 8])
+<<[(0, 4], (0, 4], (0, 4], (0, 4], (4, 8], (4, 8], (4, 8]]
 Categories (2, interval[int64]): [(0, 4] < (4, 8]]>>
 
 # Partition the passengers into 3 categories based on age.
@@ -428,6 +469,34 @@ Not surprisingly, most of the cheap tickets went to passengers in 3rd class.
 %
 % It should be noted though that with datasets where NaN's occur frequently, some preprocessing needs to be done so as to get the most accurate statistics and insights about your dataset.
 
+\begin{problem}
+Use the employment data from Ohio in 1999 to answer the following questions:
+
+\begin{enumerate}
+\item The column \li{Educational Attainment} contains numbers 0-46. 
+Any number less than 39 means the person did not get any form of degree. 
+39-42 refers to either a high-school or associate's degree.
+A number greater than 43 means the person got at least a bachelor's degree. 
+What is the most common degree among workers?
+
+\item Partition the \li{Age} column into 4 equally populated intervals. 
+Which interval contains the most workers with no degree? 
+A degree that is less than a bachelor's degree? A bachelor's degree or higher?
+
+\item What age/degree combination has the greatest yearly salary on average?
+\end{enumerate}
+\end{problem}
+
+\begin{problem}
+The \li{pydataset} contains a data set \li{iris}, which contains the measurements of various flower species.
+Use this data to answer the following questions:
+\begin{enumerate}
+\item Which flower species is the easiest distinguish and why?
+
+\item What is the correlation between petal and sepal size for each species?
+\end{enumerate}
+\end{problem}
+\begin{comment}
 \begin{problem} % More Titanic analysis.
 Suppose that someone claims that the city from which a passenger embarked had a strong influence on the passenger's survival rate.
 Investigate this claim.
@@ -465,3 +534,4 @@ Use visualizations and/or pivot tables as appropriate to support your conclusion
     Explain your conclusions.
 \end{itemize}
 \end{problem}
+\end{comment}
