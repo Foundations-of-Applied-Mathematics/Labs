@@ -1,0 +1,231 @@
+\lab{Introduction to Apache Spark}{Introduction to Apache Spark}
+\objective{Being able to reasonably deal with massive amounts of data often requires parallelization and cluster computing.
+Apache Spark is an industry standard for working with big data.
+In this lab we introduce the basics of PySpark, Spark's Python API, including data structures, syntax, and use cases.}
+
+\section*{Apache Spark} % =====================================================
+Apache Spark is an open-source, general-purpose distributed computing system used for big data analytics. Spark is able to complete jobs substantially faster than previous big data tools (i.e. Apache Hadoop) because of its in-memory caching, and optimized query execution. Spark provides development APIs in Python, Java, Scala, and R. On top of the main computing framework, Spark provides machine learning, SQL, graph analysis, and streaming libraries.
+
+Spark's Python API can be accessed through the PySpark module. Installation for local execution or remote connection to an existing cluster can be easily done with \li{conda} or \li{pip} commands.
+
+\begin{lstlisting}
+# PySpark installation with conda
+>>> conda install -c conda-forge pyspark
+
+# PySpark installation with pip
+>>> pip install pyspark
+\end{lstlisting}
+
+\begin{warn}
+If you need to setup Spark as a standalone cluster, using \li{conda} and \li{pip} is insufficient; instead you will need to use the PySpark prebuilt binaries. However, it is usually unnecessary to install PySpark using the prebuilt binaries.
+\end{warn}
+
+\subsection*{Resilient Distributed Datasets and DataFrames} % --------------------------------
+The main data structure used in Apache Spark is a Reslient Distributed Dataset (RDD). RDDs are immutable distributed collections of objects. Since RDDs are distributed, only a portion of the data is stored on each node. 
+
+Though RDDs are the main object that Spark operates on, they can be difficult to work with directly; instead, Spark offers another data structure, called a DataFrame, which is conceptually similar to a relational database. It is easy to convert DataFrames to RDDs when greater control is needed by calling the \li{.rdd} method on the DataFrame object. The reverse conversion can be done by calling \li{spark.createDataFrame()} on an existing RDD.
+
+\section*{PySpark} % ==========================================================
+One of the major benefits of using PySpark is the interactive shell which functions much like IPython. To use the shell, simply run \li{pyspark} in the terminal. In the Spark shell you can run code one line at a time without the need to have a fully written program. This is a great way to get a feel for Spark. To get help with a function us \li{help(function)}; to exit the shell simply run \li{quit()}.
+
+\begin{lstlisting}
+>>> pyspark
+<<Python 3.6.5 |Anaconda, Inc.| (default, Apr 29 2018, 16:14:56) 
+[GCC 7.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /__ / .__/\_,_/_/ /_/\_\   version 2.3.1
+      /_/
+
+Using Python version 3.6.5 (default, Apr 29 2018 16:14:56)
+SparkSession available as 'spark'.>>
+
+>>> spark.read.text("my_text_file.txt").show(3)
+<<+--------------------+
+|               value|
++--------------------+
+|One does not simp...|
+|Its black gates a...|
+|There is evil the...|
++--------------------+
+only showing top 3 rows>>
+
+>>> quit()
+\end{lstlisting}
+
+Using Spark in a Python script requires the \li{PySpark} module. For most cases you will also want to import \li{SparkSession} from the \li{pyspark.sql} submodule. To create a connection to and interact with the cluster you will need to instantiate \li{SparkContext} and \li{SparkSession} objects, respectively. It is standard to call your \li{SparkContext} \li{sc} and \li{SparkSession} \li{spark}; we will use these naming conventions throughout the remainder of the lab. It is important to note that when you are finished with a \li{SparkSession} you should end it by calling \li{spark.stop()}.
+
+\begin{info}
+When running Spark in the interactive shell \li{SparkSession} is available as \li{spark} by default. Furthermore, you don't need to worry about stopping the session when you \li{quit()}. 
+
+If you prefer a different interactive environment, like IPython, you just need to use the code given below. Help can be accessed in the usual way for your environment. Just remember to \li{stop()} the \li{SparkSession}!
+\end{info}
+
+\begin{lstlisting}
+>>> import pyspark
+>>> from pyspark.sql import SparkSession
+
+# Establish a connection to the cluster
+>>> sc = pyspark.context.SparkContext()                  
+
+# Instantiate your SparkSession object
+>>> spark = SparkSession\
+			.builder\
+			.getOrCreate()   
+			
+# Stop your SparkSession
+>>> spark.stop()
+\end{lstlisting}
+
+\begin{info}
+The syntax
+\begin{lstlisting}
+>>> spark = SparkSession\
+			.builder\
+			.getOrCreate()
+\end{lstlisting}
+is somewhat unusual. While this code can be written on a single line, it is generally more readable to break it up when dealing with many chained operations. It is important to note that you \textit{cannot} write a comment after a line continuation character \li{\\}.
+\end{info}
+
+\subsection*{Spark SQL and DataFrames}
+Creating new DataFrame objects from text, csv, JSON, and other files can be done easily with the \li{spark.read()} method. If the DataFrame schema is specified on the first line of the document, use \li{spark.read.option("header", True)}.
+Additionally, you can create DataFrames from existing Pandas DataFrames, RDDs, numpy arrays, and lists with \li{spark.createDataFrame()}.
+
+\begin{lstlisting}
+# SparkSession available as spark
+>>> txt_df = spark.read.text("my_text_file.txt")		# text files
+>>> csv_df = spark.read.csv("my_csv_file.csv")			# csv files
+>>> json_df = spark.read.json("my_json.json")			# JSON files
+
+# to use the document's first line as the schema
+>>> txt_df_schema = spark.read.option("header", True).text("my_text_file")
+
+# for Pandas DataFrames, RDDs, numpy arrays, etc.
+>>> df_convert = spark.createDataFrame("my_data.npy")	
+
+\end{lstlisting} 
+The \li{spark.sql} module allows you to perform SQL operations on DataFrame objects. This can be incredibly useful when coupled with other Spark functions since you can update, query, and analyze data in a single, unified engine. As previously mentioned, DataFrame objects can be generally regarded as functioning in the same way as a relational database.
+
+While many SQL operations found in the Spark SQL module share the same name, there are some that differ. The main difference between standard SQL and Spark SQL in PySpark is the syntax; given a DataFrame object \li{df}, to select a column, for example, you would type: \li{df.select("col_name")} or \li{df.select(df.col_name)}. 
+
+\begin{lstlisting}
+# SparkSession available as spark
+>>> df.select("name").show(3) # equivalent to df.select(df.name)
++--------+
+|    Name|
++--------+
+|   Sarah|
+|    Andy|
+|   Kevin|
++--------+
+only showing top 3 rows
+\end{lstlisting}
+
+\begin{table}[H]
+\begin{tabular}{c|c}
+    Spark SQL Command & SQLite Command \\
+    \hline
+    \li{select(*cols)} & \lsql{SELECT} \\
+    \li{groupBy(*cols)} & \lsql{GROUP BY} \\
+	\li{sort(*cols, **kwargs)} & \lsql{ORDER BY} \\
+    \li{<<filter(condition)>>} & \lsql{WHERE} \\
+    \li{when(condition, value)} & \lsql{WHEN} \\
+    \li{between(lowerBound, upperBound)} & \lsql{BETWEEN} \\
+    \li{count()} & \lsql{COUNT()} \\
+    \li{collect()} & \lsql{fetchall()}
+\end{tabular}
+\end{table}
+
+\begin{problem}
+Write a function that accepts the file \li{mathematicians.csv}, which contains basic data on over 8000 mathematicians throughout history, and use it to create a Spark DataFrame.
+\footnote{https://www.kaggle.com/joephilleo/mathematicians-on-wikipedia}
+Filter this DataFrame to contain only the names of female mathematicians born in the 19th century (1801-1900). Return a list containing the first 5 names.
+
+The following may be useful for extracting the names from the DataFrame \li{row} objects:
+\begin{lstlisting}
+# assuming df_names is a single column DataFrame of the desired names
+>>> df_names.rdd \
+...			.flatMap(lambda x: x) \
+...			.collect()[:5]
+['First Name', 'Second Name', 'Third Name', 'Fourth Name', 'Fifth Name']
+\end{lstlisting}
+\label{prob:spark-sql-basic}
+\end{problem}
+
+\begin{problem}
+Write a function that accepts the file \li{mathematicians.csv} and use it to create a Spark DataFrame. Query the DataFrame to count the number of mathematicians belonging to each country. Sort the countries by count in descending order. Return a list of the top 5 \li{(country, count)} tuples.
+
+The following may be useful for extracting the \li{(country, count)} tuples:
+\begin{lstlisting}
+# assuming country_count is a DataFrame with schema (country, count)
+>>> country_count.rdd \
+...				  .map(lambda x: x[:2]) \
+...				  .collect()[:2] 
+[('First Country', count_1), ('Second Country', count_2)]
+\end{lstlisting}
+\label{prob:spark-sql-advanced}
+\end{problem}
+
+\subsection*{RDDs} % ---------------------------------------------
+There are two main operations that you perform on RDDs in Spark: \li{map()} and \li{reduce()}. The \li{map(f)} method returns a new RDD by applying a function, \li{f}, to each element of the original RDD. The \li{reduce(f)} method reduces the data using the specified commutative and associative binary operator, \li{f}. The function, \li{f}, for \li{map(f)} and the binary operator for \li{reduce(f)} is often specified using a \li{lambda} funtion.
+
+\begin{lstlisting}
+# create an RDD from a text file
+>>> my_data = spark.read.text("my_text_file.txt").rdd		
+
+>>> my_data.first()		# display the first element of the RDD
+Row(value='One does not simply walk into Mordor.')	# returns a Row object
+
+>>> my_data.map(lambda r: r[0]).first()	# extract content from the Row object
+'One does not simply walk into Mordor.'
+
+# combine each line, returning the whole document as a single string
+>>> my_data.map(lambda r: r[0]).reduce(lambda a, b: a + " " + b)
+'One does not simply walk into Mordor. Its Black Gates are guarded by more than just Orcs. There is evil there that does not sleep, and the Great Eye is ever watchful.'		
+\end{lstlisting}
+
+
+\begin{problem}
+Write a function that accepts the name of a text file. Create a \li{SparkSession}, load the file as a DataFrame, convert it to an RDD, count the number of occurences of each word, and sort the words by count in descending order. Return a list of tuples containing the first five \li{(word, count)} pairs.
+
+Hint: If you have an RDD containing the lines of the file, what does \li{lines.flatMap(lambda x: x.split(" "))} do? Also consider using \li{reduceByKey()}.
+\label{prob:spark-word-count}
+\end{problem}
+
+One way to create RDDs that are ready for parallel computing is to use \li{sc.parallelize(c, numSlices=None)} (recall that \li{sc} is an instance of the \li{SparkContext} object). This will partition a local Python collection, \li{c}. Each partition can then be sent to a separate node for processing. The \li{numSlices} keyword argument specifies the number of partitions to create.
+Combining this with \li{range(n)} provides an efficient way to distribute and run a specific \li{map()} process \li{n} times.
+
+\begin{lstlisting}
+import numpy as np
+# SparkContext available as sc
+
+# a Python collection we wish to parallelize
+>>> c = ['a', 'b', 'c', 'd']
+>>> sc.parallelize(c, 2).glom().collect()
+[['a', 'b'], ['c', 'd']]
+>>> sc.parallelize(c, 4).glom().collect()
+[['a'], ['b'], ['c'], ['d']]
+
+# simulate flipping a coin 10 times; x is a dummy variable
+>>> toss = sc.parallelize(range(10), 2).map(lambda x: np.random.randint(2))
+>>> toss.collect()
+[0, 0, 1, 1, 1, 0, 0, 1, 1, 1]
+>>> toss.reduce(lambda a, b: a + b)	# reduce by summing the entries
+6
+\end{lstlisting}
+
+\begin{problem}
+Since the area of a circle of radius $r$ is $A=\pi r^2$, one way to estimate $\pi$ is to estimate the area of the unit circle. A Monte Carlo approach to this problem is to uniformly sample points in the square $[-1,1]\times [-1,1]$ and then count the percentage of points that land within the unit circle. The percentage of points within the circle approximates the percentage of the area occupied by the circle. Multiplying this percentage by 4 (the area of the square $[-1,1]\times [-1,1]$) gives an estimate for the area of the circle.
+\footnote{See Example 7.1.1 in the Volume 2 textbook}
+
+Write a function that uses Monte Carlo methods to estimate the value of $\pi$. 
+Use Spark's \li{parallelize()} method to create a partitioned RDD with $n$ entries, where $n=(10^5*\text{partitions})$. Specify a keyword argument, \li{partitions=2}, to control the number of partitions for the RDD. Use \li{map()} and \li{reduce()} operations on the RDD to estimate $\pi$. 
+\label{prob:spark-monte-carlo-simulation}
+\end{problem}
+
+
+
+

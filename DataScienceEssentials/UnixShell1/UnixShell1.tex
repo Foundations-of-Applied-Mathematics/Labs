@@ -1,0 +1,681 @@
+\lab{Unix Shell 1: Introduction}{Introduction to the Unix Shell}
+\label{lab:Shell}
+\objective{Unix is a popular operating system that is commonly used for servers and the basis for most open source software. Using Unix for writing and submitting labs will develop a foundation for future software development. In this lab we explore the basics of the Unix shell, including how to navigate and manipulate files, access remote machines with Secure Shell, and use Git for basic version control.}
+
+% Make tildes look nicer in the code boxes
+\lstset{
+    literate={~} {{\raisebox{.6ex}{\texttildelow}}}{1}
+}
+
+Unix was first developed by AT\&T Bell Labs in the 1970s. 
+In the 1990s, Unix became the foundation of the Linux and MacOSX operating systems.
+Most servers are Linux-based, so knowing how to use Unix shells allows us to interact with servers and other Unix-based machines.
+
+A \emph{Unix shell} is a program that takes commands from a user and executes those commands on the operating system. 
+We interact with the shell through a \emph{terminal} (also called a command line), a program that lets you type in commands and gives those commands to the shell for execution.
+
+\begin{info} % Windows warning.
+Windows is not built off of Unix, but it does come with a terminal called PowerShell.
+This terminal uses a different command syntax.
+We will not cover the equivalent commands in the Windows terminal, but you could download a Unix-based terminal such as Git Bash or Cygwin to complete this lab on a Windows machine (you will still lose out on certain commands). 
+Alternatively, Windows 10 now offers a Windows Subsystem for Linux, WSL, which is a Linux operating system downloaded onto Windows.
+\end{info}
+
+\begin{info}
+For this lab we will be working in the \li{UnixShell1} directory provided with the lab materials. 
+If you have not yet downloaded the code repository, follow steps 1 through 6 in the \texttt{Getting Started} guide found at \url{https://foundations-of-applied-mathematics.github.io/} before proceeding with this lab.
+Make sure to run the \li{download_data.sh} script as described in step 5 of \texttt{Getting Started}; otherwise you will not have the necessary files to complete this lab. 
+\end{info}
+
+\section*{Basic Unix Shell}%======================================================
+\subsection*{Shell Scripting}%------------------------------------------------------------
+The following sections of the lab will explore several shell commands. 
+You can execute these commands by typing these commands directly into a terminal.
+Sometimes, though, you will want to execute a more complicated sequence of commands, or make it easy to execute the same set of commands over and over again.
+In those cases, it is useful to create a \emph{script}, which is a sequence of shell commands saved in a file. 
+Then, instead of typing the commands in individually, you simply have to run the script, and it takes care of running all the commands.
+
+In this lab we will be running and editing a bash script.
+Bash is the most commonly used Unix shell and is the default shell installed on most Unix-based systems.
+
+The following is a very simple bash script.
+The command \li{echo <string>} prints \li{<string>} in the terminal. 
+\begin{lstlisting}
+#!/bin/bash
+echo "Hello World!"
+\end{lstlisting}
+
+The first line, \li{#\!bin/bash}, tells the computer to use the bash interpreter to run the script, and where this interpreter is located. 
+The \li{#\!} is called the \emph{shebang} or \emph{hashbang} character sequence.
+It is followed by the absolute path to the bash interpreter.
+
+To run a bash script, type \li{bash <script name>} into the terminal.
+Alternatively, you can execute any script by typing \li{./<script name>}, but note that the script must contain executable permissions for this to work.
+(We will learn more about permissions later in the lab.)
+\begin{lstlisting}
+$ bash hello_world.sh
+Hello World!
+\end{lstlisting}
+
+\subsection*{Navigation} % ----------------------------------------------------
+
+Typically, people navigate computers by clicking on icons to open folders and programs.
+In the terminal, instead of point and click we use typed commands to move from folder to folder. 
+In the Unix shell, we call folders \emph{directories}.
+The file system is a set of nested directories containing files and other directories. 
+
+Begin by opening a terminal. 
+The text you see in the upper left of the terminal is called the \emph{prompt}. 
+Before you start creating or deleting files, you'll want to know where you are.
+To see what directory you are currently working in, type \li{pwd} into the prompt.
+This command stands for \textbf{p}rint \textbf{w}orking \textbf{d}irectory, and it prints out a string telling you your current location.
+
+To see the all the contents of your current directory, type the command \li{ls}, \textbf{l}ist \textbf{s}egments.
+
+\begin{lstlisting}
+~$ pwd
+/home/username
+
+~$ ls
+Desktop		Downloads		Public 		Videos	
+Documents 	Pictures
+\end{lstlisting}
+
+The command \li{cd}, \textbf{c}hange \textbf{d}irectory, allows you to navigate directories.
+To change to a new directory, type the \li{cd} command followed by the name of the directory to which you want to move (if you \li{cd} into a file, you will get an error).
+You can move up one directory by typing \li{cd ..}.
+
+Two important directories are the root directory and the home directory.
+You can navigate to the home directory by typing \li{cd} \raise.17ex\hbox{$\scriptstyle\sim$} or just \li{cd}.
+You can navigate to root by typing \li{cd /}.
+
+\begin{problem}
+To begin, open a terminal and navigate to the \texttt{UnixShell1/} directory provided with this lab.
+Use \li{ls} to list the contents. 
+There should be a file called \texttt{Shell1.zip} and a script called \li{unixshell1.sh}.
+\footnote{If the necessary data files are not in your directory, \texttt{cd} one directory up by typing \texttt{cd ..} and type \footnotesize{\li{bash download_data.sh}} to download the data files for each lab.}
+ 
+Run \li{unixshell1.sh}.
+This script will do the following:
+\begin{enumerate}
+	\item Unzip \texttt{Shell1.zip}, creating a directory called \li{Shell1/}
+	\item Remove any previously unzipped copies of \li{Shell1/}
+	\item Execute various shell commands, to be added in the next few problems in this lab
+	\item Create a compressed version of \li{Shell1/} called \li{UnixShell1.tar.gz}.
+	\item Remove any old copies of \li{UnixShell1.tar.gz}
+\end{enumerate}
+
+Now, open the \li{unixshell1.sh} script in a text editor.
+Add commands to the script to do the following:
+\begin{itemize}
+	\item Change into the \li{Shell1/} directory.
+	\item Print a string telling you directory you are currently working in.
+\end{itemize}
+	
+Test your commands by running the script again and checking that it prints a string ending in the location \li{Shell1/}.
+\label{problem:basic-commands}
+\end{problem}
+
+\subsection*{Documentation and Help} % ---------------------------------------------------------
+When you encounter an unfamiliar command, the terminal has several tools that can help you understand what it does and how to use it.
+Most commands have manual pages, which give information about what the command does, the syntax required to use it, and different options to modify the command.
+To open the manual page for a command, type \li{man <command>}.
+Some commands also have an option called \texttt{----help}, which will print out information similar to what is contained in the manual page.
+To use this option, type \texttt{<command> ----help}.
+
+\begin{lstlisting}
+$ man ls
+LS(1)                            User Commands                           LS(1)
+
+NAME
+       ls - list directory contents
+
+SYNOPSIS
+       ls [OPTION]... [FILE]...
+
+DESCRIPTION
+       List  information  about  the FILEs (the current directory by default).
+
+       -a, --all
+              do not ignore entries starting with .
+\end{lstlisting}
+
+The \li{apropos <keyword>} command will list all Unix commands that have \li{<keyword>} contained somewhere in their manual page names and descriptions.
+For example, if you forget how to copy files, you can type in \li{apropos copy} and you'll get a list of all commands that have \li{copy} in their description.
+
+\subsection*{Flags} % ---------------------------------------------------------
+When you use \li{man}, you will see a list of options such as \li{-a}, \li{-A}, \li{--author}, etc. that modify how a command functions. 
+These are called \emph{flags}.
+You can use one flag on a command by typing \li{<command> -<flag>}, like \li{ls -a}, or combine multiple flags by typing \li{<command> -<flag1><flag2>}, etc. as in \li{ls -alt}.
+
+For example, sometimes directories contain hidden files, which are files whose names begin with a dot character like \li{.bash}.
+The \li{ls} command, by default, does not list hidden files.
+Using the \li{-a} flag specifies that \li{ls} should not ignore hidden files.
+Find more common flags for \li{ls} in Table \ref{table:ls_flags}.
+
+
+\begin{table}[H]
+\begin{tabular}{l|l}
+    Flags & Description
+    \\ \hline
+    \li{-a} & Do not ignore hidden files and folders \\
+    \li{-l} & List files and folders in long format \\
+    \li{-r} & Reverse order while sorting \\
+    \li{-R} & Print files and subdirectories recursively \\
+    \li{-s} & Print item name and size \\
+    \li{-S} & Sort by size \\
+    \li{-t} & Sort output by date modified \\
+\end{tabular}
+\caption{Common flags of the \li{ls} command.}
+\label{table:ls_flags}
+\end{table}
+
+\begin{lstlisting}
+$ ls
+file1.py  file2.py
+
+$ ls -a
+.  ..  file1.py  file2.py  .hiddenfile.py 
+
+$ ls -alt    # Multiple flags can be combined into one flag
+total 8
+drwxr-xr-x  2 c c 4096 Aug 14 10:08 .
+-rw-r--r--  1 c c    0 Aug 14 10:08 .hiddenfile.py
+-rw-r--r--  1 c c    0 Aug 14 10:08 file2.py
+-rw-r--r--  1 c c    0 Aug 14 10:08 file1.py
+drwxr-xr-x 38 c c 4096 Aug 14 10:08 ..
+\end{lstlisting}
+
+
+
+\begin{problem}
+Within the script, add a command using \li{ls} to print one list of the contents of \li{Shell1/} with the following criteria:
+\begin{itemize}
+	\item Include hidden files and folders
+	\item List the files and folders in long format (include the permissions, date last modified, etc.)
+	\item Sort the output by file size (largest files first)
+\end{itemize}
+Test your command by entering it into the terminal within \li{Shell1/} or by running the script and checking for the desired output.
+\label{problem:ls-flags}
+\end{problem}
+
+
+\subsection*{Manipulating Files and Directories} % ----------------------------
+
+In this section we will learn how to create, copy, move, and delete files and folders.
+To create a text file, use \li{touch <filename>}.
+To create a new directory, use \li{mkdir <dir_name>}.
+
+\begin{lstlisting}
+~$ cd Test/					# navigate to test directory
+
+~/Test$ ls					# list contents of directory
+file1.py
+
+~/Test$ mkdir NewDirectory	# create a new empty directory
+
+~/Test$ touch newfile.py	# create a new empty file
+
+~/Test$ ls
+file1.py  NewDirectory  newfile.py
+\end{lstlisting}
+
+To copy a file into a directory, use \li{cp <filename> <dir_name>}.
+When making a copy of a directory, use the  \li{-r} flag to recursively copy files contained in the directory. 
+If you try to copy a directory without the \li{-r}, the command will return an error.
+
+Moving files and directories follows a similar format, except no \li{-r} flag is used when moving one directory into another.
+The command \li{mv <filename> <dir_name>} will move a file to a folder and \li{mv <dir1> <dir2>} will move the first directory into the second.
+
+If you want to rename a file, use \li{mv <file_old> <file_new>}; the same goes for directories.
+
+\begin{lstlisting}
+~/Test$ ls
+file1.py  NewDirectory  newfile.py	
+
+~/Test$ mv newfile.py NewDirectory/			# move file into directory
+~/Test$ cp file1.py NewDirectory/			# make a copy of file1 in directory
+~/Test$ cd NewDirectory/				
+~/Test/NewDirectory$ mv file1.py newname.py	# rename file1.py
+~/Test/NewDirectory$ ls
+newfile.py  newname.py
+\end{lstlisting}
+
+When deleting files, use \li{rm <filename>}, and when deleting a directory, use \li{rm -r <dir_name>}.
+The \li{-r} flag tells the terminal to recursively remove all the files and subfolders within the targeted directory.
+
+If you want to make sure your command is doing what you intend, the \li{-v} flag tells \li{rm}, \li{cp}, or \li{mkdir} to print strings in the terminal describing what it is doing.
+
+When your terminal gets too cluttered, use \li{clear} to clean it up.
+
+
+
+\begin{lstlisting}
+~/Test/NewDirectory$ cd ..			# move one directory up
+~/Test$ rm -rv NewDirectory/		# remove a directory and its contents
+removed 'NewDirectory/newname.py'
+removed 'NewDirectory/newfile.py'
+removed directory 'NewDirectory/'
+
+~/Test$ rm file1.py 				# remove a file
+~/Test$ ls							# directory is now empty
+~/Test$
+\end{lstlisting}
+
+
+
+\begin{table}[H]
+\begin{tabular}{l|l}
+    Commands & Description
+    \\ \hline
+    \li{clear} & Clear the terminal screen \\
+    \li{cp file1 dir1} & Create a copy of \texttt{file1} and move it to \texttt{dir1/}\\
+    \li{cp file1 file2} & Create a copy of \texttt{file1} and name it \texttt{file2} \\
+    \li{cp -r dir1 dir2} & Create a copy of
+    \texttt{dir1/} and all its contents into \texttt{dir2/} \\
+    \li{mkdir dir1} & Create a new directory named \texttt{dir1/} \\
+    \li{mkdir -p path/to/new/dir1} & Create \texttt{dir1/} and all intermediate directories \\
+    \li{mv file1 dir1} & Move \texttt{file1} to \texttt{dir1/} \\
+    \li{mv file1 file2} & Rename \texttt{file1} as \texttt{file2} \\
+    \li{rm file1} & Delete \texttt{file1} [\li{-i}, \li{-v}] \\
+    \li{rm -r dir1} & Delete \texttt{dir1/} and all items within \texttt{dir1/} [\li{-i}, \li{-v}] \\
+    \li{touch file1} & Create an empty file named \texttt{file1} \\
+\end{tabular}
+\caption{File Manipulation Commands}
+\label{table:basic_commands}
+\end{table}
+
+
+Table \ref{table:basic_commands} contains all the commands we have discussed so far. 
+Commonly used flags for some commands are contained in square brackets; use \li{man} or \texttt{----help} to see what these mean.
+
+\begin{problem}
+Add commands to the \li{unixshell1.sh} script to make the following changes in \li{Shell1/}:
+\begin{itemize}
+	\item Delete the \texttt{Audio/} directory along with all its contents
+	\item Create \texttt{Documents/}, \texttt{Photos/}, and \texttt{Python/} directories
+	\item Change the name of the \texttt{Random/} directory to \texttt{Files/}
+\end{itemize}
+Test your commands by running the script and then using \li{ls} within \li{Shell1/} to see what directories are there.
+Once you have run the script and deleted, created or renamed files, 
+\label{problem:file-manipulation}
+\end{problem}
+
+
+\subsection*{Wildcards} % -----------------------------------------------------
+As we are working in the file system, there will be times that we want to perform the same command to a group of similar files.
+For example, you may need to move all text files within a directory to a new directory.
+Rather than copy each file one at a time, we can apply one command to several files using \emph{wildcards}.
+We will use the \li{*} and \li{?} wildcards.
+The \li{*} wildcard represents any string and the \li{?} wildcard represents any single character.
+Though these wildcards can be used in almost every Unix command, they are particularly useful when dealing with files.
+
+\begin{lstlisting}
+$ ls
+File1.txt	File2.txt	File3.jpg	text_files
+
+$ mv -v *.txt text_files/
+File1.txt -> text_files/File1.txt
+File2.txt -> text_files/File2.txt
+
+$ ls
+File3.jpg	text_files
+\end{lstlisting}
+
+See Table \ref{table:wildcards} for examples of common wildcard usage.
+
+\begin{table}[H]
+\begin{tabular}{l|l}
+    Command & Description
+    \\ \hline
+    \li{*.txt} & All files that end with \texttt{.txt}. \\
+    \li{image*} & All files that have \texttt{image} as the first 5 characters. \\
+    \li{*py*} & All files that contain \texttt{py} in the name. \\
+    \li{doc*.txt} & All files of the form \texttt{doc1.txt}, \texttt{doc2.txt}, \texttt{docA.txt}, etc. \\
+\end{tabular}
+\caption{Common uses for wildcards.}
+\label{table:wildcards}
+\end{table}
+
+\begin{problem}
+Within the \texttt{Shell1/} directory, there are many files.
+Add commands to the script to organize these files into directories using wildcards. 
+Organize by completing the following:
+\begin{itemize}
+	\item Move all the \texttt{.jpg} files to the \texttt{Photos/} directory
+	\item Move all the \texttt{.txt} files to the \texttt{Documents/} directory
+	\item Move all the \texttt{.py} files to the \texttt{Python/} directory
+\end{itemize}
+\label{problem:wildcards}
+\end{problem}
+
+\section*{Working With Files} % ================================================
+
+\subsection*{Searching the File System} % -------------------------------------
+
+There are two commands we can use for searching through our directories.
+The \li{find} command is used to find files or directories with a certain name;
+the \li{grep} command is used to find lines within files matching a certain string.
+When searching for a specific string, both commands allow wildcards within the string.
+You can use wildcards so that your search string matches a broader set of strings.
+
+\begin{lstlisting}
+# Find all files or directories in Shell1/ called "final"
+# -type f,d specifies to look for files and directories
+# . specifies to look in the current directory
+
+$ find . -name "final" -type f,d
+$			# There are no files with the exact name "final" in Shell1/
+
+$ find . -name "*final*" -type f,d     
+./Files/May/finals
+./Files/May/finals/finalproject.py
+\end{lstlisting}
+
+\begin{lstlisting}
+# Find all within files in Documents/ containing "Mary"
+# -r tells grep to search all files with Documents/
+# -n tells grep to print out the line number (2)
+
+$ Shell1$ grep -nr "Mary" Documents/ 
+Documents/people.txt:2:female,Mary,31
+\end{lstlisting}
+
+\begin{table}[H]
+\begin{tabular}{l|l}
+    Command & Description
+    \\ \hline
+    \li{<<find dir1 -type f -name "word">>} &  Find all files in \texttt{dir1/} (and its subdirectories) called \texttt{word} \\
+    & (\li{<<-type f>>} is for files; \li{<<-type d>>} is for directories) \\
+    \li{<<grep "word" filename>>} & Find all occurences of \li{word} within \texttt{filename} \\
+    \li{grep -nr <<"word" dir1>>} & Find all occurences of \li{word} within the files inside \texttt{dir1/} \\
+     & (\li{-n} lists the line number; \li{-r} performs a recursive search)\\
+\end{tabular}
+\caption{Commands using \li{find} and \li{grep}.}
+\label{table:find}
+\end{table}
+
+Table \ref{table:find} contains basic sytax for using these two commands. 
+There are many more variations of syntax for \li{grep} and \li{find}, however.
+You can use \li{man grep} and \li{man find} to explore other options for using these commands. 
+
+
+\subsection*{File Security and Permissions}% -----------------------------------------------------
+A file has three levels of permissions associated with it: the permission to read the file, to write (modify) the file, and to execute the file.
+There are also three categories of people who are assigned permissions: the user (the owner), the group, and others.
+
+You can check the permissions for \li{file1} using the command \li{ls -l <file1>}.
+Note that your output will differ from that printed below; this is purely an example.
+
+\begin{lstlisting}
+$ ls -l
+-rw-rw-r-- 1 username groupname 194 Aug  5 20:20 calc.py
+drw-rw-r-- 1 username groupname 373 Aug  5 21:16 Documents
+-rwxr-x--x 1 username groupname  27 Aug  5 20:22 mult.py
+-rw-rw-r-- 1 username groupname 721 Aug  5 20:23 project.py
+\end{lstlisting}
+
+The first character of each line denotes the type of the item whether it be a normal file, a directory, a symbolic link, etc.
+The next nine characters denote the permissions associated with that file.
+
+For example, look at the output for \texttt{mult.py}.
+The first character \li{-} denotes that \texttt{mult.py} is a normal file.
+The next three characters, \li{rwx}, tell us the owner can read, write, and execute the file.
+The next three characters, \li{r-x}, tell us members of the same group can read and execute the file, but not edit it.
+The final three characters, \li{--x}, tell us other users can execute the file and nothing more.
+
+Permissions can be modified using the \li{chmod} command.
+There are multiple notations used to modify permissions, but the easiest to use when we want to make small modifications to a file's permissions is \emph{symbolic permissions} notation.
+See Table \ref{table:permissions} for more examples of using symbolic permissions notation, as well as other useful commands for working with permissions.
+\begin{lstlisting}
+$ ls -l script1.sh
+total 0
+-rw-r--r-- 1 c c 0 Aug 21 13:06 script1.sh  
+
+$ chmod u+x script1.sh      # add permission for user to execute
+$ chmod o-r script1.sh 		# remove permission for others to read
+$ ls -l script1.sh
+total 0
+-rwxr----- 1 c c 0 Aug 21 13:06 script1.sh
+\end{lstlisting}
+
+\begin{table}[H]
+\begin{tabular}{l|l}
+Command & Description
+\\ \hline
+\li{chmod u+x file1} & Add executing (\li{x}) permissions to user (\li{u}) \\
+\li{chmod g-w file1} & Remove writing (\li{w}) permissions from group (\li{g}) \\
+\li{chmod o-r file1} & Remove reading (\li{r}) permissions from other other users (\li{o}) \\
+\li{chmod a+w file1} & Add writing permissions to everyone (\li{a}) \\
+\li{chown} & change owner \\
+\li{chgrp} & change group \\
+\li{getfacl} & view all permissions of a file in a readable format. \\
+\end{tabular}
+\caption{Symbolic permissions notation and other useful commands}
+\label{table:permissions}
+\end{table}
+
+\subsection*{Running Files} % ------------------------------------------------------
+To run a file for which you have execution permissions, type the file name preceded by \li{./}.
+
+\begin{lstlisting}
+$ ./hello.sh
+bash: ./hello.sh: Permission denied  
+
+$ ls -l hello.sh
+-rw-r--r-- 1 username groupname 31 Jul 30 14:34 hello.sh
+
+$ chmod u+x hello.sh		# You can now execute the file
+
+$ ./hello.sh
+Hello World!
+\end{lstlisting}
+
+\begin{problem}
+Within \li{Shell1/}, there is a script called \li{organize_photos.sh}.
+First, use \li{find} to locate the script.
+Once you know the file location, add commands to your script so that it completes the following tasks:
+\begin{itemize}
+	\item Moves \li{organize_photos.sh} to \li{Scripts/}
+	\item Adds executable permissions to the script for the user
+	\item Runs the script
+\end{itemize}
+Test that the script has been executed by checking that additional files have been moved into the \li{Photos/} directory.
+Check that permissions have been updated on the script by using \li{ls -l}.
+\label{problem:file-permissions}
+\end{problem}
+
+\section*{Accessing Remote Machines} % -----------------------------------------------------
+At times you will find it useful to perform tasks on a remote computer or server, such as running a script that requires a large amount of computing power on a supercomputer or accessing a data file stored on another machine.
+
+\subsection*{Secure Shell}
+\emph{Secure Shell (SSH)} allows you to remotely access other computers or servers securely.
+SSH is a network protocol encrypted using public-key cryptography. 
+It ensures that all communication between your computer and the remote server is secure and encrypted.
+
+The system you are connecting to is called the \emph{host}, and the system you are connecting from is called the \emph{client}.
+The first time you connect to a host, you will receive a warning saying the authenticity of the host can't be established. 
+This warning is a default, and appears when you are connecting to a host you have not connected to before. 
+When asked if you would like to continue connecting, select yes.
+
+When prompted for your password, type your password as normal and press enter.
+No characters will appear on the screen, but they are still being logged.
+Once the connection is established, there is a secure tunnel through which commands and files can be exchanged between the client and host.
+To end a secure connection, type exit.
+
+\begin{lstlisting}
+alice@mycomputer:~$ ssh alice27@acme01.byu.edu	
+
+alice27@acme01.byu.edu password:# Type password as normal
+last login 7 Sept 11
+					
+[alice27@byu.local@acme01 ~]$ ls	# Commands are executed on the host
+myacmeshare/
+	
+[alice27@byu.local@acme01 ~]$ exit	# End a secure connection		
+logout
+Connection to acme01.byu.edu closed.
+
+alice@mycomputer:~$					# Commands are executed on the client
+\end{lstlisting}
+
+\subsection*{Secure Copy} % ---------------------------------------------------
+To copy files from one computer to another, you can use the Unix command \li{scp}, which stands for \textbf{s}ecure \textbf{c}opy \textbf{p}rotocol.
+The syntax for \li{scp} is essentially the same as the syntax for \li{cp}.
+
+To copy a file from your computer to a specific location on on a remote machine, use the syntax \li{scp <file1> <user@remote_host:file_path>}. 
+As with \li{cp}, to copy a directory and all of its contents, use the \li{-r} flag.
+\begin{lstlisting}
+# Make copies of file1 and dir2 in the home directory on acme01.byu.edu
+alice@mycomputer:~$ scp file1 alice27@acme01.byu.edu:~/
+alice@mycomputer:~$ scp -r dir1/dir2 alice27@acme01.byu.edu:~/
+\end{lstlisting}
+
+Use the syntax \li{scp -r <user@remote_host:file_path/dir1> <file_path>} to copy \li{dir1} from a remote machine to the location specified by \li{file_path} on your current machine.
+
+\begin{lstlisting}
+# Make a local copy of dir1 (from acme01.byu.edu) in the home directory
+alice@mycomputer:~$ scp -r alice27@acme01.byu.edu:~/dir1  ~
+\end{lstlisting}
+
+\begin{table}[H]
+\begin{tabular}{l|l}
+    Commands & Description
+    \\ \hline
+    \li{ssh username@remote_host} & Establish a secure connection with \li{remote_host} \\
+    \li{scp file1 user@remote_host:file_path/} & Create a copy of \li{file1} on host\\
+    \li{scp -r dir1 user@remote_host:file_path/} & Create a copy of \li{dir1} and its contents on host \\
+     \li{scp user@remote_host:file_path/file1 file_path2} & Create a local copy of file on client\\
+\end{tabular}
+\caption{Basic syntax for \li{ssh} and \li{scp}.}
+\label{table:scp_commands}
+\end{table}
+
+\begin{problem}
+On a computer with the host name \li{acme20.byu.edu} or \li{acme21.byu.edu}, there is a file called \li{img_649.jpg}. 
+Secure copy this file to your \li{UnixShell1/} directory.
+(Do not add the \li{scp} command to the script).
+
+To \li{ssh} or \li{scp} on this computer, your username is your Net ID, and your password is your typical Net ID password.
+To use \li{scp} or \li{ssh} for this computer, you will have to be on campus using BYU Wifi. 
+
+Hint: To use \li{scp}, you will need to know the location of the file on the remote computer.
+Consider using \li{ssh} to access the machine and using \li{find}. 
+The file is located somewhere in the directory \li{/sshlab}.
+
+After secure copying, add a command to your script to copy the file from \li{UnixShell1/} into the directory \li{Shell1/Photos/}.
+(Make sure to leave a copy of the file in \li{UnixShell1/}, otherwise the file will be deleted when you run the script again.)
+\label{problem:ssh}
+\end{problem}
+
+
+\section*{Git} % =====================================================
+\emph{Git} is a version control system, meaning that it keeps a record of changes in a file. 
+Git also facilitates collaboration between people working on the same code.
+It does both these things by managing updates between an online code repository and copies of the repository, called \emph{clones}, stored locally on computers.
+
+We will be using git to submit labs and return feedback on those labs. If git is not already installed on your computer, download it at \url{http://git-scm.com/downloads}.
+
+\subsection*{Using Git} % ========================================================
+Git manages the history of a file system through \emph{commits}, or checkpoints.
+Each time a new commit is added to the online repository, a checkpoint is created so that if need be, you can use or look back at an older version of the repository.
+You can use \li{git log} to see a list of previous commits.
+You can also use \li{git status} to see the files that have been changed in your local repository since the last commit.
+
+Before making your own changes, you'll want to add any commits from other clones into your local repository.
+To do this, use the command \li{git pull origin master}.
+
+Once you have made changes and want to make a new commit, there are normally three steps.
+To save these changes to the online repository, first add the changed files to the \emph{staging area}, a list of files to save during the next commit, with \li{git add <filename(s)>}. 
+If you want to add all changes that you have made to tracked files (files that are already included in the online repository), use \li{git add -u}.
+
+Next, save the changes in the staging area with \li{git commit -m "<A brief message describing the changes>"}.
+
+Finally, add the changes in this commit to the online repository with \li{git push origin master}.
+
+\begin{lstlisting}
+$ cd MyDirectory/				# Navigate into a cloned repository
+$ git pull origin master		# Pull new commits from online repository
+
+### Make changes to file1.py ###
+
+$ git add file1.py				# Add file to staging area
+$ git commit -m "Made changes" 	# Commit changes in staging area
+$ git push origin master 		# Push changes to online repository
+\end{lstlisting}
+
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+    % Define styles
+    \tikzstyle{Box}=[rectangle,draw=black!35,font=\sffamily\footnotesize,align=center,minimum height=.8cm,minimum width=2.75cm]
+    \tikzstyle{Command}=[rectangle,draw=none,fill=none,font=\sffamily\footnotesize,align=center]
+    % Rectangles
+    \node[Box,fill=black!10!white,text=black!80!white] at (0,1.5) (B1) {Online Repository};
+    \node[Box,fill=black!10!white,text=black!80!white] at (0,-1.5) (B2) {Computer};
+    % Words (commands)
+    \node[Command] at (-2.5,0) (C1) {\lif{git push origin master}};
+    \node[Command] at (2.5,0) (C2) {\lif{git pull origin master}};
+    % Lines
+    \foreach \o/\i/\a/\b in {0/90/B1/C2,180/270/B2/C1} \draw[help lines,line width=.75pt,shorten >=-.1cm] (\a) to [out=\o,in=\i] (\b);
+    % Arrows
+    \foreach \o/\i/\a/\b in {270/0/C2/B2,90/180/C1/B1} \draw[->,>=stealth',help lines,line width=.75pt,shorten <=-.1cm] (\a) to [out=\o,in=\i] (\b);
+\end{tikzpicture}
+\caption{Exchanging git commits between the repository and a local clone.}
+\end{figure}
+
+\subsection*{Merge Conflicts} %----------------------------------------------
+Git maintains order by raising an alert when changes are made to the same file in different clones and neither clone contains the changes made in the other.
+This is called a \emph{merge conflict}, which happens when someone else  has pushed a commit that you do not yet have, while you have also made one or more commits locally that they do not have.
+
+\begin{warn}
+When pulling updates with \li{git pull origin master}, your terminal may sometimes display the following merge conflict message.
+\begin{lstlisting}
+Merge branch 'master' of https://bitbucket.org/<name>/<repo> into master
+# Please enter a commit message to explain why this merge is necessary,
+# especially if it merges an updated upstream into a topic branch.
+#
+# Lines starting with '#' will be ignored, and an empty message aborts
+# the commit.
+~
+~
+\end{lstlisting}
+
+This screen, displayed in \li{vim} (\url{https://en.wikipedia.org/wiki/Vim_(text_editor)}), is asking you to enter a message to create a \emph{merge commit} that will reconcile both changes.
+If you do not enter a message, a default message is used. 
+To close this screen and create the merge commit with the default message, type \li{:wq} (the characters will appear in the bottom left corner of the terminal) and press \li{enter}.
+
+\end{warn}
+
+\begin{info} 
+\li{Vim} is a terminal text editor available on essentially any computer you will use. 
+When working with remote machines through \li{ssh}, vim is often the only text editor available to use.
+To exit vim, press \li{esc:wq} 
+To learn more about vim, visit the official documentation at \url{https://vimhelp.org}.
+\end{info}
+
+\begin{table}[H]
+\begin{tabular}{l|l}
+    Command & Explanation \\ \hline
+    \li{git status} & Display the staging area and untracked changes. \\
+    \li{git pull origin master} & Pull changes from the online repository. \\
+    \li{git push origin master} & Push changes to the online repository. \\
+    \li{git add <filename(s)>} & Add a file or files to the staging area. \\
+    \li{git add -u} & Add all modified, tracked files to the staging area. \\
+    \li{git commit -m "<message>"} & Save the changes in the staging area with a given message. \\
+    \li{git checkout <filename>} & Revert changes to an unstaged file since the last commit. \\
+    \li{git reset HEAD <filename>} & Remove a file from the staging area, but keep changes. \\
+    \li{git diff <filename>} & See the changes to an unstaged file since the last commit. \\
+    \li{git diff --cached <filename>} & See the changes to a staged file since the last commit. \\
+    \li{git config --local <option>} & Record your credentials (\li{user.name}, \li{user.email}, etc.). \\
+\end{tabular}
+\caption{Common git commands.}
+\end{table}
+
+\begin{problem}
+Using git commands, push \li{unixshell1.sh} and
+\li{UnixShell1.tar.gz} to your online git repository.
+Do not add anything else in the \li{UnixShell1/} directory to the online repository.
+\label{problem:git}
+\end{problem}
