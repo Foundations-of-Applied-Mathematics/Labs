@@ -3,7 +3,7 @@
 % TODO: include more on the Moore-Penrose pseudoinverse and rename the lab "Pseudoinverses"?
 
 \objective{The Drazin inverse of a matrix is a pseudoinverse which preserves certain spectral properties of the matrix.
-In this lab, we compute the Drazin inverse using the Schur decomposition, then use it to compute the effective resistance of a graph and perform link prediction.}
+In this lab we compute the Drazin inverse using the Schur decomposition, then use it to compute the effective resistance of a graph and perform link prediction.}
 
 % TODO: compute Ind(A), effective resistance explanation, algorithm for computing drazin
 
@@ -66,7 +66,7 @@ k = 3
 The Drazin inverse is often defined theoretically in terms of the eigenprojections of a matrix.
 However, eigenprojections are often costly or unstable to calculate, so we resort to a different method to calculate the Drazin inverse.
 
-To begin, suppose that the $n \times n$ matrix $A$ can be written in the form
+Every $n \times n$ matrix $A$ can be written in the form
 \begin{equation}
 A = S^{-1}
 \left[\begin{array}{cc}
@@ -75,7 +75,7 @@ M & \0 \\
 \end{array}\right] S,
 \label{eq:nilpotent-sort-decomposition}
 \end{equation}
-where $S$ is a change of basis matrix, $N$ is nilpotent, and $M$ is the restriction of $A$ onto the range of $I - P_0$, where $P_0$ is the 0-eigenprojection in the spectral decomposition.
+where $S$ is a change of basis matrix, $M$ is nonsingular, and $N$ is nilpotent. 
 Then the Drazin inverse can be calculated as
 \begin{equation}
 A^D = S^{-1}
@@ -86,18 +86,27 @@ M^{-1} & \0 \\
 \label{eq:nilpotent-sort-compute-drazin}
 \end{equation}
 
-Next, the \emph{Schur decomposition} of $A$ is given by
+To put $A$ into the form in (\ref{eq:nilpotent-sort-decomposition}), we can use the \emph{Schur decomposition} of $A$, given by
 \begin{align}
 A = QTQ^{-1},
 \end{align}
 where $Q$ is orthonormal and $T$ is upper triangular.
 Since $T$ is similar to $A$, the eigenvalues of $A$ are listed along the diagonal of $T$.
-Then if $A$ is singular, at least one diagonal entry of $T$ must be $0$.
-The columns that contain the $0$ eigenvalues of $A$ form the nilpotent matrix $N$ in (\ref{eq:nilpotent-sort-decomposition}).
-To compute $M$ and $N$, we sort the Schur decomposition so that the $0$ eigenvalues are listed last along the diagonal of $T$, and then we can use (\ref{eq:nilpotent-sort-compute-drazin}) to compute $A^D$.
+If $A$ is singular, at least one diagonal entry of $T$ must be $0$.
+
+In general, Schur decompositions are not unique; the eigenvalues along the diagonal of $T$ can be reordered. 
+To find $M$, $N$, and $S$, we compute the Schur decomposition of $A$ twice, ordering the eigenvalues differently in each decomposition. 
+
+First, we sort so that the nonzero eigenvalues are listed first along the diagonal of $T$. Then, if $k$ is the number of nonzero eigenvalues, the upper left $k \times k$ block of $T$ forms the nonsingular matrix $M$, and the first $k$ columns of $Q$ form the first $k$ columns of the change of basis matrix $S$. 
+
+Computing the decomposition a second time, we reorder  so that the $0$ eigenvalues are listed first along the diagonal of $T$. 
+Then the upper left $(n-k) \times (n-k)$ block forms the nilpotent matrix $N$, and the first $n-k$ columns of $Q$ form the last $n-k$ columns of $S$. This completes a change of basis matrix that will put $A$ into the desired block diagonal form. 
+Lastly, we use (\ref{eq:nilpotent-sort-compute-drazin}) to compute $A^D$.
 
 SciPy's \li{la.schur()} is a routine for computing the Schur decomposition of a matrix, but it does not automatically sort it by eigenvalue.
-However, sorting can be accomplished by specifying the \li{sort} keyword argument.
+However, sorting can be accomplished by specifying the \li{sort} keyword argument. 
+Given an eigenvalue, the sorting function should return a boolean indicating whether to sort that eigenvalue to the top left of the diagonal of $T$. 
+
 
 \begin{lstlisting}
 >>> from scipy import linalg as la
@@ -121,22 +130,23 @@ array([[ 2.        ,  0.        ,  6.70820393],
 2                           # which is the number of nonzero eigenvalues.
 \end{lstlisting}
 
-The procedure for finding the Drazin inverse using the Schur decomposition and (\ref{eq:nilpotent-sort-decomposition}) is given in Algorithm \ref{Alg:Drazin-Inverse}.
+The procedure for finding the Drazin inverse using the Schur decomposition is given in Algorithm \ref{Alg:Drazin-Inverse}.
 Due to possible floating point arithmetic errors, consider all eigenvalues smaller than a certain tolerance to be $0$.
 
 \begin{algorithm}[H]
 \begin{algorithmic}[1]
 \Procedure{Drazin}{$A$, tol}
     \State $(n,n) \gets \shape{A}$
-    \State $Q_1,S,k_1 \gets $ \text{schur($A, |x| > $ tol)}
-	   \Comment{Sort the Schur decomposition.}
-    \State $Q_2,T,k_2 \gets $ \text{schur($A, |x| \leq $ tol)}
-    \State $U \gets [S_{:,:k_1}\ |\ T_{:,:n - k_1}]$
-        \Comment{Concatenate part of $S$ and $T$ column-wise.}
+    \State $T_1,Q_1,k_1 \gets $ \text{schur($A, |x| > $ tol)}
+	   \Comment{Sort the Schur decomposition with 0 eigenvalues last.}
+    \State $T_2,Q_2,k_2 \gets $ \text{schur($A, |x| \leq $ tol)}
+    	\Comment{Sort the Schur decomposition with 0 eigenvalues first.}
+    \State $U \gets [Q_{1_{:,:k_1}}\ |\ Q_{2_{:,:n - k_1}}]$
+    	\Comment{Create change of basis matrix.}
     \State $U^{-1} \gets \text{inverse(U)}$
     \State $V \gets U^{-1}AU$
+    	\Comment{Find block diagonal matrix in (\ref{eq:nilpotent-sort-decomposition})}
     \State $Z \gets \0_{n\times n}$
-        \Comment{The $n\times n$ zero matrix \textbf{as floats}, not ints.}
     \If {$k_1 \neq 0$}
         \State $M^{-1} \gets $ \text{inverse($V_{:k_1,:k_1}$)}
         \State $Z_{:k_1,:k_1} \gets M^{-1}$
@@ -200,7 +210,7 @@ Instead, we can use the Drazin inverse to calculate effective resistance for any
 First, create the \emph{adjacency matrix}\footnote{See Problem 1 of Image Segmentation for a refresher on adjacency matrices and the Laplacian.} of the graph, the matrix where the $(ij)$th entry is the number of connections from node $i$ to node $j$.
 Next, calculate the Laplacian $L$ of the adjacency matrix.
 % TODO: must at least briefly state what the Laplacian is.
-Then if $R_{ij}$ be the effective resistance from node $i$ to node $j$,
+Then if $R_{ij}$ is the effective resistance from node $i$ to node $j$,
 \begin{equation}
 R_{ij} = \begin{cases}
 (\widetilde{L}^j)^D_{ii} & \mbox{if $i \neq j$} \\
@@ -232,36 +242,37 @@ Test your function using the graphs and values from Figure \ref{fig:eff-res}.
 
 %%%3 Line segments
 \begin{scope}
-%Points, labels a and b
-\foreach \x/\t in {-1.5/a,-.5/,.5/,1.5/b} \filldraw (\x,0) circle (2pt) node[anchor=north,yshift=-.25cm,text depth=.25ex,text height=1.5ex] {$\t$};
+%Points, labels a, b, c, and d
+\foreach \x/\t in {-1.5/a,-.5/b,.5/c,1.5/d} \filldraw (\x,0) circle (2pt) node[anchor=north,yshift=-.25cm,text depth=.25ex,text height=1.5ex] {$\t$};
 %Line and label R
 \draw[thick] (-1.5,0) -- (1.5,0);
-\node[draw=none] at (3,0) {$R_{ab}=3$};
+\node[draw=none] at (3.5,0) {$R_{ac}=2$, $R_{ad}=3$};
 \end{scope}
 
 %%%Single line segment
 \begin{scope}[xshift=6.5cm]
 %Points, labels a and b
 \foreach \x/\t in {-.5/a,.5/b} \filldraw (\x,0) circle (2pt) node[anchor=north,yshift=-.25cm,text depth=.25ex,text height=1.5ex] {$\t$};
-%Line and laebl R
+%Line and label R
 \draw[thick] (-.5,0) -- (.5,0);
 \node[draw=none] at (2.5,0) {$R_{ab}=1$};
 \end{scope}
 
 %%%Triangle
 \begin{scope}[yshift=-2.5cm]
-%Points, labels a and b
+%Points, labels a, b, and c
 \foreach \x/\y/\t in {-.5/0/a,0/.75/,.5/0/b} \filldraw (\x,\y) circle (2pt) node[anchor=north,yshift=-.25cm,text depth=.25ex,text height=1.5ex] {$\t$};
+\node[draw=none,text depth=.25ex,text height=1.5ex] at (0, 1.1) {$c$};
 %Triangle and label R
 \draw[thick] (-.5,0) -- (0,.75) -- (.5,0) -- cycle;
-\node[draw=none] at (3,0) {$R_{ab}=\frac{2}{3}$};
+\node[draw=none] at (3.5, 0) {$R_{ab}=\frac{2}{3}$, $R_{ac}=\frac{2}{3}$};
 \end{scope}
 
 %%%Line segment and circle
 \begin{scope}[xshift=6.5cm,yshift=-2.5cm]
 %Points, labels a and b
 \foreach \x/\t/\p/\y in {-.5/a/left/-.4,.5/b/right/.4} \filldraw (\x,0) circle (2pt) node[text depth=.25ex,text height=1.5ex] at (\x+\y,0) {$\t$};
-%Line, circle, and laebl R
+%Line, circle, and label R
 \draw[thick] (-.5,0) -- (.5,0);
 \draw[thick] (0,0) circle (.5cm);
 \node[draw=none] at (2.5,0) {$R_{ab}=\frac{1}{3}$};
@@ -273,7 +284,7 @@ Test your function using the graphs and values from Figure \ref{fig:eff-res}.
 \foreach \x/\t/\p/\y in {-.5/a/left/-.4,.5/b/right/.4} \filldraw (\x,0) circle (2pt) node[text depth=.25ex,text height=1.5ex] at (\x+\y,0) {$\t$};
 %Circle and label R
 \draw[thick] (0,0) circle (.5cm);
-\node[draw=none] at (3,0) {$R_{ab}=\frac{1}{2}$};
+\node[draw=none] at (3.5,0) {$R_{ab}=\frac{1}{2}$};
 \end{scope}
 
 %%%Cross circle

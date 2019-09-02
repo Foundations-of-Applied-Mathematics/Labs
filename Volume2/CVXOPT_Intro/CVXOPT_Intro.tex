@@ -1,7 +1,7 @@
 \lab{CVXOPT}{CVXOPT}
 \objective{CVXOPT is a package of Python functions and classes designed for the purpose of convex optimization.
 In this lab we use these tools for linear and quadratic programming.
-We will solve various optimization problems using CVXOPT and optimize allocating land using linear programming.}
+We will solve various optimization problems using CVXOPT and optimize eating healthily on a budget.}
 
 %\begin{warn}
 %CVXOPT is not part of the standard library, and it is only included in the Anaconda distribution for Python 3.6 for Linux and Mac.
@@ -39,7 +39,7 @@ With a slack variable, a new form of the linear program is found:
 \end{align*}
 
 This is the formulation used by CVXOPT.
-In this formulation, we require that the matrix $A$ has full row rank,
+It requires that the matrix $A$ has full row rank,
 and that the block matrix $[G \quad A]\trp $ has full column rank.
 
 % \preceq \succeq
@@ -62,7 +62,7 @@ Consider the following example:
 	        &2x_1+x_2 = 3 \\
 		&x_1, x_2 \geq 0
 \end{align*}
-Recall that all inequalities must be less than or equal to, such that $G\x\preceq \mathbf{h}$.
+Recall that all inequalities must be less than or equal to, so that $G\x\preceq \mathbf{h}$.
 Because the final two constraints are $x_1, x_2 \geq 0$, they need to be adjusted to be $\leq$ constraints.
 This is easily done by multiplying by $-1$, resulting in the constraints $-x_1, -x_2 \leq 0$.
 If we define
@@ -161,7 +161,7 @@ and then simply convert them to the CVXOPT matrix data type.
 >>> A = matrix(A)
 >>> b = matrix(b)
 \end{lstlisting}
-In this lab, we will initialize non-trivial matrices first as NumPy arrays for consistency.
+In this lab we will initialize non-trivial matrices first as NumPy arrays for consistency.
 
 %Finally, be sure the entries in the matrices are floats!
 \end{warn}
@@ -208,7 +208,7 @@ A $l_1$ minimization problem is minimizing a vector's $l_1$ norm, while fitting 
 \end{align*}
 
 This problem can be converted into a linear program by introducing an additional vector $\u$ of length $n$.
-Define $\u$ such that $|x_i|\leq |u_i|$. 
+Define $\u$ such that $|x_i|\leq u_i$. 
 Thus, $-u_i-x_i\leq 0$ and $-u_i+x_i\leq 0$.
 These two inequalities can be added to the linear system as constraints.
 Additionally, this means that $||\x||_1\leq ||\u||_1$.
@@ -226,7 +226,8 @@ This can be written as follows:
 \text{subject to}\qquad
 &\begin{bmatrix}
 -I & I\\
--I & -I
+-I & -I\\
+-I & \0
 \end{bmatrix}
 \begin{bmatrix}
 \u \\
@@ -266,7 +267,7 @@ A = \begin{bmatrix}
 \end{bmatrix}
 \]
 The linear system $A\x = \b$ has infinitely many solutions.
-Use \li{l1Min()} to verify that the solution which minimizes $||\mathbf{x}||_1$ is approximately $\x = [1.41, 2.40, 2.40, 0.79]^T$ and the minimum objective value is approximately 7.
+Use \li{l1Min()} to verify that the solution which minimizes $||\mathbf{x}||_1$ is approximately $\x = [0., 2.571, 1.857, 0.]^T$ and the minimum objective value is approximately $4.429$.
 \label{prob:l1}
 \end{problem}
 
@@ -498,7 +499,7 @@ The formulation that we will use is
  &A\x = \b,
 \end{align*}
 where $Q$ is a positive semidefinite symmetric matrix.
-In this formulation, we require again that $A$ has full row rank, and that the block matrix
+In this formulation, we require again that $A$ has full row rank and that the block matrix
 $[Q \quad G \quad A]\trp $ has full column rank.
 
 As an example, consider the quadratic function
@@ -612,9 +613,10 @@ Write a function that accepts a matrix $A$ and vector $\b$ and solves the $l_2$ 
 Return the minimizer $\x$ and the primal objective value.
 
 To test your function, use the matrix $A$ and vector $\b$ from Problem \ref{prob:l1}. 
-The minimizer is approximately $\x=[1.55, 2.36, 2.36, 0.73]^T$ and the minimum primal objective value is approximately 14.09.
+The minimizer is approximately $\x=[0.966, 2.169, 0.809, 0.888]^T$ and the minimum primal objective value is approximately $7.079$.
 \end{problem}
 
+\begin{comment}
 \section*{Allocation Models}
 Allocation models lead to simple linear programs. An allocation model seeks to allocate a valuable resource among competing needs. Consider the following example taken from ``Optimization in Operations Research" by Ronald L. Rardin. %%pg 132
 
@@ -701,6 +703,93 @@ Remember to consider the following:
 \item Recall that the constraints of timber and animal grazing were divided by 1000.
 To compensate, the maximum total net value will be equal to the primal objective of the appropriately minimized linear function multiplied by -1000.
 \end{enumerate}
+\end{problem}
+
+\end{comment}
+
+\section*{Eating on a Budget}
+
+In 2009, the inmates of Morgan County jail convinced Judge Clemon of the Federal District Court in Birmingham to put Sheriff Barlett in jail for malnutrition.
+Under Alabama law, in order to encourage less spending, "the chief lawman could go light on prisoners' meals and pocket the leftover change."\footnote[1]{Nossiter, Adam, 8 Jan 2009, "As His Inmates Grew Thinner, a Sheriff’s Wallet Grew Fatter", \emph{New York Times},\url{https://www.nytimes.com/2009/01/09/us/09sheriff.html}}.
+Sheriffs had to ensure a minimum amount of nutrition for inmates, but minimizing costs meant more money for the sheriffs themselves.
+Judge Clemon jailed Sheriff Barlett one night until a plan was made to use all allotted funds, $1.75$ per inmate, to feed prisoners more nutritious meals.
+While this case made national news, the controversy of feeding prisoners in Alabama continues as of 2019\footnote[2]{Sheets, Connor, 31 January 2019, "Alabama sheriffs urge lawmakers to get them out of the jail food business", \url{https://www.al.com/news/2019/01/alabama-sheriffs-urge-lawmakers-to-get-them-out-of-the-jail-food-business.html}}.
+
+The problem of minimizing cost while reaching healthy nutritional requirements can be approached as a convex optimization problem.
+Rather than viewing this problem from the sheriff's perspective, we view it from the perspective of a college student trying to minimize food cost in order to pay for higher education, all while meeting standard nutritional guidelines.
+
+The file \li{food.npy} contains a dataset with nutritional facts for 18 foods that have been eaten frequently by college students working on this text.
+A subset of this dataset can be found in Table \ref{tab:food-data}, where the "Food" column contains the list of all 18 foods.
+
+The columns of the full dataset are:
+\begin{align*}
+& \text{Column 1: $p$, price (dollars)} \\
+& \text{Column 2: $s$, number of servings} \\
+& \text{Column 3: $c$, calories per serving} \\
+& \text{Column 4: $f$, fat per serving (grams)} \\
+& \text{Column 5: $\hat{s}$, sugar per serving (grams)} \\
+& \text{Column 6: $\hat{c}$, calcium per serving (milligrams)} \\
+& \text{Column 7: $\hat{f}$, fiber per serving (grams)} \\
+& \text{Column 8: $\hat{p}$, protein per serving (grams)}
+\end{align*}
+
+
+ \begin{table}[H]
+% \begin{adjustwidth}{-.5in}{-.5in}
+\begin{tabular}{|c||c|c|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{Food} & \textbf{Price} & \textbf{Serving Size} & \textbf{Calories} & \textbf{Fat} & \textbf{Sugar} & \textbf{Calcium} & \textbf{Fiber} & \textbf{Protein} \\ 
+& $p$ & $s$ & $c$ & $f$ & $\hat{s}$ & $\hat{c}$ & $\hat{f}$ & $\hat{p}$ \\ 
+& dollars & & & g & g & mg & g & g \\ \hline\hline
+Ramen & 6.88 & 48 & 190 & 7 & 0 & 0 & 0 & 5 \\ \hline
+Potatoes & 0.48 & 1 & 290 & 0.4 & 3.2 & 53.8 & 6.9 & 7.9 \\ \hline
+Milk & 1.79 & 16 & 130 & 5 & 12 & 250 & 0 & 8 \\ \hline
+Eggs & 1.32 & 12 & 70 & 5 & 0 & 28 & 0 & 6 \\ \hline
+Pasta & 3.88 & 8 & 200 & 1 & 2 & 0 & 2 & 7 \\ \hline
+Frozen Pizza & 2.78 & 5 & 350 & 11 & 5 & 150 & 2 & 14 \\ \hline
+Potato Chips & 2.12 & 14 & 160 & 11 & 1 & 0 & 1 & 1 \\ \hline
+Frozen Broccoli & 0.98 & 4 & 25 & 0 & 1 & 25 & 2 & 1 \\ \hline
+Carrots & 0.98 & 2 & 52.5 & 0.3 & 6.1 & 42.2 & 3.6 & 1.2 \\ \hline
+Bananas & 0.24 & 1 & 105 & 0.4 & 14.4 & 5.9 & 3.1 & 1.3 \\ \hline
+Tortillas & 3.48 & 18 & 140 & 4 & 0 & 0 & 0 & 3 \\ \hline
+Cheese & 1.88 & 8 & 110 & 8 & 0 & 191 & 0 & 6 \\ \hline
+Yogurt & 3.47 & 5 & 90 & 0 & 7 & 190 & 0 & 17 \\ \hline
+Bread & 1.28 & 6 & 120 & 2 & 2 & 60 & 0.01 & 4 \\ \hline
+Chicken & 9.76 & 20 & 110 & 3 & 0 & 0 & 0 & 20 \\ \hline
+Rice & 8.43 & 40 & 205 & 0.4 & 0.1 & 15.8 & 0.6 & 4.2 \\ \hline
+Pasta Sauce & 3.57 & 15 & 60 & 1.5 & 7 & 20 & 2 & 2 \\ \hline
+Lettuce & 1.78 & 6 & 8 & 0.1 & 0.6 & 15.5 & 1 & 0.6 \\ \hline
+\end{tabular}
+\caption{Subset of table containing food data}
+\label{tab:food-data}
+% \end{adjustwidth}
+\end{table}
+
+ According to the FDA\footnote[1]{url{https://www.accessdata.fda.gov/scripts/InteractiveNutritionFactsLabel/pdv.html}} and US Department of Health, someone on a $2000$ calorie diet should have no more than 2000 calories, no more than 65 grams of fat, no more than 50 grams of sugar\footnote[2]{https://www.today.com/health/4-rules-added-sugars-how-calculate-your-daily-limit-t34731}, at least 1000 milligrams of calcium\footnote[1]{26 Sept 2018, \url{https://ods.od.nih.gov/factsheets/Calcium-HealthProfessional/}}, at least 25 grams of fiber, and at least 46 grams of protein\footnote[2]{\url{https://www.accessdata.fda.gov/scripts/InteractiveNutritionFactsLabel/protein.html}} per day.
+
+ We can rewrite this as a convex optimization problem below.
+
+ \begin{align*}
+\text{minimize } & \sum_{i=1}^{18}p_ix_i, \\
+\text{subject to }& \sum_{i=1}^{18} c_ix_i \leq 2000, \\
+			& \sum_{i=1}^{18} f_ix_i \leq 65, \\
+			& \sum_{i=1}^{18} \hat{s}_ix_i \leq 50, \\
+			& \sum_{i=1}^{18} \hat{c}_ix_i \geq 1000, \\
+			& \sum_{i=1}^{18} \hat{f}_ix_i \geq 25, \\
+			& \sum_{i=1}^{18} \hat{p}_ix_i \geq 46, \\
+			& x_i \geq 0.
+\end{align*}
+
+ \begin{problem}
+Read in the file \li{food.npy}.
+Use CVXOPT to identify how much of each food item a college student should each to minimize cost spent each day.
+Return the minimizing vector and the total amount of money spent.
+
+What is the food you should eat most each day? 
+What are the three foods you should eat most each week?
+
+(Hint: Each nutritional value must be multiplied by the number of servings to get the nutrition value of the whole product).
+\label{prob:diet}
 \end{problem}
 
 You can learn more about CVXOPT at

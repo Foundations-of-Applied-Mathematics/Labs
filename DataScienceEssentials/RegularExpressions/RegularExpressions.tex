@@ -29,7 +29,7 @@ To answer the question ``does any part of my target string match this regular ex
 
 \begin{lstlisting}
 >>> import re
->>> pattern = re.<<compile>>("cat")     # Make a pattern for finding 'cat'.
+>>> pattern = re.<<compile>>("cat")     # Make a pattern object for finding 'cat'.
 >>> bool(pattern.search("cat"))     # 'cat' matches 'cat', of course.
 <<True>>
 >>> bool(pattern.match("catfish"))  # 'catfish' starts with 'cat'.
@@ -73,13 +73,13 @@ For example, to match the string \li{"\$3.99? Thanks."}, use \li{r"\\\$3\\.99\\?
 \end{enumerate}
 Without raw strings, every backslash in has to be written as a double backslash, which makes many regular expression patterns hard to read (\li{"\\\\\$3\\\\.99\\\\? Thanks\\\\."}).
 
-
 \begin{problem}
 Write a function that compiles and returns a regular expression pattern object that matches the string \li{"^\{@\}(?)[\%]\{.\}(*)[_]\{&\}\$"}.
 \label{prob:regex-metacharacter-literals}
 \end{problem}
 
-The regular expressions of Problems \ref{prob:regex-superbasic} and \ref{prob:regex-metacharacter-literals} only match strings that are or include the exact pattern.
+The regular expressions of Problems \ref{prob:regex-superbasic} and 
+\ref{prob:regex-metacharacter-literals} only match strings that are or include the exact pattern.
 The metacharacters allow regular expressions to have much more flexibility and control so that a single pattern can match a wide variety of strings, or a very specific set of strings.
 The \emph{line anchor} metacharacters \li{^} and \li{\$} are used to match the \textbf{start} and the \textbf{end} of a line of text, respectively.
 This shrinks the matching set, even when using the \li{search()} method instead of the \li{match()} method.
@@ -124,6 +124,8 @@ In other words, \li{^} is the set complement operation on the character class.
 Additionally, the dash \li{-} specifies a range of values.
 For instance, \li{[0-9]} matches any digit, and \li{[a-z]} matches any lowercase letter.
 Thus \li{[^0-9]} matches any character \textbf{except} for a digit, and \li{[^a-z]} matches any character \textbf{except} for lowercase letters. Keep in mind that the dash \li{-}, when at the beginning or end of the character class, will match the literal \li{'-'}. 
+Note that \li{[0-27-9]} acts like \li{[(0-2)|(7-9)]}.
+
 
 \begin{lstlisting}
 >>> p1, p2 = re.<<compile>>(r"^[a-z][^0-7]$"), re.<<compile>>(r"^[^abcA-C][0-27-9]$")
@@ -137,7 +139,6 @@ Thus \li{[^0-9]} matches any character \textbf{except} for a digit, and \li{[^a-
 <<d88: False False>>                    # Too many characters.
 \end{lstlisting}
 
-Note that \li{[0-27-9]} acts like \li{[(0-2)|(7-9)]}.
 
 There are also a variety of shortcuts that represent common character classes, listed in Table \ref{table:regex-character-class-shortcuts}.
 Familiarity with these shortcuts makes some regular expressions significantly more readable.
@@ -383,11 +384,12 @@ The following shows how to implement multiline searching:
 A Python \emph{block} is composed of several lines of code with the same indentation level.
 Blocks are delimited by key words and expressions, followed by a colon.
 Possible key words are \li{if}, \li{elif}, \li{else}, \li{for}, \li{while}, \li{try}, \li{except}, \li{finally}, \li{with}, \li{def}, and \li{class}.
-Some of these keywords require an expression to precede the colon (\li{if}, \li{elif}, \li{for}, etc.
+Some of these keywords require an expression to precede the colon (\li{if}, \li{elif}, \li{for}, etc.).
 Some require no expressions to precede the colon (\li{else}, \li{finally}), and \li{except} may or may not have an expression before the colon.
 
 Write a function that accepts a string of Python code and uses regular expressions to place colons in the appropriate spots.
 Assume that every colon is missing in the input string.
+Return the string of code with colons in the correct places. 
 
 \begin{lstlisting}
 """
@@ -417,16 +419,52 @@ print(p)
 \end{lstlisting}
 \end{problem}
 
+\section*{Extracting Text with Regular Expressions} % ======================
+
+Regular expressions are useful for locating and extracting information that matches a certain format. 
+The method \li{pattern.findall(string)} returns a list containing all non-overlapping matches of \li{pattern} found in \li{string}.
+The method scans the string from left to right and returns the matches in that order. 
+If two matches overlap, the match that begins first is returned.
+
+When at least one group, indicated by \li{()}, is present in the pattern, then only information contained in a group is returned. Each match is returned as a tuple containing the part of the string that matches each group in the pattern.
+
+\begin{lstlisting}
+>>> pattern = re.compile("\w* fish")
+
+# Without any groups, the entirety of each match is returned. 
+>>> pattern.findall("red fish, blue fish, one fish, two fish")
+['red fish', 'blue fish', 'one fish', 'two fish']
+
+# When a group is present, only information contained in a group is returned.
+>>> pattern2 = re.compile("(\w*) (fish|dish)")
+>>> pattern2.findall("red dish, blue dish, one fish, two fish")
+[('red', 'dish'), ('blue', 'dish'), ('one', 'fish'), ('two', 'fish')]
+\end{lstlisting}
+
+If you wish to extract the characters that match some groups, but not others, you can choose to exclude a group from being returned using the syntax \li{(?:)}
+
+\begin{lstlisting}
+>>> pattern = re.compile("(\w*) (?:fish|dish)")
+>>> pattern.findall("red dish, blue dish, one fish, two fish")
+['red', 'blue', 'one', 'two']
+\end{lstlisting}
+
+
 \begin{problem}
 The file \texttt{fake\_contacts.txt} contains poorly formatted contact data for 2000 fictitious individuals.
 Each line of the file contains data for one person, including their name and possibly their birthday, email address, and/or phone number.
 The formatting of the data is not consistent, and much of it is missing.
-For example, not everyone has their birthday listed, and those who do may have it listed in the form \li{1/1/11}, \li{1/01/2011}, or some other format.
 
-Use regular expressions to parse the data and format it uniformly, writing birthdays as \li{mm/dd/yyyy} and phone numbers as \li{(xxx)xxx-xxxx}.
+Each contact name includes a first and last name. Some names have middle initials, in the form \li{Jane C. Doe}. 
+Each birthday lists the month, then the day, and then the year, though the format varies from \li{1/1/11}, \li{1/01/2011}, etc.
+If century is not specified for birth year, as in \li{1/01/XX}, birth year is assumed to be \li{20XX}.
+Remember, not all information is listed for each contact.
+
+Use regular expressions to extract the necessary data and format it uniformly, writing birthdays as \li{mm/dd/yyyy} and phone numbers as \li{(xxx)xxx-xxxx}.
 Return a dictionary where the key is the name of an individual and the value is another dictionary containing their information.
 Each of these inner dictionaries should have the keys \li{"birthday"}, \li{"email"}, and \li{"phone"}.
 In the case of missing data, map the key to \li{None}.
+
 The first two entries of the completed dictionary are given below.
 
 \begin{lstlisting}
@@ -445,6 +483,7 @@ The first two entries of the completed dictionary are given below.
 }
 \end{lstlisting}
 \end{problem}
+
 
 \newpage
 

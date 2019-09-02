@@ -10,11 +10,126 @@ In this lab, we introduce pandas data structures, syntax, and explore its capabi
 % core data structures custom built for data analysis: the \li{Series}, \li{DataFrame}, and \li{Panel}, which roughly correspond to one, two, and three-dimensional arrays.
 % The \li{Panel} data structure is not used nearly
 
+\begin{info}
+This lab will be done using Colab Notebooks.
+These notebooks are similar to Jupyter Notebooks but run remotely on Google's servers.
+Open a Google Colab notebook by going to your Google Drive account and creating a new Colaboratory file.
+If making a Colaboratory file is not an option, download the application Colaboratory onto your Google Drive.
+Once opening a new Colab Notebook, upload the file \li{pandas1.ipynb}.
+To make the data files accessible, run the following at the top of the lab:
+\begin{lstlisting}
+>>> from google.colab import files
 
-\section*{Reading Data}
+>>> uploaded = files.upload()
+\end{lstlisting}
+This will prompt you upload files for this notebook.
+For this lab, upload \li{budget.csv} and \li{crime_data.csv}.
 
-\subsection*{DataFrames}
+Once the lab is complete, delete BOTH lines of code used for uploading files (the import statement and the upload statement) and download as a \li{.py} file to your git repository.
+Push the newly made \li{pandas1.py} file.
+\end{info}
 
+\section*{Pandas Basics}
+
+Pandas is a python library used primarily to analyze data.
+It combines functionality of NumPy, MatPlotLib, and SQL to create a easy to understand library that allows for the manipulation of data in various ways.
+In this lab, we focus on the use of Pandas to analyze and manipulate data in ways similar to NumPy and SQL.
+
+\subsection*{Pandas Data Structures}
+
+\subsubsection*{Series}
+
+The first pandas data structure is a \li{Series}.
+A \li{Series} is a one-dimensional array that can hold any datatype, similar to a \li{ndarray}.
+However, a \li{Series} has an \li{index} that gives a label to each entry.
+An \li{index} generally is used to label the data.
+
+Typically a \li{Series} contains information about one feature of the data.
+For example, the data in a \li{Series} might show a class's grades on a test and the \li{Index} would indicate each student in the class.
+To initialize a \li{Series}, the first parameter is the data and the second is the index.
+
+\begin{lstlisting}
+>>> import pandas as pd
+>>>
+>>> # Initialize Series of student grades
+>>> math = pd.Series(np.random.randint(0,100,4), ['Mark', 'Barbara', 'Eleanor', 'David'])
+>>> english = pd.Series(np.random.randint(0,100,5), ['Mark', 'Barbara', 'David', 'Greg', 'Lauren'])
+\end{lstlisting}
+
+\subsubsection*{DataFrame}
+
+The second key pandas data structure is a \li{DataFrame}.
+A \li{DataFrame} is a collection of multiple \li{Series}.
+It can be thought of as a 2-dimensional array, where each row is a separate datapoint and each column is a feature of the data.
+The rows are label with an \li{index} (as in a \li{Series}) and the columns are labelled in the attribute \li{columns}.
+
+There are many different ways to initialize a \li{DataFrame}.
+One way to initialize a \li{DataFrame} is passing in a dictionary as the data of the \li{DataFrame}.
+The keys of the dictionary will become the labels in \li{columns} and the values are the \li{Series} associated with the label.
+
+\begin{lstlisting}
+>>> # Create a DataFrame of student grades
+>>> grades = pd.DataFrame({"Math": math, "English": english}
+>>> grades
+	      Math  English
+Barbara   52.0     73.0
+David     10.0     39.0
+Eleanor   35.0      NaN
+Greg       NaN     26.0
+Lauren     NaN     99.0
+Mark      81.0     68.0
+\end{lstlisting}
+
+Notice that \li{pd.DataFrame} automatically lines up data from both \li{Series} that have the same index.
+If the data only appears in one of the \li{Series}, the entry for the second \li{Series} is \li{NaN}.
+
+We can also initialize a \li{DataFrame} with a NumPy array.
+In this way, the data is passed in as a 2-dimensional NumPy array, while the column labels and index are passed in as parameters.
+The first column label goes with the first column of the array, the second with the second, etc.
+The same holds for the index.
+
+\begin{lstlisting}
+>>> import numpy as np
+>>> # Initialize DataFrame with NumPy array
+>>> data = np.array([[52.0, 73.0], [10.0, 39.0], [35.0, np.nan], [np.nan, 26.0], [np.nan, 99.0], [81.0, 68.0]])
+>>> grades = pd.DataFrame(data, columns = ['Math', 'English'], index = ['Barbara', 'David', 'Eleanor', 'Greg', 'Lauren', 'Mark'])
+>>> grades
+	      Math  English
+Barbara   52.0     73.0
+David     10.0     39.0
+Eleanor   35.0     NaN
+Greg       NaN     26.0
+Lauren     NaN     99.0
+Mark      81.0     68.0
+\end{lstlisting}
+
+A \li{DataFrame} can also be viewed as a NumPy array using the attribute \li{values}.
+
+\begin{lstlisting}
+>>> # View the DataFrame as a NumPy array
+>>> grades.values
+array([[ 52.,  73.],
+       [ 10.,  39.],
+       [ 35.,  nan],
+       [ nan,  26.],
+       [ nan,  99.],
+       [ 81.,  68.]])
+\end{lstlisting}
+
+\begin{problem}
+Write a function \li{random_dataframe()} that accepts a dictionary \li{d} which defaults to \li{None}.
+If a dictionary is passed in, initialize a Pandas \li{DataFrame}.
+Return a tuple of the attributes \li{index}, \li{columns}, and \li{values} of the \li{DataFrame}.
+
+If a dictionary is not passed in, generate random data as a \li{ndarray} and initialize a \li{DataFrame}.
+The columns of the \li{DataFrame} should be the letters \li{'A'} through \li{'E'}.
+The index of the \li{DataFrame} should be the roman numerals 1-6.
+Return a tuple of the attributes \li{index}, \li{columns}, and \li{values} of the \li{DataFrame}.
+
+(Hint: What should the dimension of the data be if no dictionary is passed in?)
+\end{problem}
+
+\begin{comment}
 The Pandas python library is used to manipulate and analyze data.
 The two main pandas structures are \li{Series} and \li{DataFrames}.
 They are built off of \li{ndarrays} and thereby carry many functionalities of arrays.
@@ -77,6 +192,7 @@ C  0.288801  0.956662  0.817915  0.951016
 
 If we don't specify the index or columns, the default is
 \li{np.arange(n)}, where \li{n} is either the number of rows or columns.
+\end{comment}
 
 \subsection*{Data I/O}
 
@@ -117,9 +233,9 @@ arguments:
 The character that separates data fields. It is often a
 comma or a whitespace character.
 \item \li{header}:
-The row number, starting at 0, in the CSV file that contains the column names.
+The row number (0 indexed) in the CSV file that contains the column names.
  \item \li{index_col}:
-The column in the CSV file that is the index for the
+The column (0 indexed) in the CSV file that is the index for the
 \li{DataFrame}.
  \item \li{skiprows}:
 If an integer $n$, skip the first $n$ rows of the file, and then start reading
@@ -131,6 +247,15 @@ column names, specify them in a list.
 \end{itemize}
 
 \begin{comment}
+\begin{problem}
+Write a function \li{prob2()} that accepts a filename.
+Check whether the file is in CSV format and read the data in appropriately.
+If the file is not in CSV format, raise a \li{TypeError}.
+
+
+\label{prob:read-csv}
+\end{problem}
+
 To save data, pandas has functions that write to several different
 file formats.
 A typical example is the \li{to_csv()} function method attached to
@@ -148,102 +273,109 @@ demonstrates its typical usage:
 
 \section*{Data Manipulation}
 
-\subsection*{Basic Data Access}
+\subsection*{Accessing Data}
 
-While subsets of data can be accessed in \li{DataFrames} using slicing, similar to a NumPy array, subsets can also be selected using the \li{iloc} and
-\li{loc} indexers.
+While array slicing can be used to access data in a \li{DataFrame}, it is always preferable to use the \li{loc} and \li{iloc} indexers.
 Accessing \li{Series} and \li{DataFrame} objects
 using these indexing operations is more efficient than slicing because the bracket indexing has to check many cases before it can determine how to slice the data structure.
 Using \li{loc}/\li{iloc} explicitly, bypasses the extra checks.
 The \li{loc} index selects rows and columns based on
-their labels, while the \li{iloc} method selects them based on their
+their labels, while \li{iloc} selects them based on their
 integer position.
-
+When using these indexers, the first and second arguments refer to the rows and columns, respectively, just as array slicing.
 
 \begin{lstlisting}
->>> df = pd.DataFrame(np.random.randn(4,2), index=['a', 'b', 'c', 'd'], columns=['I', 'II'])
->>> df
-          I        II
-a -0.154878 -1.097156
-b -0.948226  0.585780
-c  0.433197 -0.493048
-d -0.168612  0.999194
+>>> grades
+	      Math  English
+Barbara   52.0     73.0
+David     10.0     39.0
+Eleanor   35.0     NaN
+Greg       NaN     26.0
+Lauren     NaN     99.0
+Mark      81.0     68.0
 
-[4 rows x 2 columns]
+>>> # Use loc to select the Math scores of David and Greg
+>>> grades.loc[['David', 'Greg'],'Math']
+David    10.0
+Greg      NaN
+Name: Math, dtype: float64
 
->>> # select rows a and c, column II
->>> df.loc[['a','c'], 'II']
-
-a    -1.097156
-c    -0.493048
-Name: II, dtype: float64
-
->>> # select last two rows, first column
->>> df.iloc[-2:, 0]
-
-c   0.433197
-d  -0.168612
-Name: I, dtype: float64
+>>> # Use iloc to select the Math scores of David and Greg
+>>> grades.iloc[[1,3], 0]
+David    10.0
+Greg      NaN
 \end{lstlisting}
 
-A column of a \li{DataFrame} may also be accessed using simple square
-brackets and the name of the column, or alternatively by treating the label
-as an object:
-\begin{lstlisting}
->>> # get second column of df
->>> df['II']        # or, equivalently, df.II
+An entire column of a \li{DataFrame} can be accessed using simple square
+brackets and the name of the column.
+In addition, to create a new column or reset the values of an entire column, simply call this column in the same fashion and set the value.
 
-a   -1.097156
-b    0.585780
-c   -0.493048
-d    0.999194
-Name: II, dtype: float64
+\begin{lstlisting}
+>>> # Set new History column with array of random values
+>>> grades['History'] = np.random.randint(0,100,6)
+>>> grades['History']
+Barbara     4
+David      92
+Eleanor    25
+Greg       79
+Lauren     82
+Mark       27
+Name: History, dtype: int64
+
+>>> # Reset the column such that everyone has a 100
+>>> grades['History'] = 100.0
+>>> grades
+         Math  English  History
+Barbara  52.0     73.0    100.0
+David    10.0     39.0    100.0
+Eleanor  35.0      NaN    100.0
+Greg      NaN     26.0    100.0
+Lauren    NaN     99.0    100.0
+Mark     81.0     68.0    100.0
 \end{lstlisting}
 
-Both of these techniques for getting subsets of the data may also be used to set
-subsets of the data:
+
+Often datasets can be very large and difficult to visualize.
+Pandas offers various methods to make the data easier to visualize.
+The methods \li{head} and \li{tail} will show the first or last $n$ data points, respectively, where $n$ defaults to 5.
+The method \li{sample} will draw $n$ random entry of the dataset, where $n$ defaults to 1.
 
 \begin{lstlisting}
->>> # set second columns to zeros
->>> df['II'] = 0
->>> df['II']
-a    0
-b    0
-c    0
-d    0
-Name: II, dtype: int64
+>>> # Use head to see the first n rows
+>>> grades.head(n=2)
+         Math  English  History
+Barbara  52.0     73.0    100.0
+David    10.0     39.0    100.0
 
->>> # add additional column of ones
->>> df['III'] = 1
->>> df
-            I  II  III
-a   -0.154878   0    1
-b   -0.948226   0    1
-c    0.433197   0    1
-d   -0.168612   0    1
+>>> # Use sample to sample a random entry
+>>> grades.sample()
+        Math  English  History
+Lauren   NaN     99.0    100.0
 \end{lstlisting}
 
-Additionally, pandas have functions such as \li{describe()}, \li{head()}, and \li{tail()} which can help to view and analyze data.
+It may also be useful to re-order the columns or rows or sort according to a
+given column.
 
 \begin{lstlisting}
-# Use head to see the first n rows
->>> df.head(n=2)
-            I  II  III
-a   -0.154878   0    1
-b   -0.948226   0    1
+>>> # Re-order columns
+>>> grades.reindex(columns['English','Math','History'])
+         English  Math  History
+Barbara     73.0  52.0    100.0
+David       39.0  10.0    100.0
+Eleanor      NaN  35.0    100.0
+Greg        26.0   NaN    100.0
+Lauren      99.0   NaN    100.0
+Mark        68.0  81.0    100.0
 
-# Use describe to find stats about the dataframe
->>> df.describe()
-              I        II
-count  4.000000  4.000000
-mean  -0.209630 -0.001307
-std    0.566695  0.964083
-<<min>>   -0.948226 -1.097156
-25%   -0.363515 -0.644075
-50%   -0.161745  0.046366
-75%   -0.007895  0.689133
-<<max>>    0.433197  0.999194
-
+>>> # Sort descending according to Math grades
+>>> grades.sort_values('Math', ascending=False)
+         Math  English  History
+Mark     81.0     68.0    100.0
+Barbara  52.0     73.0    100.0
+Eleanor  35.0      NaN    100.0
+David    10.0     39.0    100.0
+Greg      NaN     26.0    100.0
+Lauren    NaN     99.0    100.0
 \end{lstlisting}
 
 Other methods used for manipulating \li{DataFrame} and \li{Series} panda structures can be found in Table \ref{table:pandas-manage-data}.
@@ -267,59 +399,75 @@ Method & Description \\ \hline
 \label{table:pandas-manage-data}
 \end{table}
 
+\begin{problem}
+The file \li{budget.csv} contains the budget of a college student over the course of 4 years.
+Write a function \li{prob2()} reads in \li{budget.csv} as a \li{DataFrame}.
+Perform the following operations:
+\begin{enumerate}
+\item Reindex the columns such that amount spent on food is the first column and all other columns maintain the same ordering.
+\item Sort the \li{DataFrame} in descending order based on how much money was spent on \li{Groceries}
+\item Reset all values in the \li{'Rent'} column to \li{800.0}
+\item Reset all values in the first 5 data points to \li{0.0}
+\end{enumerate}
+Return the values of the updated \li{DataFrame} as a NumPy array.
+\label{prob:budget}
+\end{problem}
 
 \subsection*{Basic Data Manipulation}
 Because the primary pandas data structures are subclasses of \li{ndarray}, most NumPy functions work with pandas structure.
 For example, basic
-vector operations work just fine:
+vector operations work as expected:
 
 \begin{lstlisting}
->>> x = pd.Series(np.random.randn(4), index=['a', 'b', 'c', 'd'])
->>> y = pd.Series(np.random.randn(5), index=['a', 'b', 'd', 'e', 'f'])
->>> x**2
-a    1.710289
-b    0.157482
-c    0.540136
-d    0.202580
+>>> # Sum history and english grades of all students
+>>> grades['English'] + grades['History']
+Barbara    173.0
+David      139.0
+Eleanor      NaN
+Greg       126.0
+Lauren     199.0
+Mark       168.0
 dtype: float64
->>> z = x + y
->>> z
-a    0.123877
-b    0.278435
-c         NaN
-d   -1.318713
-e         NaN
-f         NaN
-dtype: float64
+
+>>> # Double all Math grades
+>>>  grades['Math']*2
+Barbara    104.0
+David       20.0
+Eleanor     70.0
+Greg         NaN
+Lauren       NaN
+Mark       162.0
+Name: Math, dtype: float64
 \end{lstlisting}
+In addition to arithmetic, \li{Series} have a variety of other methods similar to NumPy arrays.
+A collection of these methods is found in Table \ref{table:pandas-numerical-methods}.
+\begin{table}[H]
+\begin{tabular}{r|l}
+Method & Returns \\ \hline
+\li{<<abs>>()}     & Object with absolute values taken (of numerical data) \\
+\li{idxmax()}  & The index label of the maximum value \\
+\li{idxmin()}  & The index label of the minimum value \\
+\li{count()}   & The number of non-null entries \\
+\li{cumprod()} & The cumulative product over an axis \\
+\li{cumsum()}  & The cumulative sum over an axis \\
+\li{<<max>>()}     & The maximum of the entries \\
+\li{mean()}    & The average of the entries \\
+\li{median()}  & The median of the entries \\
+\li{<<min>>()}     & The minimum of the entries \\
+\li{mode()}    & The most common element(s) \\
+\li{prod()}    & The product of the elements \\
+\li{<<sum>>()}     & The sum of the elements \\
+\li{var()}     & The variance of the elements \\
+\end{tabular}
+\caption{Numerical methods of the \li{Series} and \li{DataFrame} pandas classes.
+% Methods marked with a * are not methods of NumPy's \li{ndarray} class.
+}
+\label{table:pandas-numerical-methods}
+\end{table}
 
 %The default
 % missing value \li{NaN} is given for labels that are not shared by both inputs.
 
-It may also be useful to transpose \li{DataFrames}, re-order the columns or rows, or sort according to a
-given column.
-
-\begin{lstlisting}
-# re-order columns
->>> df.reindex(columns = ['II','I'])
-         II         I
-a -1.097156 -0.154878
-b  0.585780 -0.948226
-c -0.493048  0.433197
-d  0.999194 -0.168612
-
-# sort descending according to column 'II'
->>> df.sort_values('II', ascending=False)
-          I        II
-d -0.168612  0.999194
-b -0.948226  0.585780
-c  0.433197 -0.493048
-a -0.154878 -1.097156
-
-[4 rows x 2 columns]
-\end{lstlisting}
-
-\begin{comment}
 \subsection*{Basic Statistical Functions}
 
 The pandas library allows us to easily calculate basic summary statistics of our data,
@@ -327,42 +475,126 @@ useful when we want a quick description of the data.
 The \li{describe()} function
 outputs several such summary statistics for each column in a \li{DataFrame}:
 \begin{lstlisting}
->>> df.describe()
-              I        II
-count  4.000000  4.000000
-mean  -0.209630 -0.001308
-std    0.566696  0.964083
-min   -0.948226 -1.097156
-25%   -0.363516 -0.644075
-50%   -0.161745  0.046366
-75%   -0.007859  0.689133
-max    0.433197  0.999194
-
-[8 rows x 2 columns]
+>>> # Use describe to better understand the data
+>>> grades.describe()
+            Math   English  History
+count   4.000000   5.00000      6.0
+mean   44.500000  61.00000    100.0
+std    29.827281  28.92231      0.0
+min    10.000000  26.00000    100.0
+25%    28.750000  39.00000    100.0
+50%    43.500000  68.00000    100.0
+75%    59.250000  73.00000    100.0
+max    81.000000  99.00000    100.0
 \end{lstlisting}
 
 Functions for calculating means and variances, the covariance and correlation matrices, and other
 basic statistics are also available.
-Below, we calculate the means of each row, as well as the
-covariance matrix:
+
 \begin{lstlisting}
->>> df.mean(axis=1)
-a   -0.626017
-b   -0.181223
-c   -0.029925
-d    0.415291
+>>> # Find the average grade for each student
+>>> grades.mean(axis=1)
+Barbara    75.000000
+David      49.666667
+Eleanor    67.500000
+Greg       63.000000
+Lauren     99.500000
+Mark       83.000000
 dtype: float64
 
->>> df.cov()
-           I        II
-I   0.321144 -0.256229
-II -0.256229  0.929456
+>>> # Solve for the unbiased variance between subjects
+>>> grades.cov()
+               Math  English  History
+Math     889.666667    557.0      0.0
+English  557.000000    836.5      0.0
+History    0.000000      0.0      0.0
 
-[2 rows x 2 columns]
+>>> # Give correlation matrix between subjects
+>>> grades.corr()
+            Math  English  History
+Math     1.00000  0.84996      NaN
+English  0.84996  1.00000      NaN
+History      NaN      NaN      NaN
 \end{lstlisting}
-\end{comment}
 
+The method \li{rank} gives a ranking based on methods such as average, minimum, and maximum.
+This method defaults ranking in ascending order (the least will be ranked 1 and the greatest will be ranked the highest number).
 
+\begin{lstlisting}
+>>> # Rank each student's performance based on their highest grade in any class in descending order
+>>> grades.rank(axis=1,method='max',ascending=False)
+         Math  English  History
+Barbara   3.0      2.0      1.0
+David     3.0      2.0      1.0
+Eleanor   2.0      NaN      1.0
+Greg      NaN      2.0      1.0
+Lauren    NaN      2.0      1.0
+Mark      2.0      3.0      1.0
+\end{lstlisting}
+
+These methods can be very effective in interpreting data.
+For example, the \li{rank} example above shows use that Barbara does best in History, then English and then Math.
+
+\subsection*{Dealing with Missing Data}
+
+Missing data is a ubiquitous problem in data science.
+Fortunately, pandas is particularly well-suited to
+handling missing and anomalous data.
+As we have already seen, the pandas default for a missing value is \li{NaN}.
+In basic arithmetic operations, if one of the operands is \li{NaN}, then the output is also \li{NaN}.
+If we are not interested in the missing values, we can simply drop them from the data altogether:
+
+\begin{lstlisting}
+>>> # Grades with all NaN values dropped
+>>> grades.dropna()
+         Math  English  History
+Barbara  52.0     73.0    100.0
+David    10.0     39.0    100.0
+Mark     81.0     68.0    100.0
+\end{lstlisting}
+
+This is not always the desired behavior, however.
+Missing data could actually correspond to some default value, such as zero.
+For example, in the budget dataset, filling \li{NaN} value with 0 indicates that no money was spent on that item.
+In the grade dataset, we can replace all instances of \li{NaN} with a specified value:
+\begin{lstlisting}
+>>> # fill missing data with 50.0
+>>> grades.fillna(50.0)
+         Math  English  History
+Barbara  52.0     73.0    100.0
+David    10.0     39.0    100.0
+Eleanor  35.0     50.0    100.0
+Greg     50.0     26.0    100.0
+Lauren   50.0     99.0    100.0
+Mark     81.0     68.0    100.0
+\end{lstlisting}
+
+When dealing with missing data, make sure you are aware of the behavior of the pandas functions you are using.
+For example, \li{<<sum()>>} and \li{mean()} ignore NaN values in the computation.
+
+\begin{warn}
+Always consider missing data carefully when analyzing a dataset.
+It may not always be helpful to drop the data or fill it in with a random number.
+Consider filling the data with the mean of surrounding data or the mean of the feature in question.
+Overall, the choice for how to fill missing data should make sense with the dataset.
+\end{warn}
+
+\begin{problem}
+Write a function \li{prob3()} that uses \li{budget.csv} to answer the questions "Which category affects living expenses the most? Which affects other expenses the most? How much is generally spent in these two categories?".
+Use the functions above to manipulate the data to perform the following manipulations:
+\begin{enumerate}
+\item Fill all \li{NaN} values with \li{0.0}.
+\item Create two new columns, \li{'Living Expenses'} and \li{'Other'}. 
+Sum the columns \li{'Rent', 'Groceries', 'Gas'} and \li{'Utilities'} and set as the value of \li{'Living Expenses'}.
+Sum the columns \li{'Dining Out', 'Out With Friends'} and \li{'Netflix'} and set as the value of \li{'Other'}.
+\item  Identify which column correlates most with \li{'Living Expenses'} and which correlates most with \li{'Other'}.
+This can indicate which columns in the budget affects the overarching categories the most.
+\end{enumerate}
+Return the mean of each the two columns found in 3 as a tuple.
+The first mean should be of the column corresponding to \li{'Living Expenses'} and the second to \li{'Other'}.
+\end{problem}
+
+\begin{comment}
 \begin{problem}
 Read in the file \li{crime_data.csv} as a pandas object.
 The file contains data on types of crimes in the U.S. from 1960 to 2016.
@@ -377,51 +609,7 @@ Use this table to answer the following questions:
        
 \end{enumerate}
 \end{problem}
-
-\subsection*{Dealing with Missing Data}
-
-Missing data is a ubiquitous problem in data science.
-Fortunately, pandas is particularly well-suited to
-handling missing and anomalous data.
-As we have already seen, the pandas default for a missing value is \li{NaN}.
-In basic arithmetic operations, if one of the operands is \li{NaN}, then the output is also \li{NaN}.
-If we are not interested in the missing values, we can simply drop them from the data altogether:
-
-\begin{lstlisting}
->>> x = pd.Series(np.arange(5))
->>> y = pd.Series(np.random.randn(5))
->>> x.iloc[3] = np.nan
->>> x + y
-0    0.731521
-1    0.623651
-2    2.396344
-3         NaN
-4    3.351182
-dtype: float64
->>> (x + y).dropna()
-0    0.731521
-1    0.623651
-2    2.396344
-4    3.351182
-dtype: float64
-\end{lstlisting}
-
-This is not always the desired behavior, however.
-Missing data could actually corresponds to some default value, such as zero.
-In this case, we can replace all instances of \li{NaN} with a specified value:
-\begin{lstlisting}
->>> # fill missing data with 0
->>> (x + y).fillna(0)
-0    0.731521
-1    0.623651
-2    2.396344
-3    0.000000
-4    3.351182
-dtype: float64
-\end{lstlisting}
-
-When dealing with missing data, make sure you are aware of the behavior of the pandas functions you are using.
-For example, \li{<<sum()>>} and \li{mean()} ignore NaN values in the computation.
+\end{comment}
 
 \begin{comment}
 \subsection*{Series}
@@ -551,13 +739,13 @@ dtype: int64
 Create a pandas \li{Series} where the index labels are the even integers $0,2,\ldots,50$, and the entries are $n^2 - 1$, where $n$ is the entry's label.
 Set all of the entries equal to zero whose labels are divisible by $3$.
 \end{problem}
-\end{comment}
+
 
 \subsection*{Data Manipulation with Series} % ----------------------------------------
 
 A \li{Series} object, or column of a \li{DataFrame}, has all of the advantages of a NumPy array, including entry-wise arithmetic, plus a few additional features (see Table \ref{table:pandas-numerical-methods}).
 
-\begin{comment}
+
 \begin{lstlisting}
 >>> s4 = pd.Series([1, 2, 4], index=['a', 'c', 'd'])
 >>> s5 = pd.Series([10, 20, 40], index=['a', 'b', 'd'])
@@ -568,7 +756,7 @@ A \li{Series} object, or column of a \li{DataFrame}, has all of the advantages o
 <<d    48.0>>                           # the combination is Nan (np.nan / None).
 <<dtype: float64>>
 \end{lstlisting}
-\end{comment}
+
 \begin{table}[H]
 \begin{tabular}{r|l}
 Method & Returns \\ \hline
@@ -594,7 +782,7 @@ Method & Returns \\ \hline
 \end{table}
 
 
-\begin{comment}
+
 \li{Series} are more useful than NumPy arrays when dealing with data primarily because of their index.
 For example, a \li{Series} can be indexed by time with a pandas \li{DatetimeIndex}, an index with date and/or time values.
 The usual way to create this kind of index is with \li{pd.date_range()}.
@@ -608,17 +796,6 @@ The usual way to create this kind of index is with \li{pd.date_range()}.
 
 
 \end{comment}
-
-\begin{problem}
-Answer the following questions using the file \li{crime_data.csv} and the pandas numerical methods.
-Support your answers with data from the file.
-
-\begin{enumerate}
-	\item In what year did each crime hit an all-time high in the U.S.? In what year did the majority of crimes hit an all-time high?
-	\item Which decade had the greatest amount of total crime?
-	\item During this decade, which crime was commited most, and what percent of the total crime was it?
-\end{enumerate}
-\end{problem}
 
 \begin{comment}
 \begin{info}
@@ -786,12 +963,11 @@ Your results should be comparable to those in Figure \ref{pandas:biasedRandomWal
 
 \section*{SQL Operations in pandas} % =========================================
 
-The \li{DataFrame}, being a tabular data structure, bears an obvious resemblance to a typical relational
+\li{DataFrames} are tabular data structures bearing an obvious resemblance to a typical relational
 database table.
-SQL is the standard for working with relational databases, and in this section, we will
-explore how pandas accomplishes some of the same tasks as SQL.
+SQL is the standard for working with relational databases; however, pandas can accomplish many of the same tasks as SQL.
 The SQL-like functionality of pandas is
-one of its biggest advantages, since it can eliminate the need to switch between programming languages
+one of its biggest advantages, eliminating the need to switch between programming languages
 for different tasks.
 Within pandas, we can handle both the querying \emph{and} data analysis.
 
@@ -843,14 +1019,13 @@ using the \li{head()} or \li{tail()} methods.
 \end{lstlisting}
 \end{comment}
 
-The method \li{isin()} is a useful way to find certain values in a
-\li{DataFrame}. 
-It compares the input (a list, dictionary, or \li{Series})
-to the \li{DataFrame} and returns a boolean \li{Series} showing whether or
-not the values match.
-One can then use this boolean array to select appropriate
-locations.
-Now let's look at the pandas equivalent of some SQL SELECT statements.
+SQL SELECT statements can be done by column indexing.
+WHERE statements can be included by adding masks (just like in a NumPy array).
+The method \li{isin()} can also provide a useful WHERE statement.
+This method accepts a list, dictionary, or \li{Series} containing possible values of the \li{DataFrame} or \li{Series}.
+When called upon, it returns a \li{Series} of booleans, indicating whether an entry contained a value in the parameter pass into \li{isin()}.
+
+
 \begin{lstlisting}
 >>> # SELECT ID, Age FROM studentInfo
 >>> studentInfo[['ID', 'Age']]
@@ -866,7 +1041,8 @@ Now let's look at the pandas equivalent of some SQL SELECT statements.
 8   8   29
 
 >>> # SELECT ID, GPA FROM otherInfo WHERE Financial_Aid = 'y'
->>> otherInfo[otherInfo['Financial_Aid']=='y'][['ID', 'GPA']]
+>>> mask = otherInfo['Financial_Aid'] == 'y'
+>>> otherInfomask][['ID', 'GPA']]
    ID  GPA
 0   0  3.8
 3   3  3.9
@@ -882,13 +1058,15 @@ Now let's look at the pandas equivalent of some SQL SELECT statements.
 Name: Name, dtype: object
 \end{lstlisting}
 
+\begin{comment}
 \begin{problem}
 Using panda commands, find the crime rates of the years where Property crimes were less than 90$\%$ of the total crime and burglary crimes were more than 20$\%$ of the total crime or property crimes were less than 90$\%$ of the total crime while violent crimes were more than 12$\%$ of the total crime.
 \end{problem}
+\end{comment}
 
 Next, let's look at JOIN statements.
-In pandas, this is done with the \li{merge} function,
-which takes as arguments the two \li{DataFrame} objects to join, as well as keyword arguments specifying
+In pandas, this is done with the \li{merge} function.
+\li{merge} takes the two \li{DataFrame} objects to join as parameters, as well as keyword arguments specifying
 the column on which to join, along with the type (left, right, inner, outer).
 
 \begin{lstlisting}
@@ -918,6 +1096,41 @@ the column on which to join, along with the type (left, right, inner, outer).
 \end{lstlisting}
 
 \begin{problem}
+Read in the file \li{crime_data.csv} as a pandas object.
+The file contains data on types of crimes in the U.S. from 1960 to 2016.
+Set the index as the column 'Year'.
+
+Create a new column \li{Rate} which contains the crime rate for each year.
+Using panda commands, find the number of murders in the years where the crime rate was greater than 5\% and the number of \li{Violent} was more than on average.
+Return an array containing the number of murders in these years.
+
+(Hint: To do \li{AND} statements, use two masks. Use \li{values} attribute to create array.)
+\label{prob:rate}
+\end{problem}
+
+\begin{problem}
+Answer the following questions using the file \li{crime_data.csv} and the pandas methods learned in this lab.
+The answer of each question should be saved as indicated.
+Return the answers to each question as a tuple (i.e. \li{(answer_1,answer_2,answer_3)}).
+
+\begin{enumerate}
+	\item Identify the three crimes that have a mean over 1,500,000. 
+	Of these three crimes, which two are very correlated? 
+	Which of these two crimes has a greater maximum value?
+	Save the title of this column as a variable to return as the answer.
+	\item Examine the data since 2000.
+	Sort this data (in ascending order) according to number of murders.
+	SELECT Aggravated Assault WHERE Aggravated Assault is greather than 850,000.
+	Save the reordered and SQL queried \li{DataFrame} as a NumPy array to return as the answer.
+	\item What decade had the most crime? 
+	In this decade, which crime was committed the most? 
+	What percentage of the total crime that year was it? 
+	Save this value as a float.
+\end{enumerate}
+\end{problem}
+
+\begin{comment}
+\begin{problem}
 Read in the files \li{final_accidents2.pickle} and \li{final_drivers.pickle} using the function \li{read_pickle()}.  
 The accidents file contains data on various accidents that occurred in the U.S. and their causes.
 The drivers data has data on various tickets given to drivers, how many tickets given, and what the ticket is for.
@@ -926,11 +1139,10 @@ The following table shows the meanings of the codes in the data.
 \begin{table}[H]
 \begin{tabular}{r|l}
 Code & Description \\ \hline
-\begin{comment}
 \li{describe()}  & Return a \li{Series} describing the data structure \\
 \li{head()}      & Return the first $n$ rows, defaulting to 5 \\
 \li{tail()}      & Return the last $n$ rows, defaulting to 5 \\
-\end{comment}
+
 \li{DRUNK_DR} & 0-99 - Number of drunk drivers \\ \hline
 \li{WEATHER} & 0 - Unknown \\
              & 1 - Clear \\
@@ -990,7 +1202,7 @@ Make sure to support your claims with appropriate and presentable data.
 \item What month has the most fatalities each year?
 \end{enumerate}
 \end{problem}
-
+\end{comment}
 
 \begin{comment}
 This may be going into too much detail for an introductory lab...

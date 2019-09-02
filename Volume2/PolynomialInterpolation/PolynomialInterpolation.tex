@@ -9,7 +9,7 @@ Polynomial interpolation is the method of finding a polynomial that matches a fu
 More precisely, if $f(x)$ is a function on the interval $[a,b]$ and $p(x)$ is a polynomial then $p(x)$ interpolates the function $f(x)$ at the points $x_0,x_1,\dots ,x_n$ if $p(x_j)=f(x_j)$ for all $j=0,1,\dots,n$.
 In this lab most of the discussion is focused on using interpolation as a means of approximating functions or data, however, polynomial interpolation is useful in a much wider array of applications.
 
-Given a function $f(x)$ and a set of unique points $\{x\}_{i=0}^n$, it can be shown that there exists a unique interpolating polynomial $p(x)$.
+Given a function $f(x)$ and a set of unique points $\{x_i\}_{i=0}^n$, it can be shown that there exists a unique interpolating polynomial $p(x)$.
 That is, there is one and only one polynomial of degree $n$ that interpolates $f(x)$ through those points.
 This uniqueness property is why, for the remainder of this lab, an interpolating polynomial is referred to as \emph{the} interpolating polynomial.
 One approach to finding the unique interpolating polynomial of degree $n$ is Lagrange interpolation.
@@ -35,25 +35,40 @@ One approach to finding the unique interpolating polynomial of degree $n$ is Lag
 \end{figure}
 
 \subsection*{Lagrange interpolation} %------------------------------------------------------------------------------------------------------------------------------------------------
-Given a set $\{x_i\}_{i=1}^n$ of $n$ points to interpolate, a family of $n$ basis functions with the following property, is constructed:
+Given a set $\{x_i\}_{i=1}^n$ of $n$ points to interpolate, a family of $n$ basis functions with the following property is constructed:
 \[
 L_j(x_i) = \begin{cases} 0 &\mbox{ if } i \neq j\\ 1 &\mbox{ if } i =j \\ \end{cases}.
 \]
-
-Once each of the $n$ polynomials in this family of basis functions is known, they can be combined with the y-values $y_i=f(x_i)$ of the function to be interpolated in the following manner:
-\begin{equation}
-\label{equa:poly}
-p(x) = \sum_{j=1}^n y_j L_j(x)
-\end{equation}
-This will create the unique interpolating polynomial.
 
 The Lagrange form of this family of basis functions is
 \begin{equation}
 \label{equa:lagrange}
 L_j(x) = \frac{\displaystyle\prod_{k=1, k \neq j}^n (x-x_k)}{\displaystyle\prod_{k=1, k \neq j}^n (x_j-x_k)}
 \end{equation}
-Each of these Lagrange basis functions is of degree $n-1$ and has the necessary properties as given above.
-\emph{Lagrange interpolation} consists of computing the Lagrange basis functions then combining them with the y-values.
+Each of these Lagrange basis functions is a polynomial of degree $n-1$ and has the necessary properties as given above.
+
+\begin{problem}
+Define a function \li{lagrange()} that will be used to construct and evaluate an interpolating polynomial on a domain of $x$ values. 
+The function should accept two NumPy arrays of length $n$ which contain the $x$ and $y$ values of the interpolating points as well as a NumPy array of values of length $m$ at which the interpolating polynomial will be evaluated.
+
+Within \li{lagrange()}, write a subroutine that will evaluate each of the $n$ Lagrange basis functions at every point in the domain.
+It may be helpful to follow these steps:
+\begin{enumerate}
+\item Compute the denominator of each $L_j$ (as in Equation \ref{equa:lagrange}) .
+\item Using the previous step, evaluate $L_j$ at all points in the computational domain (this will give you $m$ values for each $L_j$.)
+\item Combine the results into an  $n \times m$ NumPy array, consisting of each of the $n$ $L_j$ evaluated at each of the $m$ points in the domain.
+\end{enumerate}
+
+You may find the functions \li{np.product()} and \li{np.delete()} to be useful while writing this method.
+\label{prob:lagrange_basis}
+\end{problem}
+
+\emph{Lagrange interpolation} is completed by combining the Lagrange basis functions with the y-values of the function to be interpolated $y_i=f(x_i)$ in the following manner: 
+\begin{equation}
+\label{equa:poly}
+p(x) = \sum_{j=1}^n y_j L_j(x)
+\end{equation}
+This will create the unique interpolating polynomial.
 
 Since polynomials are typically represented in their expanded form with coefficients on each of the terms, it may seem like the best option when working with polynomials would be to use Sympy, or NumPy's
 \li{poly1d} class to compute the coefficients of the interpolating polynomial individually.
@@ -71,18 +86,11 @@ In the given example, there would have been no instability if the expression had
 Although the coefficients of the interpolating polynomials will not be explicitly computed in this lab, polynomials are still being used, albeit in a different form.
 
 \begin{problem}
-Write a function that uses the Lagrange method to find an interpolating polynomial for a set of data points and evaluates the calculated polynomial at specified values.
-This function should accept two NumPy arrays which contain the $x$ and $y$ values of the interpolation points as well as a NumPy array of values (of length $m$) at which the interpolating polynomial
-will be evaluated.
-Your function should return a NumPy array of the evaluated points.
-The following steps will help in writing your function:
-\begin{enumerate}
-\item Compute the denominator of each $L_j$ (as in Equation \ref{equa:lagrange}) .
-\item Using the previous step, evaluate each $L_j$ at all points in the compuational domain (this will give you $m$ values for each of the $n$ $L_j$ functions).
-\item Combine all of these values as in Equation \ref{equa:poly}, this will give you the final array of length $m$.
-\end{enumerate}
-Note that steps one and two can be done in the same loop.
-You may find the function \li{np.delete()} to be useful while writing this method.
+
+Complete the implementation of \li{lagrange()}. 
+
+Evaluate the interpolating polynomial at each point in the domain by combining the $y$ values of the interpolation points and the evaluated Lagrange basis functions from Problem \ref{prob:lagrange_basis} as in Equation \ref{equa:poly}. 
+Return the final array of length $m$ that consists of the interpolating polynomial evaluated at each point in the domain.
 
 You can test your function by plotting Runge's function $f(x)=\frac{1}{1+25x^2}$ and your interpolating polynomial on the same plot for different values of $n$ equally spaced interpolating values then comparing
 your plot to the plots given in Figure \ref{fig:badinterp}.
@@ -137,7 +145,7 @@ When computing the barycentric weights, each element of the product $\prod_{k=1,
 In effect, this scales each barycentric weight by $C^{1-n}$ which helps to prevent overflow during computation.
 Thus, the new barycentric weights are given by
 \[
-w_j = \frac{1}{\prod_{k=1, k \neq j}^n \left[(x_j-x_k)C\right]}.
+w_j = \frac{1}{\prod_{k=1, k \neq j}^n \left[(x_j-x_k) / C\right]}.
 \]
 Once again, this change is possible since the extra factor $C^{1-n}$ is cancelled out in the final product.
 This process is summed up in the following code:

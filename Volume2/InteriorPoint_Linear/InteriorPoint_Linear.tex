@@ -21,7 +21,7 @@ the optimal point.
 Provided the linear program is neither unbounded nor infeasible, the algorithm is certain to produce the correct answer after a finite number of steps, but it does not guarantee an efficient path along the polytope toward the minimizer.
 Interior point methods do away with the feasible polytope and instead generate a sequence of points that cut through the interior (or exterior) of the feasible region and converge iteratively to the optimal point.
 Although it is computationally more expensive to compute such interior points, each step results in significant progress toward the minimizer.
-See Figure \ref{fig:intPath}.
+See Figure \ref{fig:intPath} for an example of a path using an Interior Point algorithm.
 In general, the Simplex Method requires many more iterations (though each iteration is less expensive computationally).
 
 \begin{figure}
@@ -39,7 +39,7 @@ Consider the following linear program:
 \text{subject to }\qquad &A\x = \b\\
 &\x \succeq \0.
 \end{align*}
-Here, $\x, \c \in \mathbb{R}^n$, $\b \in \mathbb{R}^m$, and $A$ is an $m \times n$ matrix with full row rank.
+Here, $\x, \c \in \mathbb{R}^n$, $\b \in \mathbb{R}^m$, and $A\in\mathbb{R}^{m\times n}$ with full row rank.
 % By $x \succeq 0$, we simply mean that each coordinate of $x$ is nonnegative.
 % Note that this formulation is quite general, as any linear program can be posed in this manner, after appropriate transformations.
 This is the \emph{primal} problem, and its \emph{dual} takes the form:
@@ -205,7 +205,7 @@ Within \li{interiorPoint()}, write a subroutine to compute the search direction 
 Use $\sigma = \frac{1}{10}$ for the centering parameter.
 
 Note that only the last block row of $DF$ will need to be changed at each iteration (since $M$ and $X$ depend on $\Mu$ and $\x$, respectively).
-Consider using the functions \li{lu_factor()} and \li{lu_solve()} from the \li{scipy.linalg} module to solving the system of equations efficiently.
+Use the functions \li{lu_factor()} and \li{lu_solve()} from the \li{scipy.linalg} module to solving the system of equations efficiently.
 \end{problem}
 
 \begin{comment} % Old strategy for search direction vvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -294,9 +294,11 @@ Now that we have our search direction, it remains to choose our step length.
 We wish to step nearly as far as possible without violating the problem's constraints, thus remaining in the interior of the feasible region.
 First, we calculate the maximum allowable step lengths for $\x$ and $\Mu$, respectively:
 \begin{align*}
-\alpha_{\max} &= \min\left\{1, \min\{-\mu_i/\triangle \mu_i\ |\ \triangle \mu_i < 0 \}\right\}\\
-\delta_{\max} &= \min\left\{1, \min\{-x_i/\triangle x_i\ |\ \triangle x_i < 0 \}\right\}
+\alpha_{\max} &= \min\{-\mu_i/\triangle \mu_i\ |\ \triangle \mu_i < 0 \}\\
+\delta_{\max} &= \min\{-x_i/\triangle x_i\ |\ \triangle x_i < 0\}
 \end{align*}
+If all values of $\triangle\mu$ are nonnegative, let $\alpha_{\max}=1$.
+Likewise, if all values of $\triangle x$ are nonnegative, let $\delta_{\max}=1$.
 Next, we back off from these maximum step lengths slightly:
 \begin{align*}
 \alpha &= \min(1, 0.95\alpha_{\max})\\
@@ -431,8 +433,9 @@ The closer $\nu$ is to 0, the closer we are to the optimal point.
 Thus, by printing the value of $\nu$ at each iteration, you can track how your algorithm is progressing and detect when you have converged.
 
 To test your implementation, use the following code to generate a random linear program, along with the optimal solution.
-% TODO: update the spec file with this version of randomLP().
+
 \begin{lstlisting}
+def randomLP():
     """Generate a linear program min c\trp  x s.t. Ax = b, x>=0.
     First generate m feasible constraints, then add
     slack variables to convert it into the above form.
@@ -608,7 +611,7 @@ Now we can calculate the solution by calling our interior point function.
 >>> sol = interiorPoint(A, y, c, niter=10)[0]
 \end{lstlisting}
 
-The variable \li{sol}, however, holds the value for the vector
+However, the variable \li{sol} holds the value for the vector
 \[
 \mathbf{v} = (u_1,\ldots, u_m, \beta_{1,1},\ldots, \beta_{1,n}, \beta_{2,1},\ldots, \beta_{2,n}, b_1, b_2, s_1,\ldots,s_{2m+1})\trp .
 \]

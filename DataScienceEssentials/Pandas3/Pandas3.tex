@@ -2,8 +2,27 @@
 \objective{
 Many data sets contain categorical values that naturally sort the data into groups.
 Analyzing and comparing such groups is an important part of data analysis.
-In this lab we explore pandas tools for grouping data and presenting tabular data more compactly, primarily through grouby and pivot tables.
+In this lab we explore pandas tools for grouping data and presenting tabular data more compactly, primarily through groupby and pivot tables.
 }
+
+\begin{info}
+This lab will be done using Colab Notebooks.
+These notebooks are similar to Jupyter Notebooks but run remotely on Google's servers.
+Open a Google Colab notebook by going to your Google Drive account and creating a new Colaboratory file.
+If making a Colaboratory file is not an option, download the application Colaboratory onto your Google Drive.
+Once opening a new Colab Notebook, upload the file \li{pandas3.ipynb}.
+To make the data files accessible, run the following at the top of the lab:
+\begin{lstlisting}
+>>> from google.colab import files
+
+>>> uploaded = files.upload()
+\end{lstlisting}
+This will prompt you upload files for this notebook.
+For this lab, upload \li{college.csv} and \li{ohio_1999.csv}.
+
+Once the lab is complete, delete BOTH lines of code used for uploading files (the import statement and the upload statement) and download as a \li{.py} file to your git repository.
+Push the newly made \li{pandas3.py} file.
+\end{info}
 
 \section*{Groupby} % ==========================================================
 
@@ -71,7 +90,7 @@ Since the \li{"vore"} column has only a few unique values, we start by grouping 
 
 As shown above, \li{groupby()} is useful for filtering a \li{DataFrame} by column values;
 the command \li{df.groupby(col).get_group(value)} returns the rows of \li{df} where the entry of the \li{col} column is \li{value}.
-The real advantage of \li{groupby()}, however, is how easy it makes it to compare groups of data.
+The real advantage of \li{groupby()}, however, is how easily it compares groups of data.
 Standard \li{DataFrame} methods like \li{describe()}, \li{mean()}, \li{std()}, \li{<<min>>()}, and \li{<<max>>()} all work on \li{GroupBy} objects to produce a new data frame that describes the statistics of each group.
 
 \begin{lstlisting}
@@ -108,16 +127,28 @@ In this case, the \li{get_group()} method of the \li{GroupBy} object requires a 
 \end{lstlisting}
 
 \begin{problem}
-The data \li{time_usage.txt} contains data on how Americans spend their time from 2007-2017.
-Read in the data as a \li{DataFrame} object and use \li{groupby()} to filter through the \li{DataFrame} and answer the following questions:
-
+Read in the data \li{college.csv} containing information on various United States universities in 1995.
+To access information on variable names, go to \url{https://cran.r-project.org/web/packages/ISLR/ISLR.pdf}.
+Use a \li{groupby} object to group the colleges by private and public universities.
+Read in the data as a \li{DataFrame} object and use \li{groupby} and \li{describe} to examine the following columns by group:
 \begin{enumerate}
-\item How did the mean amount of time spent on all activities change over 2007 to 2017?
-
-\item On average (using the mean), did Americans spend more time doing exercise or watching TV over the past ten years? What was the difference?
+\item Student to Faculty Ratio,
+\item How many students from the top 25\% of their high school class,
+\item How many students from the top 10\% of their high school class.
 \end{enumerate}
+Determine whether private or public universities have a higher mean for each of these columns.
+For the type of university with the higher mean, save the values of the describe function on said column as an array using \li{.values}.
+Return a tuple with these arrays in the order described above.
 
-(Hint: The column \li{Estimate} gives the amount of hours spent on an activity. The activity \li{Watching TV} contains data on Americans watching TV and the activity \li{Participating in Sports Exercise and Rec Activity} contains data on Americans exercising.)
+For example, if I were comparing whether the number of professors with PhDs was higher at private or public universities, I would return the following array:
+
+\begin{lstlisting}
+array([212., 76.83490566, 12.31752531, 33., 71., 78.5 , 86., 103.])
+\end{lstlisting}
+
+
+
+
 \end{problem}
 
 \subsection*{Visualizing Groups} % --------------------------------------------
@@ -236,11 +267,11 @@ Use visualizations to support your conclusions.
 \end{comment}
 
 \begin{problem}
-Use the time usage data to answer the following questions. Support your claims with readable, labeled visualizations.
+Create visualizations that give relevant information answering the following questions (using \li{college.csv}):
 \begin{enumerate}
-\item In what activity did Americans spend most of their time in 2017?
+\item How do the number of applicants, number of accepted students, and number of enrolled students compare between private and public universities?
 
-\item In what year did Watching TV increase the most? What about Volunteering?
+\item How wide is the range of money spent on room and board at both private and public universities?
 \end{enumerate}
 \end{problem}
 
@@ -298,7 +329,7 @@ Red   Blue        7    10
 Listing the data in this way makes it easy to locate data and compare the female and male groups.
 For example, it is easy to see that brown hair is more common than red hair and that about twice as many females have blond hair and blue eyes than males.
 
-Unlike \li{"HairEyeColor"}, many data sets have more than one entry in the data for each grouping;
+Unlike \li{"HairEyeColor"}, many data sets have more than one entry in the data for each grouping.
 An example in the previous dataset would be if there were two or more rows in the original data for females with blond hair and blue eyes.
 To construct a pivot table, data of similar groups must be \emph{aggregated} together in some way.
 By default entries are aggregated by averaging the non-null values.
@@ -357,13 +388,16 @@ male     61.0  25.0   75.0>>
 \end{lstlisting}
 
 \begin{problem}
-The file \li{Ohio_1999.csv} contains data on workers in Ohio in the year 1999. Use pivot tables to answer the following questions:
+The file \li{ohio_1999.csv} contains data on workers in Ohio in the year 1999. 
+Use pivot tables to answer the following questions:
 
 \begin{enumerate}
-\item What was the highest paid race/sex combination? What was the lowest paid?
-\item What race/sex combination worked the least amount of hours? What from the data explains why?
-\item What race/sex combination works the most hours per week per person?
+\item What was the highest paid race/sex combination?
+\item What race/sex combination worked the least amount of hours?
+\item What race/sex combination worked the most hours per week per person?
 \end{enumerate}
+
+Return a tuple for each question (in order of the questions) where the first entry is the numerical code corresponding to the race and the second entry is corresponding to the sex.
 
 Some useful keys in understand the data are as follows:
 \begin{enumerate}
@@ -389,7 +423,7 @@ Notice that when creating the pivot table, the index uses the categorical \li{ag
 \begin{lstlisting}
 # pd.cut() maps continuous entries to discrete intervals.
 >>> pd.cut([1, 2, 3, 4, 5, 6, 7], [0, 4, 8])
-<<[(0, 4], (0, 4], (0, 4], (0, 4], (4, 8], (4, 8], (4, 8]]
+<<[(4, 8], (0, 4], (0, 4], (0,4], (0, 4], (4, 8], (4, 8], (4, 8]]
 Categories (2, interval[int64]): [(0, 4] < (4, 8]]>>
 
 # Partition the passengers into 3 categories based on age.
@@ -480,20 +514,47 @@ A number greater than 43 means the person got at least a bachelor's degree.
 What is the most common degree among workers?
 
 \item Partition the \li{Age} column into 4 equally populated intervals. 
-Which interval contains the most workers with no degree? 
-A degree that is less than a bachelor's degree? A bachelor's degree or higher?
+What is the most common age range among workers?
 
-\item What age/degree combination has the greatest yearly salary on average?
+\item What age/degree combination has the smallest yearly salary on average?
 \end{enumerate}
+
+Return the answer to each question (in order) as an \li{Interval}. 
+For part three, the answer should be a tuple where the first entry in the \li{Interval} of the age and the second is the \li{Interval} of the degree.
+
+An \li{Interval} is the object returned by \li{pd.cut} and \li{pd.qcut}.
+An example of getting an \li{Interval} from a pivot table is shown below.
+
+\begin{lstlisting}
+>>> # Create pivot table used in last example with titanic dataset
+>>> table = titanic.pivot_table(values="Survived",
+                        index=[age], columns=[fare, "Pclass"],
+                        aggfunc="count")
+>>> # Get index of maximum interval
+>>> table.sum(axis=1).idxmax()
+Interval(0, 12, closed='right')
+                    
+\end{lstlisting}
 \end{problem}
 
 \begin{problem}
-The \li{pydataset} contains a data set \li{iris}, which contains the measurements of various flower species.
-Use this data to answer the following questions:
-\begin{enumerate}
-\item Which flower species is the easiest distinguish and why?
+Examine the college dataset using pivot tables and groupby objects.
+Determine the answer to the following questions.
+If the answer is yes, save the answer as \li{True}.
+If the answer the no, save the answer as \li{False}.
+For the last question, save the answer as a string giving your explanation.
+Return a tuple containing your answers to the questions in order.
 
-\item What is the correlation between petal and sepal size for each species?
+\begin{enumerate}
+\item Is there a correlation between the percent of alumni that donate and the amount the school spends per student in BOTH private and public universities?
+
+\item Partition \li{Grad.Rate} into intervals of 20\%.
+Is the partition with the greatest number of schools the same for private and public universities?
+
+\item Divide the acceptance rate into partitions of 25\%.
+Does having a lower acceptance rate correlate with having more students from the top 10 percent of their high school class being admitted on average for BOTH private and public universities?
+
+\item Why is the average percentage of students admitted from the top 10 percent of their high school class so high in private universities with very low acceptance rates?
 \end{enumerate}
 \end{problem}
 \begin{comment}

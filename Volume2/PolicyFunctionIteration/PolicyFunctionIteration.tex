@@ -2,32 +2,45 @@
 \objective{Iterative methods can be powerful ways to solve dynamic optimization problems without computing the exact solution.
 Often we can iterate very quickly to the true solution, or at least within some $\epsilon$ error of the solution.
 These methods are significantly faster than computing the exact solution using dynamic programming.
-We demonstrate two iterative methods, value iteration (VI) and policy iteration (PI), and use them to solve a deterministic Markov decision process.
-}
+We demonstrate two iterative methods, value iteration (VI) and policy iteration (PI), and use them to solve a deterministic Markov decision process.}
 
 \section*{Dynamic Optimization}
 
 Many dynamic optimization problem take the form of a \emph{Markov decision process}.
+A Markov decision process is similar to that of a Markov chain, but rather than determining state movement using only probabilities, state movement is determined based on probabilities, actions, and rewards.
 They are formulated as follows.
 
 $\mathbb{T}$ is a set of discrete time periods.
 In this lab, $\mathbb{T} = {0,1,\ldots, T}$.
 $S$ is the set of possible states.
 The set of allowable actions for each state $s$ is $A_s$.
-$s_{t+1}=g(s_t,a_t)$ is a transition function that describes how the state changes, based on the previous state and action.
-The reward $u_t(s,a)$ is the reward for taking action $a$ while in state $s$ at time $t$.
-If the Markov process is stochastic, $p_t(s,a)$ is probability of taking action $a$ at time $t$ while in state $s$.
-A deterministic Markov process has $p_t(s,a) = 1$ $\forall s,a$.
+$s_{t+1}=g(s_t,a_t)$ is a transition function that determines the state $s_{t+1}$ at time $t+1$ based on the previous state $s_t$ and action $a_t$.
+The reward $u(s_t,a_t,s_{t+1})$ is the reward for taking action $a$ while in state $s$ at time $t$ and the next state being state $s_{t+1}$.
 The time discount factor $\beta \in [0,1]$ determines how much less a reward is worth in the future.
-Then the dynamic optimization problem is
+Let $N_{s,a}$ be the set of all possible next states when taking action $a$ in state $s$.
+$p(s_t,a_t,s_{t+1})$ is probability of taking action $a$ at time $t$ while in state $s$ and arriving at state $s_{t+1}\in N_{s,a}$.
+
+A deterministic Markov process has $p(s_t,a_t,s_{t+1}) = 1$ $\forall s,a$.
+This means that $N_{s,a}$ has one element $\forall s,a$.
+A stochastic Markov process has $p(s_t,a_t,s_{t+1})\leq 1$, given that there can be multiple possible next states for taking a given action in a given state.
+
+The dynamic optimization problem is
 
 \begin{align}
 \label{eq:policyiter-dynopt1}
-\max_a  & \sum_{t=0}^T \beta^t u(s_t,a_t) \\
+\max_\mathbf{a}  & \sum_{t=0}^T \beta^t u(s_t,a_t) \\
 \mbox{subject to } & s_{t+1}= g(s_t,a_t)\ \forall t.
 \end{align}
 
-The cake eating problem described in the previous lab follows this format where $S$ consists of the possible amounts of remaining cake ($\frac{i}{W}$), $c_t$ is the amount of cake we can eat, and the amount of cake remaining $s_{t+1}=g(s_t,a_t)$ is $w_t-c_t$, the amount of cake we have, $w_i$, minus the cake we eat, $c_t$.
+The cake eating problem described in the previous lab follows this format where $S$ consists of the possible amounts of remaining cake ($\frac{i}{W}$), $c_t$ is the amount of cake we can eat, and the amount of cake remaining $s_{t+1}=g(s_t,a_t)$ is $w_t-c_t$, where $w_t$ is the amount of cake we have left and $c_t$ is the amount of cake we eat at time $t$. 
+This is an example of a deterministic Markov process.
+
+For this lab we define a dictionary $P$ to represent the decision process.
+This dictionary contains all of the information about the states, actions, probabilities, and rewards.
+Each dictionary key is a state-action combination and each dictionary value is a list of tuples.
+\[P[s][a]=[(p(s,a,\bar{s}), \bar{s}, u(s,a,\bar{s}), is\_terminal),...]\]
+There is a tuple for each $\bar{s}\in N_{s,a}$ in the list.
+The final entry in the tuple, is\_terminal, indicates if the $\bar{s}$ is a stopping point.
 
 
 \subsection*{Moving on a Grid}
@@ -44,16 +57,12 @@ When the robot is in state $0$ and takes action $1$, he is then in state $2$.
 
 $A_s$ is the set of actions that keep the robot on the grid.
 If the robot is in the top left hand corner, the only allowed actions are $Down$ and $Right$ so $A_0 = \{1,2\}$.
-The transition function $g(s_t,a_t) = s_{t+1}$ can be explicitly defined for each $s, a$ where $s_{t_1}$ is the new state after moving.
-For this lab, we define a dictionary $P$ to represent the decision process.
-P[state][action]=[(prob, nextstate, reward, is\_terminal),...]
-This dictionary contains all of the information about the states, actions, probabilities, and rewards.
-The final entry in the tuple, is\_terminal, indicates if the new state is a stopping point.
+The transition function $g(s_t,a_t) = s_{t+1}$ can be explicitly defined for each $s, a$ where $s_{t+1}$ is the new state after moving.
 
 Let $N=2$ and label the squares as displayed below.
 In this example, we define the reward to be $-1$ if the robot moves into 2, $-1$ if the robot moves into $0$ from $1$, and $1$ when it reaches the end, $3$.
-This simplifies to $u_t(s,a) = u(a)$ except when moving into state $0$.
-Similarly, $p_t(s,a) = p(a) = 1$.
+We define the reward function to be $u(s_t,a_t,s_{t+1})=u(s_{t+1})$.
+Since this is a deterministic model, $p(s_t,a_t,s_{t+1}) = p(s_{t+1}) = 1,\forall s,a$.
 
 \begin{center}
 \begin{tabular}{|c|c|}
@@ -73,7 +82,7 @@ Similarly, $p_t(s,a) = p(a) = 1$.
 %\end{align*}
 
 All of this information is encapsulated in $P$.
-We define $P[state][action]$ for all states and actions, even if they are not possible.
+We define $P[s][a]$ for all states and actions, even if they are not possible.
 This simplifies coding the algorithm but is not necessary.
 
 \begin{center}
@@ -101,14 +110,14 @@ We define the \emph{value function} $V(s)$ to be the maximum possible reward of 
 Then using Bellman's optimality equation,
 \begin{equation}
 \label{eq:policyiter-val-func}
-V(s) = \max_{a \in A_s} \{\Sigma[p(a) * \left( u(a) + \beta V(a)\right)]\}.
+V(s) = \max_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}}p(\bar{s}) * \left( u(\bar{s}) + \beta V(\bar{s})\right)\}.
 \end{equation}
 
-The summation occurs when $p(s,a)<1$ so $P[s][a]$ consists of more than one tuple.
+The summation occurs when it is a stochastic Markov process.
 For example, if the robot is in the top left corner and moves right, we could have that the probability the robot actually moves right is $.5$.
 In this case, $P[0][2] = [(.5, 1, 0, False), (.5, 2, -1, False)]$.
 This will occur later in the lab.
-We also observe that in this scenario, $V(a)$ is $V(s')$ where $s'$ is the state after taking action $a$ in state $s$.
+% We also observe that in this scenario, $V(a)$ is $V(\bar{s})$ where $\bar{s}$ is the state after taking action $a$ in state $s$.
 
 \section*{Value Iteration}
 
@@ -124,7 +133,7 @@ Blackwell's contraction theorem can be used to show that Bellman's equation is a
 for an operator $T: L^{\infty}(X;\mathbb{R}) \to L^{\infty}(X;\mathbb{R})$ where $L^{\infty}(X;\mathbb{R})$ is the set of all bounded functions:
 \begin{equation}
 \label{eq:policyiter-blackwell}
-[T(f)](s) = \max_{a \in A_s} \{\Sigma [p(a) * \left( u(a) + \beta f(a)\right)]\}
+[T(f)](s) = \max_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}} p(\bar{s}) * \left( u(\bar{s}) + \beta f(\bar{s})\right)]\}
 \end{equation}
 It can be shown that \ref{eq:policyiter-dynopt1} is the fixed ``point'' of our operator $T$.
 A result of contraction mappings is that there exists a unique solution to \ref{eq:policyiter-blackwell}.
@@ -132,40 +141,40 @@ A result of contraction mappings is that there exists a unique solution to \ref{
 
 \begin{equation}
 \label{eq:policyiter-val-iteration}
-V_{k+1}(s_i) = [T(V_k)](s_i) = \max_{a \in A_s} \{\Sigma[p(a) *\left( u(a) + \beta V_k(a)\right)]\}
+V_{k+1}(s_i) = [T(V_k)](s_i) = \max_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}}p(\bar{s}) *\left( u(\bar{s}) + \beta V_k(\bar{s})\right)]\}
 \end{equation}
 
 where an initial guess for $V_0(s)$ is used.
 As $k \to \infty$, it is guaranteed that $(V_k(s)) \to V^*(s)$.
 Because of the contraction mapping, if $V_{k+1}(s) = V_k(s) \, \, \forall \, s$, we have found the true value function, $V^*(s)$.
-Using this information, we define the value iteration algorithm to find $V^*$:
+% Using this information, we define the value iteration algorithm to find $V^*$:
 
-\begin{algorithm}[H]
-\begin{algorithmic}[1]
-\Procedure{Value Iteration Function}{$P, S, A, \beta, \varepsilon$, maxiter}
-    \State $V_0 \gets [V_0(s_0),V_0(s_1),\ldots,V_0(s_N)] $
-     \Comment{Common choice is $V_0(s_i)=u(s_i)$}
-    \For{$i=1,2,\dots,$\ \li{maxiter}}
-        \Comment Iterate only \li{maxiter} times at most.
-        \For{$s \in S$}
-             \State $V_{k+1}(s) = \max_{a \in A_s}\{\Sigma[p(a)*(u(a) + \beta*V_k(a))]\}$
-        \EndFor
-        \If{ $||V_{k+1} - V_k|| < \varepsilon$}
-            \State \texttt{break}
-             \Comment{Stop iterating if the approximation stops changing enough.}
-        \EndIf
-    \EndFor
-    \State \pseudoli{return} $V_k$
-\EndProcedure
-\end{algorithmic}
-\caption{Value Function Iteration}
-\label{alg:ValueIteration}
-\end{algorithm}
+% \begin{algorithm}[H]
+% \begin{algorithmic}[1]
+% \Procedure{Value Iteration Function}{$P, S, A, \beta, \varepsilon$, maxiter}
+%     \State $V_0 \gets [V_0(s_0),V_0(s_1),\ldots,V_0(s_N)] $
+%      \Comment{Common choice is $V_0(s_i)=u(s_i)$}
+%     \For{$i=1,2,\dots,$\ \li{maxiter}}
+%         \Comment Iterate only \li{maxiter} times at most.
+%         \For{$s \in S$}
+%              \State $V_{k+1}(s) = \max_{a \in A_s}\{\Sigmap(a)*(u(a) + \beta*V_k(a))]\}$
+%         \EndFor
+%         \If{ $||V_{k+1} - V_k|| < \varepsilon$}
+%             \State \texttt{break}
+%              \Comment{Stop iterating if the approximation stops changing enough.}
+%         \EndIf
+%     \EndFor
+%     \State \pseudoli{return} $V_k$
+% \EndProcedure
+% \end{algorithmic}
+% \caption{Value Function Iteration}
+% \label{alg:ValueIteration}
+% \end{algorithm}
 
-Let $V_0 = [0,0,0,0]$ and $\beta = 1$.
-We calculate $V_1(s)$ from the example above.
+As an example, let $V_0 = [0,0,0,0]$ and $\beta = 1$, where each entry of $V_0$ represents the maximum value at that state.
+We calculate $V_1(s)$ from the robot example above.
 \begin{align*}
-V_1(0) &= \max_{a \in A_0} \{\Sigma[p(a)*(u(a)+V_0(a))]\} \\
+V_1(0) &= \max_{a \in A_0} \{\Sigma_{\bar{s}\in N_{s,a}}p(\bar{s})*(u(\bar{s})+V_0(\bar{s}))\} \\
 &= \max \{p(1)*(u(1)+V_0(1)), p(2)*(u(2)+V_0(2)))\} \\
 &= \max \{1(-1+0), 1(0+0)\} \\
 &= \max \{-1,0\} \\
@@ -177,17 +186,17 @@ V_1(1) &= \max \{p(0)*(u(0)+V_0(0)), p(2)*(u(2)+V_0(2))\}\\
 
 Calculating $V_1(2)$ and $V_1(3)$ gives $V_1 = [0, 1, 1, 0]$.
 Repeating the process, $V_2 = [1, 1, 1, 0]$, which is the solution.
-It means that maximum reward the robot can achieve by starting on square $i$ is $V_2[i]$.
+It means that maximum reward the robot can achieve by starting on square $i$ is $V_2(i)$.
 
-Most iterative algorithms have a \li{maxiter} parameter that will terminate the algorithm after \li{maxiter} iterations regardless of whether or not it has converged.
-This is because even though we have guaranteed convergence, we might have a convergence rate that is too slow to be useful.
-However, generally this algorithm will converge much faster than computing the true value function using dynamic programming.
+% Most iterative algorithms have a \li{maxiter} parameter that will terminate the algorithm after \li{maxiter} iterations regardless of whether or not it has converged.
+% This is because even though we have guaranteed convergence, we might have a convergence rate that is too slow to be useful.
+% However, generally this algorithm will converge much faster than computing the true value function using dynamic programming.
 
 \begin{problem}
 \label{prob:policyiter-value1}
-Write a function called \li{value_iteration()} that will accept a dictionary $P$ representing the decision process, the number of states, the number of actions, a discount factor $\beta \in (0,1)$, defaulting to $1$,
-the tolerance amount $\epsilon$ defaulting to $1e^-8$, and the maximum number of iterations \li{maxiter} defaulting to $3000$.
-Perform value iteration until $\|V_{k+1} - V_{k}\| < \epsilon$ or $k > $ \li{max\_iter}.
+Write a function called \li{value_iteration()} that will accept a dictionary $P$ representing the decision process, the number of states, the number of actions, a discount factor $\beta \in (0,1)$,
+the tolerance amount $\epsilon$, and the maximum number of iterations \li{maxiter}.
+Perform value iteration until $\|V_{k+1} - V_{k}\| < \epsilon$ or $k > $ \li{maxiter}.
 Return the final vector representing $V^*$ and the number of iterations.
 Test your code on the example given above.
 \end{problem}
@@ -201,11 +210,11 @@ $\pi(s)$ is the action we should take while in state $s$ to maximize reward.
 We can modify the Bellman equation using $V^*(s)$ to find $\pi$:
 \begin{equation}
 \label{eq:policyiter-pol_func}
-\pi(s) = \argmax_{a \in A_s} \{\Sigma [p(a)*(u(a) + \beta*V^*(s))]\}
+\pi(s) = \argmax_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}} p(\bar{s})*(u(\bar{s}) + \beta*V^*(\bar{s}))]\}
 \end{equation}
 
 Using value iteration, we found $V^*  = [1, 1, 1, 0]$ in the example above.
-We find $\pi(0)$ by
+We find $\pi(0)$ by looking at actions $1$ and $2$ (since actions 0 and 3 have probability 0).
 \begin{align*}
 \pi(0) &=\argmax_{1,2} \{p(1)*(u(1) + V^*(1)), p(2)*(u(2)+V^*(2))\} \\
 &= \argmax \{1*(-1+1), 1*(0+1)\} \\
@@ -224,6 +233,10 @@ The robot should move to square $3$ if possible, avoiding $2$ because it has a n
 Since $3$ is terminal, it does not matter what $\pi(3)$ is.
 We set it to $0$ for convenience.
 
+\begin{info}
+Note that $\pi$ gives the optimal action $a$ to take at each state $s$.
+It does not give a sequence of actions to take in order to maximize the policy.
+\end{info}
 
 \begin{problem}
 \label{prob:policyiter-value2}
@@ -234,35 +247,37 @@ Test your code on the example with $\beta = 1$.
 
 \section*{Policy Iteration}
 For dynamic programming problems, it can be shown that value function iteration converges relative to the discount factor $\beta$.
-As $\beta$ approaches $1$, the number of iterations increases dramatically.
+As $\beta\rightarrow1$, the number of iterations increases dramatically.
 As mentioned earlier $\beta$ is usually close to $1$, which means this algorithm can converge slowly.
 In value iteration, we used an initial guess for the value function, $V_0$ and used (\ref{eq:policyiter-dynopt1}) to iterate towards the true value function.
-Once we achieved a good enough approximation for $V^*$, we recovered the true policy function $\pi$.
-Instead of iterating on our value function, we can instead make an initial guess for the policy function, $\pi_0$, and use this to iterate toward the true policy function, called policy iteration.
+Once we achieved a good enough approximation for $V^*$, we recovered the true policy function $\pi^*$.
+Instead of iterating on our value function, we can instead make an initial guess for the policy function, $\pi_0$, and use this to iterate toward the true policy function. 
 We do so by taking advantage of the definition of the value function, where we assume that our policy function yields the most optimal result.
+This is policy iteration.
 
 That is, given a specific policy function $\pi_k$, we can modify \eqref{eq:policyiter-dynopt1} by assuming that the policy function is the optimal choice.
 This process, called \emph{policy evaluation}, evaluates the value function for a given policy.
 
 \begin{equation}
 \label{eq:policyiter-val_from_policy}
-V_k(s) = \max_{a \in [A_s]} \{\Sigma([p(a)*(u(a) + \beta V^*(s))]\} = \max_{a \in [A_s]} \Sigma([p(\pi(s))*(u(\pi(s)) + \beta *V^*(\pi(s)))]\}
+V_{k+1}(s) = \max_{a \in [A_s]} \{\Sigma_{\bar{s}\in N_{s,a}}(p(\bar{s})*(u(\bar{s}) + \beta *V_{k}(\bar{s}))\} =  \Sigma_{\bar{s}\in N_{s,\pi(s)}}(p(\bar{s})*(u(\bar{s}) + \beta *V_{k}(\bar{s}))
 \end{equation}
 The last equality occurs because in state $s$, the robot should choose the action that maximizes reward, which is $\pi(s)$ by definition.
 
 
 \begin{problem}
 \label{prob:policyiter-value3}
-Write a function called \li{compute_policy_v()} that accepts a dictionary $P$ representing the decision process, the number of states, the number of actions, an array representing a policy, a discount factor $\beta \in (0,1)$ defaulting to $1$, and a tolerance amount $\epsilon$ defaulting to $1e^-8$,.
+Write a function called \li{compute_policy_v()} that accepts a dictionary $P$ representing the decision process, the number of states, the number of actions, an array representing a policy, a discount factor $\beta \in (0,1)$, and a tolerance amount $\epsilon$.
 Return the value function corresponding to the policy.
-Test your code on the policy vector generated from \li{extract_policy} for the example.
-The result should be the same value function array from \li{value_iteration}.
+
+Test your code on the policy vector generated from \li{extract_policy()} for the example.
+The result should be the same value function array from \li{value_iteration()}.
 \end{problem}
 
 Now that we have the value function for our policy, we can take the value function and find a better policy.
-Called policy improvement, this step is the same method used in value iteration to find the policy.
+Called \emph{policy improvement}, this step is the same method used in value iteration to find the policy.
 
-Thus, given an initial guess for our policy function, $\pi_0$, we calculate the corresponding value function using (\ref{eq:policyiter-val_from_policy}), and then use \eqref{eq:policyiter-pol_func} to improve our policy function.
+Given an initial guess for our policy function, $\pi_0$, we calculate the corresponding value function using (\ref{eq:policyiter-val_from_policy}), and then use \eqref{eq:policyiter-pol_func} to improve our policy function.
 The algorithm for policy function iteration can be summarized as follows:
 
 
@@ -271,16 +286,16 @@ The algorithm for policy function iteration can be summarized as follows:
 \Procedure{Policy Iteration Function}{$P, nS, nA, \beta, tol,$ maxiter}
     \State $\pi_0 \gets [\pi_0(w_0),\pi_0(w_1),\ldots,\pi_0(w_N)] $
      \Comment{Common choice is $\pi_0(w_i)=w_{i-1}$ with $\pi_0(0)=0$}
-    \For{$i=1,2,\dots,$\ \li{maxiter}}
+    \For{$k=1,2,\dots,$\ \li{maxiter}}
         \Comment Iterate only \li{maxiter} times at most.
         \For{$s \in S$}
         \Comment{Policy evaluation}
-            \State $V_{k}(s) = \max_{a \in A_s} \{\Sigma[p(\pi(s))*(u(\pi(s)) + \beta*V^*(\pi(s)))]\}$
+            \State $V_{k+1}(s) =\Sigma_{\bar{s}\in N_{s,\pi(s)}}(p(\bar{s})*(u(\bar{s}) + \beta *V_{k}(\bar{s}))$
             \Comment{compute\_policy\_v.}
         \EndFor
         \For{$s \in S$}
         \Comment{Policy improvement.}
-            \State $\pi_{k+1}(s) =\argmax_{a \in A_s} \{\Sigma[p(a)*(u(a) + \beta*V_k*(s))]\}$
+            \State $\pi_{k+1}(s) =\argmax_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}} p(\bar{s})*(u(\bar{s}) + \beta*V_{k+1}(\bar{s}))]\}$
             \Comment{extract\_policy.}
         \EndFor
         \If{ $||\pi_{k+1} - \pi_k|| < \varepsilon$}
@@ -288,7 +303,7 @@ The algorithm for policy function iteration can be summarized as follows:
              \Comment{Stop iterating if the policy doesn't change enough.}
         \EndIf
     \EndFor
-    \State \pseudoli{return} $V_k, \pi_{k+1}$
+    \State \pseudoli{return} $V_{k+1}, \pi_{k+1}$
 \EndProcedure
 \end{algorithmic}
 \caption{Policy Iteration}
@@ -297,7 +312,7 @@ The algorithm for policy function iteration can be summarized as follows:
 
 \begin{problem}
 \label{prob:policyiter-value4}
-Write a function called \li{policy_iteration()} that will accept a dictionary $P$ representing the decision process, the number of states, the number of actions, a discount factor $\beta \in (0,1)$, defaulting to $1$, the tolerance amount $\epsilon$ defaulting to $1e^-8$, and the maximum number of iterations \li{maxiter} defaulting to $3000$.
+Write a function called \li{policy_iteration()} that will accept a dictionary $P$ representing the decision process, the number of states, the number of actions, a discount factor $\beta \in (0,1)$, the tolerance amount $\epsilon$, and the maximum number of iterations \li{maxiter}.
 Perform policy iteration until $\|\pi_{k+1} - \pi_{k}\| < \epsilon$ or $k > $ \li{maxiter}.
 Return the final vector representing $V_k$, the optimal policy $\pi_k$, and the number of iterations.
 Test your code on the example given above and compare your answers to the results from \ref{prob:policyiter-value1} and \ref{prob:policyiter-value2}.
@@ -306,46 +321,84 @@ Test your code on the example given above and compare your answers to the result
 
 
 \section*{The Frozen Lake Problem}
-For the rest of the lab, we will be using the OpenAi Gym environments.
-It can be installed using conda or pip.
+For the rest of the lab, we will be using OpenAi Gym environments.
+They can be installed using conda or pip.
 \begin{lstlisting}[language=Bash]
 $ pip install gym[all]
 \end{lstlisting}
-
-% TODO: INSERT Figure
 
 In the Frozen Lake problem, you and your friends tossed a frisbee onto a mostly frozen lake.
 The lake is divided into an $N \times N$ grid where the top left hand corner is the start, the bottom right hand corner is the end, and the other squares are either frozen or holes.
 To retrieve the frisbee, you must successfully navigate around the melted ice without falling.
 The possible actions are left, right, up, and down.
 Since ice is slippery, you won't always move in the intended direction.
+Hence, this is a stochastic Markov process, i.e. $p(s_t,a_t,s_{t+1})<1$.
 If you fall, your reward is $0$.
 If you succeed, your reward is $1$.
 There are two scenarios: $N=4$ and $N=8$.
+
+\begin{figure}[H]
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\cellcolor{green!20}S & \cellcolor{blue!20} & \cellcolor{blue!20}\textcolor{blue!20}H & \cellcolor{blue!20} \\ \hline
+\cellcolor{blue!20} & \cellcolor{red!20}H & \cellcolor{blue!20} & \cellcolor{red!20}H \\ \hline
+\cellcolor{blue!20} & \cellcolor{blue!20} & \cellcolor{blue!20} & \cellcolor{red!20}H \\ \hline
+\cellcolor{red!20}H & \cellcolor{blue!20} & \cellcolor{blue!20} & \cellcolor{green!20}F \\ \hline
+\end{tabular}
+\end{center}
+\caption{Diagram of the 4x4 scenario. The green $S$ represents the starting point and the green $F$ represents the frisbee. Red squares marked $H$ are holes. Blue squares are pieces of the frozen lake.}
+\label{fig:frozen_lake_4x4}
+\end{figure}
+
+This problem can be found in two environments in OpenAi Gym.
 To run the $4\times 4$ scenario, use \li{env_name='FrozenLake-v0'}.
 For the $8\times 8$ scenario, use \li{env_name='FrozenLake8x8-v0'}.
 
 \subsection*{Using Gym}
 To use gym, we import it and create an environment based on the built-in gym environment.
 The FrozenLake environment has $3$ important attributes, $P$, $nS,$ and $nA$.
-$P$ is a dictionary where $P[s][a]=[(probability, nextstate, reward, is\_terminal)...]$.
-Notice that this is the same $P$ we used in the previous problems.
+$P$ is the same dictionary we used in the previous problems.
 $nS$ and $nA$ are the number of states and actions respectively.
-
-We can calculate the optimal policy using value iteration or policy iteration.
+We can calculate the optimal policy with value iteration or policy iteration using these attributes.
 Since the ice is slippery, this policy will not always result in a reward of $1$.
+
+\begin{lstlisting}
+import gym
+from gym import wrappers
+# Make environment for 4x4 scenario
+env_name  = 'FrozenLake-v0'
+env = gym.make(env_name).env
+# Find number of states and actions
+number_of_states = env.nS
+number_of_actions = env.nA
+\end{lstlisting}
+
+\begin{problem}
+\label{prob:policyiter-value5}
+Write a function that runs \li{value_iteration} and \li{policy_iteration} on FrozenLake.
+It should accept a boolean \li{basic_case} defaulting to \li{True} and an integer $n$ defaulting to $1000$ that indicates how many times to run the simulation.
+If \li{basic_case} is \li{True}, run the 4x4 scenario,
+If not, run the 8x8 scenario.
+Calculate the value function and policy for the environment using both value iteration and policy iteration.
+Return the policies generated by value iteration and the policy and value function generated by policy iteration.
+Set the mean total rewards to $0$ and return them as well.
+\end{problem}
+
 The gym environments have built-in functions that allow us to simulate each step of the environment.
 Before running a scenario in gym, always put it in the starting state by calling \li{env.reset()}.
 To simulate moving, call \li{env.step}.
 
 \begin{lstlisting}
-$ import gym
-$ from gym import wrappers
-$ env_name  = 'FrozenLake-v0'
-$ env = gym.make(env_name).env
-$ number_of_states = env.nS
-$ obs = env.reset()
-$ obs, reward, done, _ = env.step(int(policy[obs]))
+import gym
+from gym import wrappers
+# Make environment for 4x4 scenario
+env_name  = 'FrozenLake-v0'
+env = gym.make(env_name).env
+# Put environment in starting state
+obs = env.reset()
+# Take a step in the optimal direction and update variables
+obs, reward, done, _ = env.step(int(policy[obs]))
 \end{lstlisting}
 
 
@@ -354,28 +407,19 @@ The observation is an environment-specific object representing the observation o
 For FrozenLake, this is the current state.
 When we step, or take an action, we get a new observation, or state, as well as the reward for taking that action.
 If we fall into a hole or reach the frisbee, the simulation is over so we are done.
+When we are done, the boolean \li{done} is \li{True}.
 The info value is a dictionary of diagnostic information.
 It will not be used in this lab.
 
-
-\begin{problem}
-\label{prob:policyiter-value5}
-Write a function that runs \li{value_iteration} and \li{policy_iteration} on FrozenLake.
-It should accept a boolean \li{basic_case} defaulting to \li{True} that indicates whether to run the $4\times 4$ or $8\times 8$ scenario and an integer $n$ defaulting to $1000$ that indicates how many times to run the simulation.
-Calculate the value function and policy for the environment using both value iteration and policy iteration.
-Return the policies generated by value iteration and the policy and value function generated by policy iteration.
-Set the mean total rewards to $0$ and return them as well.
-\end{problem}
-
 \begin{problem}
 \label{prob:policyiter-value6}
-Write a function \li{run_simulation()} that takes in the environment \li{env}, a policy \li{policy}, a discount factor $\beta$ defaulting to $1$, and a boolean \li{render} defaulting to False.
+Write a function \li{run_simulation()} that takes in the environment \li{env}, a policy \li{policy}, a boolean \li{render}, and a discount factor $\beta$.
 Calculate the total reward for the policy for one simulation using \li{env.reset} and \li{env.step()}.
 Stop the simulation when $done$ is $True$.
 (Hint: When calculating reward, use $\beta^k$.)
 
-Modify \li{frozen_lake()} to run \li{run_simulation} for both the value iteration policy and the policy iteration policy $M$ times.
-Return the policy generated by value iteration, the mean total reward for the policy generated by value iteration, the policy generated by policy iteration, and the mean total reward for the policy generated by policy iteration.
+Modify \li{frozen_lake()} to call \li{run_simulation()} for both the value iteration policy and the policy iteration policy $M$ times.
+Return the policy generated by value iteration, the mean total reward for the policy generated by value iteration, the value function generated by policy iteration, the policy generated by policy iteration, and the mean total reward for the policy generated by policy iteration.
 \end{problem}
 
 
@@ -675,7 +719,7 @@ Return the policy generated by value iteration, the mean total reward for the po
 % which corresponds to an initial policy $\psi_0(W) = W$.
 % The policy function vector can be obtained from \li{psi_ind} by simply slicing \li{w} as follows:
 % \begin{lstlisting}
-% >>> psi = w[psi_ind]
+% >>> psi = wpsi_ind]
 % \end{lstlisting}
 %
 % In order to take advantage of the sparse matrices $I$ and $Q$, use the following imports from the SciPy \li{sparse} library.
@@ -697,7 +741,7 @@ Return the policy generated by value iteration, the mean total reward for the po
 % \end{lstlisting}
 % Rather than compute $(I-\beta Q)^{-1}$ directly, use Scipy's sparse solver
 % \begin{lstlisting}
-% V = linalg.spsolve(I-beta*Q, u(w-w[psi_ind]))
+% V = linalg.spsolve(I-beta*Q, u(w-wpsi_ind]))
 % \end{lstlisting}
 % where \li{u} is the square root function.
 %
@@ -757,10 +801,10 @@ Return the policy generated by value iteration, the mean total reward for the po
 % Secondly, rather than solving a linear system of equations to obtain the value function, you will loop
 % the equation
 % \begin{lstlisting}
-% >>> V = u(w - w[psi_ind]) + beta*V[psi_ind]
+% >>> V = u(w - wpsi_ind]) + beta*Vpsi_ind]
 % \end{lstlisting}
 % $m$ times in each iteration. Notice how this line of code corresponds with Equation \eqref{Val_Fun}, where
-% \li{w} represents $W$, \li{w[psi_ind]} represents $W'$, and \li{V[psi_ind]} represents $V(W')$.
+% \li{w} represents $W$, \li{wpsi_ind]} represents $W'$, and \li{Vpsi_ind]} represents $V(W')$.
 %
 % The remainder of the code should be unchanged.
 %\end{problem}
@@ -868,7 +912,7 @@ The answer is dependent on what kind of reward we get for touching the flags, th
 % Calculating the value for the next period depends on the employment status in the current period, so we address
 % this separately for each case.
 %
-% Let us first consider the case where the individual is unemployed ($s = U$). As is customary, let $s'$ denote the
+% Let us first consider the case where the individual is unemployed ($s = U$). As is customary, let $\bar{s}$ denote the
 % employment status of the worker in the next period.
 % In this unemployed state, the worker receives unemployment benefits equal to a fraction of her most recent wage,
 % i.e. $\alpha w$, where $\alpha \in (0, 1)$.
@@ -878,9 +922,9 @@ The answer is dependent on what kind of reward we get for touching the flags, th
 % \]
 %
 % The worker also receives one wage offer ($w'$) per period, and will obtain
-% this wage in the next period provided that she chooses to accept employment, i.e. provided $s' = E$.
+% this wage in the next period provided that she chooses to accept employment, i.e. provided $\bar{s} = E$.
 % The worker must decide whether to accept the current wage offer $w'$ or to remain unemployed in the next period,
-% i.e. she must decide on the value of $s'$. How
+% i.e. she must decide on the value of $\bar{s}$. How
 % does she make this choice? She must weigh the value of entering the next period as an employed worker with wage
 % $w'$ (given by $V^E(w')$) versus the value of entering the next period as an unemployed worker with
 % previous wage $w$ and unknown wage offer $w''$ (given by $V^U(w,w'')$). Because the worker cannot know
@@ -912,38 +956,38 @@ The answer is dependent on what kind of reward we get for touching the flags, th
 % u(w).
 % \]
 % In the next period, the worker will have most recent wage $w$, she will receive wage offer $w''$, and will
-% have employment status $s'$. As in the unemployed case, $w''$ is unknown and treated as a random variable.
-% Unlike the unemployed case, however, the worker's future employment status $s'$ is not under her control,
+% have employment status $\bar{s}$. As in the unemployed case, $w''$ is unknown and treated as a random variable.
+% Unlike the unemployed case, however, the worker's future employment status $\bar{s}$ is not under her control,
 % but rather is also a random variable. The reason for this is that the worker will remain employed
 % until she loses the job, a random event that occurs with some fixed probability in each time period.
-% Hence, we must calculate the expected value of the next period with respect to both $w''$ and $s'$.
+% Hence, we must calculate the expected value of the next period with respect to both $w''$ and $\bar{s}$.
 % We may write the entire value function for the employed case as
 % \begin{equation}\label{EqVe1}
-%    V^E(w) = u(w) + \beta \mathbb{E}_{w'',s'}V(w,w'',s').
+%    V^E(w) = u(w) + \beta \mathbb{E}_{w'',\bar{s}}V(w,w'',\bar{s}).
 % \end{equation}
 %
-% To calculate the expectation term, we need to know the joint probability distribution over $w''$ and $s'$.
+% To calculate the expectation term, we need to know the joint probability distribution over $w''$ and $\bar{s}$.
 % This can be characterized in the following way.
-% We assume that $s'$ and $w''$ are independent. Hence, we can split the joint expectation
+% We assume that $\bar{s}$ and $w''$ are independent. Hence, we can split the joint expectation
 % operator into the composition of the two individual expectation operators:
 % \[
-% \mathbb{E}_{w'',s'} = \mathbb{E}_{w''}\mathbb{E}_{s'}.
+% \mathbb{E}_{w'',\bar{s}} = \mathbb{E}_{w''}\mathbb{E}_{\bar{s}}.
 % \]
 % Let $\gamma$ represent the probability that an employed worker becomes unemployed in the next period,
 % so that $1-\gamma$ is the probability of remaining employed in the next period.
-% If the worker stays employed in the next period ($s' = E$), then next period's wage equals the current
+% If the worker stays employed in the next period ($\bar{s} = E$), then next period's wage equals the current
 % period's wage, and the term inside the expectation is
 % \[
 % V(w,w'',E) = V^E(w).
 % \]
 % We then have
 % \begin{align*}
-% \mathbb{E}_{s'}V(w,w'',s') &= (1-\gamma)V(w,w'',E) + \gamma V(w,w'',U)\\
+% \mathbb{E}_{\bar{s}}V(w,w'',\bar{s}) &= (1-\gamma)V(w,w'',E) + \gamma V(w,w'',U)\\
 % &= (1-\gamma)V^E(w) + \gamma V^U(w,w'').
 % \end{align*}
 % Notice that the term $(1-\gamma)V^E(w)$ is constant with respect to $w''$. Then
 % \begin{align*}
-% \mathbb{E}_{w''}\mathbb{E}_{s'}V(w,w'',s') &= \mathbb{E}_{w''}\left[(1-\gamma)V^E(w) + \gamma V^U(w,w'')\right]\\
+% \mathbb{E}_{w''}\mathbb{E}_{\bar{s}}V(w,w'',\bar{s}) &= \mathbb{E}_{w''}\left[(1-\gamma)V^E(w) + \gamma V^U(w,w'')\right]\\
 % &= \mathbb{E}_{w''}(1-\gamma)V^E(w) + \mathbb{E}_{w''}\gamma V^U(w,w'')\\
 % &= (1-\gamma)V^E(w) + \gamma \mathbb{E}_{w''}V^U(w,w'').
 % \end{align*}
@@ -953,12 +997,12 @@ The answer is dependent on what kind of reward we get for touching the flags, th
 % \end{equation}
 %
 % We have now completely described the value function. What about the policy function?
-% The policy function for the unemployed worker gives her decision on whether to accept the job $s'=E$
-% or to reject the job $s'= U$.
+% The policy function for the unemployed worker gives her decision on whether to accept the job $\bar{s}=E$
+% or to reject the job $\bar{s}= U$.
 % This will be a function of both the most recent wage $w$ and the current wage offer $w'$.
-% The employment status $s'$ in the next period is determined by the policy function $\psi$:
+% The employment status $\bar{s}$ in the next period is determined by the policy function $\psi$:
 % \[
-% s' = \psi(w,w').
+% \bar{s} = \psi(w,w').
 % \]
 %
 % These discrete choice problems are often called threshold
@@ -966,15 +1010,15 @@ The answer is dependent on what kind of reward we get for touching the flags, th
 % some threshold level. That is, an unemployed worker will accept a job if and only if the offer wage is
 % above some set amount that depends on the most recent wage $w$. In the labor search model,
 % the threshold level is called the ``reservation wage'' $w_R'$. The reservation wage $w_R'$ is defined as
-% the wage offer such that the worker is indifferent between accepting the job $s' = E$ and
-% staying unemployed $s' = U$. Hence, this reservation wage satisfies the equation
+% the wage offer such that the worker is indifferent between accepting the job $\bar{s} = E$ and
+% staying unemployed $\bar{s} = U$. Hence, this reservation wage satisfies the equation
 % \begin{equation}\label{EqWR}
 %    V^E(w_R') = E_{w''}\left[V^U(w,w'')\right].
 % \end{equation}
 % The policy function will then take the form of accepting the job if $w' \geq w_R'$ or
 % rejecting the job offer and remaining unemployed if $w' < w_R'$:
 % \begin{equation}\label{EqSprime}
-%    s' = \psi(w,w') = \begin{cases}
+%    \bar{s} = \psi(w,w') = \begin{cases}
 %                       E \quad\text{if}\quad w' \geq w_R' \\
 %                       U \quad\text{if}\quad w' < w_R'.
 %                    \end{cases}
@@ -1163,8 +1207,8 @@ The answer is dependent on what kind of reward we get for touching the flags, th
 %    wage $w$ with the current wage on the $x$-axis and the reservation wage $w_R'$ on the $y$-axis. This is
 %    the most common way to plot discrete choice policy functions. The reservation wage represents the wage
 %    that makes the unemployed worker indifferent between taking a job offer and rejecting it. So any wage
-%    above the reservation wage line represents $s' = E$ and any wage below the reservation wage line represents
-%    $s' = U$. Your plot should resemble that in Figure \ref{fig:res_wage}.
+%    above the reservation wage line represents $\bar{s} = E$ and any wage below the reservation wage line represents
+%    $\bar{s} = U$. Your plot should resemble that in Figure \ref{fig:res_wage}.
 %
 % \end{enumerate}
 % \end{problem}

@@ -3,7 +3,7 @@
 \objective{Many real-world systems---the internet, transportation grids, social media, and so on---can be represented as graphs (networks).
 The PageRank algorithm is one way of ranking the nodes in a graph by importance.
 Though it is a relatively simple algorithm, the idea gave birth to the Google search engine in 1998 and has shaped much of the information age since then.
-In this lab, we implement the PageRank algorithm with a few different approaches, then use it to rank the nodes of a few different networks.
+In this lab we implement the PageRank algorithm with a few different approaches, then use it to rank the nodes of a few different networks.
 % The results may be of interest to fans of NCAA March Madness brackets.
 }
 
@@ -142,28 +142,29 @@ Then $p_i(t+1)$ can be computed by counting the number of links pointing to page
 
 As an example, consider the graph in Figure \ref{fig:pagerank-nosinks}.
 To get to page a at time $t + 1$, the user had to be on page b at time $t$.
-Since there are three links from page b to other pages, assuming links are chosen with equal likelihood,
+Since there are four outgoing links from page b, assuming links are chosen with equal likelihood,
 \begin{align*}
-p_\text{a}(t+1) = \frac{1}{3}p_\text{b}(t).
+p_\text{a}(t+1) = \frac{1}{4}p_\text{b}(t).
 \end{align*}
-Similarly, to get to page b at time $t+1$, the user had to have been on page a or c at time $t$.
-Since a has $3$ outgoing edges and c has $2$ outgoing edges,
+Similarly, to get to page b at time $t+1$, the user had to have been on page a, b, or c at time $t$.
+Since a has $3$ outgoing edges, b has $4$ outgoing edges, and c has $2$ outgoing edges,
 \begin{align*}
 p_\text{b}(t+1)
 = \frac{1}{3}p_\text{a}(t)
++ \frac{1}{4}p_\text{b}(t)
 + \frac{1}{2}p_\text{c}(t).
 \end{align*}
 The previous equations can be written in a way that hints at a more general linear form:
 \begin{align*}
 p_\text{a}(t+1)
     &= 0p_\text{a}(t)
-    + \frac{1}{3}p_\text{b}(t)
+    + \frac{1}{4}p_\text{b}(t)
     + 0p_\text{c}(t)
     + 0p_\text{d}(t),
 \\
 p_\text{b}(t+1)
     &= \frac{1}{3}p_\text{a}(t)
-    + 0p_\text{b}(t)
+    + \frac{1}{4}p_\text{b}(t)
     + \frac{1}{2}p_\text{c}(t)
     + 0p_\text{d}(t).
 \end{align*}
@@ -329,7 +330,9 @@ Each line of the file is formatted as \li{a/b/c/d/e/f...}, meaning the webpage w
 Write a function that accepts a damping factor $\epsilon$ defaulting to 0.85.
 Read the data and get a list of the $n$ unique page IDs in the file (the labels).
 Construct the $n\times n$ adjacency matrix of the graph where node $j$ points to node $i$ if webpage $j$ has a hyperlink to webpage $i$.
-Use your class from Problem \ref{prob:pagerank-init} and its \li{itersolve()} method from Problem \ref{prob:pagerank-computation} to compute the PageRank values of the webpages, then rank them with your function from Problem \ref{prob:pagerank-ranking}.
+Use your class from Problem \ref{prob:pagerank-init} and its \li{itersolve()} method from Problem \ref{prob:pagerank-computation} to compute the PageRank values of the webpages, then rank them with your function from Problem \ref{prob:pagerank-ranking}. 
+In the case where two webpages have the same rank, resolve ties by listing the webpage with the larger ID number first. 
+(Hint: Sorting the list of unique webpage IDs before ranking will order the site IDs from smallest to largest.) 
 Return the ranked list of webpage IDs.
 \\(Hint: after constructing the list of webpage IDs, make a dictionary that maps a webpage ID to its index in the list.
 For Figure \ref{fig:pagerank-basic}, this would be \li{\{'a': 0, 'b': 1, 'c': 2, 'd': 3\}}.

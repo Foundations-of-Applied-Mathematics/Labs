@@ -4,6 +4,25 @@ There is no universal format for such labels, and indexing by time is often diff
 Fortunately, pandas has tools for cleaning and analyzing time series.
 In this lab, we use pandas to clean and manipulate time-stamped data and introduce some basic tools for time series analysis.}
 
+\begin{info}
+This lab will be done using Colab Notebooks.
+These notebooks are similar to Jupyter Notebooks but run remotely on Google's servers.
+Open a Google Colab notebook by going to your Google Drive account and creating a new Colaboratory file.
+If making a Colaboratory file is not an option, download the application Colaboratory onto your Google Drive.
+Once opening a new Colab Notebook, upload the file \li{pandas4.ipynb}.
+To make the data files accessible, run the following at the top of the lab:
+\begin{lstlisting}
+>>> from google.colab import files
+
+>>> uploaded = files.upload()
+\end{lstlisting}
+This will prompt you upload files for this notebook.
+For this lab, upload \li{DJIA.csv}, \li{paychecks.csv}, \li{finances.csv}, and \li{website_traffic.csv}.
+
+Once the lab is complete, delete BOTH lines of code used for uploading files (the import statement and the upload statement) and download as a \li{.py} file to your git repository.
+Push the newly made \li{pandas4.py} file.
+\end{info}
+
 % Time series data is any form of data that comes attached to a timestamp (i.e. Sept 28, 2016 20:32:24) or a period of time (i.e. Q3 2012). Some examples of time series data include:
 
 \section*{Working with Dates and Times} % =====================================
@@ -97,8 +116,7 @@ Any materials referencing the \li{TimeSeries} can be corrected by replacing the 
 \begin{problem} % Load, clean, and plot Dow Jones IA data.
 The file \texttt{DJIA.csv} contains daily closing values of the Dow Jones Industrial Average from 2006--2016.
 Read the data into a \li{Series} or \li{DataFrame} with a \li{DatetimeIndex} as the index.
-Drop rows with missing values, cast the \li{"VALUES"} column to floats, then plot the data.
-\\(Hint: Use \li{lw=.5} to make the line thin enough for the data.)
+Drop rows with missing values, cast the \li{"VALUE"} column to floats, then return the updated DataFrame.
 \label{prob:timeseries-dowjones}
 \end{problem}
 
@@ -182,8 +200,7 @@ The file \texttt{paychecks.csv} contains values of an hourly employee's last 93 
 Paychecks are given on the first and third Fridays of each month, and the employee started working on March 13, 2008.
 
 Read in the data, using \li{pd.date\_range()} to generate the \li{DatetimeIndex}.
-Plot the data.
-\\(Hint: use the \li{union()} method of \li{DatetimeIndex} class.)
+Set this as the new index of the \li{DataFrame} and return the \li{DataFrame}.
 \end{problem}
 
 \section*{Periods} % ==========================================================
@@ -275,8 +292,9 @@ PeriodIndex(['2010Q1', '2010Q2', '2010Q3', '2010Q4'],
 \begin{problem} %
 The file \texttt{finances.csv} contains a list of simulated quarterly earnings and expense totals from a fictional company.
 Load the data into a \li{Series} or \li{DataFrame} with a \li{PeriodIndex} with a quarterly frequency.
+Let \li{how=end}.
 Assume the fiscal year starts at the beginning of September and that the data begins in September 1978.
-Plot the data.
+Return the \li{DataFrame}.
 \end{problem}
 
 \section*{Operations on Time Series}
@@ -386,8 +404,10 @@ Freq: A-DEC, dtype: float64
 \begin{problem} % Downsample
 The file \texttt{website\_traffic.csv} contains records for different visits to a fictitious website.
 Read in the data, calculate the duration of each visit in seconds and convert the index to a \li{DatetimeIndex}.
-Use downsampling to calculate the average visit duration by minute, and the average visit duration by hour.
-Plot both results on the same graph.
+Use downsampling to calculate the number of visits each minute and the number of visits each hour.
+Return these DataFrames.
+
+(Hint: \li{minute.agg(func)} returns a DataFrame).
 \end{problem}
 
 \section*{Elementary Time Series Analysis} % ==================================
@@ -451,10 +471,10 @@ Compute the following information about the DJIA dataset from Problem \ref{prob:
 \begin{itemize}
     \item The single day with the largest gain.
     \item The single day with the largest loss.
-    \item The month with the largest gain.
-    \item The month with the largest loss.
 \end{itemize}
-For the monthly statistics, define the gain (or loss) to be the difference between the DJIA on the last and first days of the month.
+Return the index of the day with the largest gain and the day with the largest loss.
+
+(Hint: Call \li{prob1()} to get the DataFrame already cleaned and with DatetimeIndex).
 \end{problem}
 
 \subsection*{Rolling Functions and Exponentially-Weighted Moving Functions}
@@ -523,7 +543,7 @@ Notice the syntax for EWM functions is very similar to that of rolling functions
 \end{figure}
 
 \begin{lstlisting}
-ax2 = plt.subplot(121)
+ax2 = plt.subplot(122)
 s.plot(color="gray", lw=.3, ax=ax2)
 s.ewm(span=200).mean().plot(color='g', lw=1, ax=ax2)
 ax2.legend(["Actual", "EWMA"], loc="lower right")
@@ -536,8 +556,14 @@ Plot the following from the DJIA dataset with a window or span of 30, 120, and 3
     \item The original data points.
     \item Rolling average.
     \item Exponential average.
-    \item Minimum rolling values.
-    \item Maximum rolling values.
 \end{itemize}
-Describe how varying the length of the window changes the approximation to the data.
+Your plots should look like Figure \ref{fig:prob6}.
+Return a list of the minimum rolling average value for each window size and a list of the minimum exponential average value for each span size.
+\label{prob:rolling}
 \end{problem}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figures/prob6.pdf}
+\caption{Plots for Problem \ref{prob:rolling}.}
+\label{fig:prob6}
+\end{figure}

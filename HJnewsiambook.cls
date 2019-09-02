@@ -1331,7 +1331,9 @@
                 \thispagestyle{plain}\begin{multicols}{2}\parindent0pt%
 \parskip6pt plus2pt minus1pt%
 \widowpenalty10000\clubpenalty10000}
-               {\end{multicols}\clearpage}
+               {\end{multicols}   
+               This project is funded in part by the National Science Foundation, grant no. TUES Phase II DUE-1323785.            
+               \clearpage}
 
 \setlength{\parskip}{1\parskip}
 

@@ -3,6 +3,25 @@
 To facilitate quick data visualization, pandas includes several tools that wrap around matplotlib.
 These tools make it easy to compare different parts of a data set, explore the data as a whole, and spot patterns and correlations the data.}
 
+\begin{info}
+This lab will be done using Colab Notebooks.
+These notebooks are similar to Jupyter Notebooks but run remotely on Google's servers.
+Open a Google Colab notebook by going to your Google Drive account and creating a new Colaboratory file.
+If making a Colaboratory file is not an option, download the application Colaboratory onto your Google Drive.
+Once opening a new Colab Notebook, upload the file \li{pandas2.ipynb}.
+To make the data files accessible, run the following at the top of the lab:
+\begin{lstlisting}
+>>> from google.colab import files
+
+>>> uploaded = files.upload()
+\end{lstlisting}
+This will prompt you upload files for this notebook.
+For this lab, upload \li{crime_data.csv} and \li{college.csv}.
+
+Once the lab is complete, delete BOTH lines of code used for uploading files (the import statement and the upload statement) and download as a \li{.py} file to your git repository.
+Push the newly made \li{pandas2.py} file.
+\end{info}
+
 \section*{Overview of Plotting Tools} % =======================================
 
 The main tool for visualization in pandas is the \li{plot()} method for \li{Series} and \li{DataFrames}.
@@ -41,22 +60,22 @@ By default, the \li{index} of the \li{Series} or \li{DataFrame} is used for the 
 >>> import pandas as pd
 >>> from matplotlib import pyplot as plt
 
->>> crime = pd.read_csv("crime_data.csv", index_col="Year")
->>> crime.plot(y="Population")  # Plot population against the index (years).
+>>> budget = pd.read_csv("new_budget.csv", index_col="Year")
+>>> budget.plot(y="Rent")  # Plot rent against the index (date).
 \end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=.7\textwidth]{figures/population.pdf}
+\includegraphics[width=.7\textwidth]{figures/rent.pdf}
 \end{figure}
 
 In this case, the call to the \li{plot()} method is essentially equivalent to the following code.
 
 \begin{lstlisting}
->>> plt.plot(crime.index, crime["Population"], label="Population")
->>> plt.xlabel(crime.index.name)
->>> plt.xlim(min(crime.index), max(crime.index))
->>> plt.legend(loc="best")
+>>> plt.plot(budget.index, budget['Rent'], label='Rent')
+>>> plt.xlabel(budget.index.name)
+>>> plt.xlim(min(budget.index), max(budget.index))
+>>> plt.legend(loc='best')
 \end{lstlisting}
 
 The \li{plot()} method also takes in many keyword arguments for matplotlib plotting and annotation functions.
@@ -67,47 +86,44 @@ For more customizations, see \url{https://pandas.pydata.org/pandas-docs/stable/g
 
 A good way to start analyzing an unfamiliar data set is to visualize as much of the data as possible to determine which parts are most important or interesting.
 For example, since the columns in a \li{DataFrame} share the same index, the columns can all be graphed together using the index as the $x$-axis.
-The \li{plot()} method attempts by default to plot \textbf{every} \li{Series} (column) in a \li{DataFrame}.
-The \li{plot()} method attempts by default to plot \textbf{every} \li{Series} in a \li{DataFrame}.
-
-This is especially useful with sequential data, like the crime data set.
+By default, the \li{plot()} method attempts to plot \textbf{every} \li{Series} (column) in a \li{DataFrame}.
+This is especially useful with sequential data, like the budget data set.
 
 \begin{lstlisting}
-# Plot all columns together against the index.
->>> crime.plot(linewidth=1)
+>>> # Plot all columns together against the index.
+>>> budget.plot(linewidth=1)
 
-# Plot all columns together except for 'Population' and 'Total'.
->>> crime.drop(["Population", "Total"], axis=1).plot(linewidth=1)
+>>> # Plot all columns together except for 'Living Expenses' and 'Rent'.
+>>> budget.drop(["Living Expenses", "Rent"], axis=1).plot(linewidth=1)
 \end{lstlisting}
 
 \begin{figure}[H] % Plot everything together.
 \captionsetup[subfigure]{justification=centering}
 \centering
 \begin{subfigure}{.49\textwidth}
-    \includegraphics[width=\textwidth]{figures/all_crime.pdf}
-    \caption{All columns of the crime data set on the same figure, using the index as the $x$-axis.}
-    \label{fig:crime-all}
+    \includegraphics[width=\textwidth]{figures/all_budget.pdf}
+    \caption{All columns of the budget data set on the same figure, using the index as the $x$-axis.}
+    \label{fig:budget-all}
 \end{subfigure}
 %
 \begin{subfigure}{.49\textwidth}
-    \includegraphics[width=\textwidth]{figures/all_crime2.pdf}
-    \caption{All columns of the crime data set except \li{"Population"} and \li{"Total"}.}
-    \label{fig:crime-all-v2}
+    \includegraphics[width=\textwidth]{figures/all_budget2.pdf}
+    \caption{All columns of the budget data set except \li{"Living Expenses"} and \li{"Rent"}.}
+    \label{fig:budget-all-v2}
 \end{subfigure}
 \caption{}
 \end{figure}
 
 While plotting every \li{Series} at once can give an overview of all the data, the resulting plot is often difficult for the reader to understand.
-For example, the crime data set has 11 columns, so the resulting figure, Figure \ref{fig:crime-all}, is fairly cluttered.
+For example, the budget data set has 9 columns, so the resulting figure, Figure \ref{fig:budget-all}, is fairly cluttered.
 
 One way to declutter a visualization is to examine less data.
-Notice that the \li{Population} column has values much bigger than the other columns.
-This is because the \li{"Population"} column is on a completely different scale than the others.
-Dropping this column, as well as \li{'Total'}, gives a better overview of the data, shown in Figure \ref{fig:crime-all-v2}.
+Notice that \li{'Living Expenses'} has values much bigger than the other columns.
+Dropping this column, as well as \li{'Rent'}, gives a better overview of the data, shown in Figure \ref{fig:budget-all-v2}.
 
 \begin{warn}
-The \li{"Population"} column radically differs from the other columns because it is has \textbf{different units of measure}: population is measured by ``number of people,'' but all other columns are measured in ``number of crimes.''
-Be careful not to plot parts of a data set together if those parts don't have the same units or are otherwise incomparable.
+Often plotting all data at once is unwise because columns have \textbf{different units of measure}.
+Be careful not to plot parts of a data set together if those parts do not have the same units or are otherwise incomparable.
 \end{warn}
 
 Another way to declutter a plot is to use subplots.
@@ -116,13 +132,13 @@ Subplots automatically share the same $x$-axis.
 Set \li{sharey=True} to force them to share the same $y$-axis as well.
 
 \begin{lstlisting}
->>> crime.plot(y=["Property", "Larceny", "Burglary", "Violent"],
-...            subplots=True, layout=(2,2), sharey=True,
-...            style=['-', '--', '-.', ':'])
+>>> budget.plot(y=['Dining Out','Gas','Out With Friends', 'Netflix'],
+...                 subplots=True, layout=(2,2), sharey=True,
+...                 style=['-','--','-.',':'])
 \end{lstlisting}
 
 \begin{figure}[H]
-    \includegraphics[width=.7\textwidth]{figures/line_subplots.pdf}
+    \includegraphics[width=.8\textwidth]{figures/line_subplots.pdf}
 \end{figure}
 
 As mentioned previously, the \li{plot()} method can be used to plot different kinds of plots.
@@ -130,13 +146,13 @@ One possible kind of plot is a histogram.
 Since plots made by the \li{plot()} method share an $x$-axis by default, histograms turn out poorly whenever there are columns with very different data ranges or when more than one column is plotted at once.
 
 \begin{lstlisting}
-# Plot three histograms together.
->>> crime.plot(kind="hist", y=["Violent", "Vehicle Theft", "Burglary"],
-...            bins=20, alpha=.7, rot=30)
+>>> # Plot three histograms together.
+>>> budget.plot(kind='hist',y=['Gas','Dining Out','Out With Friends'],
+...		   	     alpha=.7,bins=10)
 
-# Plot three histograms, stacking one on top of the other.
->>> crime.plot(kind="hist", y=["Violent", "Vehicle Theft", "Burglary"],
-...            bins=20, stacked=True, rot=30)
+>>> # Plot three histograms, stacking one on top of the other.
+>>> budget.plot(kind='hist',y=['Gas','Dining Out','Out With Friends'],
+...		    	    bins=10,stacked=True)
 \end{lstlisting}
 
 \begin{figure}[H] % Try to compare histograms.
@@ -158,49 +174,39 @@ Choose a number of bins that accurately represents the data; the wrong number of
 
 
 \begin{lstlisting}
->>> crime[["Violent","Murder","Robbery","Property"]].hist(grid=False, bins=20)
+>>> budget[["Dining Out","Gas","Other","Out With Friends"]].hist(grid=False, bins=10)
 \end{lstlisting}
 
 \begin{figure}[H]
     \includegraphics[width=.7\textwidth]{figures/hist_subplots.pdf}
-\end{figure}
-
-Another useful visualization to begin to understand a data set is a scatter matrix. 
-The function \li{pd.plotting.scatter_matrix()} produces a table of plots where each column is plotted against each other column in separate scatter plots.
-The plots on the diagonal, instead of plotting a column against itself, displays a histogram of that column.
-This provides a very quick method for an initial analysis of the correlation between different columns.
-
-\begin{lstlisting}
->>> pd.plotting.scatter_matrix(crime[["Population", "Total", "Violent"]])
-\end{lstlisting}
-
-\begin{figure}[H]
-    \includegraphics[width=.7\textwidth]{figures/scatter_table.pdf}
+   \caption{Histograms of \li{"Dining Out"}, \li{"Gas"}, \li{"Other"}, and \li"{Out With Friends"}.}
 \end{figure}
 
 % Problem 1
 \begin{problem}
-Create 3 visualizations for the data in \li{final_accidents2.pickle} and \linebreak \li{final_drivers.pickle}. 
-Make one of the visualizations a histogram and one visualization a scatter matrix.
+Create 2 visualizations for the data in \li{crime_data.csv}. 
+Make one of the visualizations a histogram.
 The visualizations should be well labeled and easy to understand.
-Include a short description of your plots.
+Include a short description of your plots as a caption.
+\label{prob:hist}
 \end{problem}
 
 \section*{Patterns and Correlations} % ========================================
 
 After visualizing the entire data set initially, a good next step is to closely compare related parts of the data.
 This can be done with different types of visualizations.
-For example, Figure \ref{fig:crime-all-v2} suggests that the \li{"Murder"} and \li{"Forcible Rape"} columns are roughly on the same scale.
+For example, Figure \ref{fig:budget-all-v2} suggests that the \li{"Dining Out"} and \li{"Out With Friends"} columns are roughly on the same scale.
 Since this data is sequential (indexed by time), start by plotting these two columns against the index.
 Next, create a scatter plot of one of the columns versus the other to investigate correlations that are independent of the index.
-Unlike other types of plots, using \li{kind="scatter"} requires both an \li{x} and a \li{y} column as arguments.
+Unlike other types of plots, using \li{kind="scatter"} requires both \li{x} and \li{y} columns as arguments.
 
 \begin{lstlisting}
-# Plot 'Murder' and 'Forcible Rape' as lines against the index.
->>> crime.plot(y=["Murder", "Forcible Rape"])
+>>> # Plot 'Dining Out' and 'Out With Friends' as lines against the index.
+>>> budget.plot(y=["Dining Out", "Out With Friends"])
 
-# Make a scatter plot of 'Murder' against 'Forcible Rape', ignoring the index.
->>> crime.plot(kind="scatter", x="Murder", y="Forcible Rape", alpha=.8, rot=30)
+>>> # Make a scatter plot of 'Dining Out' against 'Out With Friends'
+>>> budget.plot(kind="scatter", x="Dining Out", y="Out With Friends", 
+...                 alpha=.8)
 \end{lstlisting}
 
 \begin{figure}[H] % Plot murder against rape.
@@ -213,42 +219,56 @@ Unlike other types of plots, using \li{kind="scatter"} requires both an \li{x} a
 \begin{subfigure}{.49\textwidth}
     \includegraphics[width=\textwidth]{figures/scatter_compare.pdf}
 \end{subfigure}
+\caption{Correlations between \li{"Dining Out"} and \li{"Out With Friends"}.}
 \end{figure}
 
-The first plot shows us that rape is more common than murder.
-It also indicates that rates of rape steadily increased from the mid 1960's to the mid 1990's before leveling out, while murder rates stay relatively constant.
-The disparity between rape and murder is confirmed in the scatter plot: the clump of data points at about 15,000 murders and 90,000 rapes shows that there have been many years where rape was relatively high while murder was somewhat low.
+The first plot shows us that more money is spent on dining out than being out with friends overall.
+However, both categories stay in the same range for most of the data.
+This is confirmed in the scatter plot by the block in the upper right corner, indicating the common range spent on dining out and being out with friends.
 
 \begin{warn}
-While analyzing data, especially while searching for patterns and correlations, \textbf{always} ask yourself if the data makes sense and is trustworthy.
+When analyzing data, especially while searching for patterns and correlations, \textbf{always} ask yourself if the data makes sense and is trustworthy.
 What lurking variables could have influenced the data measurements as they were being gathered?
 
-The crime data set is somewhat suspect in this regard.
+The crime data set from Problem \ref{prob:hist} is somewhat suspect in this regard.
 The murder rate is likely accurate, since murder is conspicuous and highly reported, but what about the rape rate?
 Are the number of rapes increasing, or is the percentage of rapes being reported increasing? 
 It's probably both!
 Be careful about drawing conclusions for sensitive or questionable data.
 \end{warn}
 
+Another useful visualization used to understand correlations in a data set is a scatter matrix. 
+The function \li{pd.plotting.scatter_matrix()} produces a table of plots where each column is plotted against each other column in separate scatter plots.
+The plots on the diagonal, instead of plotting a column against itself, displays a histogram of that column.
+This provides a very quick method for an initial analysis of the correlation between different columns.
+
+\begin{lstlisting}
+>>> pd.plotting.scatter_matrix(budget[['Living Expenses','Other']])
+\end{lstlisting}
+
+\begin{figure}[H]
+    \includegraphics[width=.7\textwidth]{figures/scatter_table.pdf}
+    \caption{Scatter matrix comparing \li{"Living Expenses"} and \li{"Other"}.}
+\end{figure}
+
+
 \subsection*{Bar Graphs}
 
 Different types of graphs help to identify different patterns.
-Note that Figure \ref{fig:crime-all-v2} reveals some general patterns relative to time.
-For instance, there seems to be a small bump in each type of crime in the early 1980's.
-Slicing the entries from 1980 to 1985 provides a closer look.
-Since there are only a few entries, we can treat the data as categorical and make a bar chart.
+Note that the data set \li{budget} gives monthly expenses.
+It may be beneficial to look at one specific month.
+Bar graphs are a good way to compare small portions of the data set.
 
 As a general rule, horizontal bar charts (\li{kind="hbar"}) are better than the default vertical bar charts (\li{kind="bar"}) because most humans can detect horizontal differences more easily than vertical differences.
 If the labels are too long to fit on a normal figure, use \li{plt.tight_layout()} to adjust the plot boundaries to fit the labels in.
 
 \begin{lstlisting}
-# Plot 'Property' and 'Larceny' rates from 1980 to 1985.
->>> crime.loc[1980:1985, ["Property", "Larceny", "Burglary"]].plot(kind="barh",
-...                     title="Crime rates from 1980 to 1985")
+>>> # Plot all data for the last month in the budget
+>>> budget.iloc[-1,:].plot(kind='barh')
+>>> plt.tight_layout()
 
-# Plot the most recent year's crime rates for comparison.
->>> crime.iloc[-1][["Property", "Larceny", "Burglary"]].plot(kind="barh",
-...                     title="Crime rates in 2016", color=["C0", "C1", "C2"])
+>>> # Plot all data for the last month without 'Rent' and 'Living Expenses'
+>>> budget.drop(['Rent','Living Expenses'],axis=1).iloc[-1,:].plot(kind='barh')
 >>> plt.tight_layout()
 \end{lstlisting}
 
@@ -256,24 +276,26 @@ If the labels are too long to fit on a normal figure, use \li{plt.tight_layout()
 \captionsetup[subfigure]{justification=centering}
 \centering
 \begin{subfigure}{.49\textwidth}
-    \includegraphics[width=\textwidth]{figures/bar_multi.pdf}
+    \includegraphics[width=\textwidth]{figures/all_expenses.pdf}
 \end{subfigure}
 %
 \begin{subfigure}{.49\textwidth}
-    \includegraphics[width=\textwidth]{figures/bar_single.pdf}
+    \includegraphics[width=\textwidth]{figures/some_expenses.pdf}
 \end{subfigure}
+\caption{Bar graphs showing expenses paid in the last month of \li{budget}.}
 \end{figure}
 
 % Problem 2
 \begin{problem}
-Using the accident data from the previous problem, identify if a trend exists between \li{FATALS} and the following variables:
+Using the crime data from the previous problem, identify if a trend exists between \li{Forcible Rape} and the following variables:
 \begin{enumerate}
-\item \li{WEATHER}
-\item \li{DRINKING}
-\item \li{SP}
+\item \li{Violent}
+\item \li{Burglary}
+\item \li{Aggravated Assault}
 \end{enumerate}
 
-Support each claim with a clear, labeled visualization and a short description of how the visualization supports your claim.
+Make sure each graph is clearly labelled and readable.
+Include a caption explaining whether there is a visual trend between the variables.
 \end{problem}
 
 \section*{Distributional Visualizations} % ====================================
@@ -284,23 +306,25 @@ Box plots are useful for comparing the distributions of relatable data.
 However, box plots are a basic summary, meaning that they are susceptible to  miss important information such as how many points were in each distribution.
 
 \begin{lstlisting}
-# Compare the distributions of three columns.
->>> crime.plot(kind="box", y=["Violent", "Vehicle Theft", "Burglary"])
+>>> # Compare the distributions of four columns.
+>>> budget.plot(kind="box", y=["Gas","Dining Out","Out With Friends","Other"])
 
-# Compare the distributions of all columns but 'Population' and 'Total'.
->>> crime.drop(["Population", "Total"], axis=1).plot(kind="box", vert=False)
+>>> # Compare the distributions of all columns but 'Rent' and 'Living Expenses'.
+>>> budget.drop(["Rent", "Living Expenses"], axis=1).plot(kind="box", 
+>>>												        	vert=False)
 \end{lstlisting}
 
 \begin{figure}[H] % Use box plots to compare distributions.
 \captionsetup[subfigure]{justification=centering}
 \centering
 \begin{subfigure}{.49\textwidth}
-    \includegraphics[width=\textwidth]{figures/box_small.pdf}
+    \includegraphics[width=\textwidth]{figures/box1.pdf}
 \end{subfigure}
 %
 \begin{subfigure}{.49\textwidth}
-    \includegraphics[width=\textwidth]{figures/box_large.pdf}
+    \includegraphics[width=\textwidth]{figures/box2.pdf}
 \end{subfigure}
+\caption{Vertical and horizontal box plots of \li{budget} dataset.}
 \end{figure}
 
 % TODO: KDE plot?
@@ -387,14 +411,14 @@ A hexbin plot of the same data, Figure \ref{fig:pandas-act-hexbin}, reveals the 
     \caption{Frequency of ACT vs. SAT Quant scores.}
     \label{fig:pandas-act-hexbin}
 \end{subfigure}
-\caption{}
+\caption{Scatter plots and hexbin plot of SAT and ACT scores.}
 \end{figure}
 
 Just as choosing a good number of \li{bins} is important for a good histogram, choosing a good \li{gridsize} is crucial for an informative hexbin plot.
 A large \li{gridsize} creates many small bins and a small \li{gridsize} creates fewer, larger bins.
 
 \begin{info}
-Since Hexbins are based on frequencies, they are prone to being misleading fi the dataset is not understood well. For example, when plotting information that deals with geographic position, increases in frequency may be results in higher populations rather than the actual information being plotted.
+Since hexbins are based on frequencies, they are prone to being misleading if the dataset is not understood well. For example, when plotting information that deals with geographic position, increases in frequency may be results in higher populations rather than the actual information being plotted.
 
 \end{info}
 
@@ -402,11 +426,10 @@ See \url{http://pandas.pydata.org/pandas-docs/stable/visualization.html} for mor
 
 % Problem 3
 \begin{problem}
-Using distributional visualizations, display a distributional visualization, and provide a brief description and analysis on the following distributions:
+Use \li{crime_data.csv} to display the following distributions.
 \begin{enumerate}
-\item The distribution of accidents across the United States
-\item The distribution of age in all accidents
-\item The distribution of fatalities by the hour which the accident occurs
+        \item The distributions of \li{Burglary}, \li{Violent}, and \li{Vehicle Theft} across all crimes,
+        \item The distributions of \li{Vehicle Theft}s over the values of \li{Robbery}.
 \end{enumerate}
 
 As usual, all plots should be labeled and easy to read.
@@ -448,8 +471,11 @@ This figure comes from the \li{Icecream} dataset within the \li{pydataset} packa
 \end{lstlisting}
 
 This code produces the rather substandard plot in Figure \ref{fig:nolabels}.
-However, the method \li{data()} from the \li{pydataset} module has a boolean parameter \li{show_doc}, which displays information about the data being accessed..
-Using \li{data('Icecream', show\_doc=True)} we find the following information:
+Examining the source of the dataset can give important details to create better plots.
+When plotting data, make sure to understand what the variable names represent and where the data was taken from.
+Use this information to create a more effective plot.
+
+The ice cream data used in Figure \ref{fig:nolabels} is better understood with the following information:
 \begin{enumerate}
     \item The dataset details ice cream consumption via four-weekly observations from March 1951 to July 1953 in the United States.
     \item \li{cons} corresponds to ``consumption of ice cream per head'' and is measured in pints.
@@ -500,6 +526,15 @@ Every data visualizer has the responsibility to avoid including biases in their 
 \end{warn}
 % Problem 4
 \begin{problem}
+The dataset \li{college.csv} contains information from 1995 on universities in the United States.
+To access information on variable names, go to \url{https://cran.r-project.org/web/packages/ISLR/ISLR.pdf}.
+Create 3 plots that compare variables or universities.
+These plots should answer questions about the data, e.g. what is the distribution of graduation rates or do schools with more PhD students also take more students from the Top 10 percent of their high school class.
+These plots should be easy to understand, have clear variable names, and citations.
+\end{problem}
+
+\begin{comment}
+\begin{problem}
 The \li{pydataset} module contains numerous data sets, each stored as a pandas \li{DataFrame}.
 Read data on road accident deaths in the United States using the data set \li{road} in the \li{pydataset} module.
 Using this data, answer the following questions:
@@ -530,3 +565,4 @@ Make sure that each plot is well labeled and contains citations.
 
 (Hint: Use plt.axis('scaled') or plt.axis('square') to make sure x- and y-axis are the same.)
 \end{problem}
+\end{comment}

@@ -2,7 +2,7 @@
 \objective{Sequential decision making problems are a class of problems in which the current choice depends on future choices.
 They are a subset of Markov decision processes, an important class of problems with applications in business, robotics, and economics.
 Dynamic programming is a method of solving these problems that optimizes the solution by breaking the problem down into steps and optimizing the decision at each time period.
-In this lab, we use dynamic programming to solve two classic dynamic optimization problems.}
+In this lab we use dynamic programming to solve two classic dynamic optimization problems.}
 
 \section*{The Marriage Problem} % =============================================
 
@@ -18,20 +18,25 @@ The goal is to find the policy that maximizes the probability of choosing the be
 That policy may not always choose the best candidate, but it should get an almost-best candidate most of the time.
 
 Let $V(t-1)$ be the probability that we choose the best partner when we have passed over the first $t-1$ candidates with an optimal policy.
+In other words, we have dated $t-1$ people and want to know the probability that the $t^{th}$ person is the one we should marry.
+Note that the probability that the $t^{th}$ person is not the best candidate is $\frac{t-1}{t}$ and the probability that they are is $\frac{1}{t}$.
+If the $t^{th}$ person is not the best out of the first $t$, then probability they are the best overall is 0 and the probability they are not is $V(t)$.
+If the $t^{th}$ person is the best out of the first $t$, then the probability they are the best overall is $\frac{t}{N}$ and the probability they are not is $V(t)$.
+
 By Bellman's optimality equations,
 \begin{equation}
 \label{eq:dynamicopt-do7}
-V(t-1) = \frac{t-1}{t}V(t)+\frac{1}{t}\max\left\{ \frac{t}{N},V(t)\right\} = \max\left\{\frac{t-1}{t}V(t)+\frac{1}{N},V(t)\right\}.
+V(t-1) = \frac{t-1}{t}\max\left\{0,V(t)\right\}+\frac{1}{t}\max\left\{ \frac{t}{N},V(t)\right\} = \max\left\{\frac{t-1}{t}V(t)+\frac{1}{N},V(t)\right\}.
 \end{equation}
 
-That is, $V(t-1)$ is split into two possibilities.
-When candidate $t$ is not the best so far, we use the left-hand side of the last equation, $\frac{t-1}{t}V(t)+\frac{1}{N}$.
-Unless this is the last candidate, we don't want to choose them because we've seen someone better.
-When candidate $t$ is the best so far, we use the right-hand side, $V(t)$.
-We can either choose this candidate, in which case they turn out to be the best match with probability $\frac{t}{N}$, or move on.
+%That is, $V(t-1)$ is split into two possibilities.
+%When candidate $t$ is not the best so far, we use the left-hand side of the last equation, $\frac{t-1}{t}V(t)+\frac{1}{N}$.
+%Unless this is the last candidate, we don't want to choose them because we've seen someone better.
+%When candidate $t$ is the best so far, we use the right-hand side, $V(t)$.
+%We can either choose this candidate, in which case they turn out to be the best match with probability $\frac{t}{N}$, or move on.
 Notice that \eqref{eq:dynamicopt-do7} implies that $V(t-1)\geq V(t)$ for all $t\leq N$.
 Hence, the probability of selecting the best match $V(t)$ is non-increasing.
-Conversely, the probability that if candidate $t$ is the best so far, then they are also the best overall, $\frac{t}{N}$, is strictly increasing.
+Conversely, $P($t$ \text{ is best overall}|\text{$t$ is best out of the first $t$})=\frac{t}{N}$ is strictly increasing.
 Therefore, there is some $t_0$, called the \emph{optimal stopping point}, such that $V(t)\leq\frac{t}{N}$ for all $t\geq t_0$.
 After $t_0$ relationships, we choose the next partner who is better than all of the previous ones.
 We can write \eqref{eq:dynamicopt-do7} as
@@ -43,25 +48,27 @@ V(t-1) =
     \end{cases}
 \]
 
-The goal of an optimal stopping problem is to find $t_0$, which we can do by backwards induction on the second piece of $V(t-1)$.
+The goal of an optimal stopping problem is to find $t_0$, which we can do by backwards induction.
 We start at the final candidate, who always has probability $0$ of being the best overall if they are not the best so far, and work our way backwards, computing the expected value $V(t)$, for $t=N,N-1,\ldots,1$.
-Notice that the first candidate is always the best so far, so the probability that they are the best overall is just $1$ divided by the number of candidates, $V(1) = \frac{1}{N}$.
+%Notice that the first candidate is always the best so far, so the probability that they are the best overall is just $1$ divided by the number of candidates, $V(1) = \frac{1}{N}$.
 
 If $N=4$, we have
 \begin{align*}
 V(4) &= 0, \\
-V(3) &= \frac{3}{4}V(4)+\frac{1}{4} = .25,\\
-V(2) &= \frac{2}{3}V(3)+\frac{1}{4} = .4166,\\
-V(1) &= \frac{1}{4}\textcolor{white}{V(3)+\frac{1}{4}} = .25.
+V(3) &= \max\left\{\frac{3}{4}V(4)+\frac{1}{4},0\right\} = .25,\\
+V(2) &= \max\left\{\frac{2}{3}V(3)+\frac{1}{4},.25\right\} = .4166,\\
+V(1) &= \max\left\{\frac{1}{4},.4166\right\}= .4166.
 \end{align*}
-In this case, the maximum expected value is $.4166$ and the stopping point is $2$.
-Sometimes it is also useful to look at the optimal stopping percentage of people to date before stopping, which in this case is $2/4=.5$.
+In this case, the maximum expected value is $.4166$ and the stopping point is $t=2$.
+It is also useful to look at the optimal stopping percentage of people to date before getting married. 
+In this case, it is $2/4=.5$.
 
 \begin{problem}
 Write a function that accepts a number of candidates $N$.
-Calculate the expected values of choosing candidate $t$ when they are not the best candidate so far for $t=0,1,\ldots,N-1$.
-Return the highest expected value $V(t_0)$ and its index $t_0$.
-\\(Hint: Since Python starts indices at $0$, in code the first candidate is $t=0$.)
+Calculate the expected values of choosing candidate $t$ for $t=0,1,\ldots,N-1$.
+
+Return the highest expected value $V(t_0)$ and the optimal stopping point $t_0$.
+\\(Hint: Since Python starts indices at $0$, the first candidate is $t=0$.)
 
 Check your answer for $N=4$ with the example detailed above.
 \label{prob:dynamicopt-stopping-time}
@@ -69,11 +76,10 @@ Check your answer for $N=4$ with the example detailed above.
 
 \begin{problem}
 Write a function that takes in an integer $M$ and runs your function from Problem \ref{prob:dynamicopt-stopping-time} for each $N=3,4,\ldots,M$.
-Graph the percentage of candidates ($t_0/N$) to interview and the maximum probability $V(t_0)$ against $N$.
-Return the optimal stopping percentage for $N$.
+Graph the optimal stopping percentage of candidates ($t_0/N$) to interview and the maximum probability $V(t_0)$ against $N$.
+Return the optimal stopping percentage for $M$.
 
-Run your function with $M=1000$.
-What values do $V(t_0)$ and $t_0$ converge to as $N\rightarrow\infty$?
+The optimal stopping percentage for $M=1000$ is $.367$.
 \end{problem}
 
 Both the stopping time and the probability of choosing the best person converge to $\frac{1}{e} \approx .36788$.
@@ -89,7 +95,7 @@ Some people may prefer to eat all of their cake at once and not save any for lat
 Others may prefer to eat a little bit at a time.
 If we are to consume a cake of size $W$ over $T+1$ time periods, then our consumption at each step is represented as a vector
 \[
-\begin{bmatrix}c_0 & c_1 & \cdots & c_T\end{bmatrix}\trp,
+\mathbf{c}=\begin{bmatrix}c_0 & c_1 & \cdots & c_T\end{bmatrix}\trp,
 \]
 where
 \[
@@ -97,8 +103,8 @@ where
 \]
 This vector is called a \emph{policy vector} and describes how much cake is eaten at each time period.
 The enjoyment of eating a slice of cake is represented by a utility function.
-For some amount of consumption $c_0 \in [0, W]$, the utility gained is given by
-$u(c_0)$.
+For some amount of consumption $c_i \in [0, W]$, the utility gained is given by
+$u(c_i)$.
 
 For this lab, we assume the utility function satisfies $u(0) = 0$, that $W = 1$, and that $W$ is cut into $N$ equally-sized pieces so that each $c_i$ must be of the form $\frac{i}{N}$ for some integer $0\leq i \leq N$.
 
@@ -153,7 +159,7 @@ Policy 3 eats the same amount of cake at each step, while policy 4 begins by eat
 The cake eating problem is an optimization problem where we maximize utility.
 
 \begin{align}\label{eq:dynamicopt-do6}
-\max_{c_t}  &\sum_{t=0}^T \beta^t u(c_t) \\
+\max_{\mathbf{c}}  &\sum_{t=0}^T \beta^t u(c_t) \\
 \mbox{subject to } &\sum_{t=0}^T c_t = W \nonumber\\
 &c_t \geq 0.\nonumber
 \end{align}
@@ -162,12 +168,12 @@ One way to solve it is with the value function.
 The value function $V(a,b,W)$ gives the utility gained from following an optimal policy from time $a$ to time $b$.
 
 \begin{align*}
-V(a,b,W) = \max_{c_t} & \sum_{t=a}^b \beta^tu(c_t) \\
+V(a,b,W) = \max_{\mathbf{c}} & \sum_{t=a}^b \beta^tu(c_t) \\
 \mbox{subject to } & \sum_{t=a}^b c_t = W \\
 & c_t \geq 0.
 \end{align*}
 $V(0,T,W)$ gives how much utility we gain in $T$ days and is the same as Equation \ref{eq:dynamicopt-do6}.
-$V(a, b, \frac{W}{2})$ gives how much utility we will gain by proceeding optimally from $t=a$ if half of a cake of size $W$ was eaten before time $t=a$.
+%$V(a, b, \frac{W}{2})$ gives how much utility we will gain by proceeding optimally from $t=a$ if half of a cake of size $W$ was eaten before time $t=a$.
 
 Let $W_t$ represent the total amount of cake left at time $t$.
 Observe that $W_{t+1} \leq W_t$ for all $t$, because our problem does not allow for the creation of more cake.
@@ -186,7 +192,7 @@ The consumption matrix will help solve the value function by calculating all pos
 At each time $t$, $W_t$ can only have $N+1$ values, which will be represented as $w_i = \frac{i}{N}$, which is $i$ pieces of cake remaining.
 For example, if $N=4$, then $w=[0, .25, .5, .75, 1]\trp$, and $w_3 = 0.75$ represents having three pieces of cake left.
 In this case, we get the following consumption matrix.
-Notice that $C_{20} = u(w_2-w_0) = u(.5-0)$ and $C_{52} = u(w_5-w_2) = u(1-.25) = u(.75)$.
+%Notice that $C_{20} = u(w_2-w_0) = u(.5-0)$ and $C_{52} = u(w_5-w_2) = u(1-.25) = u(.75)$.
 
 \[
 \begin{bmatrix}
@@ -200,8 +206,9 @@ u(1) & u(0.75) & u(0.5) & u(0.25) & 0 \\
 
 \begin{problem}
 
-Write a function that accepts the number of equal sized pieces that divides the cake $N$ and a utility function $u(x)$.
-Assume $W=1$, and create a partition vector whose entries correspond to possible amounts of cake.
+Write a function that accepts the number of equal sized pieces $N$ that divides the cake and a utility function $u(x)$.
+Assume $W=1$. 
+Create a partition vector $\mathbf{w}$ whose entries correspond to possible amounts of cake.
 Return the consumption matrix.
 
 \end{problem}
@@ -209,6 +216,9 @@ Return the consumption matrix.
 
 \subsection*{Solving the Optimization Problem}
 
+Initially we do not know how much cake to eat at $t = 0$: should we eat one piece of cake ($w_1$), or perhaps all of the cake ($w_N$)?
+It may not be obvious which option is best and that option may change depending on the discount factor $\beta$.
+Instead of asking how much cake to eat at some time $t$, we ask how valuable $w_i$ cake is at time $t$.
 As mentioned above, $V(t, T-1, W_{t+1})$ in \ref{eq:dynamicopt-do1} is a new value function problem with $a = t, b = T-1$, and $W = W_{t+1}$, making \ref{eq:dynamicopt-do1} a recursion formula.
 By using the optimal value of the value function in the future, $V(t, T-1, W_{t+1})$, we can determine the optimal value for the present, $V(t, T, W_{t})$.
 $V(t, T, W_{t})$ can be solved by trying each possible $W_{t+1}$ and choosing the one that gives the highest utility.
@@ -216,12 +226,8 @@ $V(t, T, W_{t})$ can be solved by trying each possible $W_{t+1}$ and choosing th
 
 The $(N+1) \times (T+1)$ matrix $A$ that solves the value function is called the \emph{value function matrix}.
 $A_{ij}$ is the value of having $w_i$ cake at time $j$.
-$A_{0j}$ = 0 because there is never any value in having $w_0$ cake, $u(w_0) = u(0) = 0$.
+$A_{0j}$ = 0 because there is never any value in having $w_0$ cake, i.e. $u(w_0) = u(0) = 0$.
 
-Initially we do not know how much cake to eat at $t = 0$: should we eat one piece of cake ($w_1$), or perhaps all of the cake ($w_N$)?
-It may not be obvious which option is best and that option may change depending on the discount factor $\beta$.
-
-Instead of asking how much cake to eat at some time $t$, we ask how valuable $w_i$ cake is at time $t$.
 We start at the last time period.
 Since there is no value in having any cake left over when time runs out, the decision at time $T$ is obvious: eat the rest of the cake.
 The amount of utility gained from having $w_i$ cake at time $T$ is given by $u(w_i)$.
@@ -255,15 +261,15 @@ For example, the following matrix results with $T=3$, $N=4$, and $\beta=0.9$.
 
 
 \begin{problem}
-Write a function that accepts a stopping time $T$, a number of equal sized pieces that divides the cake $N$, a discount factor $\beta$, and a utility function $u(x)$.
-Return the value function matrix for $t=T$ (the matrix should have zeros everywhere except the last column).
-Return a matrix of zeros for the policy matrix.
+Write a function that accepts a stopping time $T$, a number of equal sized pieces $N$ that divides the cake, a discount factor $\beta$, and a utility function $u(x)$.
+Return the value function matrix $A$ for $t=T$ (the matrix should have zeros everywhere except the last column).
+Return a matrix of zeros for the policy matrix $P$.
 \label{prob:dynamicopt-eat-cake}
 \end{problem}
 
 Next, we use the fact that $A_{jT} = V(0,0,w_j)$ to evaluate the $T-1$ column of the value function matrix, $A_{i(T-1)}$, by modifying  (\ref{eq:dynamicopt-do2}) as follows,
 \begin{equation}\label{eq:dynamicopt-do3}
-A_{i(T-1)}( = V(0, 1, w_{i}) = \max_{w_j}\left(u(w_{i} - w_{j}) + \beta V(0,0,w_{j})\right) = \max_{w_j}\left(u(w_{i} - w_{j}) + \beta A_{jT})\right).
+A_{i(T-1)} = V(0, 1, w_{i}) = \max_{w_j}\left(u(w_{i} - w_{j}) + \beta V(0,0,w_{j})\right) = \max_{w_j}\left(u(w_{i} - w_{j}) + \beta A_{jT})\right).
 \end{equation}
 
 Remember that there is a limited set of possibilities for $w_j$, and we only need to consider options such that $w_j \leq w_i$.
@@ -276,7 +282,7 @@ CV^{T-1}_{ij} = u(w_i - w_j) + \beta A_{jT}.
 
 The largest entry in the $i$th row of $CV^{T-1}$ is the optimal value that the value function can attain at $T-1$, given that we start with $w_i$ cake.
 The maximal values of each row of $CV^{T-1}$ become the column of the value function matrix, $A$, at time $T-1$.
-We then compute $CV^{T-2}$ using $A_{j(T-1)}$ and iterate backwards to fill in the rest of $A$.
+%We then compute $CV^{T-2}$ using $A_{j(T-1)}$ and iterate backwards to fill in the rest of $A$.
 
 \begin{warn}
 The notation $CV^t$ does not mean raising the matrix to the $t$th power; rather, it indicates what time period we are in.
@@ -317,6 +323,7 @@ A_{it} = \max_{j} \left(CV_{ij}^t \right).
 \end{equation}
 
 The full value function matrix corresponding to the example is below.
+The maximum value in the value function matrix is the maximum possible utility to be gained.
 
 \begin{figure}[H]
 \[
@@ -342,6 +349,7 @@ Starting from the next to last column, iterate backwards by
 \item finding the largest value in each row of the current value matrix, and
 \item filling in the corresponding column of $A$ with these values.
 \end{itemize}
+(Hint: Use \li{axis} arguments.)
 \end{problem}
 
 \subsection*{Solving for the Optimal Policy} % --------------------------------
@@ -349,7 +357,7 @@ Starting from the next to last column, iterate backwards by
 With the value function matrix constructed, the optimization problem is solved in some sense.
 The value function matrix contains the maximum possible utility to be gained.
 However, it is not immediately apparent what policy should be followed by only inspecting the value function matrix $A$.
-The $(N+1) \times (T+1)$ policy matrix, P, is used to find the optimal policy.
+The $(N+1) \times (T+1)$ policy matrix, $P$, is used to find the optimal policy.
 %The calculation of $A$ involves the policy - we just didn't keep track of it. %Sounds too casual.
 The $(ij)$th entry of the policy matrix indicates how much cake to eat at time $j$ if we have $i$ pieces of cake.
 Like $A$ and $CV$, $i$ and $j$ begin at $0$.
@@ -387,9 +395,9 @@ text centered,minimum height=.5em,text width=.7cm]
 \end{center}
 
 To calculate $P_{12}$, we look at the second row ($i=1$) in $CV^2$.
-The maximum, $.5$, occurs at $CV_{10}^2$, so $j=0$ and $P_{12} = w_1-w_0 = .25-0$.
+The maximum, $.5$, occurs at $CV_{10}^2$, so $j=0$ and $P_{12} = w_1-w_0 = .25-0=.25$.
 Similarly, $P_{42} = w_4-w_2 = 1-.5 = .5$.
-Observe that the $j$th index corresponds to the red ovals.
+%Observe that the $j$th index corresponds to the red ovals.
 Continuing in this manner,
 \begin{center}
 \begin{tikzpicture}
@@ -401,24 +409,39 @@ text centered,minimum height=.5em,text width=.5cm]
 \matrix[matrix of math nodes,left delimiter={\lbrack},right delimiter={\rbrack}]{
     0    & 0    & 0    & 0    & \\
     0.25 & 0.25 & 0.25 & \node[ell] (4) {0.25}; & \\
-    0.25 & 0.25 & \node[ell] (3) {0.25}; & \node[ell,draw=blue] (6) {0.5};  & \\
+    0.25 & 0.25 & \node[ell] (3) {0.25}; &0.5;  & \\
     0.25 & \node[ell] (2) {0.25}; & 0.5  & 0.75 & \\
-    \node[ell] (1) {0.25}; & 0.5  & \node[ell,draw=blue] (5) {0.5};  & 1.   & \\
+    \node[ell] (1) {0.25}; & 0.5  & 0.5;  & 1.   & \\
 };
 %Arrows
 \foreach \s/\t in {1/2,2/3,3/4}
 {\draw[->,>=stealth',red](\s)--(\t);}
-\draw[->,>=stealth',blue](5)--(6);
 \end{tikzpicture}
 \end{center}
 
-The optimal policy is found by starting at the $(ij)$th entry where $i$ is the number of slices of cake available at the $j$th time interval.
-At each time intervals, eat as much cake as the $(ij)$th entry indicates, as traced out by the red arrows.
-So when $N=4$ and $j=0$, we eat $A_{40}=.25$ cake.
-Then at the next time interval, $j=1$, $N=3$ so we eat $A_{31}=.25$ of the cake.
-The blue arrows trace out the policy that would occur if we only had $2$ time intervals instead of $4$.
-In this case, we need to start at $j=2$ so that the last time interval $T=3$ corresponds to the second time interval, when $j=3$.
-What would be the optimal policy if we had $3$ time intervals?
+Given that the rows of $P$ are the slices of cake available and the columns are the time intervals, we find the policy by starting in the bottom left corner, $P_{N0}$, where there are $N$ slices of cake available and $t=0$.
+This entries tells us what percentage of the $N$ slices of cake we should eat.
+In the example, this entry is $.25$, telling us we should eat 1 slice of cake at $t=0$.
+Thus, when $t=1$ we have $N-1$ slices of cake available, since we ate $1$ slice of cake.
+We look at the entry at $P_{(N-1)1}$, which has value $.25$. 
+So we eat 1 slice of cake at $t=1$.
+We continue this pattern to find the optimal policy $\mathbf{c}=\begin{bmatrix}.25&.25&.25&.25\end{bmatrix}$.
+
+\begin{warn}
+The optimal policy will not always be a straight diagonal in the example above.
+For example, if the bottom left corner had value $.5$, then we should eat 2 pieces of cake instead of 1.
+Then the next entry we should evaluate would be $P_{(N-2)1}$ in order to determine the optimal policy.
+\end{warn}
+% The optimal policy is found by starting at the $(ij)$th entry where $i$ is the number of slices of cake available at the $j$th time interval.
+% At each time intervals, eat as much cake as the $(ij)$th entry indicates, as traced out by the red arrows.
+% So when $N=4$ and $j=0$, we eat $A_{40}=.25$ cake.
+% Then at the next time interval, $j=1$, $N=3$ so we eat $A_{31}=.25$ of the cake.
+% The blue arrows trace out the policy that would occur if we only had $2$ time intervals instead of $4$.
+% In this case, we need to start at $j=2$ so that the last time interval $T=3$ corresponds to the second time interval, when $j=3$.
+% What would be the optimal policy if we had $3$ time intervals?
+
+ To verify the optimal policy found with $P$, we can use the value function matrix $A$.
+By expanding the entires of $A$, we can see that the optimal policy does give the maximum value.
 
 
 \begin{center}
@@ -435,12 +458,11 @@ What would be the optimal policy if we had $3$ time intervals?
 %Matrix name and colored lines
 \node at (-6,0) {$A=$};
 \draw[red,very thick] (-5,-1.025) -- (-.9,-1.025);
-\draw[blue,very thick] (2.6,-1.025) -- (4.1,-1.025);
 \end{tikzpicture}
 \end{center}
 
-The non-simplified version of Figure \ref{fig:2nd_val_func_matrix}. Notice that the value of $A_{ij}$ is equal to following optimal path if you start at $P_{ij}$.
-$A_{40}$ has the same values traced by the red arrows in $P$ above and $A_{42}$ has the same values traced by the blue arrows.
+%The non-simplified version of Figure \ref{fig:2nd_val_func_matrix}. Notice that the value of $A_{ij}$ is equal to following optimal path if you start at $P_{ij}$.
+%$A_{40}$ has the same values traced by the red arrows in $P$ above and $A_{42}$ has the same values traced by the blue arrows.
 
 \begin{problem}
 Modify your function from Problem \ref{prob:dynamicopt-eat-cake} to determine the policy matrix.
@@ -449,8 +471,7 @@ Initialize the matrix as zeros and fill it in starting from the last column at t
 \end{problem}
 
 \begin{problem}
-The $(ij)$th entry of the policy matrix tells us how much cake to eat at time $j$ if we start with $i$ pieces.
-Use this information to write a function \li{find_policy()} that will find the optimal policy for the stopping time $T$, a cake of size 1 split into $N$ pieces, a discount factor $\beta$, and the utility function $u$.
+Write a function \li{find_policy()} that will find the optimal policy for the stopping time $T$, a cake of size 1 split into $N$ pieces, a discount factor $\beta$, and the utility function $u$.
 
 %Replacing problem 1: graph_policy
 %Use \li{graph\_policy()} to plot the optimal policy.

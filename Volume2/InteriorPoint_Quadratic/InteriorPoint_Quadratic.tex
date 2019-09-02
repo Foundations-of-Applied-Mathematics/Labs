@@ -3,7 +3,7 @@
 
 \lab{Interior Point 2: Quadratic Programs}{Interior Point 2: Quadratic Programs}
 \objective{Interior point methods originated as an alternative to the Simplex method for solving linear optimization problems. However, they can also be adapted to treat convex optimization problems in general.
-In this lab, we implement a primal-dual Interior Point method for convex quadratic constrained optimization and explore applications in elastic membrane theory and finance.}
+In this lab we implement a primal-dual Interior Point method for convex quadratic constrained optimization and explore applications in elastic membrane theory and finance.}
 
 % Todo: change \geq in the constraints to the component-wise geq in the book.
 
@@ -28,7 +28,7 @@ Thus, we have the problem
 \text{minimize }\qquad \frac{1}{2}&\x\trp Q\x + \c\trp \x\\
 \text{subject to }\qquad &A\x \succeq \b\\
 \end{align*}
-where $Q$ is an $n\times n$ positive semidefinite matrix, $\x, \c \in \mathbb{R}^n$, $A$ is an $m \times n$ matrix,
+where $Q\in\mathbb{R}^{n\times n}$ is a positive semidefinite matrix, $A\in\mathbb{R}^{m\times n}$, $\x, \c \in \mathbb{R}^n$,
 and $\b \in \mathbb{R}^m$.
 
 %We begin by deriving the KKT conditions for this problem.
@@ -37,7 +37,7 @@ The Lagrangian function for this problem is:
 \mathcal{L}(\x,\Mu) = \frac{1}{2}\x\trp Q\x + \c\trp \x - \Mu\trp (A\x -\b),
 \label{eq:lagrangian}
 \end{align}
-where $\Mu \in \mathbb{R}^m$ is the (as of yet unknown) Lagrange multiplier.
+where $\Mu \in \mathbb{R}^m$ is the Lagrange multiplier.
 
 \begin{comment} % Derivation overkill vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 We next take the gradient of the Lagrangian with respect to $x$ and set it equal to zero:
@@ -59,18 +59,21 @@ Ax - b &\geq 0,\\
 % What we have now is a mixture of equations and inequalities.
 % We want to express these conditions as a system of equations, so
 We also introduce a nonnegative slack vector $\y\in\mathbb{R}^m$ to change the inequality
-\[A\x - \b \succeq \0\] into the equality
+$A\x - \b \succeq \0$ into the equality $A\x - \b - \y = \0$.
+
+\begin{comment}
 \begin{align}
 A\x - \b - \y = \0 &&\Longrightarrow &&\y = A\x - \b
 \label{eq:equality}
 \end{align}
+\end{comment}
 
-Equations \ref{eq:lagrangian} and \ref{eq:equality}, together with complementary slackness, gives us our complete set of KKT conditions:
+Then the complete set of KKT conditions are:
 % we make this substitution into the complementary slackness conditions.
 % We obtain the following statement of the KKT conditions:
 \begin{align*}
 Q\x - A\trp \Mu + \c &= \0,\\
-A\x - \y - \b &= \0,\\
+A\x - \b - \y &= \0,\\
 y_i\mu_i &= 0, \qquad i=1,2,\ldots,m,\\
 \y,\Mu &\succeq \0.
 \end{align*}
@@ -108,7 +111,7 @@ and the duality measure $\nu$ for this problem is \[\nu = \frac{\y\trp \Mu}{m}.\
 
 \subsection*{Search Direction}
 
-We calculate the search direction for this algorithm the same way that we did in the linear programming case.
+We calculate the search direction for this algorithm in the spirit of Newton's Method; this is the same way that we did in the linear programming case.
 That is, we solve the system:
 \begin{align}
 DF(\x,\y,\Mu)
@@ -120,13 +123,14 @@ DF(\x,\y,\Mu)
 where $\sigma\in [0,1)$ is the centering parameter.
 
 \begin{problem}
-Copy your \li{interiorPoint()} function from the previous lab into your solutions file for this lab, renaming it \li{qInteriorPoint()}.
-This new function should accept the arrays $Q, \c, A,$ and $\b$, a tuple of arrays \li{guess} giving initial estimates for $\x, \y,$ and $\Mu$ (this will be explained later), along with the keyword arguments \li{niter=20} and \li{tol=1e-16}.
+Create a function \li{qInteriorPoint()}.
+It should accept the arrays $Q, \c, A,$ and $\b$, a tuple of arrays \li{guess} giving initial estimates for $\x, \y,$ and $\Mu$ (this will be explained later), along with the keyword arguments \li{niter=20} and \li{tol=1e-16}.
 
-Modify your code to match the $F$ and $DF$ described above, and calculate the search direction $(\triangle \x\trp , \triangle \y\trp , \triangle \Mu\trp )$ by solving Equation \ref{eq:searchDirection}.
+In this function, calculate the search direction.
+Create $F$ and $DF$ as described above, and calculate the search direction $(\triangle \x\trp , \triangle \y\trp , \triangle \Mu\trp )$ by solving Equation \ref{eq:searchDirection}.
 Use $\sigma = \frac{1}{10}$ for the centering parameter.
 
-Hint: What are the dimensions of $F$ and $DF$?
+(Hint: What are the dimensions of $F$ and $DF$?)
 \end{problem}
 
 \begin{comment} % Old method for search direction vvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -206,25 +210,32 @@ A & -I & 0\\
 \end{comment} % Old method for search direction ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 \subsection*{Step Length}
-Now that we have our search direction, we select a step length. We want to step nearly as far as possible
-without violating the nonnegativity constraints. We back off slightly from the maximum allowed step length, however,
-because an overly greedy step at one iteration may prevent a decent step at the next iteration. Thus,
-we choose our step size
+Now that we have our search direction, we select a step length.
+ We want to step nearly as far as possible
+without violating the nonnegativity constraints. 
+However, we back off slightly from the maximum allowed step length
+because an overly greedy step at one iteration may prevent a descent step at the next iteration. 
+Thus, we choose our step size
 \[
 \alpha = \max\{a \in (0,1] \, \mid \, \tau(\y,\Mu) +a(\triangle \y, \triangle \Mu) \succeq \0\},
 \]
-where $\tau \in (0,1)$ controls how much we back off from the maximal step length. For now, choose $\tau = 0.95$.
-In general, $\tau$ can be made to approach $1$ at each successive iteration, and this may speed up convergence in some cases.
+where $\tau \in (0,1)$ controls how much we back off from the maximal step length. 
+For now, choose $\tau = 0.95$.
+In general, $\tau$ can be made to approach $1$ at each successive iteration.
+This may speed up convergence in some cases.
 
-This is equivalent to the method of choosing a step direction used in the previous lab.
-In this case, however, we will use a single step length for all three of the parameters.
+% This is equivalent to the method of choosing a step direction used in the previous lab.
+% In this case, however, we will use a single step length for all three of the parameters.
+We wish to step nearly as far as possible without violating the problem’s constraints, as to remain in the interior of the feasible region. 
+First, we calculate the maximum allowable step lengths for $\mu$ and $\y$.
 
 \begin{align*}
-\beta_{\max} &= \min\left\{1, \min\{-\mu_i/\triangle \mu_i \mid \triangle \mu_i < 0 \}\right\}\\
-\delta_{\max} &= \min\left\{1, \min\{-y_i/\triangle y_i \mid \triangle y_i < 0 \}\right\}
+\beta_{\max} &= \min\{-\mu_i/\triangle \mu_i \mid \triangle \mu_i < 0 \}\\
+\delta_{\max} &=\min\{-y_i/\triangle y_i \mid \triangle y_i < 0 \}
 \end{align*}
-Since $\Mu,\y \geq \0$.
-If all of the entries of $\triangle \mu$ are positive, we let $\beta_{\max} = 1$, and likewise for $\delta_{\max}$.
+% Since $\Mu,\y \geq \0$.
+If all of the entries of $\triangle \mu$ are nonnegative, we let $\beta_{\max} = 1$.
+Likewise, if all the entries of $\triangle \y$ are nonnegative, let $\delta_{\max}=1$.
 Next, we back off from these maximum step lengths slightly:
 \begin{align*}
 \beta &= \min(1, \tau\beta_{\max})\\
@@ -249,7 +260,7 @@ To simplify matters, we suggest simply using as a first attempt an LU decomposit
 \end{comment}
 
 \subsection*{Initial Point}
-As usual, the starting point $(\x_0, \y_0, \Mu_0)$ has an important effect on the convergence of the algorithm.
+The starting point $(\x_0, \y_0, \Mu_0)$ has an important effect on the convergence of the algorithm.
 The code listed below will calculate an appropriate starting point:
 \begin{lstlisting}
 def startingPoint(G, c, A, b, guess):
@@ -300,9 +311,9 @@ We summarize the entire algorithm below.
 \Procedure{Interior Point Method for QP}{}
     \State \textrm{Choose initial point } $(\x_0, \y_0, \Mu_0)$.
     \While{$k <\ $\li{niters} and $\nu <\ $\li{tol}:}
-        \State \textrm{Calculate the duality measure }$\nu$.
-        \State \textrm{Solve \ref{eq:searchDirection} for the search direction } $(\triangle \x_k, \triangle \y_k, \triangle \Mu_k)$.
-        \State \textrm{Calculate the step length } $\alpha$.
+        \State \textrm{Calculate the duality measure} $\nu$.
+        \State \textrm{Solve \ref{eq:searchDirection} for the search direction} $(\triangle \x_k, \triangle \y_k, \triangle \Mu_k)$.
+        \State \textrm{Calculate the step length} $\alpha$.
         \State $(\x_{k+1}, \y_{k+1}, \Mu_{k+1}) = (\x_k, \y_k, \Mu_k) + \alpha(\triangle \x_k, \triangle \y_k, \triangle \Mu_k).$
     \EndWhile
 \EndProcedure
@@ -313,7 +324,6 @@ We summarize the entire algorithm below.
 \begin{problem}
 Complete the implementation of \li{qInteriorPoint()}.
 Return the optimal point $\x$ as well as the final objective function value.
-You may want to print out the duality measure $\nu$ to check the progress of the iteration.
 % and \li{verbose}, a boolean value indicating whether or not to print the current objective function value ($ \frac{1}{2}x_k\trp Qx_k + c\trp x_k$) and duality measure ($\nu_k = \frac{1}{m}y_k\trp \lambda_k$) at each iteration.
 % \end{problem}
 
@@ -358,6 +368,8 @@ A = \begin{bmatrix}
 \]
 Use $\x = [.5, .5]$ as the initial guess.
 The correct minimizer is $\left[\frac{2}{3}, \frac{4}{3}\right].$
+
+(Hint: You may want to print out the duality measure $\nu$ to check the progress of the iteration).
 \end{problem}
 % We solve this problem with the following code:
 % \begin{lstlisting}
@@ -381,7 +393,7 @@ The general version can be used to solve many convex optimization problems, prov
 
 \section*{Application: Optimal Elastic Membranes}
 The properties of elastic membranes (stretchy materials like a thin rubber sheet) are of interest in certain fields of mathematics and various sciences.
-A mathematical model for such materials can be used by biologists to study interfaces in cellular regions in an organism, or by engineers to design tensile structures.
+A mathematical model for such materials can be used by biologists to study interfaces in cellular regions of an organism or by engineers to design tensile structures.
 Often we can describe configurations of elastic membranes as a solution to an
 optimization problem.
 As a simple example, we will find the shape of a large circus tent by solving a quadratic constrained optimization problem using our Interior Point method.
@@ -392,7 +404,7 @@ At each grid point containing a tent pole, the tent height is constrained to be 
 At all other grid points, the tent height is simply constrained to be greater than zero (ground height).
 In Python, we can store a two-dimensional grid of values as a simple two-dimensional array.
 We can then flatten this array to give a one-dimensional vector representation of the grid.
-If we let $\x$ be a one-dimensional array giving the tent height at each grid point, and $L$ be the one-dimensional array giving the underlying tent pole structure (consisting mainly of zeros, except at the grid points that contain a tent pole), we have the linear constraints: \[\x \succeq L.\]
+If we let $\x$ be a one-dimensional array giving the tent height at each grid point, and $L$ be the one-dimensional array giving the underlying tent pole structure (consisting mainly of zeros, except at the grid points that contain a tent pole), we have the linear constraint: \[\x \succeq L.\]
 
 \begin{figure}
 \includegraphics[width=\textwidth]{figures/tent.pdf}
@@ -402,7 +414,7 @@ If we let $\x$ be a one-dimensional array giving the tent height at each grid po
 
 The theory of elastic membranes claims that such materials tend to naturally minimize a quantity known as the \emph{Dirichlet energy}.
 This quantity can be expressed as a quadratic function of the membrane.
-Then since we have modeled our tent with a discrete grid of values, this energy function has the form \[\frac{1}{2}\x\trp  H \x + \c\trp  \x,\] where $H$ is a particular positive semidefinite matrix closely related to Laplace's Equation, $\c$ is a vector whose entries are all equal to $-(n-1)^{-2}$, and $n$ is the side length of the grid.
+Since we have modeled our tent with a discrete grid of values, this energy function has the form \[\frac{1}{2}\x\trp  H \x + \c\trp  \x,\] where $H$ is a particular positive semidefinite matrix closely related to Laplace's Equation, $\c$ is a vector whose entries are all equal to $-(n-1)^{-2}$, and $n$ is the side length of the grid.
 Our circus tent is therefore given by the solution to the quadratic constrained optimization problem:
 \begin{align*}
 \text{minimize }\qquad &\frac{1}{2}\x\trp  H \x + \c\trp  \x\\
@@ -470,7 +482,7 @@ A safer choice might be to put the money into a bank account.
 That way, there is less risk of losing the money, plus you may even add to your savings through interest payments from the bank.
 You could also consider purchasing bonds from the government or stocks from various companies, which come with their own sets of risks and returns.
 Given all of these possibilities, how can you invest your money in such a way that maximizes the return (i.e. the wealth that you gain over the course of the investment) while still exercising caution and avoiding excessive risk?
-Economist and Nobel laureate Harry Markowitz developed the mathematical underpinnings of and answer to this question in his work on modern portfolio theory.
+Economist and Nobel laureate Harry Markowitz developed the mathematical underpinnings and answer to this question in his work on modern portfolio theory.
 
 A \emph{portfolio} is a set of investments over a period of time.
 Each investment is characterized by a financial asset (such as a stock or bond) together with the proportion of wealth allocated to the asset.
@@ -485,9 +497,9 @@ Suppose the $i$th asset has an expected rate of return $\mu_i$ and a standard de
 The total return on our portfolio, i.e. the expected percent change in our invested wealth over the investment period, is given by
 \[\sum_{i=1}^n \mu_ix_i.\]
 We define the risk of this portfolio in terms of the covariance matrix $Q$ of the $n$ assets: \[\sqrt{\x\trp  Q \x}.\]
-The covariance matrix $Q$ is always positive semidefinite, and captures the variance and correlations of the assets.
+The covariance matrix $Q$ is always positive semidefinite and captures the variance and correlations of the assets.
 
-Given that we want our portfolio to have a prescribed return $R$, there are in general many possible allocation vectors $\x$ that make this possible.
+Given that we want our portfolio to have a prescribed return $R$, there are many possible allocation vectors $\x$ that make this possible.
 It would be wise to choose the vector minimizing the risk.
 We can state this as a quadratic program:
 \begin{align*}
@@ -521,14 +533,14 @@ See Figure \ref{fig:frontier}.
 \label{fig:frontier}
 \end{figure}
 
-One difficulty of this model is that the risk and return of each asset is in general unknown.
+One weakness of this model is that the risk and return of each asset is in general unknown.
 After all, no one can predict the stock market with complete certainty.
 There are various ways of estimating these values given past stock prices, and we take a very straightforward approach.
-Suppose for each asset we have $k$ previous return values of the asset. That is, for asset $i$, we have the data vector\[y^i = [y^i_1,\,\, \ldots, \,\,y^i_k]\trp .\]
+Suppose for each asset, we have $k$ previous return values of the asset. That is, for asset $i$, we have the data vector\[y^i = [y^i_1,\,\, \ldots, \,\,y^i_k]\trp .\]
 We estimate the expected rate of return for asset $i$ by simply taking the average of $y_1,\ldots,y_k$, and we estimate the variance
 of asset $i$ by taking the variance of the data.
 We can estimate the covariance matrix for all assets by taking the covariance matrix of the vectors $y^1,\ldots,y^n$.
-In this way, we obtain estimated values for $Q$ and each $\mu_i$.
+In this way, we obtain estimated values for each $\mu_i$ and $Q$.
 
 \begin{problem}
 The text file \li{portfolio.txt} contains historical stock data for several assets (U.S. bonds, gold, S\&P 500, etc).
