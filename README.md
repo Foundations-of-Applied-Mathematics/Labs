@@ -2,14 +2,13 @@
 
 _Foundations of Applied Mathematics_ is a series of four textbooks developed for Brigham Young University’s Applied and Computational Mathematics degree program for beginning graduate and advanced undergraduate students.
 These are as follows:
-- [_Volume 1: Mathematical Analysis._](http://bookstore.siam.org/ot152/)
-- _Volume 2: Algorithms, Approximation, and Optimization._
+- [_Volume 1: Mathematical Analysis._](https://my.siam.org/Store/Product/viewproduct/?ProductId=28736189)
+- [_Volume 2: Algorithms, Approximation, and Optimization._](https://my.siam.org/Store/Product/viewproduct/?ProductId=31503574)
 - _Volume 3: Modeling with Uncertainty and Data._
 - _Volume 4: Modeling with Dynamics and Control._
 
 The textbooks are being published by [the Society for Industrial and Applied Mathematics](http://bookstore.siam.org).
-[Volume 1](http://bookstore.siam.org/ot152/) is available now.
-Volume 2 will be available in 2019, and the remaining volumes will be available soon thereafter.
+[Volume 1](https://my.siam.org/Store/Product/viewproduct/?ProductId=28736189) and [Volume 2](https://my.siam.org/Store/Product/viewproduct/?ProductId=31503574) are available now, and the remaining volumes are in development.
 
 This repository contains a collection of Python labs that go in tandem with the textbooks.
 These expose students to applications and numerical computation and reinforce the theoretical ideas taught in the text.
