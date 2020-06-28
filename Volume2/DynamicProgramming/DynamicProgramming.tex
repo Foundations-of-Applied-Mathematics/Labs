@@ -7,20 +7,20 @@ In this lab we use dynamic programming to solve two classic dynamic optimization
 \section*{The Marriage Problem} % =============================================
 
 Many dynamic optimization problems can be classified as \emph{optimal stopping} problems, where the goal is to determine at what time to take an action to maximize the expected reward.
-For example, when hiring a secretary, how many people should you interview before hiring the current interviewer?
-Or how many people should you date before you get married?
-These problems try to determine at what person $t$ to stop in order to maximize the chance of getting the best candidate.
+For example, how many people should you date before you get married?
+Or when hiring a secretary, how many people should you interview before hiring the current interviewee?
+These problems try to determine at which person $t$ to stop in order to maximize the chance of getting the best candidate.
 
 For instance, let $N$ be the number of people you could date.
 After dating each person, you can either marry them or move on; you can't resume a relationship once it ends.
 In addition, you can rank your current relationship to all of the previous options, but not to future ones.
 The goal is to find the policy that maximizes the probability of choosing the best marriage partner.
-That policy may not always choose the best candidate, but it should get an almost-best candidate most of the time.
+This policy may not always choose the best candidate, but it should get an almost-best candidate most of the time.
 
-Let $V(t-1)$ be the probability that we choose the best partner when we have passed over the first $t-1$ candidates with an optimal policy.
-In other words, we have dated $t-1$ people and want to know the probability that the $t^{th}$ person is the one we should marry.
-Note that the probability that the $t^{th}$ person is not the best candidate is $\frac{t-1}{t}$ and the probability that they are is $\frac{1}{t}$.
-If the $t^{th}$ person is not the best out of the first $t$, then probability they are the best overall is 0 and the probability they are not is $V(t)$.
+Let $V(t-1)$ be the probability that the best marriage partner is person $t$, assuming we didn't choose the first $t-1$ candidates while using an optimal policy.
+In other words, after dating $t-1$ people, you want to know the probability that the $t^{th}$ person is the one you should marry.
+Note that the probability that the $t^{th}$ person is the best candidate is $\frac{1}{t}$ and the probability that they aren't is $\frac{t-1}{t}$.
+If the $t^{th}$ person is not the best out of the first $t$, then the probability they are the best overall is 0 and the probability they are not is $V(t)$.
 If the $t^{th}$ person is the best out of the first $t$, then the probability they are the best overall is $\frac{t}{N}$ and the probability they are not is $V(t)$.
 
 By Bellman's optimality equations,
@@ -36,7 +36,7 @@ V(t-1) = \frac{t-1}{t}\max\left\{0,V(t)\right\}+\frac{1}{t}\max\left\{ \frac{t}{
 %We can either choose this candidate, in which case they turn out to be the best match with probability $\frac{t}{N}$, or move on.
 Notice that \eqref{eq:dynamicopt-do7} implies that $V(t-1)\geq V(t)$ for all $t\leq N$.
 Hence, the probability of selecting the best match $V(t)$ is non-increasing.
-Conversely, $P($t$ \text{ is best overall}|\text{$t$ is best out of the first $t$})=\frac{t}{N}$ is strictly increasing.
+Conversely, $P(t \text{ is best overall}|\text{$t$ is best out of the first $t$})=\frac{t}{N}$ is strictly increasing.
 Therefore, there is some $t_0$, called the \emph{optimal stopping point}, such that $V(t)\leq\frac{t}{N}$ for all $t\geq t_0$.
 After $t_0$ relationships, we choose the next partner who is better than all of the previous ones.
 We can write \eqref{eq:dynamicopt-do7} as
@@ -57,18 +57,19 @@ If $N=4$, we have
 V(4) &= 0, \\
 V(3) &= \max\left\{\frac{3}{4}V(4)+\frac{1}{4},0\right\} = .25,\\
 V(2) &= \max\left\{\frac{2}{3}V(3)+\frac{1}{4},.25\right\} = .4166,\\
-V(1) &= \max\left\{\frac{1}{4},.4166\right\}= .4166.
+V(1) &= \max\left\{\frac{1}{2}V(2)+\frac{1}{4},.4166\right\}= .4583.
 \end{align*}
-In this case, the maximum expected value is $.4166$ and the stopping point is $t=2$.
-It is also useful to look at the optimal stopping percentage of people to date before getting married. 
-In this case, it is $2/4=.5$.
+In this case, the maximum expected value is $.4583$ and the stopping point is $t=1$.
+It is also useful to look at the percent of possible candidates you should pass over before selecting a candidate. 
+This is called the optimal stopping percentage, which in this case is $1/4=.25$.
+After passing over (and observing) the optimal percentage of candidates, the first candidate that is better than the candidates you observed should be selected\footnote{For examples and a more comprehensive explanation, see \url{https://www.americanscientist.org/article/knowing-when-to-stop}.}.
 
 \begin{problem}
 Write a function that accepts a number of candidates $N$.
-Calculate the expected values of choosing candidate $t$ for $t=0,1,\ldots,N-1$.
+Calculate the expected values of choosing candidate $t$ for $t=1,2,\ldots,N$.
 
 Return the highest expected value $V(t_0)$ and the optimal stopping point $t_0$.
-\\(Hint: Since Python starts indices at $0$, the first candidate is $t=0$.)
+(Hint: Python starts indices at 0, so you may need to adjust your indexing before returning the optimal stopping point.)
 
 Check your answer for $N=4$ with the example detailed above.
 \label{prob:dynamicopt-stopping-time}
@@ -79,13 +80,14 @@ Write a function that takes in an integer $M$ and runs your function from Proble
 Graph the optimal stopping percentage of candidates ($t_0/N$) to interview and the maximum probability $V(t_0)$ against $N$.
 Return the optimal stopping percentage for $M$.
 
-The optimal stopping percentage for $M=1000$ is $.367$.
+The optimal stopping percentage for $M=1000$ is $.368$.
 \end{problem}
 
 Both the stopping time and the probability of choosing the best person converge to $\frac{1}{e} \approx .36788$.
 Then to maximize the chance of having the best marriage, you should date at least $\frac{N}{e}$ people before choosing the next best person.
 This famous problem is also known as the \emph{secretary problem}, the \emph{sultan's dowry problem}, and the \emph{best choice problem}.
 For more information, see \url{https://en.wikipedia.org/wiki/Secretary_problem}.
+
 
 \section*{The Cake Eating Problem} % ==========================================
 
@@ -370,7 +372,7 @@ The column of $P$ for time $t$ is calculated by taking $w_i - w_j$, where $j$ is
 P_{it} = w_i - w_j.
 \]
 \begin{align*}
-\mbox{where} \, \, & j = \{\, min\{j\} \mid CV_{ij}^t \geq CV_{ik}^t \, \forall \, k \in \left[0,1, \ldots , N \right] \,\}
+\mbox{where} \, \, & j = \{\, \min\{j\} \mid CV_{ij}^t \geq CV_{ik}^t \, \forall \, k \in \left[0,1, \ldots , N \right] \,\}
 \end{align*}
 
 Recall $CV^2$ in our example with $T=3$, $\beta=.9$, $N=4$, and $u(x) = \sqrt{x}$ above.
@@ -409,9 +411,9 @@ text centered,minimum height=.5em,text width=.5cm]
 \matrix[matrix of math nodes,left delimiter={\lbrack},right delimiter={\rbrack}]{
     0    & 0    & 0    & 0    & \\
     0.25 & 0.25 & 0.25 & \node[ell] (4) {0.25}; & \\
-    0.25 & 0.25 & \node[ell] (3) {0.25}; &0.5;  & \\
+    0.25 & 0.25 & \node[ell] (3) {0.25}; &0.5  & \\
     0.25 & \node[ell] (2) {0.25}; & 0.5  & 0.75 & \\
-    \node[ell] (1) {0.25}; & 0.5  & 0.5;  & 1.   & \\
+    \node[ell] (1) {0.25}; & 0.5  & 0.5  & 1.   & \\
 };
 %Arrows
 \foreach \s/\t in {1/2,2/3,3/4}

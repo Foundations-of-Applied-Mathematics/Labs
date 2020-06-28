@@ -135,8 +135,10 @@ Define a function \li{interiorPoint()} that will be used to solve the complete i
 This function should accept $A$, $\b$, and $\c$ as parameters, along with the keyword arguments \li{niter=20} and \li{tol=1e-16}.
 The keyword arguments will be used in a later problem.
 
+In the next few problems, you will be writing functions within this function to solve the interior point problem one step at a time.
+
 For this problem, within the \li{interiorPoint()} function, write a function for the vector-valued function $F$ described above.
-This function should accept $\x$, $\Lamb$, and $\Mu$ as parameters and return a 1-dimensional NumPy array with $2n+m$ entries.
+This function should accept $\x$, $\Lamb$, and $\Mu$ as parameters and return a 1-dimensional NumPy array with $2n+m$ entries. 
 \end{problem}
 
 \subsection*{Search Direction}
@@ -385,7 +387,7 @@ We need the \li{if} statement to deal with the case where no entry of $u$ is neg
 
 \begin{problem} % Step size ---------------------------------------------------
 Within \li{interiorPoint()}, write a subroutine to compute the step size after the search direction has been computed.
-Avoid using loops when computing $\alpha_{\max}$ and $\beta_{\max}$ (use masking and NumPy functions instead).
+Avoid using loops when computing $\alpha_{\max}$ and $\delta_{\max}$ (use masking and NumPy functions instead).
 \end{problem}
 
 \subsection*{Initial Point}
@@ -435,35 +437,35 @@ Thus, by printing the value of $\nu$ at each iteration, you can track how your a
 To test your implementation, use the following code to generate a random linear program, along with the optimal solution.
 
 \begin{lstlisting}
-def randomLP():
+def randomLP(j, k):
     """Generate a linear program min c\trp  x s.t. Ax = b, x>=0.
     First generate m feasible constraints, then add
     slack variables to convert it into the above form.
     Inputs:
-        m (int >= n): number of desired constraints.
-        n (int): dimension of space in which to optimize.
+        j (int >= k): number of desired constraints.
+        k (int): dimension of space in which to optimize.
     Outputs:
-        A ((m,n+m) ndarray): Constraint matrix.
-        b ((m,) ndarray): Constraint vector.
-        c ((n+m,), ndarray): Objective function with m trailing 0s.
-        x ((n,) ndarray): The first 'n' terms of the solution to the LP.
+        A ((j, j+k) ndarray): Constraint matrix.
+        b ((j,) ndarray): Constraint vector.
+        c ((j+k,), ndarray): Objective function with j trailing 0s.
+        x ((k,) ndarray): The first 'k' terms of the solution to the LP.
     """
-    A = np.random.random((m,n))*20 - 10
+    A = np.random.random((j,k))*20 - 10
     A[A[:,-1]<0] *= -1
-    x = np.random.random(n)*10
-    b = np.zeros(m)
-    b[:n] = A[:n,:] @ x
-    b[n:] = A[n:,:] @ x + np.random.random(m-n)*10
-    c = np.zeros(n+m)
-    c[:n] = A[:n,:].sum(axis=0)/n
-    A = np.hstack((A, np.eye(m)))
+    x = np.random.random(k)*10
+    b = np.zeros(j)
+    b[:k] = A[:k,:] @ x
+    b[k:] = A[k:,:] @ x + np.random.random(j-k)*10
+    c = np.zeros(j+k)
+    c[:k] = A[:k,:].sum(axis=0)/k
+    A = np.hstack((A, np.eye(j)))
     return A, b, -c, x
 \end{lstlisting}
 \begin{lstlisting}
->>> m, n = 7, 5
->>> A, b, c, x = randomLP(m, n)
+>>> j, k = 7, 5
+>>> A, b, c, x = randomLP(j, k)
 >>> point, value = interiorPoint(A, b, c)
->>> np.allclose(x, point[:n])
+>>> np.allclose(x, point[:k])
 <<True>>
 \end{lstlisting}
 \end{problem}

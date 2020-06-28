@@ -6,42 +6,47 @@ We demonstrate two iterative methods, value iteration (VI) and policy iteration 
 
 \section*{Dynamic Optimization}
 
-Many dynamic optimization problem take the form of a \emph{Markov decision process}.
+Many dynamic optimization problems take the form of a \emph{Markov decision process}.
 A Markov decision process is similar to that of a Markov chain, but rather than determining state movement using only probabilities, state movement is determined based on probabilities, actions, and rewards.
 They are formulated as follows.
 
 $\mathbb{T}$ is a set of discrete time periods.
-In this lab, $\mathbb{T} = {0,1,\ldots, T}$.
+In this lab, $\mathbb{T} = {0,1,\ldots, L}$, where $L$ is the final time period. 
 $S$ is the set of possible states.
 The set of allowable actions for each state $s$ is $A_s$.
 $s_{t+1}=g(s_t,a_t)$ is a transition function that determines the state $s_{t+1}$ at time $t+1$ based on the previous state $s_t$ and action $a_t$.
 The reward $u(s_t,a_t,s_{t+1})$ is the reward for taking action $a$ while in state $s$ at time $t$ and the next state being state $s_{t+1}$.
-The time discount factor $\beta \in [0,1]$ determines how much less a reward is worth in the future.
-Let $N_{s,a}$ be the set of all possible next states when taking action $a$ in state $s$.
-$p(s_t,a_t,s_{t+1})$ is probability of taking action $a$ at time $t$ while in state $s$ and arriving at state $s_{t+1}\in N_{s,a}$.
 
+The time discount factor $\beta \in [0,1]$ determines how much the reward function decreases in value with time. 
+Looking at the cake eating problem described in the previous lab, the cake goes stale with each passing day.
+In other words, each day you do not finish the cake, the reward of eating a piece decreases.
+$\beta$ accounts for this decrease in value.
+
+Let $N_{s,a}$ be the set of all possible next states when taking action $a$ in state $s$.
+$p(s_t,a_t,s_{t+1})$ is the probability of taking action $a$ at time $t$ while in state $s$ and arriving at state $s_{t+1}\in N_{s,a}$.
 A deterministic Markov process has $p(s_t,a_t,s_{t+1}) = 1$ $\forall s,a$.
 This means that $N_{s,a}$ has one element $\forall s,a$.
-A stochastic Markov process has $p(s_t,a_t,s_{t+1})\leq 1$, given that there can be multiple possible next states for taking a given action in a given state.
+A stochastic Markov process has $p(s_t,a_t,s_{t+1})\leq 1$, which implies that there can be multiple possible next states for taking a given action in a given state.
+As a result, $N_{s,a}$ has multiple elements for each $s,a$. 
 
 The dynamic optimization problem is
 
 \begin{align}
 \label{eq:policyiter-dynopt1}
-\max_\mathbf{a}  & \sum_{t=0}^T \beta^t u(s_t,a_t) \\
+\max_\mathbf{a}  & \sum_{t=0}^{L} \beta^t u(s_t,a_t) \\
 \mbox{subject to } & s_{t+1}= g(s_t,a_t)\ \forall t.
 \end{align}
 
-The cake eating problem described in the previous lab follows this format where $S$ consists of the possible amounts of remaining cake ($\frac{i}{W}$), $c_t$ is the amount of cake we can eat, and the amount of cake remaining $s_{t+1}=g(s_t,a_t)$ is $w_t-c_t$, where $w_t$ is the amount of cake we have left and $c_t$ is the amount of cake we eat at time $t$. 
+The cake eating problem follows this format where $S$ consists of the possible amounts of remaining cake ($\frac{i}{W}$), $c_t$ is the amount of cake we can eat, and the amount of cake remaining $s_{t+1}=g(s_t,a_t)$ is $w_t-c_t$, where $w_t$ is the amount of cake we have left and $c_t$ is the amount of cake we eat at time $t$. 
 This is an example of a deterministic Markov process.
 
-For this lab we define a dictionary $P$ to represent the decision process.
+For this lab, we define a dictionary $P$ to represent the decision process.
 This dictionary contains all of the information about the states, actions, probabilities, and rewards.
 Each dictionary key is a state-action combination and each dictionary value is a list of tuples.
 \[P[s][a]=[(p(s,a,\bar{s}), \bar{s}, u(s,a,\bar{s}), is\_terminal),...]\]
-There is a tuple for each $\bar{s}\in N_{s,a}$ in the list.
-The final entry in the tuple, is\_terminal, indicates if the $\bar{s}$ is a stopping point.
 
+Note the slight notation change from $(s_t,a_t,s_{t+1})$ to $(s,a,\bar{s})$. In the dictionary, $s$ is the current state, $a$ is the action, $\bar{s}\in N_{s,a}$ is the next state if action $a$ is taken, and \emph{is\_terminal} indicates if $\bar{s}$ is a stopping point.
+In addition, $p(s,a,\bar{s}) $ is the probability of taking action $a$ while in state $s$, and $u(s,a,\bar{s})$ is the reward for taking action $a$ while in state $s$.
 
 \subsection*{Moving on a Grid}
 
@@ -49,20 +54,12 @@ Now consider an $N \times N$ grid.
 Assume that a robot moves around the grid, one space at a time, until it reaches the lower right hand corner and stops.
 Each square is a state, $S = \{0, 1, \ldots, N^2-1\}$, and the set of actions is $\{Left, Down, Right, Up\}$.
 For this lab, $Left = 0$, $Down = 1$, $Right = 2$, and $Up = 3$.
-
-\begin{warn}
-It is important to remember that the actions do not correspond to the states the robot is in after the action.
-When the robot is in state $0$ and takes action $1$, he is then in state $2$.
-\end{warn}
-
-$A_s$ is the set of actions that keep the robot on the grid.
-If the robot is in the top left hand corner, the only allowed actions are $Down$ and $Right$ so $A_0 = \{1,2\}$.
-The transition function $g(s_t,a_t) = s_{t+1}$ can be explicitly defined for each $s, a$ where $s_{t+1}$ is the new state after moving.
+If you take the action $a = 1$, then you move \emph{Down} on the grid.
 
 Let $N=2$ and label the squares as displayed below.
 In this example, we define the reward to be $-1$ if the robot moves into 2, $-1$ if the robot moves into $0$ from $1$, and $1$ when it reaches the end, $3$.
-We define the reward function to be $u(s_t,a_t,s_{t+1})=u(s_{t+1})$.
-Since this is a deterministic model, $p(s_t,a_t,s_{t+1}) = p(s_{t+1}) = 1,\forall s,a$.
+We define the reward function to be $u(s,a,\bar{s}) = u(\bar{s})$.
+Since this is a deterministic model, $p(s,a,\bar{s}) = p(\bar{s}) = 1$ for all possible $s,a$.
 
 \begin{center}
 \begin{tabular}{|c|c|}
@@ -71,6 +68,10 @@ Since this is a deterministic model, $p(s_t,a_t,s_{t+1}) = p(s_{t+1}) = 1,\foral
 \cellcolor{red!20}2 & \cellcolor{green!20}3 \\ \hline
 \end{tabular}
 \end{center}
+
+$A_s$ is the set of actions that keep the robot on the grid.
+If the robot is in the top left hand corner, the only allowed actions are $Down$ and $Right$ so $A_0 = \{1,2\}$.
+The transition function $g(s,a) = \bar{s}$ can be explicitly defined for each $s, a$ where $\bar{s}$ is the new state after moving.
 
 %\begin{align*}
 %S &= \{0, 1, 2, 3\}\\
@@ -106,6 +107,13 @@ This simplifies coding the algorithm but is not necessary.
 \end{tabular}
 \end{center}
 
+For the sake of clarity, we will do a quick example using the above dictionary.
+We first assume that we start in state $0$ corresponding to the $0$ in the above grid.
+Next, we move $Down$ the grid to state $2$.
+This corresponds to taking action $1$.
+To get the correct values from the dictionary, we look at $P[s][a]$ or in this case $P[0][1] = [(1,2,-1,False)]$. So, when we move $Down$ from square $0$ to square $2$, $p(\bar{s}) = 1$,  $u(\bar{s}) = -1$, and $\bar{s} = 2$.
+As a final note, when the action is not possible $p(\bar{s}) = 0$, as shown in the dictionary above.
+
 We define the \emph{value function} $V(s)$ to be the maximum possible reward of starting in state $s$.
 Then using Bellman's optimality equation,
 \begin{equation}
@@ -114,10 +122,9 @@ V(s) = \max_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}}p(\bar{s}) * \left( u(\bar{
 \end{equation}
 
 The summation occurs when it is a stochastic Markov process.
-For example, if the robot is in the top left corner and moves right, we could have that the probability the robot actually moves right is $.5$.
+For example, if the robot is in the top left corner and we want it to move right, we could have the probability of the robot actually moving right as $.5$.
 In this case, $P[0][2] = [(.5, 1, 0, False), (.5, 2, -1, False)]$.
-This will occur later in the lab.
-% We also observe that in this scenario, $V(a)$ is $V(\bar{s})$ where $\bar{s}$ is the state after taking action $a$ in state $s$.
+This type of process will occur later in the lab.
 
 \section*{Value Iteration}
 
@@ -133,7 +140,7 @@ Blackwell's contraction theorem can be used to show that Bellman's equation is a
 for an operator $T: L^{\infty}(X;\mathbb{R}) \to L^{\infty}(X;\mathbb{R})$ where $L^{\infty}(X;\mathbb{R})$ is the set of all bounded functions:
 \begin{equation}
 \label{eq:policyiter-blackwell}
-[T(f)](s) = \max_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}} p(\bar{s}) * \left( u(\bar{s}) + \beta f(\bar{s})\right)]\}
+T[f](s) = \max_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}} p(\bar{s}) * \left( u(\bar{s}) + \beta f(\bar{s})\right)\}
 \end{equation}
 It can be shown that \ref{eq:policyiter-dynopt1} is the fixed ``point'' of our operator $T$.
 A result of contraction mappings is that there exists a unique solution to \ref{eq:policyiter-blackwell}.
@@ -141,7 +148,7 @@ A result of contraction mappings is that there exists a unique solution to \ref{
 
 \begin{equation}
 \label{eq:policyiter-val-iteration}
-V_{k+1}(s_i) = [T(V_k)](s_i) = \max_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}}p(\bar{s}) *\left( u(\bar{s}) + \beta V_k(\bar{s})\right)]\}
+V_{k+1}(s_i) = T[V_k](s_i) = \max_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}}p(\bar{s}) *\left( u(\bar{s}) + \beta V_k(\bar{s})\right)\}
 \end{equation}
 
 where an initial guess for $V_0(s)$ is used.
@@ -171,22 +178,48 @@ Because of the contraction mapping, if $V_{k+1}(s) = V_k(s) \, \, \forall \, s$,
 % \label{alg:ValueIteration}
 % \end{algorithm}
 
-As an example, let $V_0 = [0,0,0,0]$ and $\beta = 1$, where each entry of $V_0$ represents the maximum value at that state.
+As an example, let $V_0 = [0,0,0,0]$ and $\beta = 1$, where each entry of $V_0$ represents the maximum value at that state, and $V_0(s) = V_0[s]$ if we are using the array or list form of the \emph{value function}.
 We calculate $V_1(s)$ from the robot example above.
+For $V_1(0)$, we choose the \li{max} of the possible outcomes, states $1$ or $2$, after moving.
+Thus we use $P[0][2]$ for state $1$ because moving from state $0$ to state $1$ requires going right, action $2$.
+
 \begin{align*}
 V_1(0) &= \max_{a \in A_0} \{\Sigma_{\bar{s}\in N_{s,a}}p(\bar{s})*(u(\bar{s})+V_0(\bar{s}))\} \\
 &= \max \{p(1)*(u(1)+V_0(1)), p(2)*(u(2)+V_0(2)))\} \\
-&= \max \{1(-1+0), 1(0+0)\} \\
-&= \max \{-1,0\} \\
-&= 0\\
-V_1(1) &= \max \{p(0)*(u(0)+V_0(0)), p(2)*(u(2)+V_0(2))\}\\
-&=\max \{1(0+0), 1(1+0)\} \\
-&= 1
+&= \max \{1(0+0), 1(-1+0)\} \\
+&= \max \{0,-1\} \\
+&= 0 \\
+V_1(1) &= \max \{p(0)*(u(0)+V_0(0)), p(3)*(u(3)+V_0(3))\} \\
+&=\max \{1(-1+0), 1(1+0)\} \\
+&= 1 \\
+V_1(2) &= \max\{p(0)*(u(0)+V_0(0)), p(3)*(u(3)+V_0(3))\} \\
+&=\max \{1(0+0),1(1+0)\} \\
+&= 1 \\
+V_1(3) &= \max\{p(1)*(u(1)+V_0(1)), p(2)*(u(2)+V_0(2))\} \\
+&=\max \{1(0+0),1(0+0)\} \\
+&= 0
 \end{align*}
 
-Calculating $V_1(2)$ and $V_1(3)$ gives $V_1 = [0, 1, 1, 0]$.
+This calculation gives $V_1 = [0, 1, 1, 0]$.
 Repeating the process, $V_2 = [1, 1, 1, 0]$, which is the solution.
-It means that maximum reward the robot can achieve by starting on square $i$ is $V_2(i)$.
+This means that the total maximum reward the robot can achieve by starting on square $i$ is $V_2(i)$.
+
+When implementing functions in this lab, instead of only looking at possible actions $a\in A_s$, we can consider all of the actions.
+This will not affect the results, because $p(\bar{s}) = 0$ when an action is not possible.  
+This simplifies the coding significantly.
+For example, when calculating $V_{k+1}(s_i)$ consider the following lines of code.
+
+\begin{lstlisting}
+sa_vector = np.zeros(nA)
+for a in range(nA):
+    for tuple_info in P[s][a]:
+        # tuple_info is a tuple of (probability, next state, reward, done)
+        p, s_, u, _ = tuple_info
+        # sums up the possible end states and rewards with given action
+        sa_vector[a] += (p * (u + beta * V_old[s_]))
+#add the max value to the value function        
+V_new[s] = np.max(sa_vector)
+\end{lstlisting}
 
 % Most iterative algorithms have a \li{maxiter} parameter that will terminate the algorithm after \li{maxiter} iterations regardless of whether or not it has converged.
 % This is because even though we have guaranteed convergence, we might have a convergence rate that is too slow to be useful.
@@ -198,7 +231,7 @@ Write a function called \li{value_iteration()} that will accept a dictionary $P$
 the tolerance amount $\epsilon$, and the maximum number of iterations \li{maxiter}.
 Perform value iteration until $\|V_{k+1} - V_{k}\| < \epsilon$ or $k > $ \li{maxiter}.
 Return the final vector representing $V^*$ and the number of iterations.
-Test your code on the example given above.
+Test your code on the example given above. 
 \end{problem}
 
 \subsection*{Calculating the Policy}
@@ -207,31 +240,34 @@ While knowing the maximum expected value is helpful, it is usually more importan
 Value Iteration tells the robot what reward he can expect, but not how to get it.
 The policy vector, $\mathbf{c}$, is found by using the policy function: $\pi : \mathbb{R} \to \mathbb{R}$.
 $\pi(s)$ is the action we should take while in state $s$ to maximize reward.
-We can modify the Bellman equation using $V^*(s)$ to find $\pi$:
+We can modify the Bellman equation using $V^*(s)$, which is the true value function we found in problem $1$, to find $\pi$:
 \begin{equation}
 \label{eq:policyiter-pol_func}
-\pi(s) = \argmax_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}} p(\bar{s})*(u(\bar{s}) + \beta*V^*(\bar{s}))]\}
+\pi(s) = \argmax_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}} p(\bar{s})*(u(\bar{s}) + \beta*V^*(\bar{s}))\}
 \end{equation}
 
 Using value iteration, we found $V^*  = [1, 1, 1, 0]$ in the example above.
-We find $\pi(0)$ by looking at actions $1$ and $2$ (since actions 0 and 3 have probability 0).
+We find $\pi(0)$ from the example above with $\beta = 1$ by looking at actions $1$ and $2$ (since actions 0 and 3 have probability 0).
 \begin{align*}
-\pi(0) &=\argmax_{1,2} \{p(1)*(u(1) + V^*(1)), p(2)*(u(2)+V^*(2))\} \\
+\pi(0) &=\argmax_{1,2} \{p(2)*(u(2) + V^*(2)), p(1)*(u(1)+V^*(1))\} \\
 &= \argmax \{1*(-1+1), 1*(0+1)\} \\
 &= \argmax\{0, 1\}\\
-&= 2.
+&= 2
 \end{align*}
 
 So when the robot is in state $0$, he should take action $2$, moving $Right$.
 This avoids the $-1$ penalty for moving $Down$ into square $2$.
 Similarly,
 \begin{align*}
-\pi(1) &= \argmax_{0,1} \{1*(0+1), 1*(1+1)\} = \argmax \{1, 2\} = 1.
+\pi(1) &= \argmax_{0,1} \{1*(-1+1), 1*(1+0)\} \\
+&= \argmax \{0, 1\} = 1 \\
+\pi(2) &= \argmax_{2,3} \{1*(1+0), 1*(0+1)\} \\
+&= \argmax \{1, 1\} = 2
 \end{align*}
-The policy corresponding to the optimal reward is $[2,1,2,0]$.
-The robot should move to square $3$ if possible, avoiding $2$ because it has a negative reward.
 Since $3$ is terminal, it does not matter what $\pi(3)$ is.
 We set it to $0$ for convenience.
+The policy corresponding to the optimal reward is $[2,1,2,0]$.
+The robot should move to square $3$ if possible, avoiding $2$ because it has a negative reward.
 
 \begin{info}
 Note that $\pi$ gives the optimal action $a$ to take at each state $s$.
@@ -262,45 +298,42 @@ This process, called \emph{policy evaluation}, evaluates the value function for 
 \label{eq:policyiter-val_from_policy}
 V_{k+1}(s) = \max_{a \in [A_s]} \{\Sigma_{\bar{s}\in N_{s,a}}(p(\bar{s})*(u(\bar{s}) + \beta *V_{k}(\bar{s}))\} =  \Sigma_{\bar{s}\in N_{s,\pi(s)}}(p(\bar{s})*(u(\bar{s}) + \beta *V_{k}(\bar{s}))
 \end{equation}
-The last equality occurs because in state $s$, the robot should choose the action that maximizes reward, which is $\pi(s)$ by definition.
+The last equality occurs because in state $s$, the robot should choose the action that maximizes reward, which is $\pi(s)$ by definition. 
+Similarly to \emph{value iteration}, \emph{policy iteration} iterates until the desired tolerance is reached.
+This ensures that we get the value function that optimizes the reward for each starting state.
 
 
 \begin{problem}
 \label{prob:policyiter-value3}
 Write a function called \li{compute_policy_v()} that accepts a dictionary $P$ representing the decision process, the number of states, the number of actions, an array representing a policy, a discount factor $\beta \in (0,1)$, and a tolerance amount $\epsilon$.
-Return the value function corresponding to the policy.
+Use the \emph{policy evaluation} process described above to return the value function corresponding to the policy.
 
 Test your code on the policy vector generated from \li{extract_policy()} for the example.
 The result should be the same value function array from \li{value_iteration()}.
 \end{problem}
 
 Now that we have the value function for our policy, we can take the value function and find a better policy.
-Called \emph{policy improvement}, this step is the same method used in value iteration to find the policy.
+This is called \emph{policy improvement}. 
+This step is the same method used in value iteration to find the policy. 
+In other words, this step uses the \emph{extract\_policy()} method from \ref{prob:policyiter-value2} with the newly computed value function.
 
-Given an initial guess for our policy function, $\pi_0$, we calculate the corresponding value function using (\ref{eq:policyiter-val_from_policy}), and then use \eqref{eq:policyiter-pol_func} to improve our policy function.
-The algorithm for policy function iteration can be summarized as follows:
-
+\emph{Policy function iteration} starts with an intial $\pi_{0}$ and iterates using \emph{policy evalutaion} and \emph{policy improvement} successively until the desired tolerance is reached.
+The algorithm for policy function iteration, using two of the functions that you previously implemented, can be summarized as follows:
 
 \begin{algorithm}[H]
 \begin{algorithmic}[1]
 \Procedure{Policy Iteration Function}{$P, nS, nA, \beta, tol,$ maxiter}
     \State $\pi_0 \gets [\pi_0(w_0),\pi_0(w_1),\ldots,\pi_0(w_N)] $
      \Comment{Common choice is $\pi_0(w_i)=w_{i-1}$ with $\pi_0(0)=0$}
-    \For{$k=1,2,\dots,$\ \li{maxiter}}
-        \Comment Iterate only \li{maxiter} times at most.
-        \For{$s \in S$}
-        \Comment{Policy evaluation}
-            \State $V_{k+1}(s) =\Sigma_{\bar{s}\in N_{s,\pi(s)}}(p(\bar{s})*(u(\bar{s}) + \beta *V_{k}(\bar{s}))$
-            \Comment{compute\_policy\_v.}
-        \EndFor
-        \For{$s \in S$}
-        \Comment{Policy improvement.}
-            \State $\pi_{k+1}(s) =\argmax_{a \in A_s} \{\Sigma_{\bar{s}\in N_{s,a}} p(\bar{s})*(u(\bar{s}) + \beta*V_{k+1}(\bar{s}))]\}$
-            \Comment{extract\_policy.}
-        \EndFor
+    \For{$k=0,1,\dots,$\ \li{maxiter}}
+        \Comment Iterate only \li{maxiter} times at most
+        \State $v_{k+1}$ = compute\_policy\_v($\pi_{k}$)
+        \Comment{Policy evaluation using compute\_policy\_v}
+        \State $\pi_{k+1}$ = extract\_policy($v_{k+1}$)
+        \Comment{Policy improvement using extract\_policy}
         \If{ $||\pi_{k+1} - \pi_k|| < \varepsilon$}
             \State \texttt{break}
-             \Comment{Stop iterating if the policy doesn't change enough.}
+             \Comment{Stop iterating if the policy doesn't change enough}
         \EndIf
     \EndFor
     \State \pseudoli{return} $V_{k+1}, \pi_{k+1}$
@@ -315,7 +348,8 @@ The algorithm for policy function iteration can be summarized as follows:
 Write a function called \li{policy_iteration()} that will accept a dictionary $P$ representing the decision process, the number of states, the number of actions, a discount factor $\beta \in (0,1)$, the tolerance amount $\epsilon$, and the maximum number of iterations \li{maxiter}.
 Perform policy iteration until $\|\pi_{k+1} - \pi_{k}\| < \epsilon$ or $k > $ \li{maxiter}.
 Return the final vector representing $V_k$, the optimal policy $\pi_k$, and the number of iterations.
-Test your code on the example given above and compare your answers to the results from \ref{prob:policyiter-value1} and \ref{prob:policyiter-value2}.
+Test your code on the example given above and compare your answers to the results from problems \ref{prob:policyiter-value1} and \ref{prob:policyiter-value2}.
+\\(Hint: This is just the \emph{Policy Iteration} algorithm, except you also return the number of iterations)
 \end{problem}
 
 
@@ -357,10 +391,13 @@ For the $8\times 8$ scenario, use \li{env_name='FrozenLake8x8-v0'}.
 
 \subsection*{Using Gym}
 To use gym, we import it and create an environment based on the built-in gym environment.
-The FrozenLake environment has $3$ important attributes, $P$, $nS,$ and $nA$.
-$P$ is the same dictionary we used in the previous problems.
-$nS$ and $nA$ are the number of states and actions respectively.
-We can calculate the optimal policy with value iteration or policy iteration using these attributes.
+The FrozenLake environment has $3$ important attributes, $P$, $nS$, and $nA$.
+$P$ is similar to the dictionaries we used in the previous problems.
+As previously mentioned, $p(s_t,a_t,s_{t+1}) < 1$, which means the set $N_{s,a}$ has more than one value.
+If you did not create your earlier functions to account for that, it will not work as intended on this dictionary.
+We will use the enivronment's generated $P$ instead of creating our own dictionary of states and actions.
+
+We can calculate the optimal policy with value iteration or policy iteration using these $3$ attributes.
 Since the ice is slippery, this policy will not always result in a reward of $1$.
 
 \begin{lstlisting}
@@ -372,17 +409,19 @@ env = gym.make(env_name).env
 # Find number of states and actions
 number_of_states = env.nS
 number_of_actions = env.nA
+# Get the dictionary with all the states and actions
+dictionary_P = env.P
 \end{lstlisting}
 
 \begin{problem}
 \label{prob:policyiter-value5}
 Write a function that runs \li{value_iteration} and \li{policy_iteration} on FrozenLake.
-It should accept a boolean \li{basic_case} defaulting to \li{True} and an integer $n$ defaulting to $1000$ that indicates how many times to run the simulation.
-If \li{basic_case} is \li{True}, run the 4x4 scenario,
+It should accept a boolean \li{basic_case} defaulting to \li{True} and an integer $M$ defaulting to $1000$ that indicates how many times to run the simulation.
+If \li{basic_case} is \li{True}, run the 4x4 scenario.
 If not, run the 8x8 scenario.
 Calculate the value function and policy for the environment using both value iteration and policy iteration.
-Return the policies generated by value iteration and the policy and value function generated by policy iteration.
-Set the mean total rewards to $0$ and return them as well.
+Return the policy generated by value iteration and the policy and value function generated by policy iteration.
+Set the mean total rewards of both policies to $0$ and return them as well.
 \end{problem}
 
 The gym environments have built-in functions that allow us to simulate each step of the environment.
@@ -414,12 +453,17 @@ It will not be used in this lab.
 \begin{problem}
 \label{prob:policyiter-value6}
 Write a function \li{run_simulation()} that takes in the environment \li{env}, a policy \li{policy}, a boolean \li{render}, and a discount factor $\beta$.
-Calculate the total reward for the policy for one simulation using \li{env.reset} and \li{env.step()}.
+Calculate the total reward for the policy for one simulation using \li{env.reset()} and \li{env.step()}.
+If \li{render} is \emph{True}, render the environment using \li{env.render(mode = 'human')}.
 Stop the simulation when $done$ is $True$.
-(Hint: When calculating reward, use $\beta^k$.)
+Make sure not to use \li{env.close()} within this function. 
+Use \li{env.reset}, because it is much faster than opening and closing the environment every time you run the simulation.
+You should close the environment at the end of your \li{frozen_lake()} function.
+\\(Hint: When calculating reward, use $\beta^k$ as shown in \ref{eq:policyiter-dynopt1}.)
 
-Modify \li{frozen_lake()} to call \li{run_simulation()} for both the value iteration policy and the policy iteration policy $M$ times.
-Return the policy generated by value iteration, the mean total reward for the policy generated by value iteration, the value function generated by policy iteration, the policy generated by policy iteration, and the mean total reward for the policy generated by policy iteration.
+Next, modify \li{frozen_lake()} to call \li{run_simulation()} for both the value iteration policy and the policy iteration policy $M$ times. 
+Finally, make sure that \li{frozen_lake()} returns the updated values of the mean total reward for both policies.
+\\(Hint: Even though you run the simlutaion $M$ times, you should only calculate the policies once, because each policy depends on the dictionary $P$, which does not change.)
 \end{problem}
 
 

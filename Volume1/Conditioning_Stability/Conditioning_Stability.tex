@@ -5,6 +5,8 @@ Both of these concepts are important for answering the crucial question, ``is my
 In this lab we examine the conditioning of common linear algebra problems, including computing polynomial roots and matrix eigenvalues.
 We also present an example to demonstrate how two different algorithms for the same problem may not have the same level of stability.}
 
+\noindent \textbf{ Note:} There may be some variation in the solutions to problems in this lab between the different updates of NumPy, SciPy, and SymPy.
+Consider updating these packages if you are currently using older versions.
 \section*{Conditioning} % =====================================================
 
 The \emph{absolute condition number} of a function $f: \mathbb{R}^m \rightarrow \mathbb{R}^n$ at a point $\x\in\mathbb{R}^m$ is defined by
@@ -124,31 +126,6 @@ The following code computes and compares the roots of $\tilde{w}(x)$ and $w(x)$ 
 \end{lstlisting}
 \end{comment}
 
-\begin{lstlisting}
->>> import sympy as sy
->>> from matplotlib import pyplot as plt
-
-# The roots of w are 1, 2, ..., 20.
->>> w_roots = np.arange(1, 21)
-
-# Get the exact Wilkinson polynomial coefficients using SymPy.
->>> x, i = sy.symbols('x i')
->>> w = sy.poly_from_expr(sy.product(x-i, (i, 1, 20)))[0]
->>> w_coeffs = np.array(w.all_coeffs())
->>> print(w_coeffs[:6])
-[1 -210 20615 -1256850 53327946 -1672280820]
-
-# Perturb one of the coefficients very slightly.
->>> h = np.zeros(21)
->>> h[1]=1e-7
->>> new_coeffs = w_coeffs - h
->>> print(new_coeffs[:6])
-[1 -210.000000100000 20615 -1256850 53327946 -1672280820]
-
-# Use NumPy to compute the roots of the perturbed polynomial.
->>> new_roots = np.roots(np.poly1d(new_coeffs))
-\end{lstlisting}
-
 Figure \ref{fig:wilkinson-perturbed-poly} plots $w(x)$ and $\tilde{w}(x)$ together, and Figure \ref{fig:wilkinon-perturbed-roots} and compares their roots in the complex plane.
 
 \begin{figure}[H] % Original and pertubed Wilkinson polynomial + roots
@@ -177,6 +154,29 @@ Figure \ref{fig:wilkinson-polynomial} clearly indicates that a very small change
 To quantify the difference, estimate the condition numbers (this example uses the $\infty$ norm to compute $\hat{\kappa}$ and $\kappa$).
 
 \begin{lstlisting}
+>>> import sympy as sy
+>>> from matplotlib import pyplot as plt
+
+# The roots of w are 1, 2, ..., 20.
+>>> w_roots = np.arange(1, 21)
+
+# Get the exact Wilkinson polynomial coefficients using SymPy.
+>>> x, i = sy.symbols('x i')
+>>> w = sy.poly_from_expr(sy.product(x-i, (i, 1, 20)))[0]
+>>> w_coeffs = np.array(w.all_coeffs())
+>>> print(w_coeffs[:6])
+[1 -210 20615 -1256850 53327946 -1672280820]
+
+# Perturb one of the coefficients very slightly.
+>>> h = np.zeros(21)
+>>> h[1]=1e-7
+>>> new_coeffs = w_coeffs - h
+>>> print(new_coeffs[:6])
+[1 -210.000000100000 20615 -1256850 53327946 -1672280820]
+
+# Use NumPy to compute the roots of the perturbed polynomial.
+>>> new_roots = np.roots(np.poly1d(new_coeffs))
+
 # Sort the roots to ensure that they are in the same order.
 >>> w_roots = np.sort(w_roots)
 >>> new_roots = np.sort(new_roots)
@@ -188,7 +188,7 @@ To quantify the difference, estimate the condition numbers (this example uses th
 
 # Estimate the relative condition number in the infinity norm.
 >>> k * la.norm(w_coeffs, np.inf) / la.norm(w_roots, np.inf)
-1.95063629993970+25                     # This is huge!!
+1.95063629993970e+25                     # This is huge!!
 \end{lstlisting}
 
 There are some caveats to this example.
@@ -397,12 +397,12 @@ Plot the resulting polynomials together with the raw data points.
 Return the forward error $\norm{A\x-\mathbf{b}}_2$ of both approximations.
 \\(Hint: The function \li{np.polyval()} will be helpful for plotting the resulting polynomials.)
 
-Test your function using various values of $n$, taking special note of what happens for values of $n$ near $14$ (pictured below).
+Test your function using various values of $n$, taking special note of what happens for values of $n$ near $14$.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=.7\textwidth]{figures/lstsq_stability.pdf}
-\end{figure}
+%\begin{figure}[H]
+%    \centering
+%    \includegraphics[width=.7\textwidth]{figures/lstsq_stability.pdf}
+%\end{figure}
 \end{problem}
 
 \subsection*{Catastrophic Cancellation} % -------------------------------------
@@ -451,14 +451,19 @@ Since this is done symbolically, these values can be accepted as the true values
 
 \item Use (\ref{eq:integral-subfactorial-formula}) to compute $I(n)$ for the same values of $n$.
 Use \li{sy.subfactorial()} to compute $!n$ and \li{sy.factorial()} to compute $n!$.
+The function used for $e$ in this equation changes the returned error value. 
+For this problem, use \li{np.e} instead of \li{sy.exp(1)}.
 \\(Hint: be careful to only pass Python integers to these functions.)
 \label{step:subfactorial-cheat}
 
 \item Plot the relative forward error of the results computed in step \ref{step:subfactorial-cheat} at each of the given values of $n$.
+When computing the relative forward error use absolute values instead of \li{la.norm()}.
 Use a log scale on the $y$-axis.
-Is (\ref{eq:integral-subfactorial-formula}) a stable way to compute $I(n)$?
-Why?
+
 \end{enumerate}
+%Reflect: Is (\ref{eq:integral-subfactorial-formula}) a stable way to compute $I(n)$?
+%Why?
+%(This is for personal understanding only and will not be graded.)
 \end{problem}
 
 The examples presented in this lab are just a few of the ways that a mathematical problem can turn into a computational train wreck.
