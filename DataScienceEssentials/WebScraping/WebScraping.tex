@@ -9,12 +9,12 @@ HTTP stands for Hypertext Transfer Protocol, which is an application layer netwo
 It is a higher level protocol than TCP, which we used to build a server in the Web Technologies lab, but uses TCP protocols to manage connections and provide network capabilities.
 The HTTP protocol is centered around a request and response paradigm, in which a client makes a request to a server and the server replies with a response.
 There are several methods, or \emph{requests}, defined for HTTP servers, the three most common of which are GET, POST, and PUT.
-GET requests request information from the server, POST requests modify the state of the server, and PUT requests add new pieces of data to the server.
+A GET request asks for information from the server, a POST request modifies the state of the server, and a PUT request adds new pieces of data to the server.
 
 The standard way to get the source code of a website using Python is via the \li{requests} library.\footnote{Though \texttt{requests} is not part of the standard library, it is recognized as a standard tool in the data science community. See \url{http://docs.python-requests.org/}.}
 Calling \li{requests.get()} sends an HTTP GET request to a specified website.
 The website returns a response code, which indicates whether or not the request was received, understood, and accepted.
-If the response code is good, typically \li{200}, then the response will also include the website source code as an HTML file.
+If the response code is good, typically \li{200}\footnote{See \url{https://en.wikipedia.org/wiki/List_of_HTTP_status_codes} for explanation of specific response codes.}, then the response will also include the website source code as an HTML file.
 
 \begin{lstlisting}
 >>> import requests
@@ -39,12 +39,12 @@ If the response code is good, typically \li{200}, then the response will also in
 Note that some websites aren't built to handle large amounts of traffic or many repeated requests.
 Most are built to identify web scrapers or crawlers that initiate many consecutive GET requests without pauses, and retaliate or block them.
 When web scraping, always make sure to store the data that you receive in a file and include error checks to prevent retrieving the same data unnecessarily.
-This is especially important in larger applications.
+We won't spend much time on that in this lab, but it's especially important in larger applications.
 
 \begin{problem}
 Use the \li{requests} library to get the HTML source for the website \url{http://www.example.com}.
 Save the source as a file called example.html.
-If the file already exists, make sure not to scrape the website, or overwrite the file.
+If the file already exists, make sure not to scrape the website or overwrite the file.
 You will use this file later in the lab.
 \label{prob:get-example.com}
 \end{problem}
@@ -60,6 +60,8 @@ It is up to the programmer to create a scraper that respects the rules found in 
 \footnote{Python provides a parsing library called \texttt{urllib.robotparser} for reading \texttt{robot.txt} files.
 For more information, see \url{https://docs.python.org/3/library/urllib.robotparser.html}.
 }
+
+We will cover this more in the next lab.
 \end{warn}
 
 \section*{HTML} % =============================================================
@@ -102,16 +104,25 @@ The previous example can be written in a single line.
 Special tags, which don't contain any text or other tags, are written without a closing tag and in a single pair of brackets.
 A forward slash is included between the name and the closing bracket.
 Examples of these include \li{<hr/>}, which describes a horizontal line, and \li{<img/>}, the tag for representing an image.
-
+%Old problem
+\begin{comment}
 \begin{problem} % Use View Page Source to see HTML source of a simple website.
 Using the output from Problem \ref{prob:get-example.com}, examine the HTML source code for \url{http://www.example.com}.
 What tags are used?
 What is the value of the \li{<<type>>} attribute associated with the \li{style} tag?
 
-Write a function that returns the set of names of tags used in the website, and the value of the \li{<<type>>} attribute of the \li{style} tag (as a string).
+Write a function that returns a set of the names of all tags the website uses and the value of the \li{<<type>>} attribute of the \li{style} tag (as a string). 
 \\(Hint: there are ten unique tag names.)
 \label{prob:look-at-example.com}
 \end{problem}
+\end{comment}
+
+\begin{info}
+You can open .html files using a text editor or any web browser.
+In a browser, you can inspect the source code associated with specific elements.
+Right click the element and select \li{Inspect}.
+If you are using Safari, you may first need to enable ``Show Develop menu'' in ``Preferences'' under the ``Advanced'' tab.
+\end{info}
 
 \section*{BeautifulSoup} % ====================================================
 
@@ -147,15 +158,15 @@ The \li{prettify()} method returns a string that can be printed to represent the
 >>> small_soup = BeautifulSoup(small_example_html, 'html.parser')
 >>> print(small_soup.prettify())
 <<<html>
- <body>
-  <p>
-   Click
-   <a href="http://www.example.com" id="info">
-    here
-   </a>
-   for more information.
-  </p>
- </body>
+  <body>
+    <p>
+      Click
+      <a href="http://www.example.com" id="info">
+         here
+      </a>
+      for more information.
+    </p>
+  </body>
 </html>>>
 \end{lstlisting}
 
@@ -276,33 +287,37 @@ Attribute & Description \\ \hline
 <<'\n'>>                                        # The first sibling is just text.
 >>> a_tag.next_sibling.next_sibling         # The second sibling is a tag.
 <<<a class="pig" href="http://example.com/mo" id="link2">Mo</a>>>
-
-%# Alternatively, get all siblings past <a> at once.
-%>>> list(a_tag.next_siblings)
-%<<['\n',
-% <a class="pig" href="http://example.com/mo" id="link2">Mo</a>,
-% ', and\n',
-% <a class="pig" href="http://example.com/curly" id="link3">Curly.</a>,
-% '\n',
-% <p>The three pigs had an odd fascination with experimental construction.</p>,
-% '\n',
-% <p>...</p>,
-% '\n']>>
 \end{lstlisting}
+\begin{comment} %Reducing yellow boxes. This was commented before
+# Alternatively, get all siblings past <a> at once.
+>>> list(a_tag.next_siblings)
+<<['\n',
+ <a class="pig" href="http://example.com/mo" id="link2">Mo</a>,
+ ', and\n',
+ <a class="pig" href="http://example.com/curly" id="link3">Curly.</a>,
+ '\n',
+ <p>The three pigs had an odd fascination with experimental construction.</p>,
+ '\n',
+ <p>...</p>,
+ '\n']>>
+\end{comment}
 
 Note carefully that newline characters are considered to be children of a parent tag.
 Therefore iterating through children or siblings often requires checking which entries are tags and which are just text.
+In the next example, we use a tag's \li{attrs} attribute to access specific attributes within the tag (see Table \ref{table:bs4-tag-attributes}).
 
 \begin{lstlisting}
-# Get to the <p> tag that has class="story".
+# Get to the <p> tag that has class="story" using these commands.
 >>> p_tag = pig_soup.body.p.next_sibling.next_sibling
 >>> p_tag.attrs["class"]                # Make sure it's the right tag.
 <<['story']>>
 
 # Iterate through the child tags of <p> and print hrefs whenever they exist.
 >>> for child in p_tag.children:
-...     if hasattr(child, "attrs") and "href" in child.attrs:
-...         print(child.attrs["href"])
+...		# Skip the children that are not bs4.element.Tag objects
+...		# These don't have the attribute "attrs"
+...		if hasattr(child, "attrs") and "href" in child.attrs:
+...			print(child.attrs["href"])
 <<http://example.com/larry
 http://example.com/mo
 http://example.com/curly>>
@@ -346,9 +361,9 @@ The three pigs had an odd fascination with experimental construction.
 ...>>
 \end{lstlisting}
 
-\begin{problem}
-Using the output from Problem \ref{prob:get-example.com}, write a function that reads the file and loads the code into BeautifulSoup.
-Find the only \li{<a>} tag with a hyperlink, and return its text.
+\begin{problem} %Problem 3
+Write a function that reads a file of the same format as the output from Problem \ref{prob:get-example.com} and loads it into BeautifulSoup.
+Find the first \li{<a>} tag, and return its text along with a boolean value indicating whether or not it has a hyperlink (\li{href} attribute).
 \end{problem}
 
 \begin{comment}
@@ -399,20 +414,16 @@ Tags can be matched by name, attributes, and/or text.
 \begin{problem}
 The file \texttt{san\_diego\_weather.html} contains the HTML source for an old page from Weather Underground.\footnote{See \url{http://www.wunderground.com/history/airport/KSAN/2015/1/1/DailyHistory.html?req_city=San+Diego&req_state=CA&req_statename=California&reqdb.zip=92101&reqdb.magic=1&reqdb.wmo=99999&MR=1}}
 Write a function that reads the file and loads it into BeautifulSoup.
+
 Return a list of the following tags:
 \begin{enumerate}
 \item The tag containing the date ``Thursday, January 1, 2015''.
 \item The tags which contain the \textbf{links} ``Previous Day'' and ``Next Day.''
 \item The tag which contains the number associated with the Actual Max Temperature.
 \end{enumerate}
-
-This HTML tree is significantly larger than the previous examples.
-To get started, consider opening the file in a web browser.
-Find the element that you are searching for on the page, right click it, and select \li{Inspect}.
-This opens the HTML source at the element that the mouse clicked on.
 \end{problem}
 
-\subsection*{Advanced Search Techniques} % ------------------------------------
+\subsection*{Advanced Search Techniques: Regular Expressions} % ------------------------------------
 
 Consider the problem of finding the tag that is a link to the URL \url{http://example.com/curly}.
 
@@ -450,9 +461,61 @@ Finally, to find a tag that has a particular attribute, regardless of the actual
  <a class="pig" href="http://example.com/mo" id="link2">Mo</a>,
  <a class="pig" href="http://example.com/curly" id="link3">Curly.</a>]>>
 
-# Final the names all tags WITHOUT an 'id' attribute.
+# Find the names all tags WITHOUT an 'id' attribute.
 >>> [tag.name for tag in pig_soup.find_all(<<id>>=False)]
 <<['html', 'head', 'title', 'body', 'p', 'b', 'p', 'p', 'p']>>
+\end{lstlisting}
+
+\subsection*{Advanced Search Techniques: CSS Selectors} % ------------------------------------
+
+\li{BeautifulSoup} also supports the use of CSS selectors.
+CSS (Cascading Style Sheet) describes the style and layout of a webpage, and CSS selectors provide a useful way to navigate HTML code.
+Use the method \li{soup.select()} to find all elements matching an argument.
+The general format for an argument is \li{<<tag-name[attribute-name = 'attribute value']>>}.
+The table below lists symbols you can use to more precisely locate various elements.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{c|l}
+    Symbol & Meaning \\ \hline
+    \li{=} & Matches an attribute value exactly \\
+    \li{*=} & Partially matches an attribute value \\
+    \li{\^=} & Matches the beginning of an attribute value \\
+    \li{\$=} & Matches the end of an attribute value \\
+    \li{+} & Next sibling of matching element \\
+    \li{>} & Search an element's children \\
+\end{tabular}
+\caption{CSS symbols for use with Selenium}
+\label{table:selenium-css-selectors} %Referred to in Web Crawling lab
+\end{table}
+
+You can do many other useful things with CSS selectors.
+A helpful guide can be found at \url{https://www.w3schools.com/cssref/css_selectors.asp}.
+The code below gives an example using arguments described above.
+
+\begin{lstlisting}
+# Find all <a> tags with id="link1"
+>>> pig_soup.select("[id='link1']")
+[<a class="pig" href="http://example.com/larry" id="link1">Larry,</a>]
+
+# Find all tags with an href attribute containing 'curly'.
+>>> pig_soup.select("[href*='curly']")
+[<a class="pig" href="http://example.com/curly" id="link3">Curly.</a>]
+
+# Find all <a> tags with an href attribute
+>>> pig_soup.select("a[href]")
+[<a class="pig" href="http://example.com/larry" id="link1">Larry,</a>,
+ <a class="pig" href="http://example.com/mo" id="link2">Mo</a>,
+ <a class="pig" href="http://example.com/curly" id="link3">Curly.</a>]
+ 
+ # Find all <b> tags within a <p> tag with class='title'
+ >>> pig_soup.select("p[class='title'] b")
+ [<b>The Three Little Pigs</b>]
+ 
+ # Use a comma to find elements matching one of two arguments
+ >>> pig_soup.select("a[href$='mo'],[id='link3']")
+[<a class="pig" href="http://example.com/mo" id="link2">Mo</a>,
+ <a class="pig" href="http://example.com/curly" id="link3">Curly.</a>]
 \end{lstlisting}
 
 \begin{problem} % Bank Data Index.

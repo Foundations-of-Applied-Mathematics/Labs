@@ -1,569 +1,412 @@
-\lab{Pandas 4: Time Series}{Pandas 4: Time Series}
-\objective{Many real world data sets---stock market measurements, ocean tide levels, website traffic, seismograph data, audio signals, fluid simulations, quarterly dividends, and so on are time series, meaning they come with time-based labels.
-There is no universal format for such labels, and indexing by time is often difficult with raw data.
-Fortunately, pandas has tools for cleaning and analyzing time series.
-In this lab, we use pandas to clean and manipulate time-stamped data and introduce some basic tools for time series analysis.}
+\lab{Geopandas}{Geopandas}
 
-\begin{info}
-This lab will be done using Colab Notebooks.
-These notebooks are similar to Jupyter Notebooks but run remotely on Google's servers.
-Open a Google Colab notebook by going to your Google Drive account and creating a new Colaboratory file.
-If making a Colaboratory file is not an option, download the application Colaboratory onto your Google Drive.
-Once opening a new Colab Notebook, upload the file \li{pandas4.ipynb}.
-To make the data files accessible, run the following at the top of the lab:
-\begin{lstlisting}
->>> from google.colab import files
+\objective{Geopandas is a package designed to organize and manipulate geographic data, It combines the data manipulation tools from Pandas and the geometric capabilities of the Shapely package. In this lab, we explore the basic data structures of GeoSeries and GeoDataFrames and their functionalities.}
 
->>> uploaded = files.upload()
-\end{lstlisting}
-This will prompt you upload files for this notebook.
-For this lab, upload \li{DJIA.csv}, \li{paychecks.csv}, \li{finances.csv}, and \li{website_traffic.csv}.
 
-Once the lab is complete, delete BOTH lines of code used for uploading files (the import statement and the upload statement) and download as a \li{.py} file to your git repository.
-Push the newly made \li{pandas4.py} file.
-\end{info}
-
-% Time series data is any form of data that comes attached to a timestamp (i.e. Sept 28, 2016 20:32:24) or a period of time (i.e. Q3 2012). Some examples of time series data include:
-
-\section*{Working with Dates and Times} % =====================================
-
-The \li{datetime} module in the standard library provides a few tools for representing and operating on dates and times.
-The \li{datetime.datetime} object represents a \emph{time stamp}: a specific time of day on a certain day.
-Its constructor accepts a four-digit year, a month (starting at 1 for January), a day, and, optionally, an hour, minute, second, and microsecond.
-Each of these arguments must be an integer, with the hour ranging from $0$ to $23$.
+\section*{Installation} %============================
+Geopandas is a new package designed to combine the functionalities of Pandas and Shapely, a package used for geometric manipulation.
+Using Geopandas with geographic data is very useful as it allows the user to not only compare numerical data, but geometric attributes.
+Since Geopandas is currently under development, the installation procedure requires that all dependencies are up to date.
+While possible to install Geopandas through \textbf{pip} using
 
 \begin{lstlisting}
->>> from datetime import datetime
-
-# Represent November 18th, 1991, at 2:01 PM.
->>> bday = datetime(1991, 11, 18, 14, 1)
->>> print(bday)
-1991-11-18 14:01:00
-
-# Find the number of days between 11/18/1991 and 11/9/2017.
->>> dt = datetime(2017, 11, 9) - bday
->>> dt.days
-9487
+>>> pip install geopandas
 \end{lstlisting}
 
-The \li{datetime.datetime} object has a parser method, \li{strptime()}, that converts a string into a new \li{datetime.datetime} object.
-The parser is flexible so the user must specify the format that the dates are in.
-For example, if the dates are in the format \li{"Month/Day//Year::Hour"}, specify \li{<<format>>"=\%m/\%d//\%Y::\%H"} to parse the string appropriately.
-See Table \ref{table:date_formats} for formatting options.
+it is not recommended. 
+You can view the warnings here \url{https://geopandas.org/install.html}.
 
-\begin{table}[H]
+To install Geopandas through Conda, the recommended day, run the following code.
+
+\begin{lstlisting}
+>>> conda install geopandas
+>>> conda install -c conda-forge gdal
+\end{lstlisting}
+
+A particular package needed for Geopandas is Fiona.
+Geopandas will not run without the correct version of this package.
+To check the current version of Fiona that is installed, run the following code.
+If the version is not at least 1.7.13, update Fiona.
+
+\begin{lstlisting}
+# Check version of Fiona
+>>> conda list fiona
+
+# Update Fiona if necessary
+>>> pip install fiona --upgrade
+\end{lstlisting}
+
+\section*{GeoSeries} %============================
+
+A GeoSeries is a Pandas Series where each entry is a set of geometric objects.
+There are three classes of geometric objects inherited from the Shapely package:
+\begin{enumerate}
+\item Points / Multi-Points
+\item Lines / Multi-Lines
+\item Polygons / Multi-Polygons
+\end{enumerate}
+A point is used to identify objects like coordinates, where there is one small instance of the object.
+A line could be used to describe a road.
+A polygon could be used to identify regions, such as a country.
+Multipoints, multilines, and multipolygons contain lists of points, lines, and polygons, respectively.
+
+Since each object in the GeoSeries is also a Shapely object, the GeoSeries inherits many methods and attributes of Shapely objects.
+Some of the key attributes and methods are listed in Table \ref{shapely-methods}.
+These attributes and methods can be used to calculate distances, find the sizes of countries, and determine whether coordinates are within country's boundaries.
+The example below uses the attribute \li{bounds} to find the maximum and minimum coordinates of Egypt in a built-in GeoDataFrame.
+
+\begin{table}[ht]
 \begin{center}
-    \begin{tabular}{c|l}
-        Pattern & Description \\ \hline
-        \li{\%Y} & 4-digit year \\
-        \li{\%y} & 2-digit year \\
-        \li{\%m} & 1- or 2-digit month \\
-        \li{\%d} & 1- or 2-digit day \\
-        \li{\%H} & Hour (24-hour) \\
-        \li{\%I} & Hour (12-hour) \\
-        \li{\%M} & 2-digit minute \\
-        \li{\%S} & 2-digit second \\
-    \end{tabular}
+\begin{tabular}{c|c}
+Method/Attribute & Description\\
+\hline
+\li{distance(other)}&returns minimum distance from GeoSeries to \li{other}\\
+\li{contains(other)}&returns \li{True} if shape contains \li{other}\\
+\li{intersects(other)}&returns \li{True} if shape intersects \li{other}\\
+\li{area}&returns shape area\\
+\li{convex_hull}&returns convex shape around all points in the object
+\end{tabular}
+\label{shapely-methods}
 \end{center}
-\caption{Formats recognized by \li{datetime.strptime()}}
-\label{table:date_formats}
+\caption{Attributes and Methods for GeoSeries}
 \end{table}
 
 \begin{lstlisting}
->>> print(datetime.strptime("1991-11-18 / 14:01", "%Y-%m-%d / %H:%M"),
-...       datetime.strptime("1/22/1996", "%m/%d/%Y"),
-...       datetime.strptime("19-8, 1998", "%d-%m, %Y"), sep='\n')
-1991-11-18 14:01:00                 # The date formats are now standardized.
-1996-01-22 00:00:00                 # If no hour/minute/seconds data is given,
-1998-08-19 00:00:00                 # the default is midnight.
+>>> import geopandas as gpd
+>>> world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+# Get GeoSeries for Egypt
+>>> egypt = world[world['name']=='Egypt']
+
+# Find bounds of Egypt
+>>> egypt.bounds
+         minx    miny         maxx      maxy
+47   24.70007    22.0     36.86623  31.58568
 \end{lstlisting}
 
-\subsection*{Converting Dates to an Index} % ----------------------------------
+\section*{Creating GeoDataFrames} %============================
 
-The \li{TimeStamp} class is the pandas equivalent to a \li{datetime.datetime} object.
-A pandas index composed of \li{TimeStamp} objects is a \li{DatetimeIndex}, and a \li{Series} or \li{DataFrame} with a \li{DatetimeIndex} is called a \emph{time series}.
-The function \li{pd.to_datetime()} converts a collection of dates in a parsable format to a \li{DatetimeIndex}.
-The format of the dates is inferred if possible, but it can be specified explicitly with the same syntax as \li{datetime.strptime()}.
+The main structure used in GeoPandas is a GeoDataFrame, which is similar to a Pandas DataFrame.
+A GeoDataFrame has one special column called \li{geometry}.
+This GeoSeries column is used when a spatial method, like \li{distance()}, is used on the GeoDataFrame.
+
+To make a GeoDataFrame, first create a Pandas DataFrame.
+At least one of the columns in the DataFrame should contain geometric information.
+Convert a column containing geometric information to a GeoSeries using the \li{apply} method.
+At this point, the Pandas DataFrame can be cast as a GeoDataFrame.
+When creating a GeoDataFrame, if more than one column has geometric data, assign which column will be the \li{geometry} using the \li{set_geometry()} method.
 
 \begin{lstlisting}
 >>> import pandas as pd
+>>> import geopandas as gpd
+>>> from shapely.geometry import Point
 
-# Convert some dates (as strings) into a DatetimeIndex.
->>> dates = ["2010-1-1", "2010-2-1", "2012-1-1", "2012-1-2"]
->>> pd.to_datetime(dates)
-<<DatetimeIndex(['2010-01-01', '2010-02-01', '2012-01-01', '2012-01-02'],
-                dtype='datetime64[ns]', freq=None)>>
+# Create a Pandas DataFrame
+>>> df = pd.DataFrame({'City': ['Seoul', 'Lima', 'Johannesburg'],
+...                   'Country': ['South Korea', 'Peru', 'South Africa'],
+...                   'Latitude': [37.57, -12.05, -26.20],
+...                   'Longitude': [126.98, -77.04, 28.04]})
+                                 
+# Create geometry column
+>>> df['Coordinates'] = list(zip(df.Longitude, df.Latitude))
 
-# Create a time series, specifying the format for the DatetimeIndex.
->>> dates = ["1/1, 2010", "1/2, 2010", "1/1, 2012", "1/2, 2012"]
->>> date_index = pd.to_datetime(dates, format="%m/%d, %Y")
->>> pd.Series([x**2 for x in range(4)], index=date_index)
-<<2010-01-01    0
-2010-01-02    1
-2012-01-01    4
-2012-01-02    9
-dtype: int64>>
+# Make geometry column Shapely objects
+>>> df['Coordinates'] = df['Coordinates'].apply(Point)
+
+# Cast as GeoDataFrame
+>>> gdf = gpd.GeoDataFrame(df, geometry='Coordinates')
 \end{lstlisting}
 
-\begin{comment}
-\begin{warn} % Deprecated TimeSeries object.
-Prior to version 0.17.0 of \li{pandas}, there was a dedicated \li{TimeSeries} data structure.
-This has since been deprecated in favor of the more general \li{Series} and \li{DataFrame} data structures.
-Any materials referencing the \li{TimeSeries} can be corrected by replacing the \li{TimeSeries} with a \li{Series} or \li{DataFrame} with a \li{DatetimeIndex} as the index.
-\end{warn}
-\end{comment}
+\begin{info}
+Longitude is the angular measurement starting at the Prime Meridian, $0\degree$, and going to $180\degree$ to the east and $-180\degree$ to the west.
+Latitude is the angle between the equatorial plane and the normal line at a given point; a point along the Equator has latitude $0$, the North Pole has latitude $+90\degree$ or $90\degree N$, and the South Pole has latitude $-90\degree$ or $90\degree S$.
+\end{info}
 
-\begin{problem} % Load, clean, and plot Dow Jones IA data.
-The file \texttt{DJIA.csv} contains daily closing values of the Dow Jones Industrial Average from 2006--2016.
-Read the data into a \li{Series} or \li{DataFrame} with a \li{DatetimeIndex} as the index.
-Drop rows with missing values, cast the \li{"VALUE"} column to floats, then return the updated DataFrame.
-\label{prob:timeseries-dowjones}
-\end{problem}
+\section*{Plotting GeoDataFrames} %============================
 
-\subsection*{Generating Time-based Indices} % ---------------------------------
+Information from a GeoDataFrame is plotted based on the geometry column.
+Data points are displayed as geometry objects.
+The following example plots the shapes in the \li{world} GeoDataFrame.
 
-Some time series datasets come without explicit labels but have instructions for deriving timestamps.
-For example, a list of bank account balances might have records from the beginning of every month, or heart rate readings could be recorded by an app every 10 minutes.
-Use \li{pd.date\_range()} to generate a \li{DatetimeIndex} where the timestamps are equally spaced.
-The function is analogous to \li{np.arange()} and has the following parameters.
-\begin{table}[H]
+\begin{lstlisting}
+# Plot world GeoDataFrame
+>>> world.plot()
+\end{lstlisting}
+
+\begin{figure}[H]
 \begin{center}
-    \begin{tabular}{r|l}
-        Parameter & Description \\ \hline
-        \li{start} & Starting date \\
-        \li{end} & End date \\
-        \li{periods} & Number of dates to include \\
-        \li{freq} & Amount of time between consecutive dates \\
-        \li{normalize} & Normalizes the start and end times to midnight \\
-    \end{tabular}
+\includegraphics[scale=.55]{figures/worldmap.pdf}
 \end{center}
-\caption{Parameters for \li{pd.date_range()}.}
-\label{table:date_params}
-\end{table}
+\label{world-map}
+\caption{World map}
+\end{figure} 
 
-Exactly three of the parameters \li{start}, \li{end}, \li{periods}, and \li{freq} must be specified to generate a range of dates.
-The \li{freq} parameter accepts a variety of string representations, referred to as \emph{offset aliases}.
-See Table \ref{table:range_freqs} for a sampling of some of the options.
-For a complete list of the options, see \url{http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases}.
+Multiple GeoDataFrames can be plotted at once.
+This can be done by by setting one GeoDataFrame as the base of the plot and ensuring that each layer uses the same axes.
+In the following example, a GeoDataFrame containing the coordinates of world airports is plotted on top of a GeoDataFrame containing the polygons of country boundaries, resulting in a world map of airport locations.
 
-\begin{table}[H]
+\begin{lstlisting}
+# Set outline of world countries as base
+>>> fig,ax = plt.subplots(figsize=(10,7), ncols=1, nrows=1)
+>>> base = world.boundary.plot(edgecolor='black', ax=ax, linewidth=1)
+
+# Plot airports on world map
+>>> airports.plot(ax=base, marker='o', color='green', markersize=1)
+>>> ax.set_xlabel('Longitude')
+>>> ax.set_ylabel('Latitude')
+>>> ax.set_title('World Airports')
+\end{lstlisting}
+
+\begin{figure}[H]
 \begin{center}
-    \begin{tabular}{r|l}
-        Parameter & Description \\ \hline
-        \li{"D"} & calendar daily (default) \\
-        \li{"B"} & business daily \\
-        \li{"H"} & hourly \\
-        \li{"T"} & minutely \\
-        \li{"S"} & secondly \\
-        \li{"MS"} & first day of the month \\
-        \li{"BMS"} & first weekday of the month \\
-        \li{"W-MON"} & every Monday \\
-        \li{"WOM-3FRI"} & every 3rd Friday of the month \\
-    \end{tabular}
+\includegraphics[scale=.6]{figures/airports.pdf}
 \end{center}
-\caption{Options for the \li{freq} parameter to \li{pd.date_range()}.}
-\label{table:range_freqs}
-\end{table}
+\label{airport-map}
+\caption{Airport map}
+\end{figure}
 
-\begin{lstlisting}
-# Create a DatetimeIndex for 5 consecutive days starting on September 28, 2016.
->>> pd.date_range(start='9/28/2016 16:00', periods=5)
-<<DatetimeIndex(['2016-09-28 16:00:00', '2016-09-29 16:00:00',
-               '2016-09-30 16:00:00', '2016-10-01 16:00:00',
-               '2016-10-02 16:00:00'],
-              dtype='datetime64[ns]', freq='D')>>
-
-# Create a DatetimeIndex with the first weekday of every other month in 2016.
->>> pd.date_range(start='1/1/2016', end='1/1/2017', freq="2BMS" )
-<<DatetimeIndex(['2016-01-01', '2016-03-01', '2016-05-02', '2016-07-01',
-               '2016-09-01', '2016-11-01'],
-              dtype='datetime64[ns]', freq='2BMS')>>
-
-
-# Create a DatetimeIndex for 10 minute intervals between 4:00 PM and 4:30 PM on September 9, 2016.
->>> pd.date_range(start='9/28/2016 16:00',
-            end='9/28/2016 16:30', freq="10T")
-<<DatetimeIndex(['2016-09-28 16:00:00', '2016-09-28 16:10:00',
-               '2016-09-28 16:20:00', '2016-09-28 16:30:00'],
-              dtype='datetime64[ns]', freq='10T')>>
-
-# Create a DatetimeIndex for 2 hour 30 minute intervals between 4:30 PM and 2:30 AM on September 29, 2016.
->>> pd.date_range(start='9/28/2016 16:30', periods=5, freq="2h30min")
-<<DatetimeIndex(['2016-09-28 16:30:00', '2016-09-28 19:00:00',
-               '2016-09-28 21:30:00', '2016-09-29 00:00:00',
-               '2016-09-29 02:30:00'],
-              dtype='datetime64[ns]', freq='150T')>>
-\end{lstlisting}
-
-\begin{problem} % Use pd.date_range() for something.
-The file \texttt{paychecks.csv} contains values of an hourly employee's last 93 paychecks.
-Paychecks are given on the first and third Fridays of each month, and the employee started working on March 13, 2008.
-
-Read in the data, using \li{pd.date\_range()} to generate the \li{DatetimeIndex}.
-Set this as the new index of the \li{DataFrame} and return the \li{DataFrame}.
+\begin{problem}
+Read in the file \li{airports.csv} as a Pandas DataFrame.
+Create three convex hulls around the three sets of airports listed below.
+This can be done by passing in lists of the airports' coordinates to a \li{shapely.geometry.Polygon} object.
+	
+Create a new GeoDataFrame with these three Polygons as entries.
+Plot this GeoDataFrame on top of an outlined world map.
+\begin{itemize} %These could also be listed by 4-character ICAO codes, but listing the names makes the problem more exciting/realistic. Probably.
+	\item Maio Airport, Scatsta Airport, Stokmarknes Skagen Airport, Bekily Airport, K. D. Matanzima Airport, RAF Ascension Island
+	\item Oiapoque Airport, Maio Airport, Zhezkazgan Airport, Walton Airport, RAF Ascension Island, Usiminas Airport, Piloto Osvaldo Marques Dias Airport
+	\item Zhezkazgan Airport, Khanty Mansiysk Airport, Novy Urengoy Airport, Kalay Airport, Biju Patnaik Airport, Walton Airport
+\end{itemize}
 \end{problem}
 
-\section*{Periods} % ==========================================================
+\section*{Working with GeoDataFrames} %============================
 
-A pandas \li{Timestamp} object represents a precise moment in time on a given day.
-Some data, however, is recorded over a time interval, and it wouldn't make sense to place an exact timestamp on any of the measurements.
-For example, a record of the number of steps walked in a day, box office earnings per week, quarterly earnings, and so on.
-This kind of data is better represented with the pandas \li{Period} object and the corresponding \li{PeriodIndex}.
-
-The \li{Period} class accepts a \li{value} and a \li{freq}.
-The \li{value} parameter indicates the label for a given \li{Period}.
-This label is tied to the \textbf{end} of the defined \li{Period}.
-The \li{freq} indicates the length of the \li{Period} and in some cases can also indicate the offset of the \li{Period}.
-The default value for \li{freq} is "M" for months.
-The \li{freq} parameter accepts the majority, but not all, of frequencies listed in Table \ref{table:range_freqs}.
+As previously mentioned, GeoDataFrames contain many of the functionalities of Pandas DataFrames.
+For example, to create a new column, define a new column name in the GeoDataFrame with the needed information for each GeoSeries.
 
 \begin{lstlisting}
-# Creates a period for month of Oct, 2016.
->>> p1 = pd.Period("2016-10")
->>> p1.start_time                   # The start and end times of the period
-<<Timestamp('2016-10-01 00:00:00')>>    # are recorded as Timestamps.
->>> p1.end_time
-<<Timestamp('2016-10-31 23:59:59.999999999')>>
-
-# Represent the annual period ending in December that includes 10/03/2016.
->>> p2 = pd.Period("2016-10-03", freq="A-DEC")
->>> p2.start_time
-<<Timestamp('2007-01-01 00:00:00')>>
->>> p2.end_time
-<<Timestamp('2007-12-31 23:59:59.999999999')>>
-
-# Get the weekly period ending on a Saturday that includes 10/03/2016.
->>> print(pd.Period("2016-10-03", freq="W-SAT"))
-<<2016-10-02/2016-10-08>>
+# Create column in the world GeoDataFrame for gdp_per_capita
+>>> world['gdp_per_cap'] = world.gdp_md_est / world.pop_est
 \end{lstlisting}
 
-Like the \li{pd.date\_range()} method, the \li{pd.period\_range()} method is useful for generating a \li{PeriodIndex} for unindexed data.
-The syntax is essentially identical to that of \li{pd.date\_range()}.
-When using \li{pd.period\_range()}, remember that the \li{freq} parameter marks the end of the period.
-After creating a \li{PeriodIndex}, the \li{freq} parameter can be changed via the \li{asfreq()} method.
+GeoDataFrames can utilize many Pandas functionalities, and they can also be parsed by geometric manipulations.
+For example, a useful way to index GeoDataFrames is with the \li{cx} indexer.
+This splits the GeoDataFrame by the coordinates of each geometric object.
+It is used by calling the method \li{cx} on a GeoDataFrame, followed by a slicing argument, where the first element refers to the longitude and the second refers to latitude.
 
 \begin{lstlisting}
-# Represent quarters from 2008 to 2010, with Q4 ending in December.
->>> pd.period_range(start="2008", end="2010-12", freq="Q-DEC")
-<<PeriodIndex(['2008Q1', '2008Q2', '2008Q3', '2008Q4', '2009Q1', '2009Q2',
-             '2009Q3', '2009Q4', '2010Q1', '2010Q2', '2010Q3', '2010Q4'],
-            dtype='period[Q-DEC]', freq='Q-DEC')>>
+# Create a GeoDataFrame containing the northern hemisphere
+>>> north = world.cx[:, 0:]
 
-# Get every three months form March 2010 to the start of 2011.
->>> p = pd.period_range("2010-03", "2011", freq="3M")
->>> p
-<<PeriodIndex(['2010-03', '2010-06', '2010-09', '2010-12'],
-            dtype='period[3M]', freq='3M')>>
-
-# Change frequency to be quarterly.
->>> p.asfreq("Q-DEC")
-<<PeriodIndex(['2010Q2', '2010Q3', '2010Q4', '2011Q1'],
-            dtype='period[Q-DEC]', freq='Q-DEC')>>
+# Create a GeoDataFrame containing the southeastern hemisphere
+>>> south_east = world.cx[0:, :0]
 \end{lstlisting}
 
-The bounds of a \li{PeriodIndex} object can be shifted by adding or subtracting an integer.
- \li{PeriodIndex} will be shifted by $n$ $\times$ \li{freq}.
+GeoSeries in a GeoDataFrame can also be dissolved, or merged, together into one GeoSeries based on their geometry data.
+For example, all countries on one continent could be merged to create a GeoSeries containing the information of that continent.
+The method designed for this is called \li{dissolve}.
+It receives two parameters, \li{by} and \li{aggfunc}.
+\li{by} indicates which column to dissolve along, and \li{aggfunc} tells how to combine the information in all other columns.
+The default \li{aggfunc} is \li{first}, which returns the first application entry.
+In the following example, we use \li{sum} as the \li{aggfunc} so that each continent is the combination of its countries.
 
 \begin{lstlisting}
-# Shift index by 1
->>> p _= 1
->>> p
-PeriodIndex(['2010Q1', '2010Q2', '2010Q3', '2010Q4'],
-            dtype='int64', freq='Q-DEC')
+>>> world = world[['continent', 'geometry', 'gdp_per_cap']]
+
+# Dissolve world GeoDataFrame by continent
+>>> continent = world.dissolve(by = 'continent', aggfunc='sum')
 \end{lstlisting}
 
-If for any reason you need to switch from periods to timestamps, pandas provides a very simple method to do so.
-The \li{how} parameter can be \li{start} or \li{end} and determines if the timestamp is the beginning or the end of the period.
-Similarly, you can switch from timestamps to periods.
+\section*{Projections} %============================
+
+When plotting, GeoPandas uses the CRS (coordinate reference system) of a GeoDataFrame.
+This reference system informs how coordinates should be spaced on a plot.
+GeoPandas accepts many different CRSs, and references to them can be found at \url{www.spatialreference.org}.
+Two of the most commonly used CRSs are EPSG:4326 and EPSG:3395.
+EPSG:4326 uses the standard latitude-longitude projection used by GPS.
+EPSG:3395, also known as Mercator, is the standard navigational projection.
+
+When creating a new GeoDataFrame, it is important to set the \li{crs} attribute of the GeoDataFrame.
+This allows the plot to be shown correctly.
+GeoDataFrames being layered need to have the same CRS.
+To change the CRS, use the method \li{to_crs()}.
 
 \begin{lstlisting}
-# Convert to timestamp (last day of each quarter)
->>> p = p.to_timestamp(how='end')
->>> p
-DatetimeIndex(['2010-03-31', '2010-06-30', '2010-09-30', '2010-12-31'],
-                dtype='datetime64[ns]', freq='Q-DEC')
+# Check CRS of world GeoDataFrame
+>>> print(world.crs)
+epsg:4326
 
->>> p.to_period("Q-DEC")
-PeriodIndex(['2010Q1', '2010Q2', '2010Q3', '2010Q4'],
-            dtype='int64', freq='Q-DEC')
-
+# Change CRS of world to Mercator
+# inplace=True ensures that we modify world instead of returning a copy
+>>> world.to_crs(3395, inplace=True) 
+>>> print(world.crs)
+epsg:3395
 \end{lstlisting}
 
-\begin{problem} %
-The file \texttt{finances.csv} contains a list of simulated quarterly earnings and expense totals from a fictional company.
-Load the data into a \li{Series} or \li{DataFrame} with a \li{PeriodIndex} with a quarterly frequency.
-Let \li{how=end}.
-Assume the fiscal year starts at the beginning of September and that the data begins in September 1978.
-Return the \li{DataFrame}.
-\end{problem}
-
-\section*{Operations on Time Series}
-
-There are certain operations only available to Series and DataFrames that have a \li{DatetimeIndex}. A sampling of this functionality is described throughout the remainder of this lab.
-
-\subsection*{Slicing}
-
-Slicing is much more flexible in pandas for time series. We can slice by year, by month, or even use traditional slicing syntax to select a range of dates.
-
-% TODO: initialize df using pd.date_range().
-\begin{lstlisting}
-# Select all rows in a given year
->>> df["2010"]
-                   0         1
-2010-01-01  0.566694  1.093125
-2010-02-01 -0.219856  0.852917
-2010-03-01  1.511347 -1.324036
-
-# Select all rows in a given month of a given year
->>> df["2012-01"]
-                   0         1
-2012-01-01  0.212141  0.859555
-2012-01-02  1.483123 -0.520873
-2012-01-03  1.436843  0.596143
-
-# Select a range of dates using traditional slicing syntax
->>> df["2010-1-2":"2011-12-31"]
-                   0         1
-2010-02-01 -0.219856  0.852917
-2010-03-01  1.511347 -1.324036
-2011-01-01  0.300766  0.934895
-\end{lstlisting}
-
-\subsection*{Resampling} % ----------------------------------------------------
-
-Some datasets do not have datapoints at a fixed frequency.
-For example, a dataset of website traffic has datapoints that occur at irregular intervals.
-In situations like these, \emph{resampling} can help provide insight on the data.
-
-The two main forms of resampling are \emph{downsampling}, aggregating data into fewer intervals, and \emph{upsampling}, adding more intervals.
-
-To downsample, use the \li{resample()} method of the \li{Series} or \li{DataFrame}.
-This method is similar to \li{groupby()} in that it groups different entries together.
-Then aggregation produces a new data set.
-The first parameter to \li{resample()} is an offset string from Table \ref{table:range_freqs}: \li{"D"} for daily, \li{"H"} for hourly, and so on.
+GeoDataFrames can also be plotted using the values in the the other attributes of the GeoSeries.
+The map plots the color of each geometry object according to the value of the column selected.
+This is done by passing in the parameter \li{column} into the \li{plot()} method.
 
 \begin{lstlisting}
->>> import numpy as np
-
-# Get random data for every day from 2000 to 2010.
->>> dates = pd.date_range(start="2000-1-1", end='2009-12-31', freq='D')
->>> df = pd.Series(np.random.random(len(days)), index=dates)
->>> df
-2000-01-01    0.559
-2000-01-02    0.874
-2000-01-03    0.774
-                ...
-2009-12-29    0.837
-2009-12-30    0.472
-2009-12-31    0.211
-Freq: D, Length: 3653, dtype: float64
-
-# Group the data by year.
->>> years = df.resample("A")        # 'A' for 'annual'.
->>> years.agg(len)                  # Number of entries per year.
-2000-12-31    366.0
-2001-12-31    365.0
-2002-12-31    365.0
-                ...
-2007-12-31    365.0
-2008-12-31    366.0
-2009-12-31    365.0
-Freq: A-DEC, dtype: float64
-
->>> years.mean()                    # Average entry by year.
-2000-12-31    0.491
-2001-12-31    0.514
-2002-12-31    0.484
-                ...
-2007-12-31    0.508
-2008-12-31    0.521
-2009-12-31    0.523
-Freq: A-DEC, dtype: float64
-
-# Group the data by month.
->>> months = df.resample("M")
->>> len(months.mean())              # 12 months x 10 years = 120 months.
-120
+>>> fig, ax = plt.subplots(1, figsize=(10,4))
+# Plot world based on gdp
+>>> world.plot(column='gdp_md_est', cmap='OrRd', legend=True,  ax=ax)
+>>> ax.set_title('World Map based on GDP')
+>>> ax.set_xlabel('Longitude')
+>>> ax.set_ylabel('Latitude')
+>>> plt.show()
 \end{lstlisting}
 
-\begin{comment}
-\begin{table}[H]
+\begin{figure}[H]
 \begin{center}
-    \begin{tabular}{r|l}
-        Parameter & Description \\ \hline
-        \li{rule} & the offset string (see Table \ref{table:range_freqs}) \\
-        \li{how} & the data aggregation method (i.e. ``sum'' or ``mean'')\\
-        \li{closed} & the boundary of the interval that is closed/inclusive (default ``right") \\
-        \li{label} & the boundary of the interval that is assigned to the label (default ``right") \\
-    \end{tabular}
+\includegraphics[scale=.7]{figures/gdp.pdf}
 \end{center}
-\caption{Parameters for \li{DataFrame.resample()}}
-\end{table}
-\end{comment}
+\caption{World Map Based on GDP}
+\label{figure:gdp_map}
+\end{figure}
 
-\begin{problem} % Downsample
-The file \texttt{website\_traffic.csv} contains records for different visits to a fictitious website.
-Read in the data, calculate the duration of each visit in seconds and convert the index to a \li{DatetimeIndex}.
-Use downsampling to calculate the number of visits each minute and the number of visits each hour.
-Return these DataFrames.
+\begin{problem}
+Use the command \li{geopandas.read_file('county_data.gpkg')} to create a GeoDataFrame of information about US counties.\footnote{Source: \url{http://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_us_county_5m.zip}}
+Each county's shape is stored in the \li{geometry} column.
+Use this to plot all US counties two times, first using the default CRS and then using EPSG:5071.
 
-(Hint: \li{minute.agg(func)} returns a DataFrame).
+Next, create a new GeoDataFrame that merges all counties within a single state.
+Drop regions with the following STATEFP codes: 02, 15, 60, 66, 69, 72, 78.
+Plot this GeoDataFrame to see an outline of all 48 contiguous states.
+Ensure a CRS  of EPSG:5071.
+\label{problem:us_counties}
 \end{problem}
 
-\section*{Elementary Time Series Analysis} % ==================================
+\section*{Merging GeoDataFrames} %============================
 
-\subsection*{Shifting}
-
-\li{DataFrame} and \li{Series} objects have a \li{shift()} method that allows you to move data up or down relative to the index.
-When dealing with time series data, we can also shift the \li{DatetimeIndex} relative to a time offset.
+Just as multiple Pandas DataFrames can be merged, multiple GeoDataFrames can be merged with attribute joins or spatial joins.
+An attribute join is similar to a merge in Pandas.
+It combines two GeoDataFrames on a column (not the geometry column) and then combines the rest of the data into one GeoDataFrame.
 
 \begin{lstlisting}
->>> df = pd.DataFrame(dict(VALUE=np.random.rand(5)),
-                index=pd.date_range("2016-10-7", periods=5, freq='D'))
->>> df
-<<               VALUE
-2016-10-07  0.127895
-2016-10-08  0.811226
-2016-10-09  0.656711
-2016-10-10  0.351431
-2016-10-11  0.608767>>
+>>> world = gpd.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+>>> cities = gpd.read_file(geopandas.datasets.get_path('naturalearth_cities'))
 
->>> df.shift(1)
-<<               VALUE
-2016-10-07       NaN
-2016-10-08  0.127895
-2016-10-09  0.811226
-2016-10-10  0.656711
-2016-10-11  0.351431>>
+# Create subsets of the world and cities GeoDataFrames
+>>> world = world[['continent', 'name', 'iso_a3']]
+>>> cities = cities[['name', 'iso_a3']]
 
->>> df.shift(-2)
-<<               VALUE
-2016-10-07  0.656711
-2016-10-08  0.351431
-2016-10-09  0.608767
-2016-10-10       NaN
-2016-10-11       NaN>>
-
->>> df.shift(14, freq="D")
-<<               VALUE
-2016-10-21  0.127895
-2016-10-22  0.811226
-2016-10-23  0.656711
-2016-10-24  0.351431
-2016-10-25  0.608767>>
+# Merge the GeoDataFrames on their iso_a3 code
+>>> countries = world.merge(cities, on='iso_a3')
 \end{lstlisting}
 
-Shifting data makes it easy to gather statistics about changes from one timestamp or period to the next.
+A spatial join merges two GeoDataFrames based on their geometry data.
+The function used for this is \li{sjoin}.
+\li{sjoin} accepts two GeoDataFrames and then direction on how to merge.
+It is imperative that two GeoDataFrames have the same CRS.
+In the example below, we merge using an \li{inner} join with the option \li{intersects}.
+The \li{inner} join means that we will only use keys in the intersection of both geometry columns, and we will retain only the left geometry column.
+\li{intersects} tells the GeoDataFrames to merge on GeoSeries that intersect each other.
+Other options include \li{contains} and \li{within}.
 
 \begin{lstlisting}
-# Find the changes from one period/timestamp to the next
->>> df - df.shift(1)            # Equivalent to df.diff().
-               VALUE
-2016-10-07       NaN
-2016-10-08  0.683331
-2016-10-09 -0.154516
-2016-10-10 -0.305279
-2016-10-11  0.257336
+# Combine countries and cities on their geographic location
+>>> countries = gpd.sjoin(world, cities, how='inner', op='intersects')
 \end{lstlisting}
 
 \begin{problem}
-Compute the following information about the DJIA dataset from Problem \ref{prob:timeseries-dowjones}.
-\begin{itemize}
-    \item The single day with the largest gain.
-    \item The single day with the largest loss.
-\end{itemize}
-Return the index of the day with the largest gain and the day with the largest loss.
+Load in the file \li{nytimes.csv}\footnote{Source: \url{https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv}} as a DataFrame.
+This file includes county-level data for the cumulative cases and deaths of Covid-19 in the US, starting with the first case in Snohomish County, Washington, on January 21, 2020.
+Begin by converting the \li{date} column into a \li{DatetimeIndex}.
 
-(Hint: Call \li{prob1()} to get the DataFrame already cleaned and with DatetimeIndex).
+Next, use county FIPS codes to merge your GeoDataFrame from Problem \ref{problem:us_counties} with the DataFrame you just created.
+A FIPS code is a 5-digit unique identifier for geographic locations.
+Ignore rows in the Covid-19 DataFrame with unknown FIPS codes as well as all data from Hawaii and Alaska.
+
+Note that the \li{fips} column of the Covid-19 DataFrame stores entries as floats, but the county GeoDataFrame stores FIPS codes as strings, with the first two digits in the \li{STATEFP} column and the last three in the \li{COUNTYFP} column.
+
+Once you have completed the merge, plot the cases from March 21, 2020 on top of your state outline map from Problem \ref{problem:us_counties}, using the CRS of EPSG:5071.
+Finally, print out the name of the county with the most cases along with its case count.
+\label{problem:merge_covid}
 \end{problem}
 
-\subsection*{Rolling Functions and Exponentially-Weighted Moving Functions}
+\section*{Logarithmic Plotting Techniques} %============================
 
-Many time series are inherently noisy.
-To analyze general trends in data, we use \emph{rolling functions} and \emph{exponentally-weighted moving (EWM)} functions.
-Rolling functions, or \emph{moving window functions}, perform a calculation on a window of data.
-There are a few rolling functions that come standard with pandas.
-
-\subsubsection*{Rolling Functions (Moving Window Functions)}
-
-One of the most commonly used rolling functions is the \emph{rolling average}, which takes the average value over a window of data.
+The color scheme of a graph can also help to communicate information clearly.
+A good list of available colormaps can be found at \url{https://matplotlib.org/3.2.1/gallery/color/colormap_reference.html}.
+Note also that you can reverse any colormap by adding \li{_r} to the end.
+The following example demonstrates some plotting features, using country GDP as in Figure \ref{figure:gdp_map}.
 
 \begin{lstlisting}
-# Generate a time series using random walk from a uniform distribution.
-N = 10000
-bias = 0.01
-s = np.zeros(N)
-s[1:] = np.random.uniform(low=-1, high=1, size=N-1) + bias
-s = pd.Series(s.cumsum(),
-              index=pd.date_range("2015-10-20", freq='H', periods=N))
+>>> fig, ax = plt.subplots(figsize=(15,7), ncols=1, nrows=1)
+>>> world.plot(column='gdp_md_est', cmap='plasma_r', 
+...			ax=ax, legend=True, edgecolor='gray')
 
-# Plot the original data together with a rolling average.
-ax1 = plt.subplot(121)
-s.plot(color="gray", lw=.3, ax=ax1)
-s.rolling(window=200).mean().plot(color='r', lw=1, ax=ax1)
-ax1.legend(["Actual", "Rolling"], loc="lower right")
-ax1.set_title("Rolling Average")
+# Add title and remove axis tick marks
+>>> ax.set_title('GDP on Linear Scale')
+>>> ax.set_yticks([])
+>>> ax.set_xticks([])
+>>> plt.show()
 \end{lstlisting}
 
-The function call \li{s.rolling(window=200)} creates a \li{pd.core.rolling.Window} object that can be aggregated with a function like \li{mean()}, \li{std()}, \li{var()}, \li{<<min>>()}, \li{<<max>>()}, and so on.
+%\begin{figure}[H]
+%\begin{center}
+%\includegraphics[scale=.75]{figures/world_linear.pdf}
+%\end{center}
+%\caption{World map showing country GDP}
+%\label{figure:linear_world}
+%\end{figure}
 
-\subsubsection*{Exponentially-Weighted Moving (EWM) Functions}
+Sometimes data can be much more informative when plotted on a logarithmic scale.
+See how the world map changes when we add a \li{norm} argument in the code below.
+Depending on the purpose of the graph, Figure \ref{figure:log_world} may be more informative than Figure \ref{figure:linear_world}.
 
-Whereas a moving window function gives equal weight to the whole window, an \emph{exponentially-weighted moving} function gives more weight to the most recent data points.
+\begin{lstlisting}
+>>> from matplotlib.colors import LogNorm
+>>> from matplotlib.cm import ScalarMappable
+>>> fig, ax = plt.subplots(figsize=(15,6), ncols=1, nrows=1)
 
-In the case of a \emph{exponentially-weighted moving average} (EWMA), each data point is calculated as follows.
-\[
-z_i = \alpha \bar{x}_i + (1 - \alpha)z_{i-1},
-\]
-where $z_i$ is the value of the EWMA at time $i$, $\bar{x}_i$ is the average for the $i$-th window, and $\alpha$ is the decay factor that controls the importance of previous data points.
-Notice that $\alpha=1$ reduces to the rolling average.
+# Set the norm using data bounds
+>>> data = world.gdp_md_est
+>>> norm = LogNorm(vmin=min(data), vmax=max(data))
 
-More commonly, the decay is expressed as a function of the window size.
-In fact, the \li{span} for an EWMA is nearly analogous to \li{window} size for a rolling average.
+# Plot the graph using the norm
+>>> world.plot(column='gdp_md_est', cmap='plasma_r', ax=ax,
+...			edgecolor='gray', norm=norm)
 
-Notice the syntax for EWM functions is very similar to that of rolling functions.
+# Create a custom colorbar
+>>> cbar = fig.colorbar(ScalarMappable(norm=norm, cmap='plasma_r'), 
+...			ax=ax, orientation='horizontal', pad=0, label='GDP')
 
-\begin{figure}[H] % Rolling average vs. EWMA
-\captionsetup[subfigure]{justification=centering}
-\centering
-\begin{subfigure}{.49\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/moving_rolling.pdf}
-    \caption{}
-    \label{fig:pandas-ts-moving-rolling}
-\end{subfigure}
-%
-\begin{subfigure}{.49\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/moving_ewma.pdf}
-    \caption{}
-    \label{fig:pandas-ts-moving-ewma}
-\end{subfigure}
-\caption{Rolling average and EWMA.}
+>>> ax.set_title('Country Area on a Log Scale')
+>>> ax.set_yticks([])
+>>> ax.set_xticks([])
+>>> plt.show()
+\end{lstlisting}
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[scale=.65]{figures/world_log.pdf}
+\end{center}
+\caption{World map showing country GDP using a log scale}
+\label{figure:log_world}
 \end{figure}
-
-\begin{lstlisting}
-ax2 = plt.subplot(122)
-s.plot(color="gray", lw=.3, ax=ax2)
-s.ewm(span=200).mean().plot(color='g', lw=1, ax=ax2)
-ax2.legend(["Actual", "EWMA"], loc="lower right")
-ax2.set_title("EWMA")
-\end{lstlisting}
 
 \begin{problem}
-Plot the following from the DJIA dataset with a window or span of 30, 120, and 365.
-\begin{itemize}
-    \item The original data points.
-    \item Rolling average.
-    \item Exponential average.
-\end{itemize}
-Your plots should look like Figure \ref{fig:prob6}.
-Return a list of the minimum rolling average value for each window size and a list of the minimum exponential average value for each span size.
-\label{prob:rolling}
+As in Problem \ref{problem:merge_covid}, plot your state outline map from Problem \ref{problem:us_counties} on top of a map of the Covid-19 cases from March 21, 2020.
+This time, however, use a log scale.
+Use EPSG:5071 for the CRS.
+Pick a good colormap (the counties with the most cases should generally be darkest) and be sure to display a colorbar.
 \end{problem}
 
-\begin{figure}[h]
-\includegraphics[width=\textwidth]{figures/prob6.pdf}
-\caption{Plots for Problem \ref{prob:rolling}.}
-\label{fig:prob6}
-\end{figure}
+\begin{problem}
+In this problem, you will create an animation of the spread of Covid-19 through US counties from January 21, 2020 to June 21, 2020.
+Use a log scale and a good colormap, and be sure that you're using the same norm and colorbar for the whole animation.
+Use EPSG:5071 for the projection.
+
+As a reminder, below is a summary of what you will need in order to animate this map.
+You may also find it helpful to refer to the animation section included with the Volume 4 lab manual. 
+%------------------------------------------- Is that ok to say?
+\begin{enumerate}
+	\item Set up your figure and norm. Be sure to use the highest case count for your \li{vmax} so that the scale remains uniform.
+	\item Write your \li{update} function. This should plot the cases from a given day.
+	\item Set up your colorbar. Do this outside the \li{update} function to avoid adding a new colorbar each day.
+	\item Create the animation. Check to make sure everything displays properly before you save it.
+	\item Save the animation.
+	\item Display the animation.
+\end{enumerate}
+\end{problem}
