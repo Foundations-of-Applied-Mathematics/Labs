@@ -1,39 +1,15 @@
 \lab{Pandas 1: Introduction}{Pandas 1: Introduction}
 \objective{Though NumPy and SciPy are powerful tools for numerical computing, they lack some of the high-level functionality necessary for many data science applications.
 Python's \emph{pandas} library, built on NumPy, is designed specifically for data management and analysis.
-In this lab, we introduce pandas data structures, syntax, and explore its capabilities for quickly analyzing and presenting data.
+In this lab we introduce pandas data structures, syntax, and explore its capabilities for quickly analyzing and presenting data.
 }
 \label{lab:pandas1}
-
-% Just as NumPy is built on the \li{ndarray} data structure suited for efficient
-% scientific and numerical computation, pandas is centered around a handful of
-% core data structures custom built for data analysis: the \li{Series}, \li{DataFrame}, and \li{Panel}, which roughly correspond to one, two, and three-dimensional arrays.
-% The \li{Panel} data structure is not used nearly
-
-\begin{info}
-This lab will be done using Colab Notebooks.
-These notebooks are similar to Jupyter Notebooks but run remotely on Google's servers.
-Open a Google Colab notebook by going to your Google Drive account and creating a new Colaboratory file.
-If making a Colaboratory file is not an option, download the application Colaboratory onto your Google Drive.
-Once opening a new Colab Notebook, upload the file \li{pandas1.ipynb}.
-To make the data files accessible, run the following at the top of the lab:
-\begin{lstlisting}
->>> from google.colab import files
-
->>> uploaded = files.upload()
-\end{lstlisting}
-This will prompt you upload files for this notebook.
-For this lab, upload \li{budget.csv} and \li{crime_data.csv}.
-
-Once the lab is complete, delete BOTH lines of code used for uploading files (the import statement and the upload statement) and download as a \li{.py} file to your git repository.
-Push the newly made \li{pandas1.py} file.
-\end{info}
 
 \section*{Pandas Basics}
 
 Pandas is a python library used primarily to analyze data.
-It combines functionality of NumPy, MatPlotLib, and SQL to create a easy to understand library that allows for the manipulation of data in various ways.
-In this lab, we focus on the use of Pandas to analyze and manipulate data in ways similar to NumPy and SQL.
+It combines functionality of NumPy, MatPlotLib, and SQL to create an easy to understand library that allows for the manipulation of data in various ways.
+In this lab we focus on the use of Pandas to analyze and manipulate data in ways similar to NumPy and SQL.
 
 \subsection*{Pandas Data Structures}
 
@@ -51,9 +27,11 @@ To initialize a \li{Series}, the first parameter is the data and the second is t
 \begin{lstlisting}
 >>> import pandas as pd
 >>>
->>> # Initialize Series of student grades
->>> math = pd.Series(np.random.randint(0,100,4), ['Mark', 'Barbara', 'Eleanor', 'David'])
->>> english = pd.Series(np.random.randint(0,100,5), ['Mark', 'Barbara', 'David', 'Greg', 'Lauren'])
+# Initialize Series of student grades
+>>> math = pd.Series(np.random.randint(0,100,4), ['Mark', 'Barbara', 
+...		'Eleanor', 'David'])
+>>> english = pd.Series(np.random.randint(0,100,5), ['Mark', 'Barbara',
+...		'David', 'Greg', 'Lauren'])
 \end{lstlisting}
 
 \subsubsection*{DataFrame}
@@ -61,15 +39,16 @@ To initialize a \li{Series}, the first parameter is the data and the second is t
 The second key pandas data structure is a \li{DataFrame}.
 A \li{DataFrame} is a collection of multiple \li{Series}.
 It can be thought of as a 2-dimensional array, where each row is a separate datapoint and each column is a feature of the data.
-The rows are label with an \li{index} (as in a \li{Series}) and the columns are labelled in the attribute \li{columns}.
+The rows are labeled with an \li{index} (as in a \li{Series}) and the columns are labeled in the attribute \li{columns}.
+
 
 There are many different ways to initialize a \li{DataFrame}.
-One way to initialize a \li{DataFrame} is passing in a dictionary as the data of the \li{DataFrame}.
+One way to initialize a \li{DataFrame} is by passing in a dictionary as the data of the \li{DataFrame}.
 The keys of the dictionary will become the labels in \li{columns} and the values are the \li{Series} associated with the label.
 
 \begin{lstlisting}
->>> # Create a DataFrame of student grades
->>> grades = pd.DataFrame({"Math": math, "English": english}
+# Create a DataFrame of student grades
+>>> grades = pd.DataFrame({"Math": math, "English": english})
 >>> grades
 	      Math  English
 Barbara   52.0     73.0
@@ -90,23 +69,17 @@ The same holds for the index.
 
 \begin{lstlisting}
 >>> import numpy as np
->>> # Initialize DataFrame with NumPy array
->>> data = np.array([[52.0, 73.0], [10.0, 39.0], [35.0, np.nan], [np.nan, 26.0], [np.nan, 99.0], [81.0, 68.0]])
->>> grades = pd.DataFrame(data, columns = ['Math', 'English'], index = ['Barbara', 'David', 'Eleanor', 'Greg', 'Lauren', 'Mark'])
->>> grades
-	      Math  English
-Barbara   52.0     73.0
-David     10.0     39.0
-Eleanor   35.0     NaN
-Greg       NaN     26.0
-Lauren     NaN     99.0
-Mark      81.0     68.0
+# Initialize DataFrame with NumPy array. This is identical to the grades DataFrame above.
+>>> data = np.array([[52.0, 73.0], [10.0, 39.0], [35.0, np.nan], 
+...		[np.nan, 26.0], [np.nan, 99.0], [81.0, 68.0]])
+>>> grades = pd.DataFrame(data, columns = ['Math', 'English'], index = 
+...		['Barbara', 'David', 'Eleanor', 'Greg', 'Lauren', 'Mark'])
 \end{lstlisting}
 
 A \li{DataFrame} can also be viewed as a NumPy array using the attribute \li{values}.
 
 \begin{lstlisting}
->>> # View the DataFrame as a NumPy array
+# View the DataFrame as a NumPy array
 >>> grades.values
 array([[ 52.,  73.],
        [ 10.,  39.],
@@ -115,84 +88,6 @@ array([[ 52.,  73.],
        [ nan,  99.],
        [ 81.,  68.]])
 \end{lstlisting}
-
-\begin{problem}
-Write a function \li{random_dataframe()} that accepts a dictionary \li{d} which defaults to \li{None}.
-If a dictionary is passed in, initialize a Pandas \li{DataFrame}.
-Return a tuple of the attributes \li{index}, \li{columns}, and \li{values} of the \li{DataFrame}.
-
-If a dictionary is not passed in, generate random data as a \li{ndarray} and initialize a \li{DataFrame}.
-The columns of the \li{DataFrame} should be the letters \li{'A'} through \li{'E'}.
-The index of the \li{DataFrame} should be the roman numerals 1-6.
-Return a tuple of the attributes \li{index}, \li{columns}, and \li{values} of the \li{DataFrame}.
-
-(Hint: What should the dimension of the data be if no dictionary is passed in?)
-\end{problem}
-
-\begin{comment}
-The Pandas python library is used to manipulate and analyze data.
-The two main pandas structures are \li{Series} and \li{DataFrames}.
-They are built off of \li{ndarrays} and thereby carry many functionalities of arrays.
-A \li{Series} is a one-dimensional array that can hold any datatype.
-Unlike a NumPy array, every \li{Series} has an \emph{index} that labels each entry, and a \li{Series} object can also be given a name to label the entire data set.
-A group of \li{Series} makes a 2-d structure called a \li{DataFrame}.
-A \li{DataFrame} is like a table while the \li{Series} are the columns.
-The row labels are collectively called the \emph{index}, and the column labels are collectively called the \emph{columns}.
-There are many ways to initialize a \li{DataFrame}.
-In the following code, we build a \li{DataFrame} out of a dictionary of \li{Series}.
-
-\begin{lstlisting}
->>> x = pd.Series(np.random.randn(4), ['a', 'b', 'c', 'd'])
->>> y = pd.Series(np.random.randn(5), ['a', 'b', 'd', 'e', 'f'])
->>> d = {"series 1": x, "series 2": y}
->>> df1 = pd.DataFrame(d)
->>> df1
-<<   series 1  series 2
-a -0.365542  1.227960
-b  0.080133  0.683523
-c  0.737970       NaN
-d  0.097878 -1.102835
-e       NaN  1.345004
-f       NaN  0.217523>>
-\end{lstlisting}
-
-The index of this \li{DataFrame} is the union of the indices of \li{Series} \li{x} and \li{Series} \li{y}.
-The columns are given by the keys of the dictionary \li{d}.
-Since \li{x} doesn't have a label \li{e}, the value in row \li{e}, column \li{1} is \li{NaN}.
-This same reasoning explains the other missing values as well.
-We can recover the \li{Series} \li{x} by slicing using the axis label for the first column on the \li{DataFrame} and \li{dropna()}, which removes the \li{NaN}:
- \begin{lstlisting}
->>> df1["series1"].dropna()
-<<a   -0.365542
-b    0.080133
-c    0.737970
-d    0.097878
-Name: series 1, dtype: float64>>
-\end{lstlisting}
-
-\begin{warn}
-A pandas \li{DataFrame} cannot be sliced in exactly the same way as a NumPy array.
-Notice how we just used \li{df1["series 1"]} to access a \emph{column} of the
-the \li{DataFrame} \li{df1}.
-We will discuss this in more detail later on.
-\end{warn}
-
-We can also initialize a \li{DataFrame} using a NumPy array, creating custom
-row and column labels.
-
-\begin{lstlisting}
->>> data = np.random.random((3, 4))
->>> pd.DataFrame(data, index=['A', 'B', 'C'], columns=np.arange(1, 5))
-             1         2         3         4
-A  0.065646  0.968593  0.593394  0.750110
-B  0.803829  0.662237  0.200592  0.137713
-C  0.288801  0.956662  0.817915  0.951016
-3 rows     4 columns
-\end{lstlisting}
-
-If we don't specify the index or columns, the default is
-\li{np.arange(n)}, where \li{n} is either the number of rows or columns.
-\end{comment}
 
 \subsection*{Data I/O}
 
@@ -208,9 +103,11 @@ Method & Description \\ \hline
 \li{tail()}      & Return the last $n$ rows, defaulting to 5 \\
 \end{comment}
 \li{to_csv()}    & Write the index and entries to a CSV file \\
+\li{read_csv()}  & Read a csv and convert into a DataFrame\\
 \li{to_json()}   & Convert the object to a JSON string \\
 \li{to_pickle()} & Serialize the object and store it in an external file \\
 \li{to_sql()}    & Write the object data to an open SQL database \\
+\li{read_html()} & Read a table in an html page and convert to a DataFrame\\
 \end{tabular}
 \caption{Methods for exporting data in a pandas \li{Series} or \li{DataFrame}.}
 \label{table:pandas-view-or-export}
@@ -246,30 +143,10 @@ If the CSV file does not contain the column names, or you wish to use other
 column names, specify them in a list.
 \end{itemize}
 
-\begin{comment}
-\begin{problem}
-Write a function \li{prob2()} that accepts a filename.
-Check whether the file is in CSV format and read the data in appropriately.
-If the file is not in CSV format, raise a \li{TypeError}.
-
-
-\label{prob:read-csv}
-\end{problem}
-
-To save data, pandas has functions that write to several different
-file formats.
-A typical example is the \li{to_csv()} function method attached to
-\li{Series} and \li{DataFrame} objects, which writes the data to a CSV file.
-Keyword arguments allow you to specify the separator character, omit writing the
-columns names or index, and specify many other options.
-The code below
-demonstrates its typical usage:
-\begin{lstlisting}
->>> df.to_csv("my_df.csv")
-\end{lstlisting}
-\end{comment}
-
-
+The \li{read_html} is useful when scraping data. 
+It takes in a url or html file and an optional \li{match}, a string or regex.
+It returns a list of the tables that match the \li{match} in a DataFrame.
+While the data will probably need to be cleaned up a little, it is much faster than scraping a website.
 
 \section*{Data Manipulation}
 
@@ -285,22 +162,13 @@ integer position.
 When using these indexers, the first and second arguments refer to the rows and columns, respectively, just as array slicing.
 
 \begin{lstlisting}
->>> grades
-	      Math  English
-Barbara   52.0     73.0
-David     10.0     39.0
-Eleanor   35.0     NaN
-Greg       NaN     26.0
-Lauren     NaN     99.0
-Mark      81.0     68.0
-
->>> # Use loc to select the Math scores of David and Greg
+# Use loc to select the Math scores of David and Greg
 >>> grades.loc[['David', 'Greg'],'Math']
 David    10.0
 Greg      NaN
 Name: Math, dtype: float64
 
->>> # Use iloc to select the Math scores of David and Greg
+# Use iloc to select the Math scores of David and Greg
 >>> grades.iloc[[1,3], 0]
 David    10.0
 Greg      NaN
@@ -311,7 +179,7 @@ brackets and the name of the column.
 In addition, to create a new column or reset the values of an entire column, simply call this column in the same fashion and set the value.
 
 \begin{lstlisting}
->>> # Set new History column with array of random values
+# Set new History column with array of random values
 >>> grades['History'] = np.random.randint(0,100,6)
 >>> grades['History']
 Barbara     4
@@ -322,7 +190,7 @@ Lauren     82
 Mark       27
 Name: History, dtype: int64
 
->>> # Reset the column such that everyone has a 100
+# Reset the column such that everyone has a 100
 >>> grades['History'] = 100.0
 >>> grades
          Math  English  History
@@ -338,16 +206,16 @@ Mark     81.0     68.0    100.0
 Often datasets can be very large and difficult to visualize.
 Pandas offers various methods to make the data easier to visualize.
 The methods \li{head} and \li{tail} will show the first or last $n$ data points, respectively, where $n$ defaults to 5.
-The method \li{sample} will draw $n$ random entry of the dataset, where $n$ defaults to 1.
+The method \li{sample} will draw $n$ random entries of the dataset, where $n$ defaults to 1.
 
 \begin{lstlisting}
->>> # Use head to see the first n rows
+# Use head to see the first n rows
 >>> grades.head(n=2)
          Math  English  History
 Barbara  52.0     73.0    100.0
 David    10.0     39.0    100.0
 
->>> # Use sample to sample a random entry
+# Use sample to sample a random entry
 >>> grades.sample()
         Math  English  History
 Lauren   NaN     99.0    100.0
@@ -357,8 +225,8 @@ It may also be useful to re-order the columns or rows or sort according to a
 given column.
 
 \begin{lstlisting}
->>> # Re-order columns
->>> grades.reindex(columns['English','Math','History'])
+# Re-order columns
+>>> grades.reindex(columns=['English','Math','History'])
          English  Math  History
 Barbara     73.0  52.0    100.0
 David       39.0  10.0    100.0
@@ -367,7 +235,7 @@ Greg        26.0   NaN    100.0
 Lauren      99.0   NaN    100.0
 Mark        68.0  81.0    100.0
 
->>> # Sort descending according to Math grades
+# Sort descending according to Math grades
 >>> grades.sort_values('Math', ascending=False)
          Math  English  History
 Mark     81.0     68.0    100.0
@@ -401,14 +269,14 @@ Method & Description \\ \hline
 
 \begin{problem}
 The file \li{budget.csv} contains the budget of a college student over the course of 4 years.
-Write a function \li{prob2()} reads in \li{budget.csv} as a \li{DataFrame}.
-Perform the following operations:
+Write a function that performs the following operations:
 \begin{enumerate}
 \item Reindex the columns such that amount spent on food is the first column and all other columns maintain the same ordering.
 \item Sort the \li{DataFrame} in descending order based on how much money was spent on \li{Groceries}
 \item Reset all values in the \li{'Rent'} column to \li{800.0}
 \item Reset all values in the first 5 data points to \li{0.0}
 \end{enumerate}
+Read in \li{budget.csv} as a \li{DataFrame} and perform each of these operations on the \li{DataFrame}. 
 Return the values of the updated \li{DataFrame} as a NumPy array.
 \label{prob:budget}
 \end{problem}
@@ -419,7 +287,7 @@ For example, basic
 vector operations work as expected:
 
 \begin{lstlisting}
->>> # Sum history and english grades of all students
+# Sum history and english grades of all students
 >>> grades['English'] + grades['History']
 Barbara    173.0
 David      139.0
@@ -429,7 +297,7 @@ Lauren     199.0
 Mark       168.0
 dtype: float64
 
->>> # Double all Math grades
+# Double all Math grades
 >>>  grades['Math']*2
 Barbara    104.0
 David       20.0
@@ -475,7 +343,7 @@ useful when we want a quick description of the data.
 The \li{describe()} function
 outputs several such summary statistics for each column in a \li{DataFrame}:
 \begin{lstlisting}
->>> # Use describe to better understand the data
+# Use describe to better understand the data
 >>> grades.describe()
             Math   English  History
 count   4.000000   5.00000      6.0
@@ -492,7 +360,7 @@ Functions for calculating means and variances, the covariance and correlation ma
 basic statistics are also available.
 
 \begin{lstlisting}
->>> # Find the average grade for each student
+# Find the average grade for each student
 >>> grades.mean(axis=1)
 Barbara    75.000000
 David      49.666667
@@ -502,14 +370,7 @@ Lauren     99.500000
 Mark       83.000000
 dtype: float64
 
->>> # Solve for the unbiased variance between subjects
->>> grades.cov()
-               Math  English  History
-Math     889.666667    557.0      0.0
-English  557.000000    836.5      0.0
-History    0.000000      0.0      0.0
-
->>> # Give correlation matrix between subjects
+# Give correlation matrix between subjects
 >>> grades.corr()
             Math  English  History
 Math     1.00000  0.84996      NaN
@@ -521,7 +382,8 @@ The method \li{rank} gives a ranking based on methods such as average, minimum, 
 This method defaults ranking in ascending order (the least will be ranked 1 and the greatest will be ranked the highest number).
 
 \begin{lstlisting}
->>> # Rank each student's performance based on their highest grade in any class in descending order
+# Rank each student's performance based on their highest grade in any class 
+# in descending order
 >>> grades.rank(axis=1,method='max',ascending=False)
          Math  English  History
 Barbara   3.0      2.0      1.0
@@ -542,23 +404,18 @@ Fortunately, pandas is particularly well-suited to
 handling missing and anomalous data.
 As we have already seen, the pandas default for a missing value is \li{NaN}.
 In basic arithmetic operations, if one of the operands is \li{NaN}, then the output is also \li{NaN}.
-If we are not interested in the missing values, we can simply drop them from the data altogether:
+If we are not interested in the missing values, we can simply drop them from the data altogether, or we can fill them with some other value like the mean.
+\li{NaN} might also mean something specific, such as corresponding to some default value, so that should inform what we do with \li{NaN} values.
 
 \begin{lstlisting}
->>> # Grades with all NaN values dropped
+# Grades with all NaN values dropped
 >>> grades.dropna()
          Math  English  History
 Barbara  52.0     73.0    100.0
 David    10.0     39.0    100.0
 Mark     81.0     68.0    100.0
-\end{lstlisting}
 
-This is not always the desired behavior, however.
-Missing data could actually correspond to some default value, such as zero.
-For example, in the budget dataset, filling \li{NaN} value with 0 indicates that no money was spent on that item.
-In the grade dataset, we can replace all instances of \li{NaN} with a specified value:
-\begin{lstlisting}
->>> # fill missing data with 50.0
+# fill missing data with 50.0
 >>> grades.fillna(50.0)
          Math  English  History
 Barbara  52.0     73.0    100.0
@@ -580,400 +437,28 @@ Overall, the choice for how to fill missing data should make sense with the data
 \end{warn}
 
 \begin{problem}
-Write a function \li{prob3()} that uses \li{budget.csv} to answer the questions "Which category affects living expenses the most? Which affects other expenses the most? How much is generally spent in these two categories?".
-Use the functions above to manipulate the data to perform the following manipulations:
+Write a function which uses \li{budget.csv} to answer the questions "Which category affects living expenses the most? Which affects other expenses the most? How much is generally spent in these two categories?".
+Perform the following manipulations:
 \begin{enumerate}
 \item Fill all \li{NaN} values with \li{0.0}.
 \item Create two new columns, \li{'Living Expenses'} and \li{'Other'}. 
 Sum the columns \li{'Rent', 'Groceries', 'Gas'} and \li{'Utilities'} and set as the value of \li{'Living Expenses'}.
 Sum the columns \li{'Dining Out', 'Out With Friends'} and \li{'Netflix'} and set as the value of \li{'Other'}.
-\item  Identify which column correlates most with \li{'Living Expenses'} and which correlates most with \li{'Other'}.
+\item Identify which column correlates most with \li{'Living Expenses'} and which correlates most with \li{'Other'}.
 This can indicate which columns in the budget affects the overarching categories the most.
 \end{enumerate}
-Return the mean of each the two columns found in 3 as a tuple.
-The first mean should be of the column corresponding to \li{'Living Expenses'} and the second to \li{'Other'}.
+Return the names of each of those columns as a tuple.
+The first should be of the column corresponding to \li{'Living Expenses'} and the second to \li{'Other'}.
 \end{problem}
 
-\begin{comment}
-\begin{problem}
-Read in the file \li{crime_data.csv} as a pandas object.
-The file contains data on types of crimes in the U.S. from 1960 to 2016.
-Set the index as the column 'Year'.
-
-Create a new column \li{Rate} which contains the crime rate for each year.
-Use this table to answer the following questions:
-\begin{enumerate}
-    \item What is the mean crime rate? In what years was the crime rate above the mean?
-    \item On average, using the mean, what is the least common crime?
-    \item Identify two crimes which have close means. Do these crimes have any kind of correlation from year to year? If so, what is the correlation?
-       
-\end{enumerate}
-\end{problem}
-\end{comment}
-
-\begin{comment}
-\subsection*{Series}
-
-A pandas \li{Series} is generalization of a one-dimensional NumPy array, or the column of a DataFrame.
-Like a NumPy array, every \li{Series} has a data type (\li{dtype}), and the entries of the \li{Series} are all of that type.
-Unlike a NumPy array, every \li{Series} has an \emph{index} that labels each entry, and a \li{Series} object can also be given a name to label the entire data set.
-
-\begin{lstlisting}
->>> import numpy as np
->>> import pandas as pd
-
-# Initialize a Series of random entries with an index of letters.
->>> pd.Series(np.random.random(4), index=['a', 'b', 'c', 'd'])
-<<a    0.474170
-b    0.106878
-c    0.420631
-d    0.279713
-dtype: float64>>
-
-# The default index is integers from 0 to the length of the data.
->>> pd.Series(np.random.random(4), name="uniform draws")
-<<0    0.767501
-1    0.614208
-2    0.470877
-3    0.335885
-Name: uniform draws, dtype: float64>>
-\end{lstlisting}
-
-The index in a \li{Series} is a pandas object of type \li{Index} and is stored as the \li{index} attribute of the \li{Series}.
-The plain entries in the \li{Series} are stored as a NumPy array and can be accessed as such via the \li{values} attribute.
-
-\begin{lstlisting}
->>> s1 = pd.Series([1, 2, 3, 4], index=['a', 'b', 'c', 'd'], name="some ints")
-
->>> s1.values                           # Get the entries as a NumPy array.
-<<array([1, 2, 3, 4])>>
-
->>> print(s1.name, s1.dtype, sep=", ")  # Get the name and dtype.
-<<some ints, int64>>
-
->>> s1.index                            # Get the pd.Index object.
-<<Index(['a', 'b', 'c', 'd'], dtype='object')>>
-\end{lstlisting}
-
-The elements of a \li{Series} can be accessed by either the regular position-based integer index, or by the corresponding label in the index.
-New entries can be added dynamically as long as a valid index label is provided, similar to adding a new key-value pair to a dictionary.
-A \li{Series} can also be initialize from a dictionary: the keys become the index labels, and the values become the entries.
-
-\begin{lstlisting}
->>> s2 = pd.Series([10, 20, 30], index=["apple", "banana", "carrot"])
->>> s2
-<<apple     10
-banana    20
-carrot    30
-dtype: int64>>
-
-# s2[0] and s2["apple"] refer to the same entry.
->>> print(s2[0], s2["apple"], s2["carrot"])
-<<10 10 30>>
-
->>> s2[0] += 5              # Change the value of the first entry.
->>> s2["dewberry"] = 0      # Add a new value with label 'dewberry'.
->>> s2
-<<apple       15
-banana      20
-carrot      30
-dewberry     0
-dtype: int64>>
-
-# Initialize a Series from a dictionary.
->>> pd.Series({"eggplant":3, "fig":5, "grape":7}, name="more foods")
-<<eggplant    3
-fig         5
-grape       7
-Name: more foods, dtype: int64>>
-\end{lstlisting}
-
-Slicing and fancy indexing also work the same way in \li{Series} as in NumPy arrays.
-In addition, multiple entries of a \li{Series} can be selected by indexing a list of labels in the index.
-
-\begin{lstlisting}
->>> s3 = pd.Series({"lions":2, "tigers":1, "bears":3}, name="oh my")
->>> s3
-<<bears     3
-lions     2
-tigers    1
-Name: oh my, dtype: int64>>
-
-# Get a subset of the data by regular slicing.
->>> s3[1:]
-<<lions     2
-tigers    1
-Name: oh my, dtype: int64>>
-
-# Get a subset of the data with fancy indexing.
->>> s3[np.array([len(i) == 5 for i in s3.index])]
-<<bears    3
-lions    2
-Name: oh my, dtype: int64>>
-
-# Get a subset of the data by providing several index labels.
->>> s3[ ["tigers", "bears"] ]
-tigers    1                     # Note that the entries are reordered,
-bears     3                     # and the name stays the same.
-<<Name: oh my, dtype: int64>>
-\end{lstlisting}
-
-\begin{comment} % Unnecessary, already getting too long.
-We can create a \li{Series} having constant values in the following manner:
-\begin{lstlisting}
->>> val = 4     #desired constant value of Series
->>> n = 6       #desired length of Series
->>> s3 = pd.Series(val, index=np.arange(n))
->>> s3
-0    4
-1    4
-2    4
-3    4
-4    4
-5    4
-dtype: int64
-\end{lstlisting}
-
-
-\begin{problem}
-Create a pandas \li{Series} where the index labels are the even integers $0,2,\ldots,50$, and the entries are $n^2 - 1$, where $n$ is the entry's label.
-Set all of the entries equal to zero whose labels are divisible by $3$.
-\end{problem}
-
-
-\subsection*{Data Manipulation with Series} % ----------------------------------------
-
-A \li{Series} object, or column of a \li{DataFrame}, has all of the advantages of a NumPy array, including entry-wise arithmetic, plus a few additional features (see Table \ref{table:pandas-numerical-methods}).
-
-
-\begin{lstlisting}
->>> s4 = pd.Series([1, 2, 4], index=['a', 'c', 'd'])
->>> s5 = pd.Series([10, 20, 40], index=['a', 'b', 'd'])
->>> 2*s4 + s5
-<<a    12.0>>
-<<b     NaN>>                           # s4 doesn't have an entry for b, and
-<<c     NaN>>                           # s5 doesn't have an entry for c, so
-<<d    48.0>>                           # the combination is Nan (np.nan / None).
-<<dtype: float64>>
-\end{lstlisting}
-
-\begin{table}[H]
-\begin{tabular}{r|l}
-Method & Returns \\ \hline
-\li{<<abs>>()}     & Object with absolute values taken (of numerical data) \\
-\li{idxmax()}  & The index label of the maximum value \\
-\li{idxmin()}  & The index label of the minimum value \\
-\li{count()}   & The number of non-null entries \\
-\li{cumprod()} & The cumulative product over an axis \\
-\li{cumsum()}  & The cumulative sum over an axis \\
-\li{<<max>>()}     & The maximum of the entries \\
-\li{mean()}    & The average of the entries \\
-\li{median()}  & The median of the entries \\
-\li{<<min>>()}     & The minimum of the entries \\
-\li{mode()}    & The most common element(s) \\
-\li{prod()}    & The product of the elements \\
-\li{<<sum>>()}     & The sum of the elements \\
-\li{var()}     & The variance of the elements \\
-\end{tabular}
-\caption{Numerical methods of the \li{Series} and \li{DataFrame} pandas classes.
-% Methods marked with a * are not methods of NumPy's \li{ndarray} class.
-}
-\label{table:pandas-numerical-methods}
-\end{table}
-
-
-
-\li{Series} are more useful than NumPy arrays when dealing with data primarily because of their index.
-For example, a \li{Series} can be indexed by time with a pandas \li{DatetimeIndex}, an index with date and/or time values.
-The usual way to create this kind of index is with \li{pd.date_range()}.
-
-\begin{lstlisting}
-# Make an index of the first t11	`hree days in July 2000.
->>> pd.date_range("7/1/2000", "7/3/2000", freq='D')
-<<DatetimeIndex(['2000-07-01', '2000-07-02', '2000-07-03'],
-                dtype='datetime64[ns]', freq='D')>>
-\end{lstlisting}
-
-
-\end{comment}
-
-\begin{comment}
-\begin{info}
-The \li{Series} in Problem \ref{prob:pandas-random-walk} is an example of a \emph{time series}, since it is indexed by time.
-Time series show up often in data science; we will explore them in more depth in another lab.
-\end{info}
-\end{comment}
-
-
-\begin{comment}
-A \li{DataFrame} is a collection of \li{Series} that share the same index, and is therefore a two-dimensional generalization of a NumPy array.
-The row labels are collectively called the \emph{index}, and the column labels are collectively called the \emph{columns}.
-An individual column in a \li{DataFrame} object is one \li{Series}.
-
-There are many ways to initialize a \li{DataFrame}.
-In the following code, we build a \li{DataFrame} out of a dictionary of \li{Series}.
-
-\begin{lstlisting}
->>> x = pd.Series(np.random.randn(4), ['a', 'b', 'c', 'd'])
->>> y = pd.Series(np.random.randn(5), ['a', 'b', 'd', 'e', 'f'])
->>> df1 = pd.DataFrame({"series 1": x, "series 2": y})
->>> df1
-<<   series 1  series 2
-a -0.365542  1.227960
-b  0.080133  0.683523
-c  0.737970       NaN
-d  0.097878 -1.102835
-e       NaN  1.345004
-f       NaN  0.217523>>
-\end{lstlisting}
-
-Note that the index of this \li{DataFrame} is the union of the index of \li{Series} \li{x} and that of \li{Series} \li{y}.
-The columns are given by the keys of the dictionary \li{d}.
-Since \li{x} doesn't have a label \li{e}, the
-value in row \li{e}, column \li{1} is \li{NaN}.
-This same reasoning explains the other missing values as well.
-Note that if we take the first column of the \li{DataFrame} and drop the missing values, we recover the \li{Series} \li{x}:
-
-\begin{lstlisting}
->>> df1["series1"].dropna()
-<<a   -0.365542
-b    0.080133
-c    0.737970
-d    0.097878
-Name: series 1, dtype: float64>>
-\end{lstlisting}
-
-
-
-We can also initialize a \li{DataFrame} using a NumPy array, creating custom
-row and column labels.
-\begin{lstlisting}
->>> data = np.random.random((3, 4))
->>> pd.DataFrame(data, index=['A', 'B', 'C'], columns=np.arange(1, 5))
-
-            1	        2	        3	        4
-A	 0.065646	 0.968593	 0.593394	 0.750110
-B	 0.803829	 0.662237	 0.200592	 0.137713
-C	 0.288801	 0.956662	 0.817915	 0.951016
-3 rows     4 columns
-\end{lstlisting}
-
-As with Series, if we don't specify the index or columns, the default is
-\li{np.arange(n)}, where \li{n} is either the number of rows or columns.
-
-\begin{comment} % Not necessary here. Too much info.
-It is also possible to create multi-indexed arrays, for example:
-\begin{lstlisting}
->>> grade=['eighth', 'ninth', 'tenth']
->>> subject=['math', 'science', 'english']
->>> myindex = pd.MultiIndex.from_product([grade, subject], names=['grade', 'subject'])
->>> myseries = pd.Series(np.random.randn(9), index=myindex)
->>> myseries
-grade   subject
-eighth  math       1.706644
-        science   -0.899587
-        english   -1.009832
-ninth   math       2.096838
-        science    1.884932
-        english    0.413266
-tenth   math      -0.924962
-        science   -0.851689
-        english    1.053329
-dtype: float64
-\end{lstlisting}
-
-Multi-indexing is visually convenient, and will be explored further in Lab
-\ref{lab:pandas3}, where we will discuss pandas pivot tables.
-\end{comment}
-
-
-
-\begin{comment} % Moved random walk to Series section.
-\subsection*{Plotting}
-
-Plotting is often a much more effective way to view and gain understanding of a dataset than simply viewing the raw numbers.
-Fortunately, pandas interfaces well with matplotlib, allowing relatively
-painless data visualization.
-
-Most of the functionality of plotting using pandas will be discussed in Lab \ref{lab:pandas2}.
- In this lab, we will simply show how to plot a \li{Series}.
-Doing so is easy, as the \li{Series} object is equipped with its own plot
-function.
-% Change this example to use the titanic data, which will be cleaned up.
-
-Let's start with visualizing a simple random walk.
-By way of background, a \emph{random walk} is a
-stochastic process used to model a non-deterministic path through some space.
-It is a useful construct in
-many fields and can be used to explain things like the motion of a molecule as it travels through a liquid to modeling the fluctuations
-of stock prices.
-Here we will simulate a one-dimensional symmetric random walk on the integers, which can be
-described as follows.
-\begin{enumerate}
-  \item Start at 0.
-  \item Flip a fair coin.
-  \item If heads, move one unit to the right.
-Otherwise, move one unit to the left.
-  \item Go to Step 2.
-\end{enumerate}
-How can we simulate this random walk efficiently? Note that the walk is really characterized by the outcomes
-of the coin flip.
-If we represent heads by the number $1$ and tails by $-1$, then our position at a given moment
-is just the cumulative sum of all previous outcomes.
-Below, we simulate a sequence of coin flips, build the
-resulting random walk, and plot the outcome.
-\begin{lstlisting}
->>> import matplotlib.pyplot as plt
->>> N = 1000        # length of random walk
->>> s = np.zeros(N)
->>> s[1:] = np.random.binomial(1, .5, size=(N-1,))*2-1 #coin flips
->>> s = pd.Series(s)
->>> s = s.cumsum()  # random walk
->>> s.plot()
->>> plt.ylim([-50, 50])
->>> plt.show()
->>> plt.close()
-\end{lstlisting}
-
-The random walk is shown in Figure \ref{fig:PandasRandomWalk}.
-
-\begin{figure}
-\centering
-\includegraphics[width=.7 \textwidth]{randomWalk.pdf}
-\caption{Random walk of length 1000.}
-\label{fig:PandasRandomWalk}
-\end{figure}
-
-\begin{problem}
-Create five random walks of length 100, and plot them together in the same plot.
-
-Next, create a ``biased'' random walk by changing the coin flip probability of head from 0.5 to 0.51.
-Plot this biased walk with lengths 100, 10000, and then 100000.
-Notice the definite trend that emerges.
-Your results should be comparable to those in Figure \ref{pandas:biasedRandomWalk}.
-\end{problem}
-
-\begin{figure}
-\centering
-\includegraphics[width=.7 \textwidth]{biasedRandomWalk.pdf}
-\caption{Biased random walk of length 100 (above) and 10000 (below).}
-\label{pandas:biasedRandomWalk}
-\end{figure}
-\end{comment}
-
-\section*{SQL Operations in pandas} % =========================================
-
-\li{DataFrames} are tabular data structures bearing an obvious resemblance to a typical relational
-database table.
-SQL is the standard for working with relational databases; however, pandas can accomplish many of the same tasks as SQL.
-The SQL-like functionality of pandas is
-one of its biggest advantages, eliminating the need to switch between programming languages
-for different tasks.
-Within pandas, we can handle both the querying \emph{and} data analysis.
+\section*{Complex Operations in Pandas}
+Often times, the data that we have is not exactly the data we want to analyze.
+In cases like this we use more complex data manipulation tools to access only the data that we need.
 
 For the examples below, we will use the following data:
 \begin{lstlisting}
->>> name = ['Mylan', 'Regan', 'Justin', 'Jess', 'Jason', 'Remi', 'Matt', 'Alexander', 'JeanMarie']
+>>> name = ['Mylan', 'Regan', 'Justin', 'Jess', 'Jason', 'Remi', 'Matt',
+...		'Alexander', 'JeanMarie']
 >>> sex = ['M', 'F', 'M', 'F', 'M', 'F', 'M', 'M', 'F']
 >>> age = [20, 21, 18, 22, 19, 20, 20, 19, 20]
 >>> rank = ['Sp', 'Se', 'Fr', 'Se', 'Sp', 'J', 'J', 'J', 'Se']
@@ -983,11 +468,12 @@ For the examples below, we will use the following data:
 >>> mathID = [0, 1, 5, 6, 3]
 >>> mathGd = [4.0, 3.0, 3.5, 3.0, 4.0]
 >>> major = ['y', 'n', 'y', 'n', 'n']
->>> studentInfo = pd.DataFrame({'ID': ID, 'Name': name, 'Sex': sex, 'Age': age, 'Class': rank})
+>>> studentInfo = pd.DataFrame({'ID': ID, 'Name': name, 'Sex': sex, 'Age': age, 
+...		'Class': rank})
 >>> otherInfo = pd.DataFrame({'ID': ID, 'GPA': GPA, 'Financial_Aid': aid})
->>> mathInfo = pd.DataFrame({'ID': mathID, 'Grade': mathGd, 'Math_Major': major})
+>>> mathInfo = pd.DataFrame({'ID': mathID, 'Grade': mathGd, 'Math_Major': 
+...		major})
 \end{lstlisting}
-
 Before querying our data, it is important to know some of its basic properties,
 such as number of columns, number of rows, and the datatypes of the columns.
 This can be done by simply calling the \li{info()} method on the desired
@@ -1004,20 +490,369 @@ Math_Major    5 non-null object
 dtypes: float64(1), int64(1), object(1)
 \end{lstlisting}
 
-\begin{comment}
-We can also get some basic information about the structure of the \li{DataFrame}
-using the \li{head()} or \li{tail()} methods.
+\subsection*{Masks}
+Sometimes, we only want to access data from a single column.
+For example if we wanted to only access the \li{ID} of the students in the \li{studentInfo} DataFrame, then we would use the following syntax.
+\begin{lstlisting}
+   # Get the ID column from studentInfo
+   >>> studentInfo.ID # or studentInfo['ID']
+      ID
+   0   0
+   1   1
+   2   2
+   3   3
+   4   4
+   5   5
+   6   6
+   7   7
+   8   8
+\end{lstlisting}
+If we wanted to access multiple columns at once we can use a list of column names.
+\begin{lstlisting}
+   # Get the ID and Age columns.
+   >>> studentInfo[['ID', 'Age']]
+      ID  Age
+   0   0   20
+   1   1   21
+   2   2   18
+   3   3   22
+   4   4   19
+   5   5   20
+   6   6   20
+   7   7   19
+   8   8   29
+\end{lstlisting}
+
+Now we can access the specific columns that we want.
+However some of these columns may still contain data points that we don't want to consider.
+In this case we can build a mask.
+Each mask that we build will return a pandas \li{Series} object with a \li{bool} value at each index indicating if the condition is satisfied.
 
 \begin{lstlisting}
->>> mathInfo.head()
-   Grade  ID Math_Major  ID  Age  GPA
-0    4.0   0          y   0   20  3.8
-1    3.0   1          n   2   18  3.0
-2    3.5   5          y   4   19  2.8
-3    3.0   6          n   6   20  3.8
-4    4.0   3          n   7   19  3.4
+   # Create a mask for all student receiving financial aid.
+   >>> mask = otherInfo['Financial_Aid'] == 'y'
+   # Access other info where the mask is true and display the ID and GPA columns.
+   >>> otherInfo[mask][['ID', 'GPA']]
+      ID  GPA
+   0   0  3.8
+   3   3  3.9
+   7   7  3.4
 \end{lstlisting}
-\end{comment}
+
+We can also create compound masks with multiple statements.
+We do this using the same syntax you would use for a compound mask in a normal NumPy array.
+Useful operators are: \li{&}, the \li{AND} operator; \li{|}, the \li{OR} operator; and $\sim$, the \li{NOT} operator.
+
+\begin{lstlisting}
+   # Get all student names where Class = 'J' OR Class = 'Sp'.
+   >>>  mask = (studentInfo.Class == 'J') | (studentInfo.Class == 'Sp')
+   >>>  studentInfo[mask].Name
+   0        Mylan
+   4        Jason
+   5         Remi
+   6         Matt
+   7    Alexander
+   Name: Name, dtype: object
+   # Ghis can also be acomplished with the following command:
+   # studentInfo[studentInfo['Class'].isin(['J','Sp'])]['Name']
+\end{lstlisting}
+
+\begin{problem}\label{prob:rate}
+Read in the file \li{crime_data.csv} as a pandas object.
+The file contains data on types of crimes in the U.S. from 1960 to 2016.
+Set the index as the column 'Year'.
+Answer the following questions using the pandas methods learned in this lab.
+The answer of each question should be saved as indicated.
+Return the answers to each question as a tuple (i.e. \li{(answer_1,answer_2,answer_3)}).
+
+\begin{enumerate}
+	\item Identify the three crimes that have a mean over 1,500,000. 
+	Of these three crimes, which two are very correlated? 
+	Which of these two crimes has a greater maximum value?
+	Save the title of this column as a variable to return as the answer.
+	\item Examine the data since 2000.
+	Sort this data (in ascending order) according to number of murders.
+	Find the years where Aggravated Assault is greather than 850,000.
+   Save the indices of the masked and reordered \li{DataFrame} as a NumPy array to return as the answer.
+	\item What year had the highest crime rate? 
+	In this year, which crime was committed the most? 
+	What percentage of the total crime that year was it? 
+	Save this value as a float.
+\end{enumerate}
+\end{problem}
+
+% what used to be pandas 4
+
+\section*{Working with Dates and Times} % =====================================
+
+The \li{datetime} module in the standard library provides a few tools for representing and operating on dates and times.
+The \li{datetime.datetime} object represents a \emph{time stamp}: a specific time of day on a certain day.
+Its constructor accepts a four-digit year, a month (starting at 1 for January), a day, and, optionally, an hour, minute, second, and microsecond.
+Each of these arguments must be an integer, with the hour ranging from $0$ to $23$.
+
+\begin{lstlisting}
+>>> from datetime import datetime
+
+# Represent November 18th, 1991, at 2:01 PM.
+>>> bday = datetime(1991, 11, 18, 14, 1)
+>>> print(bday)
+1991-11-18 14:01:00
+
+# Find the number of days between 11/18/1991 and 11/9/2017.
+>>> dt = datetime(2017, 11, 9) - bday
+>>> dt.days
+9487
+\end{lstlisting}
+
+The \li{datetime.datetime} object has a parser method, \li{strptime()}, that converts a string into a new \li{datetime.datetime} object.
+The parser is flexible so the user must specify the format that the dates are in.
+For example, if the dates are in the format \li{"Month/Day//Year::Hour"}, specify \li{<<format>>"=\%m/\%d//\%Y::\%H"} to parse the string appropriately.
+See Table \ref{table:date_formats} for formatting options.
+
+\begin{table}[H]
+\begin{center}
+    \begin{tabular}{c|l}
+        Pattern & Description \\ \hline
+        \li{\%Y} & 4-digit year \\
+        \li{\%y} & 2-digit year \\
+        \li{\%m} & 1- or 2-digit month \\
+        \li{\%d} & 1- or 2-digit day \\
+        \li{\%H} & Hour (24-hour) \\
+        \li{\%I} & Hour (12-hour) \\
+        \li{\%M} & 2-digit minute \\
+        \li{\%S} & 2-digit second \\
+    \end{tabular}
+\end{center}
+\caption{Formats recognized by \li{datetime.strptime()}}
+\label{table:date_formats}
+\end{table}
+
+\begin{lstlisting}
+>>> print(datetime.strptime("1991-11-18 / 14:01", "%Y-%m-%d / %H:%M"),
+...       datetime.strptime("1/22/1996", "%m/%d/%Y"),
+...       datetime.strptime("19-8, 1998", "%d-%m, %Y"), sep='\n')
+1991-11-18 14:01:00                 # The date formats are now standardized.
+1996-01-22 00:00:00                 # If no hour/minute/seconds data is given,
+1998-08-19 00:00:00                 # the default is midnight.
+\end{lstlisting}
+
+\subsection*{Converting Dates to an Index} % ----------------------------------
+
+The \li{TimeStamp} class is the pandas equivalent to a \li{datetime.datetime} object.
+A pandas index composed of \li{TimeStamp} objects is a \li{DatetimeIndex}, and a \li{Series} or \li{DataFrame} with a \li{DatetimeIndex} is called a \emph{time series}.
+The function \li{pd.to_datetime()} converts a collection of dates in a parsable format to a \li{DatetimeIndex}.
+The format of the dates is inferred if possible, but it can be specified explicitly with the same syntax as \li{datetime.strptime()}.
+
+\begin{lstlisting}
+>>> import pandas as pd
+
+# Convert some dates (as strings) into a DatetimeIndex.
+>>> dates = ["2010-1-1", "2010-2-1", "2012-1-1", "2012-1-2"]
+>>> pd.to_datetime(dates)
+<<DatetimeIndex(['2010-01-01', '2010-02-01', '2012-01-01', '2012-01-02'],
+                dtype='datetime64[ns]', freq=None)>>
+
+# Create a time series, specifying the format for the DatetimeIndex.
+>>> dates = ["1/1, 2010", "1/2, 2010", "1/1, 2012", "1/2, 2012"]
+>>> date_index = pd.to_datetime(dates, format="%m/%d, %Y")
+>>> pd.Series([x**2 for x in range(4)], index=date_index)
+<<2010-01-01    0
+2010-01-02    1
+2012-01-01    4
+2012-01-02    9
+dtype: int64>>
+\end{lstlisting}
+
+\begin{problem} % Load, clean, and plot Dow Jones IA data.
+The file \texttt{DJIA.csv} contains daily closing values of the Dow Jones Industrial Average from 2006--2016.
+Read the data into a \li{Series} or \li{DataFrame} with a \li{DatetimeIndex} as the index.
+Drop rows with missing values, cast the \li{"VALUE"} column to floats, then return the updated DataFrame.
+\label{prob:timeseries-dowjones}
+\end{problem}
+
+\subsection*{Generating Time-based Indices} % ---------------------------------
+
+Some time series datasets come without explicit labels but have instructions for deriving timestamps.
+For example, a list of bank account balances might have records from the beginning of every month, or heart rate readings could be recorded by an app every 10 minutes.
+Use \li{pd.date\_range()} to generate a \li{DatetimeIndex} where the timestamps are equally spaced.
+The function is analogous to \li{np.arange()} and has the following parameters.
+\begin{table}[H]
+\begin{center}
+    \begin{tabular}{r|l}
+        Parameter & Description \\ \hline
+        \li{start} & Starting date \\
+        \li{end} & End date \\
+        \li{periods} & Number of dates to include \\
+        \li{freq} & Amount of time between consecutive dates \\
+        \li{normalize} & Normalizes the start and end times to midnight \\
+    \end{tabular}
+\end{center}
+\caption{Parameters for \li{pd.date_range()}.}
+\label{table:date_params}
+\end{table}
+
+Exactly three of the parameters \li{start}, \li{end}, \li{periods}, and \li{freq} must be specified to generate a range of dates.
+The \li{freq} parameter accepts a variety of string representations, referred to as \emph{offset aliases}.
+See Table \ref{table:range_freqs} for a sampling of some of the options.
+For a complete list of the options, see \url{http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases}.
+
+\begin{table}[H]
+\begin{center}
+    \begin{tabular}{r|l}
+        Parameter & Description \\ \hline
+        \li{"D"} & calendar daily (default) \\
+        \li{"B"} & business daily \\
+        \li{"H"} & hourly \\
+        \li{"T"} & minutely \\
+        \li{"S"} & secondly \\
+        \li{"MS"} & first day of the month \\
+        \li{"BMS"} & first weekday of the month \\
+        \li{"W-MON"} & every Monday \\
+        \li{"WOM-3FRI"} & every 3rd Friday of the month \\
+    \end{tabular}
+\end{center}
+\caption{Options for the \li{freq} parameter to \li{pd.date_range()}.}
+\label{table:range_freqs}
+\end{table}
+
+\begin{lstlisting}
+# Create a DatetimeIndex for 5 consecutive days starting on September 28, 2016.
+>>> pd.date_range(start='9/28/2016 16:00', periods=5)
+<<DatetimeIndex(['2016-09-28 16:00:00', '2016-09-29 16:00:00',
+               '2016-09-30 16:00:00', '2016-10-01 16:00:00',
+               '2016-10-02 16:00:00'],
+              dtype='datetime64[ns]', freq='D')>>
+
+# Create a DatetimeIndex with the first weekday of every other month in 2016.
+>>> pd.date_range(start='1/1/2016', end='1/1/2017', freq="2BMS" )
+<<DatetimeIndex(['2016-01-01', '2016-03-01', '2016-05-02', '2016-07-01',
+               '2016-09-01', '2016-11-01'],
+              dtype='datetime64[ns]', freq='2BMS')>>
+
+
+# Create a DatetimeIndex for 10 minute intervals between 4:00 PM and 4:30 PM on September 9, 2016.
+>>> pd.date_range(start='9/28/2016 16:00',
+            end='9/28/2016 16:30', freq="10T")
+<<DatetimeIndex(['2016-09-28 16:00:00', '2016-09-28 16:10:00',
+               '2016-09-28 16:20:00', '2016-09-28 16:30:00'],
+              dtype='datetime64[ns]', freq='10T')>>
+
+# Create a DatetimeIndex for 2 hour 30 minute intervals between 4:30 PM and 2:30 AM on September 29, 2016.
+>>> pd.date_range(start='9/28/2016 16:30', periods=5, freq="2h30min")
+<<DatetimeIndex(['2016-09-28 16:30:00', '2016-09-28 19:00:00',
+               '2016-09-28 21:30:00', '2016-09-29 00:00:00',
+               '2016-09-29 02:30:00'],
+              dtype='datetime64[ns]', freq='150T')>>
+\end{lstlisting}
+
+\begin{problem} % Use pd.date_range() for something.
+The file \texttt{paychecks.csv} contains values of an hourly employee's last 93 paychecks.
+Paychecks are given on the first and third Fridays of each month, and the employee started working on March 13, 2008.
+
+Read in the data, using \li{pd.date\_range()} to generate the \li{DatetimeIndex}.
+Set this as the new index of the \li{DataFrame} and return the \li{DataFrame}.
+\end{problem}
+
+\section*{Elementary Time Series Analysis}
+\subsection*{Shifting}
+
+\li{DataFrame} and \li{Series} objects have a \li{shift()} method that allows you to move data up or down relative to the index.
+When dealing with time series data, we can also shift the \li{DatetimeIndex} relative to a time offset.
+
+\begin{lstlisting}
+>>> df = pd.DataFrame(dict(VALUE=np.random.rand(5)),
+                index=pd.date_range("2016-10-7", periods=5, freq='D'))
+>>> df
+<<               VALUE
+2016-10-07  0.127895
+2016-10-08  0.811226
+2016-10-09  0.656711
+2016-10-10  0.351431
+2016-10-11  0.608767>>
+
+>>> df.shift(1)
+<<               VALUE
+2016-10-07       NaN
+2016-10-08  0.127895
+2016-10-09  0.811226
+2016-10-10  0.656711
+2016-10-11  0.351431>>
+
+>>> df.shift(-2)
+<<               VALUE
+2016-10-07  0.656711
+2016-10-08  0.351431
+2016-10-09  0.608767
+2016-10-10       NaN
+2016-10-11       NaN>>
+
+>>> df.shift(14, freq="D")
+<<               VALUE
+2016-10-21  0.127895
+2016-10-22  0.811226
+2016-10-23  0.656711
+2016-10-24  0.351431
+2016-10-25  0.608767>>
+\end{lstlisting}
+
+Shifting data makes it easy to gather statistics about changes from one timestamp or period to the next.
+
+\begin{lstlisting}
+# Find the changes from one period/timestamp to the next
+>>> df - df.shift(1)            # Equivalent to df.diff().
+               VALUE
+2016-10-07       NaN
+2016-10-08  0.683331
+2016-10-09 -0.154516
+2016-10-10 -0.305279
+2016-10-11  0.257336
+\end{lstlisting}
+
+\begin{problem}
+Compute the following information about the DJIA dataset from Problem \ref{prob:timeseries-dowjones}.
+\begin{itemize}
+    \item The single day with the largest gain.
+    \item The single day with the largest loss.
+\end{itemize}
+Return the index of the day with the largest gain and the day with the largest loss.
+
+(Hint: Call your function from Problem \ref{prob:timeseries-dowjones} to get the DataFrame already cleaned and with DatetimeIndex).
+\end{problem}
+
+More information on how to use \li{datetime} with Pandas is in the additional material section. 
+This includes working with \li{Periods} and more analysis with time series.
+\pagebreak
+
+\section*{Additional Material}
+\subsection*{SQL Operations in pandas} % =========================================
+
+\li{DataFrames} are tabular data structures bearing an obvious resemblance to a typical relational
+database table.
+SQL is the standard for working with relational databases; however, pandas can accomplish many of the same tasks as SQL.
+The SQL-like functionality of pandas is
+one of its biggest advantages, eliminating the need to switch between programming languages
+for different tasks.
+Within pandas, we can handle both the querying \emph{and} data analysis.
+
+For the examples below, we will use the following data:
+\begin{lstlisting}
+>>> name = ['Mylan', 'Regan', 'Justin', 'Jess', 'Jason', 'Remi', 'Matt',
+...		'Alexander', 'JeanMarie']
+>>> sex = ['M', 'F', 'M', 'F', 'M', 'F', 'M', 'M', 'F']
+>>> age = [20, 21, 18, 22, 19, 20, 20, 19, 20]
+>>> rank = ['Sp', 'Se', 'Fr', 'Se', 'Sp', 'J', 'J', 'J', 'Se']
+>>> ID = range(9)
+>>> aid = ['y', 'n', 'n', 'y', 'n', 'n', 'n', 'y', 'n']
+>>> GPA = [3.8, 3.5, 3.0, 3.9, 2.8, 2.9, 3.8, 3.4, 3.7]
+>>> mathID = [0, 1, 5, 6, 3]
+>>> mathGd = [4.0, 3.0, 3.5, 3.0, 4.0]
+>>> major = ['y', 'n', 'y', 'n', 'n']
+>>> studentInfo = pd.DataFrame({'ID': ID, 'Name': name, 'Sex': sex, 'Age': age, 
+...		'Class': rank})
+>>> otherInfo = pd.DataFrame({'ID': ID, 'GPA': GPA, 'Financial_Aid': aid})
+>>> mathInfo = pd.DataFrame({'ID': mathID, 'Grade': mathGd, 'Math_Major': 
+...		major})
+\end{lstlisting}
 
 SQL SELECT statements can be done by column indexing.
 WHERE statements can be included by adding masks (just like in a NumPy array).
@@ -1027,7 +862,7 @@ When called upon, it returns a \li{Series} of booleans, indicating whether an en
 
 
 \begin{lstlisting}
->>> # SELECT ID, Age FROM studentInfo
+# SELECT ID, Age FROM studentInfo
 >>> studentInfo[['ID', 'Age']]
    ID  Age
 0   0   20
@@ -1040,15 +875,16 @@ When called upon, it returns a \li{Series} of booleans, indicating whether an en
 7   7   19
 8   8   29
 
->>> # SELECT ID, GPA FROM otherInfo WHERE Financial_Aid = 'y'
+# SELECT ID, GPA FROM otherInfo WHERE Financial_Aid = 'y'
 >>> mask = otherInfo['Financial_Aid'] == 'y'
->>> otherInfomask][['ID', 'GPA']]
+>>> otherInfo[mask][['ID', 'GPA']]
+
    ID  GPA
 0   0  3.8
 3   3  3.9
 7   7  3.4
 
->>> # SELECT Name FROM studentInfo WHERE Class = 'J' OR Class = 'Sp'
+# SELECT Name FROM studentInfo WHERE Class = 'J' OR Class = 'Sp'
 >>>  studentInfo[studentInfo['Class'].isin(['J','Sp'])]['Name']
 0        Mylan
 4        Jason
@@ -1058,19 +894,13 @@ When called upon, it returns a \li{Series} of booleans, indicating whether an en
 Name: Name, dtype: object
 \end{lstlisting}
 
-\begin{comment}
-\begin{problem}
-Using panda commands, find the crime rates of the years where Property crimes were less than 90$\%$ of the total crime and burglary crimes were more than 20$\%$ of the total crime or property crimes were less than 90$\%$ of the total crime while violent crimes were more than 12$\%$ of the total crime.
-\end{problem}
-\end{comment}
-
 Next, let's look at JOIN statements.
 In pandas, this is done with the \li{merge} function.
 \li{merge} takes the two \li{DataFrame} objects to join as parameters, as well as keyword arguments specifying
 the column on which to join, along with the type (left, right, inner, outer).
 
 \begin{lstlisting}
->>> # SELECT * FROM studentInfo INNER JOIN mathInfo ON studentInfo.ID = mathInfo.ID
+# SELECT * FROM studentInfo INNER JOIN mathInfo ON studentInfo.ID = mathInfo.ID
 >>> pd.merge(studentInfo, mathInfo, on='ID') # INNER JOIN is the default
    Age Class  ID    Name Sex  Grade Math_Major
 0   20    Sp   0   Mylan   M    4.0          y
@@ -1080,7 +910,8 @@ the column on which to join, along with the type (left, right, inner, outer).
 4   20     J   6    Matt   M    3.0          n
 [5 rows x 7 columns]
 
->>> # SELECT GPA, Grade FROM otherInfo FULL OUTER JOIN mathInfo ON otherInfo.ID = mathInfo.ID
+# SELECT GPA, Grade FROM otherInfo FULL OUTER JOIN mathInfo ON otherInfo. 
+# ID = mathInfo.ID
 >>> pd.merge(otherInfo, mathInfo, on='ID', how='outer')[['GPA', 'Grade']]
    GPA  Grade
 0  3.8    4.0
@@ -1095,216 +926,292 @@ the column on which to join, along with the type (left, right, inner, outer).
 [9 rows x 2 columns]
 \end{lstlisting}
 
-\begin{problem}
-Read in the file \li{crime_data.csv} as a pandas object.
-The file contains data on types of crimes in the U.S. from 1960 to 2016.
-Set the index as the column 'Year'.
+\subsection*{More Datetime with Pandas}
+\subsection*{Periods} % ==========================================================
 
-Create a new column \li{Rate} which contains the crime rate for each year.
-Using panda commands, find the number of murders in the years where the crime rate was greater than 5\% and the number of \li{Violent} was more than on average.
-Return an array containing the number of murders in these years.
+A pandas \li{Timestamp} object represents a precise moment in time on a given day.
+Some data, however, is recorded over a time interval, and it wouldn't make sense to place an exact timestamp on any of the measurements.
+For example, a record of the number of steps walked in a day, box office earnings per week, quarterly earnings, and so on.
+This kind of data is better represented with the pandas \li{Period} object and the corresponding \li{PeriodIndex}.
 
-(Hint: To do \li{AND} statements, use two masks. Use \li{values} attribute to create array.)
-\label{prob:rate}
-\end{problem}
+The \li{Period} class accepts a \li{value} and a \li{freq}.
+The \li{value} parameter indicates the label for a given \li{Period}.
+This label is tied to the \textbf{end} of the defined \li{Period}.
+The \li{freq} indicates the length of the \li{Period} and in some cases can also indicate the offset of the \li{Period}.
+The default value for \li{freq} is "M" for months.
+The \li{freq} parameter accepts the majority, but not all, of frequencies listed in Table \ref{table:range_freqs}.
 
-\begin{problem}
-Answer the following questions using the file \li{crime_data.csv} and the pandas methods learned in this lab.
-The answer of each question should be saved as indicated.
-Return the answers to each question as a tuple (i.e. \li{(answer_1,answer_2,answer_3)}).
+\begin{lstlisting}
+# Creates a period for month of Oct, 2016.
+>>> p1 = pd.Period("2016-10")
+>>> p1.start_time                   # The start and end times of the period
+<<Timestamp('2016-10-01 00:00:00')>>    # are recorded as Timestamps.
+>>> p1.end_time
+<<Timestamp('2016-10-31 23:59:59.999999999')>>
 
-\begin{enumerate}
-	\item Identify the three crimes that have a mean over 1,500,000. 
-	Of these three crimes, which two are very correlated? 
-	Which of these two crimes has a greater maximum value?
-	Save the title of this column as a variable to return as the answer.
-	\item Examine the data since 2000.
-	Sort this data (in ascending order) according to number of murders.
-	SELECT Aggravated Assault WHERE Aggravated Assault is greather than 850,000.
-	Save the reordered and SQL queried \li{DataFrame} as a NumPy array to return as the answer.
-	\item What decade had the most crime? 
-	In this decade, which crime was committed the most? 
-	What percentage of the total crime that year was it? 
-	Save this value as a float.
-\end{enumerate}
-\end{problem}
+# Represent the annual period ending in December that includes 10/03/2016.
+>>> p2 = pd.Period("2016-10-03", freq="A-DEC")
+>>> p2.start_time
+<<Timestamp('2016-01-01 00:00:00')
+>>> p2.end_time
+<<Timestamp('2016-12-31 23:59:59.999999999')>>
+
+# Get the weekly period ending on a Saturday that includes 10/03/2016.
+>>> print(pd.Period("2016-10-03", freq="W-SAT"))
+<<2016-10-02/2016-10-08>>
+\end{lstlisting}
+
+Like the \li{pd.date\_range()} method, the \li{pd.period\_range()} method is useful for generating a \li{PeriodIndex} for unindexed data.
+The syntax is essentially identical to that of \li{pd.date\_range()}.
+When using \li{pd.period\_range()}, remember that the \li{freq} parameter marks the end of the period.
+After creating a \li{PeriodIndex}, the \li{freq} parameter can be changed via the \li{asfreq()} method.
+
+\begin{lstlisting}
+# Represent quarters from 2008 to 2010, with Q4 ending in December.
+>>> pd.period_range(start="2008", end="2010-12", freq="Q-DEC")
+<<PeriodIndex(['2008Q1', '2008Q2', '2008Q3', '2008Q4', '2009Q1', '2009Q2',
+             '2009Q3', '2009Q4', '2010Q1', '2010Q2', '2010Q3', '2010Q4'],
+            dtype='period[Q-DEC]', freq='Q-DEC')>>
+
+# Get every three months form March 2010 to the start of 2011.
+>>> p = pd.period_range("2010-03", "2011", freq="3M")
+>>> p
+<<PeriodIndex(['2010-03', '2010-06', '2010-09', '2010-12'],
+            dtype='period[3M]', freq='3M')>>
+
+# Change frequency to be quarterly.
+>>> p.asfreq("Q-DEC")
+<<PeriodIndex(['2010Q2', '2010Q3', '2010Q4', '2011Q1'],
+            dtype='period[Q-DEC]', freq='Q-DEC')>>
+\end{lstlisting}
+
+The bounds of a \li{PeriodIndex} object can be shifted by adding or subtracting an integer.
+ \li{PeriodIndex} will be shifted by $n$ $\times$ \li{freq}.
+
+\begin{lstlisting}
+# Shift index by 1
+>>> p _= 1
+>>> p
+PeriodIndex(['2010Q1', '2010Q2', '2010Q3', '2010Q4'],
+            dtype='int64', freq='Q-DEC')
+\end{lstlisting}
+
+If for any reason you need to switch from periods to timestamps, pandas provides a very simple method to do so.
+The \li{how} parameter can be \li{start} or \li{end} and determines if the timestamp is the beginning or the end of the period.
+Similarly, you can switch from timestamps to periods.
+
+\begin{lstlisting}
+# Convert to timestamp (last day of each quarter)
+>>> p = p.to_timestamp(how='end')
+>>> p
+DatetimeIndex(['2010-03-31', '2010-06-30', '2010-09-30', '2010-12-31'],
+                dtype='datetime64[ns]', freq='Q-DEC')
+
+>>> p.to_period("Q-DEC")
+PeriodIndex(['2010Q1', '2010Q2', '2010Q3', '2010Q4'],
+            dtype='int64', freq='Q-DEC')
+
+\end{lstlisting}
 
 \begin{comment}
-\begin{problem}
-Read in the files \li{final_accidents2.pickle} and \li{final_drivers.pickle} using the function \li{read_pickle()}.  
-The accidents file contains data on various accidents that occurred in the U.S. and their causes.
-The drivers data has data on various tickets given to drivers, how many tickets given, and what the ticket is for.
-The following table shows the meanings of the codes in the data.
-
-\begin{table}[H]
-\begin{tabular}{r|l}
-Code & Description \\ \hline
-\li{describe()}  & Return a \li{Series} describing the data structure \\
-\li{head()}      & Return the first $n$ rows, defaulting to 5 \\
-\li{tail()}      & Return the last $n$ rows, defaulting to 5 \\
-
-\li{DRUNK_DR} & 0-99 - Number of drunk drivers \\ \hline
-\li{WEATHER} & 0 - Unknown \\
-             & 1 - Clear \\
-             & 2 - Rain \\
-             & 3 - Sleet, Hail \\
-             & 4 - Snow \\
-             & 5 - Fog, Smog, Smoke \\
-             & 6 - Severe Crosswinds \\
-             & 7 - Blowing Sand, Soil, and Dirt \\
-             & 8 - Other \\
-             & 10 - Cloudy \\
-             & 11 - Blowing Snow \\
-             & 12 - Freezing Rain or Drizzle \\
-             & 98 - Not Reported \\
-             & 99 - Unknown \\ \hline
-\li{SP} & 0 - Not Speeding \\
-        & 1 - Speeding \\
-        & 8 - Not Reported \\
-        & 9 - Unknown \\ \hline
-\li{FATALS} & 0-99 - Number of fatalities \\ \hline
-\li{VEH_NO} & Assigned number of motor vehicle \\ \hline
-\li{DRINKING} & 0 - Alcohol Not Involved \\ 
-              & 1 - Alcohol Involved \\
-              & 8 - Not Reported \\
-              & 9 - Unknown \\ \hline
-\li{SPEEDREL} & 0 - No \\ 
-              & 1 - Yes \\
-              & 2 - Yes, Racing \\
-              & 3 - Yes, Exceeded Speed Limit \\
-              & 4 - Yes, Too Fast for Conditions \\
-              & 5 - Yes, Specifics Unknown \\
-              & 8 - No Driver Present/Unknown if Driver Present \\
-              & 9 - Unknown
-
-\end{tabular}
-\caption{Codes for \li{FARS} data.}
-\label{table:fars-codes}
-\end{table}
-
-Create a \li{DataFrame} containing the Case Number, Age, whether the accident was caused by a drunk driver, whether the driver had DUIs, and if the accident was fatal, using an inner join operation.
-Create a second \li{DataFrame} containing Case Number, Age, and fatalities using an inner join operation. In this \li{DataFrame}, also include the speed column from each dataframe.
-
-Use these dataframes to answer the following questions.
-Make sure to support your claims with appropriate and presentable data.
-
-\begin{enumerate}
-\item What is the most common kind of weather involved with accidents?
-
-\item How many accidents involved speeding?
-
-\item Of accidents where the type of speeding is known, what is the most common type of speeding in accidents?
-
-\item Rounding to the nearest integer, what is the mean number of drunk drivers involved in each accident?
-
-\item What is the mean number of fatalities per accident each year?
-
-\item What month has the most fatalities each year?
-\end{enumerate}
+\begin{problem} %
+The file \texttt{finances.csv} contains a list of simulated quarterly earnings and expense totals from a fictional company.
+Load the data into a \li{Series} or \li{DataFrame} with a \li{PeriodIndex} with a quarterly frequency.
+Let \li{how=end}.
+Assume the fiscal year starts at the beginning of September and that the data begins in September 1978.
+Return the \li{DataFrame}.
 \end{problem}
 \end{comment}
+\subsection*{Operations on Time Series}
+
+There are certain operations only available to Series and DataFrames that have a \li{DatetimeIndex}. A sampling of this functionality is described throughout the remainder of this lab.
+
+\subsubsection*{Slicing}
+
+Slicing is much more flexible in pandas for time series. We can slice by year, by month, or even use traditional slicing syntax to select a range of dates.
+
+% TODO: initialize df using pd.date_range().
+\begin{lstlisting}
+# Select all rows in a given year
+>>> df["2010"]
+                   0         1
+2010-01-01  0.566694  1.093125
+2010-02-01 -0.219856  0.852917
+2010-03-01  1.511347 -1.324036
+
+# Select all rows in a given month of a given year
+>>> df["2012-01"]
+                   0         1
+2012-01-01  0.212141  0.859555
+2012-01-02  1.483123 -0.520873
+2012-01-03  1.436843  0.596143
+
+# Select a range of dates using traditional slicing syntax
+>>> df["2010-1-2":"2011-12-31"]
+                   0         1
+2010-02-01 -0.219856  0.852917
+2010-03-01  1.511347 -1.324036
+2011-01-01  0.300766  0.934895
+\end{lstlisting}
+
+\subsubsection*{Resampling} % ----------------------------------------------------
+
+Some datasets do not have datapoints at a fixed frequency.
+For example, a dataset of website traffic has datapoints that occur at irregular intervals.
+In situations like these, \emph{resampling} can help provide insight on the data.
+
+The two main forms of resampling are \emph{downsampling}, aggregating data into fewer intervals, and \emph{upsampling}, adding more intervals.
+
+To downsample, use the \li{resample()} method of the \li{Series} or \li{DataFrame}.
+This method is similar to \li{groupby()} in that it groups different entries together.
+Then aggregation produces a new data set.
+The first parameter to \li{resample()} is an offset string from Table \ref{table:range_freqs}: \li{"D"} for daily, \li{"H"} for hourly, and so on.
+
+\begin{lstlisting}
+>>> import numpy as np
+
+# Get random data for every day from 2000 to 2010.
+>>> dates = pd.date_range(start="2000-1-1", end='2009-12-31', freq='D')
+>>> df = pd.Series(np.random.random(len(days)), index=dates)
+>>> df
+2000-01-01    0.559
+2000-01-02    0.874
+2000-01-03    0.774
+                ...
+2009-12-29    0.837
+2009-12-30    0.472
+2009-12-31    0.211
+Freq: D, Length: 3653, dtype: float64
+
+# Group the data by year.
+>>> years = df.resample("A")        # 'A' for 'annual'.
+>>> years.agg(len)                  # Number of entries per year.
+2000-12-31    366.0
+2001-12-31    365.0
+2002-12-31    365.0
+                ...
+2007-12-31    365.0
+2008-12-31    366.0
+2009-12-31    365.0
+Freq: A-DEC, dtype: float64
+
+>>> years.mean()                    # Average entry by year.
+2000-12-31    0.491
+2001-12-31    0.514
+2002-12-31    0.484
+                ...
+2007-12-31    0.508
+2008-12-31    0.521
+2009-12-31    0.523
+Freq: A-DEC, dtype: float64
+
+# Group the data by month.
+>>> months = df.resample("M")
+>>> len(months.mean())              # 12 months x 10 years = 120 months.
+120
+\end{lstlisting}
 
 \begin{comment}
-This may be going into too much detail for an introductory lab...
-It is sometimes desirable to join to DataFrames on their indexes rather than on a particular column.
-The \li{join} method makes this operation convenient.
-\begin{lstlisting}
->>> #create new DataFrame
->>> sibs = [0, 1, 0, 5, 2, 9]
->>> sibInfo = pd.DataFrame({'Siblings':sibs})
->>> sibInfo
-   Siblings
-0         0
-1         1
-2         0
-3         5
-4         2
-5         9
-[6 rows x 1 columns]
+\begin{problem} % Downsample
+The file \texttt{website\_traffic.csv} contains records for different visits to a fictitious website.
+Read in the data, calculate the duration of each visit in seconds and convert the index to a \li{DatetimeIndex}.
+Use downsampling to calculate the number of visits each minute and the number of visits each hour.
+Return these DataFrames.
 
->>> #now join studentInfo with sibInfo
->>> studentInfo.join(sibInfo)
-   Age Class  ID    Name Sex  Siblings
-0   20    Sp   0    Mylan   M         0
-1   21    Se   1   Regan   F         1
-2   18    Fr   2     Justin   M         0
-3   22    Se   3   Jess   F         5
-4   19    Sp   4     Jason   M         2
-5   20     J   5  Remi   F         9
-6   20     J   6   Matt   M       NaN
-7   19     J   7  Alexander   M       NaN
-8   20    Se   8     JeanMarie   F       NaN
-[9 rows x 6 columns]
-\end{lstlisting}
-The default is a left join, but this can be altered.
-When attempting to join to DataFrames that share common columns on their indexes,
-we must rename the columns to avoid contradictions.
-We do this by simply appending
-characters to the existing column names, specified by the \li{lsuffix} and \li{rsuffix}
-parameters (for the left and right DataFrames, respectively).
-\begin{lstlisting}
->>> #join studentInfo and mathInfo on indexes
->>> studentInfo.join(mathInfo, lsuffix='_left', rsuffix='_right', how='inner')
-   Age Class  ID_left   Name Sex  Grade  ID_right Math_Major
-0   20    Sp        0   Mylan   M    4.0         0          y
-1   21    Se        1  Regan   F    3.0         1          n
-2   18    Fr        2    Justin   M    3.5         5          y
-3   22    Se        3  Jess   F    3.0         6          n
-4   19    Sp        4    Jason   M    4.0         3          n
-[5 rows x 8 columns]
-\end{lstlisting}
-
-The final SQL-like operation we will discuss is the UNION, or concatenation of DataFrames.
-In the simplest setting, this operation is useful when we have two DataFrames that have the
-same columns but possibly different rows.
-\begin{lstlisting}
->>> #create another df holding more math info
->>> mathID2 = [0, 5, 2, 4]
->>> mathGd2 = [4.0, 3.5, 2.0, 3.0]
->>> major2 = ['y', 'y', 'n', 'y']
->>> mathInfo2 = pd.DataFrame({'Grade':mathGd2, 'ID':mathID2, 'Math_Major':major2})
->>> pd.concat([mathInfo, mathInfo2], ignore_index=True).drop_duplicates()
-   Grade  ID Math_Major
-0    4.0   0          y
-1    3.0   1          n
-2    3.5   5          y
-3    3.0   6          n
-4    4.0   3          n
-7    2.0   2          n
-8    3.0   4          y
-[7 rows x 3 columns]
-\end{lstlisting}
-The \li{ignore_index=True} argument means we discard the indexes of the two input DataFrames and create
-a new one for the concatenated DataFrame.
-The \li{drop_duplicates} method simply drops duplicate rows.
+(Hint: \li{minute.agg(func)} returns a DataFrame).
+\end{problem}
 \end{comment}
+\subsection*{Elementary Time Series Analysis} % ==================================
 
+\subsubsection*{Rolling Functions and Exponentially-Weighted Moving Functions}
 
+Many time series are inherently noisy.
+To analyze general trends in data, we use \emph{rolling functions} and \emph{exponentally-weighted moving (EWM)} functions.
+Rolling functions, or \emph{moving window functions}, perform a calculation on a window of data.
+There are a few rolling functions that come standard with pandas.
 
+\subsubsection*{Rolling Functions (Moving Window Functions)}
+
+One of the most commonly used rolling functions is the \emph{rolling average}, which takes the average value over a window of data.
+
+\begin{lstlisting}
+# Generate a time series using random walk from a uniform distribution.
+N = 10000
+bias = 0.01
+s = np.zeros(N)
+s[1:] = np.random.uniform(low=-1, high=1, size=N-1) + bias
+s = pd.Series(s.cumsum(),
+              index=pd.date_range("2015-10-20", freq='H', periods=N))
+
+# Plot the original data together with a rolling average.
+ax1 = plt.subplot(121)
+s.plot(color="gray", lw=.3, ax=ax1)
+s.rolling(window=200).mean().plot(color='r', lw=1, ax=ax1)
+ax1.legend(["Actual", "Rolling"], loc="lower right")
+ax1.set_title("Rolling Average")
+\end{lstlisting}
+
+The function call \li{s.rolling(window=200)} creates a \li{pd.core.rolling.Window} object that can be aggregated with a function like \li{mean()}, \li{std()}, \li{var()}, \li{<<min>>()}, \li{<<max>>()}, and so on.
+
+\subsubsection*{Exponentially-Weighted Moving (EWM) Functions}
+
+Whereas a moving window function gives equal weight to the whole window, an \emph{exponentially-weighted moving} function gives more weight to the most recent data points.
+
+In the case of a \emph{exponentially-weighted moving average} (EWMA), each data point is calculated as follows.
+\[
+z_i = \alpha \bar{x}_i + (1 - \alpha)z_{i-1},
+\]
+where $z_i$ is the value of the EWMA at time $i$, $\bar{x}_i$ is the average for the $i$-th window, and $\alpha$ is the decay factor that controls the importance of previous data points.
+Notice that $\alpha=1$ reduces to the rolling average.
+
+More commonly, the decay is expressed as a function of the window size.
+In fact, the \li{span} for an EWMA is nearly analogous to \li{window} size for a rolling average.
+
+Notice the syntax for EWM functions is very similar to that of rolling functions.
+
+\begin{figure}[H] % Rolling average vs. EWMA
+\captionsetup[subfigure]{justification=centering}
+\centering
+\begin{subfigure}{.49\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/moving_rolling.pdf}
+    \caption{}
+    \label{fig:pandas-ts-moving-rolling}
+\end{subfigure}
+%
+\begin{subfigure}{.49\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/moving_ewma.pdf}
+    \caption{}
+    \label{fig:pandas-ts-moving-ewma}
+\end{subfigure}
+\caption{Rolling average and EWMA.}
+\end{figure}
+
+\begin{lstlisting}
+ax2 = plt.subplot(122)
+s.plot(color="gray", lw=.3, ax=ax2)
+s.ewm(span=200).mean().plot(color='g', lw=1, ax=ax2)
+ax2.legend(["Actual", "EWMA"], loc="lower right")
+ax2.set_title("EWMA")
+\end{lstlisting}
 
 \begin{comment}
 \begin{problem}
-In 1912 the RMS \emph{Titanic} sank after colliding with an iceberg.
-The file \texttt{titanic.csv} contains data on the incident.
-Each row represents a different passenger, and the columns describe various features of the passengers (age, sex, whether or not they survived, etc.)
-
-Start by cleaning the data.
+Plot the following from the DJIA dataset with a window or span of 30, 120, and 365.
 \begin{itemize}
-    \item Read the data into a \li{DataFrame}.
-    Use the first row of the file as the column labels, but do not use any of the columns as the index.
-    \item Drop the columns \li{"Sibsp"}, \li{"Parch"}, \li{"Cabin"}, \li{"Boat"}, \li{"Body"}, and \li{"home.dest"}.
-    \item Drop any entries without data in the \li{"Survived"} column, then change the remaining entries to \li{True} or \li{False} (they start as 1 or 0).
-    \item Replace null entries in the \li{"Age"} column with the average age.
-    \item Save the new \li{DataFrame} as \texttt{titanic\_clean.csv}.
+    \item The original data points.
+    \item Rolling average.
+    \item Exponential average.
 \end{itemize}
-Next, answer the following questions.
-\begin{itemize}
-    \item How many people survived? What percentage of passengers survived?
-    \item What was the average price of a ticket? How much did the most expensive ticket cost?
-    \item How old was the oldest survivor? How young was the youngest survivor? What about non-survivors?
-\end{itemize}
-
-
-
+Your plots should look like Figure \ref{fig:prob6}.
+Return a list of the minimum rolling average value for each window size and a list of the minimum exponential average value for each span size.
+\label{prob:rolling}
 \end{problem}
+
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{figures/prob6.pdf}
+\caption{Plots for Problem \ref{prob:rolling}.}
+\label{fig:prob6}
+\end{figure}
 \end{comment}

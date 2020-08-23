@@ -38,12 +38,14 @@ Rearranging terms, we obtain
 Again, since we are working with images and not some time based problem, we can without loss of generality let $\Delta t = 1$, so we obtain the finite difference scheme
 \[U_{l,m}^{n+1} = U_{l,m}^n + (U_{l-1,m}^n - U_{l,m}^n) + (U_{l+1,m}^n - U_{l,m}^n) + (U_{l,m-1}^n - U_{l,m}^n) + (U_{l,m+1}^n - U_{l,m}^n).\]
 We will now limit the diffusion near the edges of objects by making the modification
-\begin{align*}
+\begin{equation}\label{eq:anisotropic}
+\begin{aligned}
 U_{l,m}^{n+1} = U_{l,m}^n + & \lambda \Big(g(|U_{l-1,m}^n - U_{l,m}^n|)(U_{l-1,m}^n - U_{l,m}^n) \\
 			&+ g(|U_{l+1,m}^n - U_{l,m}^n|)(U_{l+1,m}^n - U_{l,m}^n) \\
 			&+ g(|U_{l,m-1}^n - U_{l,m}^n|)(U_{l,m-1}^n - U_{l,m}^n) \\
 			&+ g(|U_{l,m+1}^n - U_{l,m}^n|)(U_{l,m+1}^n - U_{l,m}^n)\Big),
-\end{align*}
+\end{aligned}
+\end{equation}
 where $\lambda \leq \frac{1}{4}$ is the stability condition.
 
 In this difference scheme, each term is affected most by nearby terms that are most similar to it, so less diffusion will happen anywhere there is a sharp difference between pixels.
@@ -73,26 +75,37 @@ plt.imshow(picture, cmap=cm.gray)
 plt.show()
 \end{lstlisting}
 
-\begin{problem}
-\label{prob:anisdiff_bw}
-Complete the following fuction, implementing anisotropic diffusion for black and white images using the following boundary conditions:
+\subsection*{Simplifying Calculations}\label{sec:simp}
 
-For the top edge let
-\begin{align*}
-U_{l,m}^{n+1} = U_{l,m}^n + & \lambda (g(|U_{l-1,m}^n - U_{l,m}^n|)(U_{l-1,m}^n - U_{l,m}^n) \\
-					& + g(|U_{l+1,m}^n - U_{l,m}^n|)(U_{l+1,m}^n - U_{l,m}^n) \\
-					& + g(|U_{l,m+1}^n - U_{l,m}^n|)(U_{l,m+1}^n - U_{l,m}^n))
-\end{align*}
-Do the other edges similarly.
-
-For the top left corner let
+You will notice that the algorithm given in \ref{eq:anisotropic} does not describe what to do for the edges and corners of $U^{n+1}$.
+In these cases we will simply eliminate the undefined terms in the algorithm.
+For example, the top edge equation becomes
 \begin{align*}
 U_{l,m}^{n+1} = U_{l,m}^n + & \lambda (g(|U_{l+1,m}^n - U_{l,m}^n|)(U_{l+1,m}^n - U_{l,m}^n) \\
-					& + g(|U_{l,m+1}^n - U_{l,m}^n|)(U_{l,m+1}^n - U_{l,m}^n))
+                    & + g(|U_{l,m+1}^n - U_{l,m}^n|)(U_{l,m+1}^n - U_{l,m}^n)) \\
+					& + g(|U_{l,m-1}^n - U_{l,m}^n|)(U_{l,m-1}^n - U_{l,m}^n)),
 \end{align*}
-Do the other corners similarly.
+and top left corner equation becomes
+\begin{align*}
+U_{l,m}^{n+1} = U_{l,m}^n + & \lambda (g(|U_{l+1,m}^n - U_{l,m}^n|)(U_{l+1,m}^n - U_{l,m}^n) \\
+					& + g(|U_{l,m+1}^n - U_{l,m}^n|)(U_{l,m+1}^n - U_{l,m}^n)).
+\end{align*}
+Essentially we are only using the terms of the difference scheme that are actually defined.
 
-Essentially we are just using the terms of the difference scheme that are actually defined.
+To help facilitate this we can create a larger "padded" matrix that will make these calculations easy to do.
+This padded matrix will have an extra row on the top and bottom, and an extra column on either side of the original matrix.
+These extra rows and columns will duplicate the outer edge of the original matrix.
+
+So if our original array \li{X} has shape \li{m,n}, then our padded array \li{Y} has shape \li{m+2,n+2}.
+The top edge of \li{Y} will be defined so that \li{Y[0,1:-1] == X[0,:]} is true, and the rest of the edges of \li{Y} follow the same pattern.
+
+Notice that this allows us to simply implement the algorithm found in \ref{eq:anisotropic} without having to make special cases for the edges and corners, since those previously undefined terms become zero when using the padded matrix.
+
+\begin{problem}
+\label{prob:anisdiff_bw}
+Complete the following function, by implementing the anisotropic diffusion algorithm found in \ref{eq:anisotropic} for black and white images.
+Use the padded array technique found in the Simplifying Calculations section.
+
 
 In your function, use
 \[g(x) = e^{-\left(\frac{x}{\sigma}\right)^2}\]
@@ -108,8 +121,6 @@ def anisdiff_bw(U, N, lambda_, g):
 \end{lstlisting}
 Run the function on \li{balloon.jpg}.
 Show the original image and the diffused image for $\sigma = .1$, $\lambda = .25$, $N = 5, 20, 100$.
-
-
 \end{problem}
 
 \newpage
@@ -159,7 +170,7 @@ When implementing this scheme for colored images, use the $2$-norm on 3-space, i
 
 \begin{problem}
 Complete the following function to process a colored image.
-You may modify your colde from the previous problem.
+You may modify your code from the previous problem.
 Measure the difference between pixels using the $2$-norm.
 Use the corresponding vector versions of the boundary conditions given in Problem \ref{prob:anisdiff_bw}.
 

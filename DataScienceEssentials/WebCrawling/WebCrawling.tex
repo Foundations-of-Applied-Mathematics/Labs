@@ -4,6 +4,7 @@
 In this lab, we present two methods for crawling through multiple web pages without violating copyright laws or straining the load on a server.
 We also demonstrate how to scrape data from asynchronously loaded web pages and how to interact programmatically with web pages when needed.}
 
+\begin{comment} %No longer using pickle files
 \begin{info}
 For grading purposes, before returning a value in each function of this lab, write the value being returned to a \li{pickle} file.
 Name the file \li{ans1} if it contains the returned value of Problem 1, \li{ans2} for Problem 2, and so on, so that you have five pickle files saved.
@@ -13,9 +14,10 @@ In order to create a pickle file, use the following code:
 >>>
 >>> # Write the answer of Problem 1, "value", to a pickle file
 >>> with open("ans1", "wb") as fp:
->>>     pickle.load(value, fp)
+>>>     pickle.dump(value, fp)
 \end{lstlisting}
 \end{info}
+\end{comment}
 
 \section*{Scraping Etiquette} % ===============================================
 
@@ -39,11 +41,11 @@ Websites that do allow scraping usually have a file called \texttt{robots.txt} (
 Be careful and considerate when doing any sort of scraping, and take care when writing and testing code to avoid unintended behavior.
 It is up to the programmer to create a scraper that respects the rules found in the terms and conditions and in \texttt{robots.txt}.
 Make sure to scrape websites legally.
-\footnote{Python provides a parsing library called \texttt{urllib.robotparser} for reading \texttt{robot.txt} files.
-For more information, see \url{https://docs.python.org/3/library/urllib.robotparser.html}.
-}
+%\footnote{Python provides a parsing library called \texttt{urllib.robotparser} for reading \texttt{robot.txt} files.
+%For more information, see \url{https://docs.python.org/3/library/urllib.robotparser.html}.
+%}
 \end{warn}
-
+\begin{comment} %This is almost word-for-word in the previous lab
 The standard way to get the HTML source code of a website using Python is via the \li{requests} library.\footnote{Though \texttt{requests} is not part of the standard library, it is recognized as a standard tool in the data science community. See \url{http://docs.python-requests.org/}.}
 Calling \li{requests.get()} sends an HTTP GET request to a specified website; the result is an object with a response code that indicates whether or not the request was successful and if so, access to the website source code.
 
@@ -66,21 +68,53 @@ Calling \li{requests.get()} sends an HTTP GET request to a specified website; th
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />>>
 # ...
 \end{lstlisting}
+\end{comment}
 
-Recall that consecutive GET requests without pauses can strain a website's server and provoke retaliation.
+Recall that consecutive requests without pauses can strain a website's server and provoke retaliation.
 Most servers are designed to identify such scrapers, block their access, and sometimes even blacklist the user.
 This is especially common in smaller websites that aren't built to handle enormous amounts of traffic.
 To briefly pause the program between requests, use \li{time.sleep()}.
 \begin{lstlisting}
 >>> import time
->>> time.sleep(3)                   # Pause execution for 3 seconds.
+>>> time.sleep(3)      # Pause execution for 3 seconds.
 \end{lstlisting}
 
 The amount of necessary wait time depends on the website.
-Sometimes, \texttt{robots.txt} contains a \li{Request-rate} directive which gives a ratio of the form \li{<requests>/<seconds>}.
+Sometimes, \texttt{robots.txt} contains a \li{Crawl-delay} directive which gives a number of seconds to wait between successive requests.
 If this doesn't exist, pausing for a half-second to a second between requests is typically sufficient.
 An email to the site's webmaster is always the safest approach and may be necessary for large scraping operations.
 
+Python provides a parsing library called \li{urllib.robotparser} for reading \li{robot.txt} files.
+Below is an example of using this library to check where robots are allowed on arxiv.org.
+A website's \texttt{robots.txt} file will often include different instructions for specific crawlers.
+These crawlers are identified by a \li{User-agent} string.
+For example, Google's webcrawler, \li{User-agent} Googlebot, may be directed to index only the pages the website wants to have listed on a Google search.
+We will use the default \li{User-agent}, \li{"*"}.
+
+\begin{lstlisting}
+>>> from urllib import robotparser
+>>> rp = robotparser.RobotFileParser()
+# Set the URL for the robots.txt file. Note that the URL contains `robots.txt'
+>>> rp.set_url("https://arxiv.org/robots.txt") 
+>>> rp.read()
+# Request the crawl-delay time for the default User-agent
+>>> rp.crawl_delay("*")	
+15
+# Check if User-agent "*" can access the page
+>>> rp.can_fetch("*", "https://arxiv.org/archive/math/") 
+True
+>>> rp.can_fetch("*", "https://arxiv.org/IgnoreMe/")
+False
+\end{lstlisting}
+
+\begin{problem} %Problem 1: robots.txt
+Write a program that accepts a web address defaulting to the site \url{http://example.webscraping.com} and a list of pages defaulting to \li{["/", "/trap", "/places/default/search"]}.
+For each page, check if the \texttt{robots.txt} file permits access.
+Return a list of boolean values corresponding to each page.
+Also return the crawl delay time.
+%Write out to your pickle file a tuple containing a list of boolean values corresponding to each page and the crawl delay time.
+\label{problem:robots-file}
+\end{problem}
 
 \section*{Crawling Through Multiple Pages} % ==================================
 
@@ -133,7 +167,8 @@ This link is stored in the HTML as a relative website path (\texttt{page-2.html}
 Modify \li{scrape_books()} so that it gathers the price for each fiction book and returns the mean price, in $\pounds$, of a fiction book.
 
 \end{problem}
-
+%=============================
+\begin{comment}
 An alternative approach that is often useful is to first identify the links to relevant pages, then scrape each of these page in succession.
 For example, the Federal Reserve releases quarterly data on large banks in the United States at \url{http://www.federalreserve.gov/releases/lbr}.
 The following function extracts the four measurements of total consolidated assets for JPMorgan Chase during 2004.
@@ -180,7 +215,8 @@ The Basketball Reference website at \url{https://www.basketball-reference.com} c
 For the past ten seasons, identify which player had the most season points and find how many points they scored during that season.
 Return a list of triples consisting of the season, the player, and the points scored, ("season year", "player name", points scored).
 \end{problem}
-
+\end{comment}
+%===============================
 \begin{comment} % Old problem options.
 \begin{enumerate}
 \item Load \url{http://www.google.com/finance} into BeautifulSoup.
@@ -202,7 +238,7 @@ In a SQL table, store the name, hometown, position, and \# of games played in th
 
 Web crawling with the methods presented in the previous section fails under a few circumstances.
 First, many webpages use \emph{JavaScript}, the standard client-side scripting language for the web, to load portions of their content  \emph{asynchronously}.
-This means that at least some of the content isn't initially accessible through the page's source code.
+This means that at least some of the content isn't initially accessible through the page's source code (for example, if you have to scroll down to load more results).
 Second, some pages require user interaction, such as clicking buttons which aren't links (\li{<a>} tags which contain a URL that can be loaded) or entering text into form fields (like search bars).
 
 \begin{comment} % Old example; this site is blocked by BYU OIT for gambling.
@@ -235,6 +271,12 @@ It also has BeautifulSoup-esque tools for searching the HTML source of the curre
 Selenium requires an executable \emph{driver} file for each kind of browser.
 The following examples use Google Chrome, but Selenium supports Firefox, Internet Explorer, Safari, Opera, and PhantomJS (a special browser without a user interface).
 See \url{https://seleniumhq.github.io/selenium/docs/api/py} or \url{http://selenium-python.readthedocs.io/installation.html} for installation instructions and driver download instructions.
+
+If your program still can't find the driver after you've downloaded it, add the argument \li{executable_path  = "path/to/driver/file"} when you call \li{webdriver}.
+If this doesn't work, you may need to add the location to your system PATH.
+On a Mac, open the file \li{/etc/path} and add the new location.
+On Linux, add \li{export PATH="path/to/driver/file:\$PATH"} to the file \li{/.bashrc} .
+For Windows, follow a tutorial such as this one: \url{https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/}.
 \end{info}
 
 To use Selenium, start up a browser using one of the drivers in \li{selenium.webdriver}.
@@ -286,7 +328,7 @@ Selenium can deliver the HTML page source to BeautifulSoup, but it also has its 
 
 Each of the \li{find_element_by_*()} methods returns a single object representing a \emph{web element} (of type \li{selenium.webdriver.remote.webelement.WebElement}), much like a BeautifulSoup tag (of type \li{bs4.element.Tag}).
 If no such element can be found, a Selenium \li{NoSuchElementException} is raised.
-Each webdriver also has several \li{find_elements_by_*()} methods (element\textbf{s}, plural) that return a list of all matching elements, or an empty list if there are no matches.
+If you want to find more than just the first matching object, each webdriver also has several \li{find_elements_by_*()} methods (element\textbf{s}, plural) that return a list of all matching elements, or an empty list if there are no matches.
 
 Web element objects have methods that allow the program to interact with them: \li{click()} sends a click, \li{send_keys()} enters in text, and \li{clear()} deletes existing text.
 This functionality makes it possible for Selenium to interact with a website in the same way that a human would.
@@ -328,13 +370,66 @@ To illustrate that using Selenium solves the problem of asynchronously-loaded co
 Notice that there is now a tag containing \li{"Chicago"}.
 \end{comment}
 
-\begin{problem}
+\begin{problem} %Problem 3
 The website IMDB contains a variety of information on movies.
 Specifically, information on the top 10 box office movies of the week can be found at \url{https://www.imdb.com/chart/boxoffice}.
 Using BeaufiulSoup, Selenium, or both, return a list of the top 10 movies of the week and order the list according to the total grossing of the movies, from most money to the least.
 \end{problem}
 
-\begin{problem} % Enter something in a search bar.
+\section*{Using CSS Selectors}%=====================
+
+In addition to the methods listed in Table \ref{table:selenium-chrome-driver}, you can also use CSS or XPath selectors to interact more precisely with the page source.
+Refer to Table \ref{table:selenium-css-selectors} from the previous lab for a review of CSS syntax.
+The following code searches Google for ``Python Selenium Docs'' and then clicks on the second result.
+
+\begin{lstlisting}
+#As before, go to Google and type in the search bar,
+# but this time we use CSS selectors
+
+>>> from selenium.webdriver.common.keys import Keys
+>>> from selenium.common.exceptions import NoSuchElementException
+
+>>> browser = webdriver.Chrome()
+>>> try:
+...		browser.get("https://google.com")
+...		try:
+...			search_bar = browser.find_element_by_css_selector(
+							"input[name='q']")
+...			search_bar.clear()
+...			search_bar.send_keys("Python Selenium Docs")
+...			search_bar.send_keys(Keys.RETURN)
+...			try:	
+...				# Wait a second, then get the second search result
+...				time.sleep(1)
+...				# "+ div" returns the element's  next sibling with a "div" tag
+...				second_result = browser.find_element_by_css_selector(
+								"div[class='g'] + div")
+...				try:
+...					# Get the link, which is a child of second_result
+...					link = second_result.find_element_by_css_selector(
+							"div[class='r']")
+...					link.click()
+...					time.sleep(1)
+
+...				#Remember to handle exceptions
+...				except NoSuchElementException:
+...					print("Could not find link")
+...			except NoSuchElementException:
+...				print("Could not find second result")
+...		except NoSuchElementException:
+...			print("Could not find the search bar")
+...	finally:
+...		browser.close()
+
+\end{lstlisting}
+
+In the above example, we could have used \li{find_element_by_class_name()}, but when you need more precision than that, CSS selectors can be very useful. 
+Remember that to view specific HTML associated with an object in Chrome or Firefox, you can right click on the object and click ``Inspect.''
+For Safari, you need to first enable ``Show Develop menu'' in ``Preferences'' under ``Advanced.''
+Keep in mind that you can also search through the source code (ctrl+f or cmd+f) to make sure you're using a unique identifier.
+
+\begin{comment} %arXiv.org's robots.txt file prohibits web crawlers to use the search page
+\begin{problem} 
 The arXiv (pronounced ``archive'') is an online repository of scientific publications, hosted by Cornell University.
 Write a function that accepts a string to serve as a search query defaulting to \li{linkedin}.
 Use Selenium to enter the query into the search bar of \url{https://arxiv.org} and press Enter.
@@ -342,10 +437,10 @@ The resulting page has up to 50 links to the PDFs of technical papers that match
 Gather these URLs, then continue to the next page (if there are more results) and continue gathering links until obtaining at most 150 URLs.
 Return the list of URLs.
 \end{problem}
-
+\end{comment}
 \begin{info}
 Using Selenium to access a page's source code is typically much safer, though slower, than using \li{requests.get()}, since Selenium waits for each web page to load before proceeding.
-For instance, the arXiv is a somewhat defensive about scrapers (\url{https://arxiv.org/help/robots}), but Selenium makes it possible to gather info from the website without offending the administrators.
+For instance, some websites are somewhat defensive about scrapers, but Selenium can sometimes make it possible to gather info without offending the administrators.
 \end{info}
 
 \begin{comment} % old problem
@@ -364,14 +459,20 @@ If the websites do not load properly, consider a \li{try-except} clause like the
 \end{problem}
 \end{comment}
 
-\begin{comment}
 \begin{problem}
 \emph{Project Euler} (\url{https://projecteuler.net}) is a collection of mathematical computing problems.
 Each problem is listed with an ID, a description/title, and the number of users that have solved the problem.
 
-Using Selenium, BeautifulSoup, or both, for each of the (at least) 600 problems in the archive at \url{https://projecteuler.net/archives}, record the problem ID and the number of people who have solved it.
-Return a list of IDs, sorted from largest to smallest by the number of people who have solved them.
-That is, the first entry in the list should be the ID of the \textbf{most solved} problem, and the last entry in the list should be the ID of the \textbf{least solved} problem.
-\\(Hint: start by identifying the URLs to each archive page.)
+Using Selenium, BeautifulSoup, or both, record the number of people who have solved each of the 700+ problems in the archive at https://projecteuler.net/archives.
+Plot the number of people who have solved each problem against the problem IDs, using a log scale for the y-axis.
+Display the scatter plot, then state the IDs of which problems have been solved most and least number of times.
+%\\(Hint: start by identifying the URLs to each archive page.)
 \end{problem}
-\end{comment}
+
+\begin{problem} %Dynamic scraping problem
+The website \url{http://example.webscraping.com} contains a list of countries of the world.
+Using Selenium, go to the search page, enter the letters \li{"ca"}, and hit \li{enter}.
+Remember to use the crawl delay time you found in Problem \ref{problem:robots-file} so you don't send your requests too fast.
+Gather the \li{href} links associated with the \li{<a>} tags of all 10 displayed results.
+Print each link on a different line.
+\end{problem}
