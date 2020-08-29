@@ -1,5 +1,6 @@
 \lab{Geopandas}{Geopandas}
 
+
 \objective{Geopandas is a package designed to organize and manipulate geographic data, It combines the data manipulation tools from Pandas and the geometric capabilities of the Shapely package. In this lab, we explore the basic data structures of GeoSeries and GeoDataFrames and their functionalities.}
 
 
@@ -13,7 +14,7 @@ While possible to install Geopandas through \textbf{pip} using
 >>> pip install geopandas
 \end{lstlisting}
 
-it is not recommended. 
+it is not recommended.
 You can view the warnings here \url{https://geopandas.org/install.html}.
 
 To install Geopandas through Conda, the recommended day, run the following code.
@@ -105,7 +106,7 @@ When creating a GeoDataFrame, if more than one column has geometric data, assign
 ...                   'Country': ['South Korea', 'Peru', 'South Africa'],
 ...                   'Latitude': [37.57, -12.05, -26.20],
 ...                   'Longitude': [126.98, -77.04, 28.04]})
-                                 
+
 # Create geometry column
 >>> df['Coordinates'] = list(zip(df.Longitude, df.Latitude))
 
@@ -116,10 +117,12 @@ When creating a GeoDataFrame, if more than one column has geometric data, assign
 >>> gdf = gpd.GeoDataFrame(df, geometry='Coordinates')
 \end{lstlisting}
 
+
 \begin{info}
 Longitude is the angular measurement starting at the Prime Meridian, $0\degree$, and going to $180\degree$ to the east and $-180\degree$ to the west.
 Latitude is the angle between the equatorial plane and the normal line at a given point; a point along the Equator has latitude $0$, the North Pole has latitude $+90\degree$ or $90\degree N$, and the South Pole has latitude $-90\degree$ or $90\degree S$.
 \end{info}
+
 
 \section*{Plotting GeoDataFrames} %============================
 
@@ -138,7 +141,7 @@ The following example plots the shapes in the \li{world} GeoDataFrame.
 \end{center}
 \label{world-map}
 \caption{World map}
-\end{figure} 
+\end{figure}
 
 Multiple GeoDataFrames can be plotted at once.
 This can be done by by setting one GeoDataFrame as the base of the plot and ensuring that each layer uses the same axes.
@@ -164,11 +167,12 @@ In the following example, a GeoDataFrame containing the coordinates of world air
 \caption{Airport map}
 \end{figure}
 
+
 \begin{problem}
 Read in the file \li{airports.csv} as a Pandas DataFrame.
 Create three convex hulls around the three sets of airports listed below.
 This can be done by passing in lists of the airports' coordinates to a \li{shapely.geometry.Polygon} object.
-	
+
 Create a new GeoDataFrame with these three Polygons as entries.
 Plot this GeoDataFrame on top of an outlined world map.
 \begin{itemize} %These could also be listed by 4-character ICAO codes, but listing the names makes the problem more exciting/realistic. Probably.
@@ -216,6 +220,7 @@ In the following example, we use \li{sum} as the \li{aggfunc} so that each conti
 >>> continent = world.dissolve(by = 'continent', aggfunc='sum')
 \end{lstlisting}
 
+
 \section*{Projections} %============================
 
 When plotting, GeoPandas uses the CRS (coordinate reference system) of a GeoDataFrame.
@@ -237,7 +242,7 @@ epsg:4326
 
 # Change CRS of world to Mercator
 # inplace=True ensures that we modify world instead of returning a copy
->>> world.to_crs(3395, inplace=True) 
+>>> world.to_crs(3395, inplace=True)
 >>> print(world.crs)
 epsg:3395
 \end{lstlisting}
@@ -263,6 +268,7 @@ This is done by passing in the parameter \li{column} into the \li{plot()} method
 \caption{World Map Based on GDP}
 \label{figure:gdp_map}
 \end{figure}
+
 
 \begin{problem}
 Use the command \li{geopandas.read_file('county_data.gpkg')} to create a GeoDataFrame of information about US counties.\footnote{Source: \url{http://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_us_county_5m.zip}}
@@ -333,7 +339,7 @@ The following example demonstrates some plotting features, using country GDP as 
 
 \begin{lstlisting}
 >>> fig, ax = plt.subplots(figsize=(15,7), ncols=1, nrows=1)
->>> world.plot(column='gdp_md_est', cmap='plasma_r', 
+>>> world.plot(column='gdp_md_est', cmap='plasma_r',
 ...			ax=ax, legend=True, edgecolor='gray')
 
 # Add title and remove axis tick marks
@@ -343,19 +349,20 @@ The following example demonstrates some plotting features, using country GDP as 
 >>> plt.show()
 \end{lstlisting}
 
-%\begin{figure}[H]
-%\begin{center}
-%\includegraphics[scale=.75]{figures/world_linear.pdf}
-%\end{center}
-%\caption{World map showing country GDP}
-%\label{figure:linear_world}
-%\end{figure}
+\begin{figure}[H]
+\begin{center}
+\includegraphics[scale=.75]{figures/world_linear.pdf}
+\end{center}
+\caption{World map showing country GDP}
+\label{figure:linear_world}
+\end{figure}
 
 Sometimes data can be much more informative when plotted on a logarithmic scale.
 See how the world map changes when we add a \li{norm} argument in the code below.
 Depending on the purpose of the graph, Figure \ref{figure:log_world} may be more informative than Figure \ref{figure:linear_world}.
 
 \begin{lstlisting}
+
 >>> from matplotlib.colors import LogNorm
 >>> from matplotlib.cm import ScalarMappable
 >>> fig, ax = plt.subplots(figsize=(15,6), ncols=1, nrows=1)
@@ -369,7 +376,7 @@ Depending on the purpose of the graph, Figure \ref{figure:log_world} may be more
 ...			edgecolor='gray', norm=norm)
 
 # Create a custom colorbar
->>> cbar = fig.colorbar(ScalarMappable(norm=norm, cmap='plasma_r'), 
+>>> cbar = fig.colorbar(ScalarMappable(norm=norm, cmap='plasma_r'),
 ...			ax=ax, orientation='horizontal', pad=0, label='GDP')
 
 >>> ax.set_title('Country Area on a Log Scale')
@@ -399,7 +406,7 @@ Use a log scale and a good colormap, and be sure that you're using the same norm
 Use EPSG:5071 for the projection.
 
 As a reminder, below is a summary of what you will need in order to animate this map.
-You may also find it helpful to refer to the animation section included with the Volume 4 lab manual. 
+You may also find it helpful to refer to the animation section included with the Volume 4 lab manual.
 %------------------------------------------- Is that ok to say?
 \begin{enumerate}
 	\item Set up your figure and norm. Be sure to use the highest case count for your \li{vmax} so that the scale remains uniform.
