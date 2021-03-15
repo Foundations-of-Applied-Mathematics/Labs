@@ -7,23 +7,24 @@
 % change so its ARMA(p,q) in model identification
 \section*{Time Series}
 
+
 A time series is any discrete-time stochastic process.  
-In other words, it is a sequence of random variables, $\{y_t\}_{t=1}^n$, that are determined by their time $t$.  
+In other words, it is a sequence of random variables, $\{y_t\}_{t=1}^T$, that are determined by their time $t$.  
 Examples of time series include heart rate readings over time, pollution readings over time, stock prices at the closing of each day, and air temperature.
 Often when analyzing time series, we want to forecast future data, such as what will the stock price of a company be in a week and what will the temperature be in 10 days.
 
 \section*{ARMA$(p,q)$ Models}
 
 One way to forecast a time series is using an ARMA model.
-An $\text{ARMA}(p,q)$ model combines an autoregressive model of order $p$ and a moving average model of order $q$ on a time series $\{y_t\}_{t = 1}^n$.
+An $\text{ARMA}(p,q)$ model combines an autoregressive model of order $p$ and a moving average model of order $q$ on a time series $\{y_t\}_{t = 1}^T$.
 This model is a dependent model as it is non-independent of previous data.
 Because of this, the model needs to become stationary in order to compensate for the dependency of the data.
-To make data stationary, we look at the time series $\{z_t\}_{t=1}^n$ where $z_t=y_t-y_{t-1}$.
+To make data stationary, we look at the time series $\{z_t\}_{t=1}^T$ where $z_t=y_t-y_{t-1}$.
 The model itself is a stochastic process on $z_t$, satisfying the equation
 
 \begin{align}
     \label{eq:arma:def}
-    z_t =\underbrace{\left(\sum_{i=1}^p \phi_{i}z_{t - i}\right)}_\text{AR(p)} + \epsilon_t + 
+    z_t =\underbrace{\left(\sum_{i=1}^p \phi_{i}z_{t - i}\right)}_\text{AR(p)} + \epsilon_t +
     \underbrace{\left(\sum_{j=1}^{q} \theta_{j}\epsilon_{t-j} \right)}_\text{MA(q)}
 \end{align}
 where each $\epsilon_t$ is an identically-distributed Gaussian variable $\mathscr{N}(\mu,\sigma^2),$ and $\phi_i$ and $\theta_j$ are constants.
@@ -81,7 +82,7 @@ A naive way to use an ARMA model is to choose $p$ and $q$ based on intuition.
 Figure \ref{fig:correlations} showed that there is a strong correlation between $z_t$ and $z_{t-1}$ and between $z_t$ and $z_{t-2}$.
 The correlation is weaker between $z_t$ and $z_{t-3}$.
 Intuition then suggests to choose $p=2$.
-By looking at the correlations between the current noise with previous noise, similar to Figure \ref{fig:correlations}, it can also be seen that there is a weak correlation between $z_t$ and $\epsilon_t$ and between $z_t$ and $\epsilon_{t-1}$. 
+By looking at the correlations between the current noise with previous noise, similar to Figure \ref{fig:correlations}, it can also be seen that there is a weak correlation between $z_t$ and $\epsilon_t$ and between $z_t$ and $\epsilon_{t-1}$.
 Between $z_t$ and $\epsilon_{t-2}$ there is no correlation.
 For more on how these error correlations were found, see Additional Materials.
 Intuition from these correlations suggests to choose $q=1$.
@@ -91,7 +92,7 @@ Thus, a naive choice for our model is an ARMA($2,1)$ model.
 \centering
 \includegraphics[width=\textwidth]{figures/naive.pdf}
 \caption{Naive forecast on \li{weather.npy}}
-\label{fig:naive}
+\label{fig:ARMA:naive}
 \end{figure}
 
 \begin{problem}
@@ -99,17 +100,18 @@ Write a function \li{arma_forecast_naive()} that builds an ARMA(p,q) model where
 Let $\epsilon_i\sim\mathscr{N}(0,1)$ for all $i$.
 Use your function to predict the next $n$ values of the time series.
 The function should accept a parameter $p$, $q$, and $n$ (the number of observations to predict).
-Plot $\{z_t\}_{t=1}^n$ followed by your predicted observations of $z_t$.
+Plot the observed differences $\{z_t\}_{t=1}^T$ followed by your predicted observations of $z_t$.
 
 The file \li{weather.npy} contains data on the temperature in Provo, Utah from 7:56 PM May 13, 2019 to 6:56 PM May 16, 2019, taken every hour.
+
 Use this file to test your code.
-For $p=2$, $q=1$, and $n=20$, your plot should look similar to Figure \ref{fig:naive}, however, due to the variance of the error $\epsilon_t$, the plot will not look exactly like Figure \ref{fig::naive}.
+For $p=2$, $q=1$, and $T=20$, your plot should look similar to Figure \ref{fig:ARMA:naive}, however, due to the variance of the error $\epsilon_t$, the plot will not look exactly like Figure \ref{fig:ARMA:naive}.
 The predictions may be higher or lower on the x-axis.
-\label{prob:naive}
+\label{prob:arma:naive}
 \end{problem}
 
 Let $\Theta = \{\phi_i, \theta_j, \mu, \sigma_a^2\}$ be the set of parameters
-for an $\text{ARMA}(p,q)$ model. 
+for an $\text{ARMA}(p,q)$ model.
 Suppose we have a set of observations $\{z_t\}_{t=1}^n$.
 Our goal is to find the $p,q$, and $\Theta$ that maximize the likelihood of the ARMA model given the data.
 Using the chain rule, we can factorize the likelihood of the model given this data as
@@ -122,11 +124,11 @@ Using the chain rule, we can factorize the likelihood of the model given this da
 \subsubsection*{State Space Representation}
 
 In a general $\text{ARMA}(p,q)$ model, the likelihood is a function of the
-unobserved error terms $a_t$ and is not trivial to compute. 
+unobserved error terms $a_t$ and is not trivial to compute.
 Simple approximations can be made, but these may be inaccurate under certain
-circumstances. 
+circumstances.
 Explicit derivations of the likelihood are possible, but
-tedious. 
+tedious.
 However, when the $\text{ARMA}$ model is placed in state-space, the
 Kalman filter affords a straightforward, recursive way to compute the
 likelihood.
@@ -154,7 +156,7 @@ $r = \max(p, q+1)$. Define
     w_t &\sim \text{MVN}(0, Q),
     \label{eqn:error}
 \end{align}
-where $\phi_i = 0$ for $i>p$, and $\theta_j = 0$ for $j > q$. 
+where $\phi_i = 0$ for $i>p$, and $\theta_j = 0$ for $j > q$.
 Note that Equation \ref{eq:AR} gives
 \begin{align}
     F\hat{\textbf{x}}_{t-1|t-2}+w_{t}&=\begin{bmatrix}\sum_{i=1}^r\phi_ix_{t-i}\\
@@ -189,13 +191,13 @@ steps.
 \subsubsection*{Likelihood via Kalman Filter}
 
 We assumed in Equation \ref{eqn:error} that the error terms of the model are Gaussian.
-This means that each conditional distribution in \ref{eq:arma:factorized} is also Gaussian, and is completely characterized by its mean and variance. 
+This means that each conditional distribution in \ref{eq:arma:factorized} is also Gaussian, and is completely characterized by its mean and variance.
 These two quantities are easily found via the Kalman filter:
 \begin{align}
     \text{mean} & \quad H\hat{\textbf{x}}_{t|t-1} + \mu \\
     \text{variance} & \quad HP_{t|t-1}H^T
 \end{align}
-where $\hat{\textbf{x}}_{t|t-1}$ and $P_{t|t-1}$ are found during the Predict step. 
+where $\hat{\textbf{x}}_{t|t-1}$ and $P_{t|t-1}$ are found during the Predict step.
 Given that each conditional distribution is Gaussian, the likelihood can then be found as follows:
 \begin{align}
     \label{eq:arma:likelihood}
@@ -205,12 +207,12 @@ Given that each conditional distribution is Gaussian, the likelihood can then be
 
 \begin{problem}
 \label{prob:arma:likelihood}
-Write a function \li{arma_likelihood()} that returns the log-likelihood of an ARMA
-model, given a time series $\{z_t\}_{t=1}^n$.
-This function should accept a \li{file} with the observations and each of the parameters in $\Theta$.
+Write a function \li{arma_likelihood()} that returns the log-likelihood of an ARMAmodel, given a time series $\{z_t\}_{t=1}^T$.
+This function should accept a \li{file} with the observations and each of the parameters in $\Theta$. 
+In this case, using \li{weather.npy}, the time series should be the change in temperature.
 Return the log-likelihood of the $\text{ARMA}(p,q)$ model as a \li{float}.
 
-Use the \li{state_space_rep()} function provided to create $F,Q,$ and $H$. 
+Use the \li{state_space_rep()} function provided to create $F,Q,$ and $H$.
 A \li{kalman()} filter has been provided to calculate the means and covariances of each observation.
 
 (Hint: Calling the function \li{kalman()} on a time series will return an array whose values are $x_{k\mid k-1}$ and an array whose values are $P_{k\mid k-1}$ for each $k\leq n$.
@@ -237,7 +239,7 @@ the model, and $\ell(\Theta)$ is the maximum likelihood for the model class.
 
 To compute the maximum likelihood for a model class, we need to optimize
 \ref{eq:arma:likelihood} over the space of parameters $\Theta$. We can do so
-by using an optimization routine such as \li{scipy.optimize.fmin} on the function \li{arma_likelihood()} from Problem \ref{prob:arma:likelihood}. 
+by using an optimization routine such as \li{scipy.optimize.fmin} on the function \li{arma_likelihood()} from Problem \ref{prob:arma:likelihood}.
 Use the following code to run this routine.
 
 \begin{lstlisting}
@@ -245,7 +247,7 @@ Use the following code to run this routine.
 
 >>> # assume p, q, and time_series are defined
 >>> def f(x): # x contains the phis, thetas, mu, and std
->>>     return -1*arma_likelihood(time_series, phis=x[:p], thetas=x[p:p+q], mu=x[-2],std=x[-1])
+>>>     return -1*arma_likelihood(filename, phis=x[:p], thetas=x[p:p+q], mu=x[-2],std=x[-1])
 >>> # create initial point
 >>> x0 = np.zeros(p+q+2)
 >>> x0[-2] = time_series.mean()
@@ -263,18 +265,18 @@ The order of the model which minimizes the AIC is then the optimal model.
 
 \begin{problem}
 \label{prob:model-identification}
-Write a function \li{model_identification()} that accepts a \li{file} containing the time series data and two integers, $i$ and $j$. 
-Return each parameter in $\Theta$ that minimizes the AIC of an ARMA($p,q$) model, given that $1\leq p \leq i$ and $1\leq q \leq j$.
+Write a function \li{model_identification()} that accepts a \li{file} containing the time series data and two integers, $p$ and $q$. 
+Return each parameter in $\Theta$ that minimizes the AIC of an ARMA($i,j$) model, given that $1\leq i \leq p$ and $1\leq j \leq q$.
 
-Your code should produce the following output (it may take about two minutes to run):
+Your code should produce the following output (it may take awhile to run):
 \begin{lstlisting}
->>> model_identification(filename='weather.npy',i=4,j=4)
-(array([ 0.72135856]), array([-0.26246788]), 0.35980339870105321, 1.5568331253098422)
+>>> model_identification(filename='weather.npy',p=4,q=4)
+(array([ 1.27212808, -0.18810575, -0.05675297, -0.17660135]), array([-0.99998677]), 0.06041769590312662, 1.4181814024512955)
 \end{lstlisting}
 \end{problem}
 
 \section*{Forecasting with Kalman Filter}
-We now have identified the optimal ARMA$(p,q)$ model. 
+We now have identified the optimal ARMA$(p,q)$ model.
 We can use this model to predict future states.
 The Kalman filter provides a straightforward way to predict future states by giving the mean and variance of the conditional distribution of future observations.
 Observations can be found as follows
@@ -303,38 +305,45 @@ Once computed, only the predict step is needed to find the future means and cova
 \label{prob:arma:forecast}
 Write a function \li{arma_forecast()} that accepts a \li{file} containing a time series, the parameters for an ARMA model, and the number $n$ of observations to forecast.
 Calculate the mean and covariance of the future $n$ observations using a Kalman filter.
-Plot the original observations as well as the mean for each future observation.
+Plot the original observations as well as the \li{mean} for each future observation.
 Plot a 95\% confidence interval (2 standard deviations away from the mean) around the means of future observations.
-Return the means and covariances calculated.
+Return the means and standard deviations calculated.
 
 (Hint: The standard deviation is the square root of the covariance calculated.)
 
-The following code should create a plot similar to Figure \ref{fig:forecasted}. 
+The following code should create a plot similar to Figure \ref{fig:forecasted}.
 
 \begin{lstlisting}
 >>> # Get optimal model
->>> phis, thetas, mu, std = model_identification(filename='weather.npy', i=4, j=4)
+>>> phis, thetas, mu, std =np.array([ 0.72135856]), array([-0.26246788]), 0.35980339870105321, 1.5568331253098422)
 
 >>> # Forecast optimal mode
 >>> arma_forecast(filename='weather.npy', phis=phis, thetas=thetas, mu=mu, std=std)
 \end{lstlisting}
 
-How does this plot compare to the naive ARMA model made in Problem \ref{prob:naive}?
+How does this plot compare to the naive ARMA model made in Problem \ref{prob:arma:naive}?
 \end{problem}
 
 \section*{Statsmodel ARMA}
 
 The module \li{statsmodels} contains a package that includes an ARMA model class.
+This is accessed through ARIMA model, which stands for Autoregressive Integrated Moving Average.
 This class also uses a Kalman Filter to calculate the MLE.
-When creating an ARMA object, initialize the variables \li{endog} (the data) and \li{order} (the order of the model).
+When creating an ARIMA object, initialize the variables \li{endog} (the data) and \li{order} (the order of the model).
+The order is of the form $(p,d,q)$ where $d$ is the differences.
+To create an ARMA model, set $d=0$.
 The object can then be fitted based on the MLE using a Kalman Filter.
 
 \begin{lstlisting}
-from statsmodels.tsa.arima_model import ARMA
+from statsmodels.tsa.arima.model import ARIMA
 # Intialize the object with weather data and order (1,1)
-model = ARMA(data,order=(1,1))
-# Fit model using MLE and allowing for a constant if needed
-model.fit(method='mle', trend='c')
+model = ARIMA(z,order=(p,0,q),trend='c').fit(method='innovations_mle')
+
+# Access p and q
+>>> model.specification.k_ar
+p
+>>> model.specification.k_ma
+q
 \end{lstlisting}
 
 \begin{figure}
@@ -364,8 +373,8 @@ Use the optimal model to predict $n$ future observations of the time series.
 Plot the original observations along with the mean of each future observations given by \li{statsmodels}.
 Return the AIC of the optimal model.
 
-For $p=3, q=3$, and $n=30$, your graph should look similar to Figure \ref{fig:sm}.  
-How does this graph compare to Problem \ref{prob:naive}? Problem \ref{prob:arma:forecast}?
+For $p=3, q=3$, and $n=30$, your graph should look similar to Figure \ref{fig:sm}.
+How does this graph compare to Problem \ref{prob:arma:naive}? Problem \ref{prob:arma:forecast}?
 \label{prob:statsmodels}
 \end{problem}
 
@@ -375,6 +384,11 @@ How does this graph compare to Problem \ref{prob:naive}? Problem \ref{prob:arma:
 \caption{Statsmodel ARMA(3,1) forecast on \li{weather.npy}.}
 \label{fig:sm}
 \end{figure}
+
+
+\section*{Optional}
+In the previous problem, we used the statsmodel \li{ARIMA} class. 
+The following code and problem use the soon to be depreciated \li{ARMA} class
 
 The \li{ARMA} class can also perform model identification.
 The method \li{arma_order_select_ic} will find the optimal order of the ARMA model based on certain criteria.
@@ -413,7 +427,7 @@ This range can be given by indices (as in Problem \ref{prob:statsmodels}) or by 
 
 >>> # Create plot
 >>> fig, ax = plt.subplots(figsize=(13,7))
->>> # Plot from 1950 to 2012. 
+>>> # Plot from 1950 to 2012.
 >>> fig = model.plot_predict(start='1950', end='2012', ax=ax)
 
 >>> ax.set_title('Sunspot Dataset')
@@ -506,7 +520,7 @@ where $K$ is the number of seasons.
 With the overall and seasonal trend known, the noise of the data is simply $R_t=y_t-T_t-S_t$.
 To determine the strength of correlations with the current error and the past error, plot $y_t$ vs. $R_{t-i}$ as in Figure \ref{fig:correlations}.
 
-\subsection*{Proof of Equation \ref{eq:update-z}} 
+\subsection*{Proof of Equation \ref{eq:update-z}}
 \begin{align}
     \sum_{i=1}^p\phi_i(z_{t-i}-\mu)+a_t+\sum_{j=1}^q\theta_ja_{t-j}&=\sum_{i=1}^p\phi_i(H\hat{\textbf{x}}_{t-i})+a_t+\sum_{j=1}^q\theta_ja_{t-j}\\
     &=\sum_{i=1}^r\phi_i(x_{t-i}+\sum_{k=1}^{r-1}\theta_kx_{t-i-k})+a_t+\sum_{j=1}^{r-1}\theta_ja_{t-j}\\

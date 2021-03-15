@@ -85,11 +85,11 @@ Command & Description \\ \hline
 \end{tabular}
 \end{table}
 
-Each of these processes can be stoped with a keyboard interrupt (\li{Ctrl+C}).
+Each of these processes can be stopped with a keyboard interrupt (\li{Ctrl+C}).
 By default, the controller uses JSON files in \path{UserDirectory/.ipython/profile-default/security/} to determine its settings.
 Once a controller is running, it acts like a server listening for client connections from engine processes.
 Engines connect by default to a controller with the settings defined in the aforementioned JSON files.
-There is no limit to the number of engines that can be started in their own terminal windows and connected to the controller, but it is recommended to only use as many engines areas there are cores to maximize efficiency.
+There is no limit to the number of engines that can be started in their own terminal windows and connected to the controller, but it is recommended to only use as many engines areas as there are cores to maximize efficiency.
 Once started, each engine has its own ID number on the controller that is used for communication.
 
 \begin{warn} % Do everything in the same directory.
@@ -200,7 +200,7 @@ Each method has an easy shortcut via indexing.
 
 # Initialize the variables 'a' and 'b' on each engine.
 >>> dview.push({'a':10, 'b':5})         # OR dview['a'] = 10; dview['b'] = 5
-<<[None, None, None, None]>>
+<<[None, None, None, None]>>            # Output from each engine
 
 # Check the value of 'a' on each engine.
 >>> dview.pull('a')                     # OR dview['a']
@@ -233,7 +233,7 @@ Pull the variables back and make sure they haven't changed.
 Parallelization almost always involves splitting up collections and sending different pieces to each engine for processing.
 The process is called \emph{scattering} and is usually used for dividing up arrays or lists.
 The inverse process of pasting a collection back together is called \emph{gathering}.
-This method of distributing and collecting a dataset is the foundation of the prominent MapReduce algorithm.
+This method of distributing and collecting a dataset is the foundation of the prominent MapReduce algorithm, a common model for processing large data sets using parallelization.
 
 \begin{lstlisting}
 >>> import numpy as np
@@ -306,31 +306,7 @@ Unlike \li{execute()}, \li{<<apply>>()} returns the output from the engines dire
 [16, 16, 16, 16]
 \end{lstlisting}
 
-Note that the engines can access their local variables in any of the execution methods.
-
-\begin{problem}
-Write a function that accepts an integer $n$.
-Instruct each engine to make $n$ draws from the standard normal distribution, then hand back the minimum, maximum, and mean draw to the client.
-Print the results.
-If you have four engines running, your output should resemble the following:
-\begin{lstlisting}
-<<means = [0.0031776784, -0.0058112042, 0.0012574772, -0.0059655951]>>
-<<maxs = [4.0388107, 4.3664958, 4.2060184, 4.3391623]>>
-<<mins = [-4.1508589, -4.3848019, -4.1313324, -4.2826519]>>
-\end{lstlisting}
-\label{prob:parallel-apply-basic}
-\end{problem}
-
-\begin{problem}
-Use your function from Problem \ref{prob:parallel-apply-basic} to compare serial and parallel execution times.
-For $n = 1000000, 5000000, 10000000, 15000000,$
-\begin{enumerate}
-\item Time how long it takes to run your function.
-\item Time how long it takes to do the same process (make $n$ draws and calculate and record the statistics) in a for loop with $N$ iterations, where $N$ is the number of engines running.
-\end{enumerate}
-Plot the execution times against $n$.
-You should notice an increase in efficiency in the parallel version as the problem size increases.
-\end{problem}
+Note that the engines can access their local variables in either of the execution methods.
 
 \subsubsection*{Map} % - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -437,6 +413,32 @@ Class Method & Description
 There are additional magic methods supplied by \li{iPyParallel} that make some of these operations easier.
 These methods are contained in the Additional Material section.
 More information on \li{iPyParallel} architecture, interface, and methods at \url{https://ipyparallel.readthedocs.io/en/latest/index.html}.
+
+
+\begin{problem}
+Write a function that accepts an integer $n$.
+Instruct each engine to make $n$ draws from the standard normal distribution, then hand back the minimum, maximum, and mean draw to the client.
+Print the results.
+If you have four engines running, your output should resemble the following:
+\begin{lstlisting}
+<<means = [0.0031776784, -0.0058112042, 0.0012574772, -0.0059655951]>>
+<<maxs = [4.0388107, 4.3664958, 4.2060184, 4.3391623]>>
+<<mins = [-4.1508589, -4.3848019, -4.1313324, -4.2826519]>>
+\end{lstlisting}
+\label{prob:parallel-apply-basic}
+\end{problem}
+
+\begin{problem}
+Use your function from Problem \ref{prob:parallel-apply-basic} to compare serial and parallel execution times.
+For $n = 1000000, 5000000, 10000000, 15000000,$
+\begin{enumerate}
+\item Time how long it takes to run your function.
+\item Time how long it takes to do the same process serially. Make $n$ draws and then calculate and record the statistics, but use a \li{for} loop with $N$ iterations, where $N$ is the number of engines running.
+\end{enumerate}
+Plot the execution times against $n$.
+You should notice an increase in efficiency in the parallel version as the problem size increases.
+\end{problem}
+
 
 \begin{comment}
 \section*{Parallel Computing}
