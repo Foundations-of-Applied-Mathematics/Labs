@@ -74,6 +74,14 @@ The same holds for the index.
 ...		[np.nan, 26.0], [np.nan, 99.0], [81.0, 68.0]])
 >>> grades = pd.DataFrame(data, columns = ['Math', 'English'], index =
 ...		['Barbara', 'David', 'Eleanor', 'Greg', 'Lauren', 'Mark'])
+
+# View the columns
+>>> grades.columns
+Index(['Math', 'English'], dtype='object')
+
+# View the Index
+>>> grades.index
+Index(['Barbara', 'David', 'Eleanor', 'Greg', 'Lauren', 'Mark'], dtype='object')
 \end{lstlisting}
 
 A \li{DataFrame} can also be viewed as a NumPy array using the attribute \li{values}.
@@ -129,10 +137,8 @@ arguments:
 \item \li{delimiter}:
 The character that separates data fields. It is often a
 comma or a whitespace character.
-\item \li{header}:
-The row number (0 indexed) in the CSV file that contains the column names.
- \item \li{index_col}:
-The column (0 indexed) in the CSV file that is the index for the
+\item \li{header}: The row number (0 indexed) in the CSV file that contains the column names.
+ \item \li{index_col}: The column (0 indexed) in the CSV file that is the index for the
 \li{DataFrame}.
  \item \li{skiprows}:
 If an integer $n$, skip the first $n$ rows of the file, and then start reading
@@ -269,15 +275,17 @@ Method & Description \\ \hline
 
 \begin{problem}
 The file \li{budget.csv} contains the budget of a college student over the course of 4 years.
-Write a function that performs the following operations:
+Write a function that performs the following operations in this order:
 \begin{enumerate}
-\item Reindex the columns such that amount spent on food is the first column and all other columns maintain the same ordering.
+\item Reindex the columns such that amount spent on groceries is the first column and all other columns maintain the same ordering.
 \item Sort the \li{DataFrame} in descending order based on how much money was spent on \li{Groceries}
 \item Reset all values in the \li{'Rent'} column to \li{800.0}
 \item Reset all values in the first 5 data points to \li{0.0}
 \end{enumerate}
-Read in \li{budget.csv} as a \li{DataFrame} and perform each of these operations on the \li{DataFrame}.
+Read in \li{budget.csv} as a \li{DataFrame} with the index as column 0 and perform each of these operations on the \li{DataFrame}.
 Return the values of the updated \li{DataFrame} as a NumPy array.
+
+Hint: Use \li{index\_col=0} to set the first column as the index when reading in the csv .
 \label{prob:budget}
 \end{problem}
 
@@ -437,14 +445,14 @@ Overall, the choice for how to fill missing data should make sense with the data
 \end{warn}
 
 \begin{problem}
-Write a function which uses \li{budget.csv} to answer the questions "Which category affects living expenses the most? Which affects other expenses the most? How much is generally spent in these two categories?".
+Write a function which uses \li{budget.csv} to answer the questions "Which category affects living expenses the most? Which affects other expenses the most?"
 Perform the following manipulations:
 \begin{enumerate}
 \item Fill all \li{NaN} values with \li{0.0}.
 \item Create two new columns, \li{'Living Expenses'} and \li{'Other'}.
 Sum the columns \li{'Rent', 'Groceries', 'Gas'} and \li{'Utilities'} and set as the value of \li{'Living Expenses'}.
 Sum the columns \li{'Dining Out', 'Out With Friends'} and \li{'Netflix'} and set as the value of \li{'Other'}.
-\item Identify which column correlates most with \li{'Living Expenses'} and which correlates most with \li{'Other'}.
+\item Identify which column, other than \li{'Living Expenses'}, correlates most with \li{'Living Expenses'} and which column, other than \li{'Other'} correlates most with \li{'Other'}.
 This can indicate which columns in the budget affects the overarching categories the most.
 \end{enumerate}
 Return the names of each of those columns as a tuple.
@@ -572,9 +580,9 @@ Return the answers to each question as a tuple (i.e. \li{(answer_1,answer_2,answ
 	Save the title of this column as a variable to return as the answer.
 	\item Examine the data since 2000.
 	Sort this data (in ascending order) according to number of murders.
-	Find the years where Aggravated Assault is greather than 850,000.
-   Save the indices of the masked and reordered \li{DataFrame} as a NumPy array to return as the answer.
-	\item What year had the highest crime rate?
+	Find the years where Aggravated Assault is greater than 850,000.
+   Save the indices (the years) of the masked and reordered \li{DataFrame} as a NumPy array to return as the answer.
+	\item What year had the highest \li{crime rate}?
 	In this year, which crime was committed the most?
 	What percentage of the total crime that year was it?
 	Save this value as a float.
@@ -666,7 +674,9 @@ dtype: int64>>
 \begin{problem} % Load, clean, and plot Dow Jones IA data.
 The file \texttt{DJIA.csv} contains daily closing values of the Dow Jones Industrial Average from 2006--2016.
 Read the data into a \li{Series} or \li{DataFrame} with a \li{DatetimeIndex} as the index.
-Drop rows with missing values, cast the \li{"VALUE"} column to floats, then return the updated DataFrame.
+Drop any rows without numerical values, cast the \li{"VALUE"} column to floats, then return the updated DataFrame.
+
+Hint: You can change the column type the same way you'd change a numpy array type.
 \label{prob:timeseries-dowjones}
 \end{problem}
 
@@ -694,21 +704,21 @@ The function is analogous to \li{np.arange()} and has the following parameters.
 Exactly three of the parameters \li{start}, \li{end}, \li{periods}, and \li{freq} must be specified to generate a range of dates.
 The \li{freq} parameter accepts a variety of string representations, referred to as \emph{offset aliases}.
 See Table \ref{table:range_freqs} for a sampling of some of the options.
-For a complete list of the options, see \url{http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases}.
+For a complete list of the options, see \url{https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timeseries-offset-aliasesl}.
 
 \begin{table}[H]
 \begin{center}
     \begin{tabular}{r|l}
         Parameter & Description \\ \hline
         \li{"D"} & calendar daily (default) \\
-        \li{"B"} & business daily \\
+        \li{"B"} & business daily (every business day)\\
         \li{"H"} & hourly \\
         \li{"T"} & minutely \\
         \li{"S"} & secondly \\
-        \li{"MS"} & first day of the month \\
-        \li{"BMS"} & first weekday of the month \\
-        \li{"W-MON"} & every Monday \\
-        \li{"WOM-3FRI"} & every 3rd Friday of the month \\
+        \li{"MS"} & first day of the month (Month Start) \\
+        \li{"BMS"} & first business day of the month (Business Month Start)\\
+        \li{"W-MON"} & every Monday (Week-Monday)\\
+        \li{"WOM-3FRI"} & every 3rd Friday of the month (Week of the Month - 3rd Friday)\\
     \end{tabular}
 \end{center}
 \caption{Options for the \li{freq} parameter to \li{pd.date_range()}.}
@@ -747,7 +757,7 @@ For a complete list of the options, see \url{http://pandas.pydata.org/pandas-doc
 
 \begin{problem} % Use pd.date_range() for something.
 The file \texttt{paychecks.csv} contains values of an hourly employee's last 93 paychecks.
-Paychecks are given on the first and third Fridays of each month, and the employee started working on March 13, 2008.
+Paychecks are given every other Friday, starting on March 14, 2008, and the employee started working on March 13, 2008.
 
 Read in the data, using \li{pd.date\_range()} to generate the \li{DatetimeIndex}.
 Set this as the new index of the \li{DataFrame} and return the \li{DataFrame}.
@@ -809,12 +819,12 @@ Shifting data makes it easy to gather statistics about changes from one timestam
 \end{lstlisting}
 
 \begin{problem}
-Compute the following information about the DJIA dataset from Problem \ref{prob:timeseries-dowjones}.
+Compute the following information about the DJIA dataset from Problem \ref{prob:timeseries-dowjones} that has a DateTimeIndex.
 \begin{itemize}
     \item The single day with the largest gain.
     \item The single day with the largest loss.
 \end{itemize}
-Return the index of the day with the largest gain and the day with the largest loss.
+Return the DateTimeIndex of the day with the largest gain and the day with the largest loss.
 
 (Hint: Call your function from Problem \ref{prob:timeseries-dowjones} to get the DataFrame already cleaned and with DatetimeIndex).
 \end{problem}

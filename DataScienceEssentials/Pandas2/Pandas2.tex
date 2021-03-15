@@ -62,13 +62,13 @@ By default, the \li{index} of the \li{Series} or \li{DataFrame} is used for the 
 >>> import pandas as pd
 >>> from matplotlib import pyplot as plt
 
->>> budget = pd.read_csv("new_budget.csv", index_col="Year")
+>>> budget = pd.read_csv("budget.csv", index_col="Date")
 >>> budget.plot(y="Rent")  # Plot rent against the index (date).
 \end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=.7\textwidth]{figures/rent.pdf}
+\includegraphics[width=.7\textwidth]{figures/Rent.pdf}
 \end{figure}
 
 In this case, the call to the \li{plot()} method is essentially equivalent to the following code.
@@ -93,8 +93,8 @@ This is especially useful with sequential data, like the budget data set.
 
 \begin{lstlisting}
 # Plot all columns together against the index.
->>> budget.plot(linewidth=1)
->>> budget.drop(["Living Expenses", "Rent"], axis=1).plot(linewidth=1)
+>>> budget.plot(title="All Budgets",linewidth=1)
+>>> budget.drop(["Rent"], axis=1).plot(linewidth=1,title="All Budgets Except Rent")
 \end{lstlisting}
 
 \begin{figure}[H] % Plot everything together.
@@ -133,8 +133,8 @@ Set \li{sharey=True} to force them to share the same $y$-axis as well.
 
 \begin{lstlisting}
 >>> budget.plot(y=['Dining Out','Gas','Out With Friends', 'Netflix'],
-...                 subplots=True, layout=(2,2), sharey=True,
-...                 style=['-','--','-.',':'])
+... 	subplots=True, layout=(2,2), sharey=True,
+... 	style=['-','--','-.',':'],title="Plots of Dollars Spent for Different Budgets")
 \end{lstlisting}
 
 \begin{figure}[H]
@@ -148,11 +148,11 @@ Since plots made by the \li{plot()} method share an $x$-axis by default, histogr
 \begin{lstlisting}
 # Plot three histograms together.
 >>> budget.plot(kind='hist',y=['Gas','Dining Out','Out With Friends'],
-...		   	     alpha=.7,bins=10)
+... 	alpha=.7,bins=10,title="Frequency of Amount (in dollars) Spent")
 
 # Plot three histograms, stacking one on top of the other.
 >>> budget.plot(kind='hist',y=['Gas','Dining Out','Out With Friends'],
-...		    	    bins=10,stacked=True)
+...		bins=10,stacked=True,title="Frequency of Amount (in dollars) Spent")
 \end{lstlisting}
 
 \begin{figure}[H] % Try to compare histograms.
@@ -174,18 +174,17 @@ Choose a number of bins that accurately represents the data; the wrong number of
 
 
 \begin{lstlisting}
->>> budget[["Dining Out","Gas","Other","Out With Friends"]].hist(grid=False,
-...			bins=10)
+>>> budget[["Dining Out","Gas"]].hist(grid=False,bins=10)
 \end{lstlisting}
 
 \begin{figure}[H]
     \includegraphics[width=.7\textwidth]{figures/hist_subplots.pdf}
-   \caption{Histograms of \li{"Dining Out"}, \li{"Gas"}, \li{"Other"}, and \li{"Out With Friends"}.}
+   \caption{Histograms of \li{"Dining Out"} and \li{"Gas"}.}
 \end{figure}
 
 % Problem 1
 \begin{problem}
-Create 2 visualizations for the data in \li{crime_data.csv}.
+Create 3 visualizations for the data in \li{crime_data.csv}.
 Make one of the visualizations a histogram.
 The visualizations should be well labeled and easy to understand.
 Include a short description of your plots as a caption.
@@ -204,14 +203,15 @@ Unlike other types of plots, using \li{kind="scatter"} requires both \li{x} and 
 \begin{lstlisting}
 
 # Plot 'Dining Out' and 'Out With Friends' as lines against the index.
->>> budget.plot(y=["Dining Out", "Out With Friends"])
+>>> budget.plot(y=["Dining Out", "Out With Friends"],title="Amount Spent on Dining Out and Out with Friends per Day")
 
 # Make a scatter plot of 'Dining Out' against 'Out With Friends'
 >>> budget.plot(kind="scatter", x="Dining Out", y="Out With Friends",
-...		alpha=.8)
+... 	alpha=.8,xlim=(0,max(budget['Dining Out'])+1),
+...		ylim=(0,max(budget['Out With Friends'])+1))
 \end{lstlisting}
 
-\begin{figure}[H] % Plot murder against rape.
+\begin{figure}[H] 
 \captionsetup[subfigure]{justification=centering}
 \centering
 \begin{subfigure}{.49\textwidth}
@@ -261,7 +261,7 @@ Note that the data set \li{budget} gives monthly expenses.
 It may be beneficial to look at one specific month.
 Bar graphs are a good way to compare small portions of the data set.
 
-As a general rule, horizontal bar charts (\li{kind="hbar"}) are better than the default vertical bar charts (\li{kind="bar"}) because most humans can detect horizontal differences more easily than vertical differences.
+As a general rule, horizontal bar charts (\li{kind="barh"}) are better than the default vertical bar charts (\li{kind="bar"}) because most humans can detect horizontal differences more easily than vertical differences.
 If the labels are too long to fit on a normal figure, use \li{plt.tight_layout()} to adjust the plot boundaries to fit the labels in.
 
 \begin{lstlisting}
@@ -397,7 +397,7 @@ A hexbin plot of the same data, Figure \ref{fig:pandas-act-hexbin}, reveals the 
 >>> satact.plot(kind="scatter", x="ACT", y="SATQ", alpha=.8)
 
 # Plot the densities of the ACT vs. SATQ scores with a hexbin plot.
->>> satact.plot(kind="Hexbin", x="ACT", y="SATQ", gridsize=20)
+>>> satact.plot(kind="hexbin", x="ACT", y="SATQ", gridsize=20)
 \end{lstlisting}
 
 \begin{figure}[H]
@@ -436,6 +436,8 @@ Use \li{crime_data.csv} to display the following distributions.
 \end{enumerate}
 
 As usual, all plots should be labeled and easy to read.
+
+Hint: To get the x-axis label to display, you might need to set the sharex parameter of plot() to False.
 \end{problem}
 
 \section*{Principles of Good Data Visualization} % ============================
@@ -480,8 +482,10 @@ Use this information to create a more effective plot.
 
 The ice cream data used in Figure \ref{fig:nolabels} is better understood with the following information:
 \begin{enumerate}
-    \item The dataset details ice cream consumption via four-weekly observations from March 1951 to July 1953 in the United States.
-    \item \li{cons} corresponds to ``consumption of ice cream per head'' and is measured in pints.
+    \item The dataset details ice cream consumption via $30$ four-week periods from March 1951 to July 1953 in the United States.
+    \item \li{cons} corresponds to ``consumption of ice cream per capita'' and is measured in pints.
+    \item \li{income} is the family's weekly income in dollars.
+    \item \li{price} is the price of a pint of ice cream.
     \item \li{temp} corresponds to temperature, degrees Fahrenheit.
     \item The listed source is: ``Hildreth, C. and J. Lu (1960) \emph{Demand relations with autocorrelated disturbances}, Technical Bulletin No 2765, Michigan State University.''
 \end{enumerate}
@@ -504,6 +508,10 @@ For example, the $y$ axis should specify that the consumption is in units of \em
 
 To add the necessary text to the figure, use either \li{plt.annotate()} or \li{plt.text()}.
 Alternatively, add text immediately below wherever the figure is displayed.
+The first two parameters of \li{plt.text} are the $x$ and $y$ coordinates to place the text.
+The third parameter is the text to write.
+For instance, using \li{plt.text(0.5, 0.5, "Hello World")} will center the \li{Hello World} string in the axes.
+
 
 \begin{lstlisting}
 >>> plt.text(20, .1, r"Source: Hildreth, C. and J. Lu (1960) \emph{Demand"
@@ -534,7 +542,7 @@ The dataset \li{college.csv} contains information from 1995 on universities in t
 To access information on variable names, go to \url{https://cran.r-project.org/web/packages/ISLR/ISLR.pdf}.
 Create 3 plots that compare variables or universities.
 These plots should answer questions about the data, e.g. what is the distribution of graduation rates or do schools with lower student to faculty ratios have higher tuition costs.
-These plots should be easy to understand, have clear variable names, and citations.
+These three plots should be easy to understand and have clear variable names and citations.
 \end{problem}
 
 \begin{comment}

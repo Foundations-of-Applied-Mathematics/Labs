@@ -103,7 +103,7 @@ Join commands in SQLite have the following general syntax.
 SELECT <alias.column, ...>
     FROM <table> AS <alias> JOIN <table> AS <alias>, ...
     ON <alias.column> == <alias.column>, ...
-    WHERE <condition>
+    WHERE <condition>;
 \end{lstlisting}
 
 The \lsql{ON} clause tells the query how to join tables together.
@@ -246,7 +246,7 @@ Some flavors of SQL also support the \lsql{RIGHT OUTER JOIN} command, but \li{sq
 \subsection*{Joining Multiple Tables} % ---------------------------------------
 
 Complicated queries often join several different relations.
-If the same kind join is being used, the relations and conditional statements can be put in list form.
+If the same kind of join is being used, the relations and conditional statements can be put in list form.
 For example, the following code selects courses that Kristopher Tran has taken, and the grades that he got in those courses, by joining three tables together.
 Note that 2 conditions are required in the \lsql{ON} clause in this case.
 
@@ -303,14 +303,14 @@ Only include results for students that are actually taking Calculus, but be care
 
 Many data sets can be naturally sorted into groups.
 The \lsql{GROUP BY} command gathers rows from a table and groups them by a certain attribute.
-The groups must are then combined by one of the \emph{aggregate functions} \lsql{AVG()}, \lsql{MIN()}, \lsql{MAX()}, \lsql{SUM()}, or \lsql{COUNT()}.
+The groups are then combined by one of the \emph{aggregate functions} \lsql{AVG()}, \lsql{MIN()}, \lsql{MAX()}, \lsql{SUM()}, or \lsql{COUNT()}.
 The following code groups the rows in Table \ref{table:sql2-student-grades} by \li{studentID} and counts the number of entries in each group.
  % (the number of courses that student is enrolled in).
 
 \begin{lstlisting}
 >>> cur.execute("SELECT StudentID, COUNT(*) "   # * means "all of the rows".
 ...             "FROM StudentGrades "
-...             "GROUP BY StudentID").fetchall()
+...             "GROUP BY StudentID;").fetchall()
 <<[(103066521, 3),
  (206208438, 2),
  (262019426, 2),
@@ -330,7 +330,7 @@ The join creates a temporary table like Tables \ref{table:sql2-inner-join-temp} 
 >>> cur.execute("SELECT SI.StudentName, COUNT(*) "
 ...             "FROM StudentGrades AS SG INNER JOIN StudentInfo AS SI "
 ...             "ON SG.StudentID == SI.StudentID "
-...             "GROUP BY SG.StudentID").fetchall()
+...             "GROUP BY SG.StudentID;").fetchall()
 <<[('Cameron Kim', 3),
  ('Kristopher Tran', 2),
  ('Alfonso Phelps', 2),
@@ -352,7 +352,7 @@ For instance, the result set of the previous example can be filtered down to onl
 ...             "FROM StudentGrades AS SG INNER JOIN StudentInfo AS SI "
 ...             "ON SG.StudentID == SI.StudentID "
 ...             "GROUP BY SG.StudentID "
-...             "HAVING num_courses == 3").fetchall()   # Refer to alias later.
+...             "HAVING num_courses == 3;").fetchall()   # Refer to alias later.
 <<[('Cameron Kim', 3), ('Gilbert Chapman', 3), ('Mercedes Hall', 3)]>>
 
 # Alternatively, get just the student names.
@@ -360,7 +360,7 @@ For instance, the result set of the previous example can be filtered down to onl
 ...             "FROM StudentGrades AS SG INNER JOIN StudentInfo AS SI "
 ...             "ON SG.StudentID == SI.StudentID "
 ...             "GROUP BY SG.StudentID "
-...             "HAVING COUNT(*) == 3").fetchall()
+...             "HAVING COUNT(*) == 3;").fetchall()
 <<[('Cameron Kim',), ('Gilbert Chapman',), ('Mercedes Hall',)]>>
 \end{lstlisting}
 
@@ -382,7 +382,7 @@ This is always the very last statement in a query.
 ...             "FROM StudentGrades AS SG INNER JOIN StudentInfo AS SI "
 ...             "ON SG.StudentID == SI.StudentID "
 ...             "GROUP BY SG.StudentID "
-...             "ORDER BY num_courses DESC, SI.StudentName ASC").fetchall()
+...             "ORDER BY num_courses DESC, SI.StudentName ASC;").fetchall()
 <<[('Cameron Kim', 3),>>                # The results are now ordered by the
 << ('Gilbert Chapman', 3),>>            # number of courses each student is in,
 << ('Mercedes Hall', 3),>>              # then alphabetically by student name.
@@ -398,7 +398,8 @@ This is always the very last statement in a query.
 \begin{problem} % COUNT(), ORDER BY.
 Write a function that accepts a database file.
 Query the given database for tuples of the form \li{(MajorName, N)} where \li{N} is the number of students in the specified major.
-Sort the results in ascending order by the count \li{N}.
+Sort the results in ascending order by the count \li{N}, and then in alphabetic order by MajorName.
+Include \textbf{Null} majors.
 \end{problem}
 
 \subsection*{Searching Text with Wildcards} % ---------------------------------
@@ -417,6 +418,7 @@ For instance, \li{\%Z\_} matches any string of characters ending in a Z then ano
 \begin{problem} % LIKE
 Write a function that accepts a database file.
 Query the database for tuples of the form \li{(StudentName, MajorName)} where the last name of the specified student begins with the letter C.
+Include \textbf{Null} majors.
 \end{problem}
 
 \subsection*{Case Expressions} % ----------------------------------------------

@@ -14,6 +14,7 @@ While possible to install Geopandas through \textbf{pip} using
 >>> pip install geopandas
 \end{lstlisting}
 
+
 it is not recommended.
 You can view the warnings here \url{https://geopandas.org/install.html}.
 
@@ -67,9 +68,9 @@ Method/Attribute & Description\\
 \li{area}&returns shape area\\
 \li{convex_hull}&returns convex shape around all points in the object
 \end{tabular}
-\label{shapely-methods}
 \end{center}
 \caption{Attributes and Methods for GeoSeries}
+\label{shapely-methods}
 \end{table}
 
 \begin{lstlisting}
@@ -99,7 +100,7 @@ When creating a GeoDataFrame, if more than one column has geometric data, assign
 \begin{lstlisting}
 >>> import pandas as pd
 >>> import geopandas as gpd
->>> from shapely.geometry import Point
+>>> from shapely.geometry import Point, Polygon
 
 # Create a Pandas DataFrame
 >>> df = pd.DataFrame({'City': ['Seoul', 'Lima', 'Johannesburg'],
@@ -115,6 +116,16 @@ When creating a GeoDataFrame, if more than one column has geometric data, assign
 
 # Cast as GeoDataFrame
 >>> gdf = gpd.GeoDataFrame(df, geometry='Coordinates')
+
+# Display the GeoDataFrame
+>>> gdf
+           City       Country  Latitude  Longitude                  Coordinates
+0         Seoul   South Korea     37.57     126.98   POINT (126.98000 37.57000)
+1          Lima          Peru    -12.05     -77.04  POINT (-77.04000 -12.05000)
+2  Johannesburg  South Africa    -26.20      28.04   POINT (28.04000 -26.20000)
+
+# Create a polygon with all three cities as points
+>>> city_polygon = Polygon(list(zip(df.Longitude, df.Latitude)))
 \end{lstlisting}
 
 
@@ -122,7 +133,6 @@ When creating a GeoDataFrame, if more than one column has geometric data, assign
 Longitude is the angular measurement starting at the Prime Meridian, $0\degree$, and going to $180\degree$ to the east and $-180\degree$ to the west.
 Latitude is the angle between the equatorial plane and the normal line at a given point; a point along the Equator has latitude $0$, the North Pole has latitude $+90\degree$ or $90\degree N$, and the South Pole has latitude $-90\degree$ or $90\degree S$.
 \end{info}
-
 
 \section*{Plotting GeoDataFrames} %============================
 
@@ -166,7 +176,6 @@ In the following example, a GeoDataFrame containing the coordinates of world air
 \label{airport-map}
 \caption{Airport map}
 \end{figure}
-
 
 \begin{problem}
 Read in the file \li{airports.csv} as a Pandas DataFrame.
@@ -326,7 +335,7 @@ Ignore rows in the Covid-19 DataFrame with unknown FIPS codes as well as all dat
 Note that the \li{fips} column of the Covid-19 DataFrame stores entries as floats, but the county GeoDataFrame stores FIPS codes as strings, with the first two digits in the \li{STATEFP} column and the last three in the \li{COUNTYFP} column.
 
 Once you have completed the merge, plot the cases from March 21, 2020 on top of your state outline map from Problem \ref{problem:us_counties}, using the CRS of EPSG:5071.
-Finally, print out the name of the county with the most cases along with its case count.
+Finally, print out the name of the county with the most cases on March 21, 2020 along with its case count.
 \label{problem:merge_covid}
 \end{problem}
 
@@ -376,6 +385,7 @@ Depending on the purpose of the graph, Figure \ref{figure:log_world} may be more
 ...			edgecolor='gray', norm=norm)
 
 # Create a custom colorbar
+
 >>> cbar = fig.colorbar(ScalarMappable(norm=norm, cmap='plasma_r'),
 ...			ax=ax, orientation='horizontal', pad=0, label='GDP')
 
@@ -407,6 +417,7 @@ Use EPSG:5071 for the projection.
 
 As a reminder, below is a summary of what you will need in order to animate this map.
 You may also find it helpful to refer to the animation section included with the Volume 4 lab manual.
+
 %------------------------------------------- Is that ok to say?
 \begin{enumerate}
 	\item Set up your figure and norm. Be sure to use the highest case count for your \li{vmax} so that the scale remains uniform.

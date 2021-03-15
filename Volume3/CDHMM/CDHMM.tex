@@ -37,9 +37,9 @@ $\{\Sigma_{i,1},\ldots,\Sigma_{i,M}\}$.
 Let's define a full GMMHMM with $N=2$ states, $K = 3$, and $M=3$ components.
 \begin{lstlisting}
 >>> import numpy as np
->>> A = np.array([[.65, .35], [.15, .85]])
->>> pi = np.array([.8, .2])
->>> weights = np.array([[.7, .2, .1], [.1, .5, .4]])
+>>> A = np.array([[.65, .35], [.15, .85]])   # state transition matrix
+>>> pi = np.array([.8, .2])   # initial state distribution
+>>> weights = np.array([[.7, .2, .1], [.1, .5, .4]]) 
 >>> means1 = np.array([[0., 17., -4.], [5., -12., -8.], [-16., 22., 2.]])
 >>> means2 = np.array([[-5., 3., 23.], [-12., -2., 14.], [15., -32., 0.]])
 >>> means = np.array([means1, means2])
@@ -49,9 +49,15 @@ Let's define a full GMMHMM with $N=2$ states, $K = 3$, and $M=3$ components.
 >>> gmmhmm = [A, weights, means, covars, pi]
 \end{lstlisting}
 
+Once we have a GMMHMM, we can randomly choose the first state based on the initial state distribution $\pi$.
 As explained above, to sample from a GMMHMM, we draw a sample from one of the Gaussians $\mathcal{N}(\mu_i, \Sigma_i)$, with component $i$ chosen according to the probably weights $\{c_{1},\ldots,c_{M}\}$.
-We can draw a random sample from the GMMHMM corresponding to the second state as follows:
+We can draw a random sample from the GMMHMM corresponding to the second state.
+Once we have the sample, we use the transition matrix $A$ to determine the second state.
 \begin{lstlisting}
+# choose initial state
+>>> state = np.argmax(np.random.multinomial(1, pi))  
+
+# randomly sample
 >>> sample_component = np.argmax(np.random.multinomial(1, weights[1,:]))
 >>> sample = np.random.multivariate_normal(means[1, sample_component, :], covars[1, sample_component, :, :])
 \end{lstlisting}
@@ -84,6 +90,15 @@ def sample_gmmhmm(gmmhmm, n_sim):
     """
     pass
 \end{lstlisting}
+
+Test your function by running it on the gmmhmm given in the example, with $n\_sim=4$.
+Print out the each state and its corresponding observations.
+
+Note, $K$ is the same $K$ that defines the gmmhmm and is identified through the gmmhmm, so you don't need to set it.
+\begin{comment}
+Run the function 10 times and print out the states from each run.
+
+\end{comment}
 \end{problem}
 
 The classic problems for which we normally use discrete observation HMMs can also be solved by using CDHMMs, though with continuous observations it is much more difficult to keep things numerically stable.
@@ -101,19 +116,16 @@ The audio to be processed is divided into small frames of approximately $30$ ms.
 Industrial-grade speech recognition systems do not train a GMMHMM for each word in a vocabulary (that would be ludicrous for a large vocabulary), but rather on \emph{phonemes}, or distinct sounds. The English language has $44$ phonemes, yielding $44$ different GMMHMMs. As you could imagine, this greatly facilitates the problem of speech recognition.  Each and every word can be represented by some combination of these $44$ distinct sounds.  By correctly classifying a signal by its phonemes, we can determine what word was spoken. Doing so is beyond the scope of this lab, so we will simply train GMMHMMs on five words/phrases: biology, mathematics, political science, psychology, and statistics.
 
 \begin{problem}
-Obtain $30$ (or more) recordings for each of the words/phrases \emph{mathematics}, \emph{biology}, \emph{political science}, \emph{psychology}, and \emph{statistics}.
-These audio samples should be 2 seconds in duration, recorded at a rate of 44100 samples per second, with samples stored as 16-bit signed integers in WAV format.
-Load the recordings into Python using {\tt scipy.io.wavfile.read}.
+Samples.zip contains 31 recordings for each of the words/phrases mathematics, biology, political science, psychology, and statistics. 
+These audio samples are 2 seconds in
+duration, recorded at a rate of 44100 samples per second, with samples stored as 16-bit signed
+integers in WAV format. 
+Load the recordings into Python using $scipy.io.wavfile.read$.
 
-If the audio files have two channels, average these channels to obtain an array of length $88200$ for each sample.
-Extract the MFCCs from each sample using code from the file {\tt MFCC.py}:
-\begin{lstlisting}
->>> import MFCC
->>> # assume sample is an array of length 88200
->>> mfccs = MFCC.extract(sample)
-\end{lstlisting}
-Store the MFCCs for each word in a separate list. You should have five lists, each containing 30 MFCC arrays, corresponding to each of the five words
-under consideration.
+Extract the MFCCs from each sample using code from the file MFCC.py.
+Store the MFCCs for each word in a separate list. 
+You should have five lists, each containing
+31 MFCC arrays, corresponding to each of the five words under consideration.
 \end{problem}
 
 For a specific word, given enough distinct samples of that word (decomposed into MFCCs), we can train a GMMHMM.
@@ -128,20 +140,28 @@ Let \li{samples} be a list of arrays, where each array is the output of the MFCC
 Using a function \li{initialize()} that returns a random initial state distribution and row-stochastic transition matrix, we can train a GMMHMM with $5$ states
 and $3$ mixture components and view its log-likelihood as follows:
 \begin{lstlisting}
->>> import gmmhmm
+>>> import gmmhmm as hmm
 >>> startprob, transmat = initialize(5)
->>> model = gmmhmm.GMMHMM(n_components=5, n_mix=3, transmat=transmat, startprob=startprob, cvtype='diag')
+>>> model = hmm.GMMHMM(n_components=5, n_mix=3, transmat=transmat, startprob=startprob, cvtype='diag')
 >>> # these values for covars_prior and var should work well for this problem
 >>> model.covars_prior = 0.01
 >>> model.fit(samples, init_params='mc', var=0.1)
->>> print model.logprob
+>>> print(model.logprob)
 \end{lstlisting}
 
 \begin{problem}
-Partition each list of MFCCs into a training set of 20 samples, and a test set of the remaining 10 samples.
+Partition each list of MFCCs into a training set of 20 samples, and a test set of
+the remaining 10 samples.
+Using the training sets, train a GMMHMM on each of the words from the previous problem
+with at least 10 random restarts (reinitializing and creating a new model).
+Use $n\_components=5$ and $initialize(5)$.  
+Keep the best model for each word (the one with the highest
+log-likelihood). 
+This process may take up to a couple of hours. 
+Since you will not want to run this
+more than once, you will want to save the best model for each word to disk using the pickle
+module so that you can use it later.
 
-Using the training sets, train a GMMHMM on each of the words from the previous problem with at least $10$ random restarts, keeping the best model for each word (the one with the highest log-likelihood).
-This process may take several minutes.  Since you will not want to run this more than once, you will want to save the best model for each word to disk using the {\tt pickle} module so that you can use it later.
 \end{problem}
 
 Given a trained model, we would like to compute the log-likelihood of a new sample.
@@ -150,6 +170,8 @@ Letting \li{obs} be an array of MFCCs for a speech sample we do this as follows:
 >>> score = model.score(obs)
 \end{lstlisting}
 We classify a new speech sample by scoring it against each of the 5 trained GMMHMMs, and returning the word corresponding to the GMMHMM with the highest score.
+
+
 \begin{problem}
 Classify the 10 test samples for each word. 
 How does your system perform? Which words are the hardest to correctly classify?
@@ -242,12 +264,12 @@ Write a function that initializes the initial state distribution and transition 
 
 Let \li{samples} be a list of arrays, where each row in each array is a set of MFCCs corresponding to a frame in a sample for a given word. Using a function \li{initialize()} that returns a random initial state distribution and transition matrix, we will show how to train a GMMHMM with $5$ states, each having an output distribution as a GMM with $3$ mixture components. We also look at the log-likelihood of the data, given the trained model.
 \begin{lstlisting}
->>> import gmmhmm
+>>> import gmmhmm as hmm
 >>> startprob, transmat = initialize(5)
->>> model = gmmhmm.GMMHMM(n_components=5, n_mix=3, transmat=transmat, startprob=startprob, cvtype='diag')
+>>> model = hmm.GMMHMM(n_components=5, n_mix=3, transmat=transmat, startprob=startprob, cvtype='diag')
 >>> model.covars_prior = 0.01
 >>> model.fit(samples, init_params='mc', var=0.1)
->>> print model.logprob
+>>> print(model.logprob)
 \end{lstlisting}
 
 \begin{problem}
