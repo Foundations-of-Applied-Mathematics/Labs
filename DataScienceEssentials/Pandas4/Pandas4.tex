@@ -1,46 +1,26 @@
-\lab{Geopandas}{Geopandas}
+\lab{GeoPandas}{GeoPandas}
 
 
-\objective{Geopandas is a package designed to organize and manipulate geographic data, It combines the data manipulation tools from Pandas and the geometric capabilities of the Shapely package. In this lab, we explore the basic data structures of GeoSeries and GeoDataFrames and their functionalities.}
+\objective{GeoPandas is a package designed to organize and manipulate geographic data, It combines the data manipulation tools of pandas with the geometric capabilities of the Shapely package. In this lab, we explore the basic data structures of GeoSeries and GeoDataFrames and their functionalities.}
 
 
 \section*{Installation} %============================
-Geopandas is a new package designed to combine the functionalities of Pandas and Shapely, a package used for geometric manipulation.
-Using Geopandas with geographic data is very useful as it allows the user to not only compare numerical data, but geometric attributes.
-Since Geopandas is currently under development, the installation procedure requires that all dependencies are up to date.
-While possible to install Geopandas through \textbf{pip} using
-
+GeoPandas is a new package designed to combine the functionality of pandas with Shapely, a package used for geometric manipulation.
+Using GeoPandas with geographic data is very useful as it allows the user to not only compare numerical data, but also geometric attributes.
+GeoPandas can be installed via \li{pip}:
 \begin{lstlisting}
 >>> pip install geopandas
 \end{lstlisting}
-
-
-it is not recommended.
-You can view the warnings here \url{https://geopandas.org/install.html}.
-
-To install Geopandas through Conda, the recommended day, run the following code.
-
-\begin{lstlisting}
->>> conda install geopandas
->>> conda install -c conda-forge gdal
-\end{lstlisting}
-
-A particular package needed for Geopandas is Fiona.
-Geopandas will not run without the correct version of this package.
-To check the current version of Fiona that is installed, run the following code.
-If the version is not at least 1.7.13, update Fiona.
-
-\begin{lstlisting}
-# Check version of Fiona
->>> conda list fiona
-
-# Update Fiona if necessary
->>> pip install fiona --upgrade
-\end{lstlisting}
+However, Geopandas can be notoriously difficult to install.
+%It is very finicky, which is likely a by-product of it still being in development
+This is especially the case if the python environment is not carefully maintained.
+Some of its dependencies can also be very difficult to install on certain systems.
+Because of this, using Colab for this lab is recommended; its environment is set up in a way that makes GeoPandas very easy to install.
+Otherwise, the GeoPandas documentation contains some additional options that can be used if installation difficulties occur: \url{https://geopandas.org/install.html}.
 
 \section*{GeoSeries} %============================
 
-A GeoSeries is a Pandas Series where each entry is a set of geometric objects.
+A GeoSeries is a pandas Series where each entry is a set of geometric objects.
 There are three classes of geometric objects inherited from the Shapely package:
 \begin{enumerate}
 \item Points / Multi-Points
@@ -48,7 +28,7 @@ There are three classes of geometric objects inherited from the Shapely package:
 \item Polygons / Multi-Polygons
 \end{enumerate}
 A point is used to identify objects like coordinates, where there is one small instance of the object.
-A line could be used to describe a road.
+A line could be used to describe objects such as roads.
 A polygon could be used to identify regions, such as a country.
 Multipoints, multilines, and multipolygons contain lists of points, lines, and polygons, respectively.
 
@@ -66,7 +46,8 @@ Method/Attribute & Description\\
 \li{contains(other)}&returns \li{True} if shape contains \li{other}\\
 \li{intersects(other)}&returns \li{True} if shape intersects \li{other}\\
 \li{area}&returns shape area\\
-\li{convex_hull}&returns convex shape around all points in the object
+\li{convex_hull}&returns convex shape around all points in the object\\
+\li{bounds} &  returns the bounding x- and y-coordinates of the object
 \end{tabular}
 \end{center}
 \caption{Attributes and Methods for GeoSeries}
@@ -87,15 +68,15 @@ Method/Attribute & Description\\
 
 \section*{Creating GeoDataFrames} %============================
 
-The main structure used in GeoPandas is a GeoDataFrame, which is similar to a Pandas DataFrame.
-A GeoDataFrame has one special column called \li{geometry}.
+The main structure used in GeoPandas is a GeoDataFrame, which is similar to a pandas DataFrame.
+A GeoDataFrame has one special column called \li{geometry}, which must be a GeoSeries.
 This GeoSeries column is used when a spatial method, like \li{distance()}, is used on the GeoDataFrame.
 
-To make a GeoDataFrame, first create a Pandas DataFrame.
+A GeoDataFrame can be made from a pandas DataFrame.
 At least one of the columns in the DataFrame should contain geometric information.
-Convert a column containing geometric information to a GeoSeries using the \li{apply} method.
+This column containing geometric information can be converted to a GeoSeries using the \li{apply()} method.
 At this point, the Pandas DataFrame can be cast as a GeoDataFrame.
-When creating a GeoDataFrame, if more than one column has geometric data, assign which column will be the \li{geometry} using the \li{set_geometry()} method.
+Assign which column will be the \li{geometry} using either the \li{geometry} keyword in the constructor or the \li{set_geometry()} method afterwards.
 
 \begin{lstlisting}
 >>> import pandas as pd
@@ -117,6 +98,11 @@ When creating a GeoDataFrame, if more than one column has geometric data, assign
 # Cast as GeoDataFrame
 >>> gdf = gpd.GeoDataFrame(df, geometry='Coordinates')
 
+# Equivalently, specify the geometry after construction
+# Note that set_geometry() returns a new GeoDataFrame
+>>> gdf = gpd.GeoDataFrame(df)
+>>> gdf = gdf.set_geometry('Coordinates')
+
 # Display the GeoDataFrame
 >>> gdf
            City       Country  Latitude  Longitude                  Coordinates
@@ -128,6 +114,30 @@ When creating a GeoDataFrame, if more than one column has geometric data, assign
 >>> city_polygon = Polygon(list(zip(df.Longitude, df.Latitude)))
 \end{lstlisting}
 
+A \li{GeoDataFrame} can also be made directly from a dictionary.
+If the dictionary already contains geometric objects, the corresponding column can be directly set as the \li{geometry} in the constructor.
+Otherwise, a column containing geometry data can be created as in the above example and then set as the \li{geometry} with the \li{set_geometry()} method.
+
+\begin{lstlisting}
+# Both of these methods create the same GeoDataFrame as above
+# Directly create the GeoDataFrame from the dictionary
+>>> gdf = gpd.GeoDataFrame({'City': ['Seoul', 'Lima', 'Johannesburg'],
+...                   'Country': ['South Korea', 'Peru', 'South Africa'],
+...                   'Latitude': [37.57, -12.05, -26.20],
+...                   'Longitude': [126.98, -77.04, 28.04]})
+# Create geometry column and set as the geometry
+>>> gdf['Coordinates'] = list(zip(df.Longitude, df.Latitude))
+>>> gdf['Coordinates'] = df['Coordinates'].apply(Point)
+# inplace=True modifies gdf itself rather than returning a copy
+>>> gdf.set_geometry('Coordinates', inplace=True)
+
+# Equivalently, using a dictionary that already contains geometry objects
+>>> gdf = gpd.GeoDataFrame({'City': ['Seoul', 'Lima', 'Johannesburg'],
+...                   'Country': ['South Korea', 'Peru', 'South Africa'],
+...                   'Coordinates': [Point(126.98,37.57),
+...                       Point(-77.04,-12.05), Point(28.04,-12.05)]},
+...                   geometry='Coordinates')
+\end{lstlisting}
 
 \begin{info}
 Longitude is the angular measurement starting at the Prime Meridian, $0\degree$, and going to $180\degree$ to the east and $-180\degree$ to the west.
@@ -155,14 +165,20 @@ The following example plots the shapes in the \li{world} GeoDataFrame.
 
 Multiple GeoDataFrames can be plotted at once.
 This can be done by by setting one GeoDataFrame as the base of the plot and ensuring that each layer uses the same axes.
-In the following example, a GeoDataFrame containing the coordinates of world airports is plotted on top of a GeoDataFrame containing the polygons of country boundaries, resulting in a world map of airport locations.
+In the following example, the file \li{airports.csv}, containing the coordinates of world airports, is loaded into a GeoDataFrame and plotted on top of the boundary of the \li{world} GeoDataFrame.
 
 \begin{lstlisting}
 # Set outline of world countries as base
 >>> fig,ax = plt.subplots(figsize=(10,7), ncols=1, nrows=1)
 >>> base = world.boundary.plot(edgecolor='black', ax=ax, linewidth=1)
 
-# Plot airports on world map
+# Load airport data and convert to a GeoDataFrame
+>>> airports = pd.read_csv('airports.csv')
+>>> airports['Coordinates'] = list(zip(airports.Longitude, airports.Latitude))
+>>> airports['Coordinates'] = airports.Coordinates.apply(Point)
+>>> airports = gpd.GeoDataFrame(airports, geometry='Coordinates')
+
+# Plot airports on top of world map
 >>> airports.plot(ax=base, marker='o', color='green', markersize=1)
 >>> ax.set_xlabel('Longitude')
 >>> ax.set_ylabel('Latitude')
@@ -178,7 +194,7 @@ In the following example, a GeoDataFrame containing the coordinates of world air
 \end{figure}
 
 \begin{problem}
-Read in the file \li{airports.csv} as a Pandas DataFrame.
+Read in the file \li{airports.csv} as a pandas DataFrame.
 Create three convex hulls around the three sets of airports listed below.
 This can be done by passing in lists of the airports' coordinates to a \li{shapely.geometry.Polygon} object.
 
@@ -193,7 +209,7 @@ Plot this GeoDataFrame on top of an outlined world map.
 
 \section*{Working with GeoDataFrames} %============================
 
-As previously mentioned, GeoDataFrames contain many of the functionalities of Pandas DataFrames.
+As previously mentioned, GeoDataFrames contain many of the functionalities of pandas DataFrames.
 For example, to create a new column, define a new column name in the GeoDataFrame with the needed information for each GeoSeries.
 
 \begin{lstlisting}
@@ -201,7 +217,7 @@ For example, to create a new column, define a new column name in the GeoDataFram
 >>> world['gdp_per_cap'] = world.gdp_md_est / world.pop_est
 \end{lstlisting}
 
-GeoDataFrames can utilize many Pandas functionalities, and they can also be parsed by geometric manipulations.
+GeoDataFrames can utilize many pandas functionalities, and they can also be parsed by geometric manipulations.
 For example, a useful way to index GeoDataFrames is with the \li{cx} indexer.
 This splits the GeoDataFrame by the coordinates of each geometric object.
 It is used by calling the method \li{cx} on a GeoDataFrame, followed by a slicing argument, where the first element refers to the longitude and the second refers to latitude.
@@ -214,7 +230,7 @@ It is used by calling the method \li{cx} on a GeoDataFrame, followed by a slicin
 >>> south_east = world.cx[0:, :0]
 \end{lstlisting}
 
-GeoSeries in a GeoDataFrame can also be dissolved, or merged, together into one GeoSeries based on their geometry data.
+GeoSeries objects in a GeoDataFrame can also be dissolved, or merged, together into one GeoSeries based on their geometry data.
 For example, all countries on one continent could be merged to create a GeoSeries containing the information of that continent.
 The method designed for this is called \li{dissolve}.
 It receives two parameters, \li{by} and \li{aggfunc}.
@@ -230,18 +246,17 @@ In the following example, we use \li{sum} as the \li{aggfunc} so that each conti
 \end{lstlisting}
 
 
-\section*{Projections} %============================
+\section*{Projections and Coloring} %============================
 
 When plotting, GeoPandas uses the CRS (coordinate reference system) of a GeoDataFrame.
-This reference system informs how coordinates should be spaced on a plot.
-GeoPandas accepts many different CRSs, and references to them can be found at \url{www.spatialreference.org}.
+This reference system indicates how coordinates should be spaced on a plot.
 Two of the most commonly used CRSs are EPSG:4326 and EPSG:3395.
-EPSG:4326 uses the standard latitude-longitude projection used by GPS.
-EPSG:3395, also known as Mercator, is the standard navigational projection.
+EPSG:4326 is the standard latitude-longitude projection used by GPS.
+EPSG:3395, also known as the Mercator projection, is the standard navigational projection.
 
 When creating a new GeoDataFrame, it is important to set the \li{crs} attribute of the GeoDataFrame.
-This allows the plot to be shown correctly.
-GeoDataFrames being layered need to have the same CRS.
+This allows any plots to be shown correctly.
+Furthermore, GeoDataFrames being layered need to have the same CRS.
 To change the CRS, use the method \li{to_crs()}.
 
 \begin{lstlisting}
@@ -254,6 +269,27 @@ epsg:4326
 >>> world.to_crs(3395, inplace=True)
 >>> print(world.crs)
 epsg:3395
+\end{lstlisting}
+
+GeoPandas accepts many different CRSs; a reference can be found at \url{www.spatialreference.org}.
+% I think this is helpful information, but I'm not sure
+Additionally, inspecting a given CRS object in the terminal without using \li{print()} or \li{str()} can be used to get additional information about a specific CRS:\footnote{This can also be accomplished using \li{print(repr(crs))}.}
+\begin{lstlisting}[mathescape]
+>>> world.crs
+<Projected CRS: EPSG:3395>
+Name: WGS 84 / World Mercator
+Axis Info [cartesian]:
+- E[east]: Easting (metre)
+- N[north]: Northing (metre)
+Area of Use:
+- name: World between 80$^\circ$S and 84$^\circ$N.
+- bounds: (-180.0, -80.0, 180.0, 84.0)
+Coordinate Operation:
+- name: World Mercator
+- method: Mercator (variant A)
+Datum: World Geodetic System 1984
+- Ellipsoid: WGS 84
+- Prime Meridian: Greenwich
 \end{lstlisting}
 
 GeoDataFrames can also be plotted using the values in the the other attributes of the GeoSeries.
@@ -280,7 +316,8 @@ This is done by passing in the parameter \li{column} into the \li{plot()} method
 
 
 \begin{problem}
-Use the command \li{geopandas.read_file('county_data.gpkg')} to create a GeoDataFrame of information about US counties.\footnote{Source: \url{http://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_us_county_5m.zip}}
+The file \li{county_data.gpkg.zip} contains information about US counties.\footnote{Source: \url{http://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_us_county_5m.zip}}
+After unzipping, use the command \li{gpd.read_file('county_data.gpkg')} to create a GeoDataFrame of this information.
 Each county's shape is stored in the \li{geometry} column.
 Use this to plot all US counties two times, first using the default CRS and then using EPSG:5071.
 
@@ -290,11 +327,25 @@ Plot this GeoDataFrame to see an outline of all 48 contiguous states.
 Ensure a CRS  of EPSG:5071.
 \label{problem:us_counties}
 \end{problem}
+\begin{info}
+\li{.gpkg} files are actually structured as a directory that contains several files that each contain parts of the data.
+For instance, \li{county_data.gpkg} consists of the files \li{county_data.cpg}, \li{county_data.dbf}, \li{county_data.prj}, \li{county_data.shp}, and \li{county_data.shx}.
+Be sure that these files are placed directly in the first level of folders, and not in further subdirectories.\\
+To use this file in Google Colab, upload the zipped file and extract it with the following code:
+\begin{lstlisting}
+county = files.upload()
+!unzip county_data.gpkg.zip
+\end{lstlisting}
+It then can be loaded:
+\begin{lstlisting}
+county_df = gpd.read_file('county_data.gpkg')
+\end{lstlisting}
+\end{info}
 
 \section*{Merging GeoDataFrames} %============================
 
-Just as multiple Pandas DataFrames can be merged, multiple GeoDataFrames can be merged with attribute joins or spatial joins.
-An attribute join is similar to a merge in Pandas.
+Just as multiple pandas DataFrames can be merged, multiple GeoDataFrames can be merged with attribute joins or spatial joins.
+An attribute join is similar to a merge in pandas.
 It combines two GeoDataFrames on a column (not the geometry column) and then combines the rest of the data into one GeoDataFrame.
 
 \begin{lstlisting}
@@ -371,7 +422,6 @@ See how the world map changes when we add a \li{norm} argument in the code below
 Depending on the purpose of the graph, Figure \ref{figure:log_world} may be more informative than Figure \ref{figure:linear_world}.
 
 \begin{lstlisting}
-
 >>> from matplotlib.colors import LogNorm
 >>> from matplotlib.cm import ScalarMappable
 >>> fig, ax = plt.subplots(figsize=(15,6), ncols=1, nrows=1)
@@ -385,7 +435,6 @@ Depending on the purpose of the graph, Figure \ref{figure:log_world} may be more
 ...			edgecolor='gray', norm=norm)
 
 # Create a custom colorbar
-
 >>> cbar = fig.colorbar(ScalarMappable(norm=norm, cmap='plasma_r'),
 ...			ax=ax, orientation='horizontal', pad=0, label='GDP')
 
@@ -423,8 +472,6 @@ You may also find it helpful to refer to the animation section included with the
 	\item Set up your figure and norm. Be sure to use the highest case count for your \li{vmax} so that the scale remains uniform.
 	\item Write your \li{update} function. This should plot the cases from a given day.
 	\item Set up your colorbar. Do this outside the \li{update} function to avoid adding a new colorbar each day.
-	\item Create the animation. Check to make sure everything displays properly before you save it.
-	\item Save the animation.
-	\item Display the animation.
+	\item Create the animation and embed it.
 \end{enumerate}
 \end{problem}

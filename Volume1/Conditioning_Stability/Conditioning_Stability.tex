@@ -109,7 +109,7 @@ To see this, consider the \emph{Wilkinson polynomial}, made famous by James H. W
 \[
 w(x) = \prod_{r=1}^{20}(x-r) = x^{20} - 210x^{19} + 20615x^{18} - 1256850x^{17} + \cdots.
 \]
-Let $\tilde{w}(x)$ be $w(x)$ where the coefficient on $x^{19}$ is very slightly perturbed from $-210$ to $-210.0000001$.
+Let $\tilde{w}(x)$ be $w(x)$ where the coefficient on $x^{19}$ is very slightly perturbed from $-210$ to $-209.9999999$.
 The following code computes and compares the roots of $\tilde{w}(x)$ and $w(x)$ using NumPy and SymPy.
 
 \begin{comment}
@@ -170,9 +170,9 @@ To quantify the difference, estimate the condition numbers (this example uses th
 # Perturb one of the coefficients very slightly.
 >>> h = np.zeros(21)
 >>> h[1]=1e-7
->>> new_coeffs = w_coeffs - h
+>>> new_coeffs = w_coeffs + h
 >>> print(new_coeffs[:6])
-[1 -210.000000100000 20615 -1256850 53327946 -1672280820]
+[1 -209.999999900000 20615 -1256850 53327946 -1672280820]
 
 # Use NumPy to compute the roots of the perturbed polynomial.
 >>> new_roots = np.roots(np.poly1d(new_coeffs))
@@ -184,11 +184,11 @@ To quantify the difference, estimate the condition numbers (this example uses th
 # Estimate the absolute condition number in the infinity norm.
 >>> k = la.norm(new_roots - w_roots, np.inf) / la.norm(h, np.inf)
 >>> print(k)
-28262391.3304
+27841936.8061
 
 # Estimate the relative condition number in the infinity norm.
 >>> k * la.norm(w_coeffs, np.inf) / la.norm(w_roots, np.inf)
-1.95063629993970e+25                     # This is huge!!
+1.92161703373792e+25                     # This is huge!!
 \end{lstlisting}
 
 There are some caveats to this example.
@@ -250,6 +250,30 @@ H = reals + 1j*imags
 \end{lstlisting}
 Use \li{scipy.linalg.eig()} or \li{scipy.linalg.eigvals()} to compute the eigenvalues of $A$ and $A+H$, and use the 2-norm for both the vector and matrix norms.
 Return the absolute and relative condition numbers.
+
+The order \li{scipy.linalg.eig()} and \li{scipy.linalg.eigvals()} return eigenvalues is completely arbitrary, which means that the eigenvalues of $A$ and $A+H$ may be returned in different orders.
+Without correcting for this, the computed value of $\|\boldsymbol{\lambda} - \tilde{\boldsymbol{\lambda}}\|$ can be very large even if the two matrices have very similar eigenvalues.
+Additionally, \li{np.sort()} does not help, as many matrices have sets of eigenvalues for which the sort order of this function is itself ill-conditioned.
+So, before comparing the two lists of eigenvalues, use the following function to reorder both to be as close as possible to each other:
+\begin{lstlisting}
+def reorder_eigvals(orig_eigvals, pert_eigvals):
+    """Reorder the perturbed eigenvalues to be as close to the original eigenvalues as possible.
+    Parameters:
+        orig_eigvals ((n,) ndarray) - The eigenvalues of the unperturbed matrix A
+        pert_eigvals ((n,) ndarray) - The eigenvalues of the perturbed matrix A+H
+    Returns:
+        ((n,) ndarray) - the reordered eigenvalues of the perturbed matrix
+    """
+    n = len(pert_eigvals)
+    sort_order = np.zeros(n).astype(int)
+    dists = np.abs(orig_eigvals - pert_eigvals.reshape(-1,1))
+    for _ in range(n):
+        index = np.unravel_index(np.argmin(dists), dists.shape)
+        sort_order[index[0]] = index[1]
+        dists[index[0],:] = np.inf
+        dists[:,index[1]] = np.inf
+    return pert_eigvals[sort_order]
+\end{lstlisting}
 \label{prob:eig-condit}
 \end{problem}
 
@@ -447,6 +471,7 @@ Write a function to do the following.
 \item Use SymPy's \li{sy.integrate()} to evaluate the integral form of $I(n)$ for $n=5,10,\ldots,50$.
 Convert the symbolic results of each integration to a float.
 Since this is done symbolically, these values can be accepted as the true values of $I(n)$.
+For this problem, use \li{sy.exp()} in the integrand.
 \\(Hint: be careful that the values of $n$ in the integrand are of type \li{int}.)
 
 \item Use (\ref{eq:integral-subfactorial-formula}) to compute $I(n)$ for the same values of $n$.

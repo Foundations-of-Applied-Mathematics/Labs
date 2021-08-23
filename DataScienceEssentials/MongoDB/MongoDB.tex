@@ -111,7 +111,7 @@ Each line in the file is a single JSON message that can be loaded with \li{json.
 
 Create a MongoDB database and initialize a collection in the database.
 Use the collection's \li{delete_many()} method with an empty set as input to clear existing contents of the collection, then fill the collection one line at a time with the data from \texttt{trump.json}.
-Check that your collection has 67,859 entries with its \li{count()} method.
+Check that your collection has 67,859 entries with its \li{estimated_document_count()} method.
 \label{prob:mongo-fill-db}
 \end{problem}
 
@@ -122,18 +122,21 @@ MongoDB uses a \emph{query by example} pattern for querying.  This means that to
 # Find all the documents that have a 'name' field containing the value 'Jack'.
 >>> data = col.find({'name': 'Jack'})
 
+# Count how many documents have a 'name' field containing the value 'Jack'.
+>>> count = col.count_documents({'name': 'Jack'})
+
 # Find the FIRST document with a 'name' field containing the value 'Jack'.
 >>> data = col.find_one({'name': 'Jack'})
 \end{lstlisting}
 
 The \li{find_one()} method returns the first matching document as a dictionary.
 The \li{find()} query may find any number of objects, so it will return a \li{Cursor}, a Python object that is used to iterate over the query results.
-There are many useful functions that can be called on a \li{Cursor}, for more information see \url{http://api.mongodb.com/python/current/api/pymongo/cursor.html}.
+There are many useful functions that can be called on a \li{Cursor}; for more information see \url{https://pymongo.readthedocs.io/en/stable/api/pymongo/cursor.html}.
 
 \begin{lstlisting}
 # Search for documents containing True in the 'student' field.
 >>> students = col.find({'student': True})
->>> students.count()                # There are 2 matching documents.
+>>> col.count_documents({'student': True})   # There are 2 matching documents.
 2
 
 # List the first student's data.
@@ -162,7 +165,7 @@ There are many useful functions that can be called on a \li{Cursor}, for more in
   'student': True}]>>
 \end{lstlisting}
 
-The Logical operators listed in the following table can be used to do more complex queries.
+The logical operators listed in the following table can be used to do more complex queries.
 % There are more operators available with other Python Modules.
 
 \begin{table}[H]
@@ -206,8 +209,8 @@ The Logical operators listed in the following table can be used to do more compl
 >>> results = col.find({'name': {'$regex': re.compile('e')}})
 \end{lstlisting}
 
-It is likely that a database will hold more complex JSON entries then these, with many nested attributes and arrays.
-For example, an entry in a database for a school might look like this.
+It is likely that a database will hold more complex JSON entries than these, with many nested attributes and arrays.
+For example, an entry in a database for a school might look like this:
 
 \begin{lstlisting}
 {'name': 'Jason', 'age': 16,
@@ -215,7 +218,7 @@ For example, an entry in a database for a school might look like this.
  'jobs':['waiter', 'custodian']}
 \end{lstlisting}
 
-To query the nested attributes and arrays use a dot, as in the following examples.
+To query the nested attributes and arrays, use a dot, as in the following examples:
 
 \begin{lstlisting}
 # Query for student that are seniors
@@ -227,9 +230,9 @@ To query the nested attributes and arrays use a dot, as in the following example
 
 The Twitter JSON files are large and complex.
 To see what they look like, either look at the JSON file used to populate the \li{collection} or print any tweet from the database.
-The following website also contains useful information about the fields in the JSON file \url{https://dev.twitter.com/overview/api/tweets}.
+The following website also contains useful information about the fields in the JSON file: \url{https://dev.twitter.com/overview/api/tweets}.
 
-The \li{distinct} function is also useful in seeing what the possible values are for a given field.
+The \li{distinct()} function is also useful in seeing what the possible values are for a given field.
 
 \begin{lstlisting}
 # Find all the values in the names field.
@@ -242,14 +245,16 @@ Query the Twitter collection from Problem \ref{prob:mongo-fill-db} for the follo
 \begin{itemize}
     \item How many tweets include the word Russia? Use \li{re.IGNORECASE}.
     \item How many tweets came from one of the main continental US time zones? These are listed as \li{"Central Time (US \& Canada)"}, \li{"Pacific Time (US \& Canada)"}, \li{"Eastern Time (US \& Canada)"}, and \li{"Mountain Time (US \& Canada)"}.
-    \item How often did each language occur? Construct a dictionary with each language and it's frequency count.
+    \item How often did each language occur? Construct a dictionary with each language and its frequency count.
     \\(Hint: use \li{distinct()} to get the language options.)
 \end{itemize}
 \end{problem}
 
-\section*{Deleting and Sorting Documents}
+\section*{Deleting and Sorting Documents}%==================================================
 
-Items can be deleted from a database using the same syntax that is used to find them. Use \li{delete_one} to delete just the first item that matches your search, or \li{delete_many} to delete all items that match your search.
+Items can be deleted from a database using the same syntax that is used to find them.
+Use \li{delete_one} to delete just the first item that matches your search, or \li{delete_many} to delete all items that match your search.
+Note that using an empty dictionary \li{\{\}} as the query causes it to match all documents in the collection.
 
 \begin{lstlisting}
 # Delete the first person from the database whose name is Jack.
@@ -262,11 +267,14 @@ Items can be deleted from a database using the same syntax that is used to find 
 >>> col.delete_many({})
 \end{lstlisting}
 
-Another useful function is the \li{sort} function, which can sort the data by some attribute. It takes in the attribute by which the data will be sorted, and then the direction (1 for ascending and -1 for descending). Ascending is the default. The following code is an example of sorting.
+Another useful function is the \li{sort} function, which can sort the data by some attribute.
+It takes in the attribute by which the data will be sorted, and then the direction (1 for ascending and -1 for descending).
+Ascending is the default.
+The following code is an example of sorting:
 
 \begin{lstlisting}
 # Sort the students by name in alphabetic order.
->>> results = col.find().sort('name', 1)
+>>> results = col.find({}).sort('name', 1)
 >>> for person in results:
 ...     print(person['name'])
 ...

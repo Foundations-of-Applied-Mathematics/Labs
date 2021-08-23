@@ -8,14 +8,14 @@ In fact, the former is a special case of the latter, so we will just discuss GMM
 
 In order to understand GMMHMMs, we need to be familiar with a particular continuous, multivariate distribution called a \emph{mixture of Gaussians}.
 A mixture of Gaussians is a distribution composed of several Gaussian (or Normal) distributions with corresponding weights.
-Such a distribution is parameterized by the number of mixture components $M$, the dimension $N$ of the normal distributions involved, a collection of component weights
-$\{c_1, \ldots, c_M\}$ that are nonnegative and sum to 1, and a collection of mean and covariance parameters $\{(\mu_1,\Sigma_1), \ldots, (\mu_M,\Sigma_M)\}$ for each Gaussian
-component. To sample from a mixture of Gaussians, one first chooses the mixture component $i$ according to the probability weights $\{c_1,\ldots,c_M\}$, and then one
-samples from the normal distribution $\mathcal{N}(\mu_i, \Sigma_i)$. The probability density function for a mixture of Gaussians is given by
+Such a distribution is parameterized by the number of mixture components $K$, the dimension $N$ of the normal distributions involved, a collection of component weights
+$\{c_1, \ldots, c_K\}$ that are nonnegative and sum to 1, and a collection of mean and covariance parameters $\{(\mu_1,\Sigma_1), \ldots, (\mu_K,\Sigma_K)\}$ for each Gaussian
+component. To sample from a mixture of Gaussians, one first chooses the mixture component $i$ according to the probability weights $\{c_1,\ldots,c_K\}$, and then one
+samples from the normal distribution $\mathcal{N}(\mu_k, \Sigma_k)$. The probability density function for a mixture of Gaussians is given by
 \[
-f(x) = \sum_{i=1}^M c_iN(x;\,\mu_i,\Sigma_i),
+p(\mathbf{z}|\mathbf{\theta}) = \sum_{k=1}^K c_kN(\mathbf{z};\,\mu_k,\Sigma_k),
 \]
-where $N(\cdot;\,\mu_i,\Sigma_i)$ denotes the probability density function for the normal distribution $\mathcal{N}(\mu_i, \Sigma_i)$.
+where $N(\cdot;\,\mu_k,\Sigma_k)$ denotes the probability density function for the normal distribution $\mathcal{N}(\mu_k, \Sigma_k)$.
 See Figure \ref{fig:mixture} for the plot of such a density curve.
 Note that a mixture of Gaussians with just one mixture component reduces to a simple normal distribution, and so a GMMHMM with just one mixture component
 is simply a Gaussian HMM.
@@ -28,13 +28,13 @@ is simply a Gaussian HMM.
 \end{figure}
 
 
-In a GMMHMM, we seek to model a hidden state sequence $\{\mathbf{x}_1,\ldots,\mathbf{x}_T\}$ and a corresponding observation sequence $\{O_1,\ldots,O_T\}$, just as with discrete HMMs.
-The major difference, of course, is that each observation $O_t$ is a real-valued vector of length $K$ distributed according to a mixture of Gaussians with $M$ components.
+In a GMMHMM, we seek to model a hidden state sequence $\{X_1,\ldots, X_T\}$ and a corresponding observation sequence $\{Z_1,\ldots,Z_T\}$, just as with discrete HMMs.
+The major difference, of course, is that each observation $\mathbf{z}_t$ is a real-valued vector of length $M$ distributed according to a mixture of Gaussians with $K$ components.
 The parameters for such a model include the initial state distribution $\pi$ and the state transition matrix $A$ (just as with discrete HMMs).
-Additionally, for each state $i=1,\ldots,N$, we have component weights $\{c_{i,1},\ldots,c_{i,M}\}$, component means $\{\mu_{i,1},\ldots,\mu_{i,M}\}$, and component covariance matrices
-$\{\Sigma_{i,1},\ldots,\Sigma_{i,M}\}$.
+Additionally, for each state $i=1,\ldots,N$, we have component weights $\{c_{k,1},\ldots,c_{i,K}\}$, component means $\{\mu_{k,1},\ldots,\mu_{k,K}\}$, and component covariance matrices
+$\{\Sigma_{k,1},\ldots,\Sigma_{i,K}\}$.
 
-Let's define a full GMMHMM with $N=2$ states, $K = 3$, and $M=3$ components.
+Let's define a full GMMHMM with $N=2$ states, $M = 3$, and $K=3$ components.
 \begin{lstlisting}
 >>> import numpy as np
 >>> A = np.array([[.65, .35], [.15, .85]])   # state transition matrix
@@ -58,8 +58,8 @@ Once we have the sample, we use the transition matrix $A$ to determine the secon
 >>> state = np.argmax(np.random.multinomial(1, pi))  
 
 # randomly sample
->>> sample_component = np.argmax(np.random.multinomial(1, weights[1,:]))
->>> sample = np.random.multivariate_normal(means[1, sample_component, :], covars[1, sample_component, :, :])
+>>> sample_component = np.argmax(np.random.multinomial(1, weights[state,:]))
+>>> sample = np.random.multivariate_normal(means[state, sample_component, :], covars[state, sample_component, :, :])
 \end{lstlisting}
 
 Figure \ref{fig:samples} shows an observation sequence generated from a GMMHMM with one mixture component and two states.
@@ -91,14 +91,12 @@ def sample_gmmhmm(gmmhmm, n_sim):
     pass
 \end{lstlisting}
 
-Test your function by running it on the gmmhmm given in the example, with $n\_sim=4$.
-Print out the each state and its corresponding observations.
+Test your function by running it on the gmmhmm given in the example, with $n\_sim=900$.
+Use \li{sklearn.decomposition.PCA} with 2 components to plot the observations in two-dimensional space. 
+Color the observations by state. How many clusters do you see?
 
-Note, $K$ is the same $K$ that defines the gmmhmm and is identified through the gmmhmm, so you don't need to set it.
-\begin{comment}
-Run the function 10 times and print out the states from each run.
+Note, $M$ is the same $M$ that defines the gmmhmm and is identified through the gmmhmm, so you don't need to set it.
 
-\end{comment}
 \end{problem}
 
 The classic problems for which we normally use discrete observation HMMs can also be solved by using CDHMMs, though with continuous observations it is much more difficult to keep things numerically stable.
@@ -111,12 +109,13 @@ Hidden Markov Models are the basis of modern speech recognition systems. However
 components of speech recognition, such as language models, that we will not address in this lab.
 
 The basic signal processing and HMM stages of the speech recognition system that we develop in this lab can be summarized as follows:
-The audio to be processed is divided into small frames of approximately $30$ ms. These are short enough that we can treat the signal as being constant over these inervals. We can then take this framed signal and, through a series of transformations, represent it by mel-frequency cepstral coefficients (MFCCs), keeping only the first $K$ (say $K = 10$). Viewing these MFCCs as continuous observations in $\mathbb{R}^{K}$, we can train a GMMHMM on sequences of MFCCs for a given word, spoken multiple times. Doing this for several words, we have a collection of GMMHMMs, one for each word. Given a new speech signal, after framing and decomposing it into its MFCC array, we can score the signal against each GMMHMM, returning the word whose GMMHMM scored the highest.
+The audio to be processed is divided into small frames of approximately $30$ ms. These are short enough that we can treat the signal as being constant over these inervals. We can then take this framed signal and, through a series of transformations, represent it by mel-frequency cepstral coefficients (MFCCs), keeping only the first $M$ (say $M = 10$). Viewing these MFCCs as continuous observations in $\mathbb{R}^{M}$, we can train a GMMHMM on sequences of MFCCs for a given word, spoken multiple times. Doing this for several words, we have a collection of GMMHMMs, one for each word. Given a new speech signal, after framing and decomposing it into its MFCC array, we can score the signal against each GMMHMM, returning the word whose GMMHMM scored the highest.
 
 Industrial-grade speech recognition systems do not train a GMMHMM for each word in a vocabulary (that would be ludicrous for a large vocabulary), but rather on \emph{phonemes}, or distinct sounds. The English language has $44$ phonemes, yielding $44$ different GMMHMMs. As you could imagine, this greatly facilitates the problem of speech recognition.  Each and every word can be represented by some combination of these $44$ distinct sounds.  By correctly classifying a signal by its phonemes, we can determine what word was spoken. Doing so is beyond the scope of this lab, so we will simply train GMMHMMs on five words/phrases: biology, mathematics, political science, psychology, and statistics.
 
 \begin{problem}
-Samples.zip contains 31 recordings for each of the words/phrases mathematics, biology, political science, psychology, and statistics. 
+Samples.zip contains 30 recordings for each of the words/phrases mathematics, biology, political science, psychology, and statistics. 
+Remove the files that end in 00 (eg. Biology00.wav).
 These audio samples are 2 seconds in
 duration, recorded at a rate of 44100 samples per second, with samples stored as 16-bit signed
 integers in WAV format. 
@@ -125,7 +124,7 @@ Load the recordings into Python using $scipy.io.wavfile.read$.
 Extract the MFCCs from each sample using code from the file MFCC.py.
 Store the MFCCs for each word in a separate list. 
 You should have five lists, each containing
-31 MFCC arrays, corresponding to each of the five words under consideration.
+30 MFCC arrays, corresponding to each of the five words under consideration.
 \end{problem}
 
 For a specific word, given enough distinct samples of that word (decomposed into MFCCs), we can train a GMMHMM.
@@ -174,8 +173,13 @@ We classify a new speech sample by scoring it against each of the 5 trained GMMH
 
 \begin{problem}
 Classify the 10 test samples for each word. 
+
 How does your system perform? Which words are the hardest to correctly classify?
-Make a dictionary containing the accuracy of the classification of your five testing sets.  Specifically, the words/phrases will be the keys, and the values will be the percent accuracy. 
+Make a dictionary containing the accuracy of the classification of your five testing sets. 
+Specifically, the words/phrases will be the keys, and the values will be the percent accuracy. 
+For example, to find the accuracy for the biology model score (\li{model.score(sample)}) each model on all 10 samples in the biology test set. 
+The predicted class for each sample is the class of the model with the highest score.
+The accuracy of the biology model is the number of words in the biology test set that the biology model gave the highest score for over ten, since there were 10 words in the test set.
 \end{problem}
 
 

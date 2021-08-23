@@ -41,7 +41,6 @@ A \li{DataFrame} is a collection of multiple \li{Series}.
 It can be thought of as a 2-dimensional array, where each row is a separate datapoint and each column is a feature of the data.
 The rows are labeled with an \li{index} (as in a \li{Series}) and the columns are labeled in the attribute \li{columns}.
 
-
 There are many different ways to initialize a \li{DataFrame}.
 One way to initialize a \li{DataFrame} is by passing in a dictionary as the data of the \li{DataFrame}.
 The keys of the dictionary will become the labels in \li{columns} and the values are the \li{Series} associated with the label.
@@ -60,12 +59,12 @@ Mark      81.0     68.0
 \end{lstlisting}
 
 Notice that \li{pd.DataFrame} automatically lines up data from both \li{Series} that have the same index.
-If the data only appears in one of the \li{Series}, the entry for the second \li{Series} is \li{NaN}.
+If the data only appears in one of the \li{Series}, the corresponding entry for the other \li{Series} is \li{NaN}.
 
 We can also initialize a \li{DataFrame} with a NumPy array.
-In this way, the data is passed in as a 2-dimensional NumPy array, while the column labels and index are passed in as parameters.
-The first column label goes with the first column of the array, the second with the second, etc.
-The same holds for the index.
+With this method, the data is passed in as a 2-dimensional NumPy array, while the column labels and the index are passed in as parameters.
+The first column label goes with the first column of the array, the second with the second, and so forth.
+The index works similarly.
 
 \begin{lstlisting}
 >>> import numpy as np
@@ -123,15 +122,10 @@ Method & Description \\ \hline
 
 The CSV (comma separated values) format is a simple way of storing tabular data
 in plain text.
-Because CSV files are one of the most popular file formats for
-exchanging data, we will explore the \li{read_csv()} function in more detail.
-To learn to read other types of file formats, see the online pandas
-documentation.
-To read a CSV data file into a \li{DataFrame}, call the
-\li{read_csv()} function with the path to the CSV file, along with the
-appropriate keyword arguments.
-Below we list some of the most important keyword
-arguments:
+Because CSV files are one of the most popular file formats for exchanging data, we will explore the \li{read_csv()} function in more detail.
+%To learn to read other types of file formats, see the online pandas documentation.
+%To read a CSV data file into a \li{DataFrame}, call the \li{read_csv()} function with the path to the CSV file, along with the appropriate keyword arguments.
+Some frequently-used keyword arguments include the following:
 
 \begin{itemize}
 \item \li{delimiter}:
@@ -149,23 +143,20 @@ If the CSV file does not contain the column names, or you wish to use other
 column names, specify them in a list.
 \end{itemize}
 
-The \li{read_html} is useful when scraping data.
-It takes in a url or html file and an optional \li{match}, a string or regex.
-It returns a list of the tables that match the \li{match} in a DataFrame.
-While the data will probably need to be cleaned up a little, it is much faster than scraping a website.
+Another particularly useful function is \li{read_html()}, which is useful when scraping data.
+It takes in a url or html file and an optional argument \li{match}, a string or regex, and returns a list of the tables that match the \li{match} in a DataFrame.
+While the resulting data will probably need to be cleaned, it is frequently much faster than scraping a website.
 
 \section*{Data Manipulation}
 
 \subsection*{Accessing Data}
 
-While array slicing can be used to access data in a \li{DataFrame}, it is always preferable to use the \li{loc} and \li{iloc} indexers.
-Accessing \li{Series} and \li{DataFrame} objects
-using these indexing operations is more efficient than slicing because the bracket indexing has to check many cases before it can determine how to slice the data structure.
-Using \li{loc}/\li{iloc} explicitly, bypasses the extra checks.
-The \li{loc} index selects rows and columns based on
-their labels, while \li{iloc} selects them based on their
-integer position.
-When using these indexers, the first and second arguments refer to the rows and columns, respectively, just as array slicing.
+In general, the best way to access data in a \li{Series} or \li{DataFrame} is through the indexers \li{loc} and \li{iloc}.
+While array slicing can be used, it is more efficient to use these indexers.
+Accessing \li{Series} and \li{DataFrame} objects using these indexing operations is more efficient than slicing because the bracket indexing has to check many cases before it can determine how to slice the data structure.
+Using \li{loc} or \li{iloc} explicitly bypasses these extra checks.
+The \li{loc} index selects rows and columns based on their labels, while \li{iloc} selects them based on their integer position.
+With these indexers, the first and second arguments refer to the rows and columns, respectively, just as array slicing.
 
 \begin{lstlisting}
 # Use loc to select the Math scores of David and Greg
@@ -180,12 +171,11 @@ David    10.0
 Greg      NaN
 \end{lstlisting}
 
-An entire column of a \li{DataFrame} can be accessed using simple square
-brackets and the name of the column.
-In addition, to create a new column or reset the values of an entire column, simply call this column in the same fashion and set the value.
+To access an entire column of a \li{DataFrame}, the most efficient method is to use only square brackets and the name of the column, without the indexer.
+This syntax can also be used to create a new column or reset the values of an entire column.
 
 \begin{lstlisting}
-# Set new History column with array of random values
+# Create a new History column with array of random values
 >>> grades['History'] = np.random.randint(0,100,6)
 >>> grades['History']
 Barbara     4
@@ -208,12 +198,10 @@ Lauren    NaN     99.0    100.0
 Mark     81.0     68.0    100.0
 \end{lstlisting}
 
-
-Often datasets can be very large and difficult to visualize.
-Pandas offers various methods to make the data easier to visualize.
+Datasets can often be very large and thus difficult to visualize.
+Pandas has various methods to make this easier.
 The methods \li{head} and \li{tail} will show the first or last $n$ data points, respectively, where $n$ defaults to 5.
 The method \li{sample} will draw $n$ random entries of the dataset, where $n$ defaults to 1.
-
 \begin{lstlisting}
 # Use head to see the first n rows
 >>> grades.head(n=2)
@@ -226,10 +214,8 @@ David    10.0     39.0    100.0
         Math  English  History
 Lauren   NaN     99.0    100.0
 \end{lstlisting}
-
 It may also be useful to re-order the columns or rows or sort according to a
 given column.
-
 \begin{lstlisting}
 # Re-order columns
 >>> grades.reindex(columns=['English','Math','History'])
@@ -251,9 +237,7 @@ David    10.0     39.0    100.0
 Greg      NaN     26.0    100.0
 Lauren    NaN     99.0    100.0
 \end{lstlisting}
-
 Other methods used for manipulating \li{DataFrame} and \li{Series} panda structures can be found in Table \ref{table:pandas-manage-data}.
-
 \begin{table}[H]
 \begin{tabular}{r|l}
 Method & Description \\ \hline
@@ -277,22 +261,20 @@ Method & Description \\ \hline
 The file \li{budget.csv} contains the budget of a college student over the course of 4 years.
 Write a function that performs the following operations in this order:
 \begin{enumerate}
+\item Read in \li{budget.csv} as a \li{DataFrame} with the index as column 0. Hint: Use \li{index\_col=0} to set the first column as the index when reading in the csv.
 \item Reindex the columns such that amount spent on groceries is the first column and all other columns maintain the same ordering.
-\item Sort the \li{DataFrame} in descending order based on how much money was spent on \li{Groceries}
-\item Reset all values in the \li{'Rent'} column to \li{800.0}
-\item Reset all values in the first 5 data points to \li{0.0}
+\item Sort the \li{DataFrame} in descending order by how much money was spent on \li{Groceries}.
+\item Reset all values in the \li{'Rent'} column to \li{800.0}.
+\item Reset all values in the first 5 data points to \li{0.0}.
 \end{enumerate}
-Read in \li{budget.csv} as a \li{DataFrame} with the index as column 0 and perform each of these operations on the \li{DataFrame}.
 Return the values of the updated \li{DataFrame} as a NumPy array.
 
-Hint: Use \li{index\_col=0} to set the first column as the index when reading in the csv .
 \label{prob:budget}
 \end{problem}
 
 \subsection*{Basic Data Manipulation}
-Because the primary pandas data structures are subclasses of \li{ndarray}, most NumPy functions work with pandas structure.
-For example, basic
-vector operations work as expected:
+Because the primary pandas data structures are based off of \li{ndarray}, most NumPy functions work with pandas structures.
+For example, basic vector operations work as would be expected:
 
 \begin{lstlisting}
 # Sum history and english grades of all students
@@ -315,7 +297,7 @@ Lauren       NaN
 Mark       162.0
 Name: Math, dtype: float64
 \end{lstlisting}
-In addition to arithmetic, \li{Series} have a variety of other methods similar to NumPy arrays.
+In addition to arithmetic, \li{Series} has a variety of other methods similar to NumPy arrays.
 A collection of these methods is found in Table \ref{table:pandas-numerical-methods}.
 \begin{table}[H]
 \begin{tabular}{r|l}
@@ -347,7 +329,7 @@ Method & Returns \\ \hline
 \subsection*{Basic Statistical Functions}
 
 The pandas library allows us to easily calculate basic summary statistics of our data,
-useful when we want a quick description of the data.
+which can be useful when we want a quick description of the data.
 The \li{describe()} function
 outputs several such summary statistics for each column in a \li{DataFrame}:
 \begin{lstlisting}
@@ -386,12 +368,13 @@ English  0.84996  1.00000      NaN
 History      NaN      NaN      NaN
 \end{lstlisting}
 
-The method \li{rank} gives a ranking based on methods such as average, minimum, and maximum.
-This method defaults ranking in ascending order (the least will be ranked 1 and the greatest will be ranked the highest number).
+The method \li{rank()} can be used to rank the values in a data set, either within each entry or with each column.
+This function defaults ranking in ascending order: the least will be ranked 1 and the greatest will be ranked the highest number.
 
 \begin{lstlisting}
-# Rank each student's performance based on their highest grade in any class
-# in descending order
+# Rank each student's performance in their classes in descending order
+# (best to worst)
+# The method keyword specifies what rank to use when ties occur.
 >>> grades.rank(axis=1,method='max',ascending=False)
          Math  English  History
 Barbara   3.0      2.0      1.0
@@ -403,17 +386,16 @@ Mark      2.0      3.0      1.0
 \end{lstlisting}
 
 These methods can be very effective in interpreting data.
-For example, the \li{rank} example above shows use that Barbara does best in History, then English and then Math.
+For example, the \li{rank()} example above shows use that Barbara does best in History, then English, and then Math.
 
 \subsection*{Dealing with Missing Data}
 
 Missing data is a ubiquitous problem in data science.
-Fortunately, pandas is particularly well-suited to
-handling missing and anomalous data.
+Fortunately, pandas is particularly well-suited to handling missing or anomalous data.
 As we have already seen, the pandas default for a missing value is \li{NaN}.
 In basic arithmetic operations, if one of the operands is \li{NaN}, then the output is also \li{NaN}.
-If we are not interested in the missing values, we can simply drop them from the data altogether, or we can fill them with some other value like the mean.
-\li{NaN} might also mean something specific, such as corresponding to some default value, so that should inform what we do with \li{NaN} values.
+If we are not interested in the missing values, we can simply drop them from the data altogether, or we can fill them with some other value, such as the mean.
+\li{NaN} might also mean something specific, such as some default value, which should inform what to do with \li{NaN} values.
 
 \begin{lstlisting}
 # Grades with all NaN values dropped
@@ -450,10 +432,10 @@ Perform the following manipulations:
 \begin{enumerate}
 \item Fill all \li{NaN} values with \li{0.0}.
 \item Create two new columns, \li{'Living Expenses'} and \li{'Other'}.
-Sum the columns \li{'Rent', 'Groceries', 'Gas'} and \li{'Utilities'} and set as the value of \li{'Living Expenses'}.
-Sum the columns \li{'Dining Out', 'Out With Friends'} and \li{'Netflix'} and set as the value of \li{'Other'}.
-\item Identify which column, other than \li{'Living Expenses'}, correlates most with \li{'Living Expenses'} and which column, other than \li{'Other'} correlates most with \li{'Other'}.
-This can indicate which columns in the budget affects the overarching categories the most.
+Set the value of \li{'Living Expenses'} to be the sum of the columns \li{'Rent', 'Groceries', 'Gas'} and \li{'Utilities'}.
+Set the value of \li{'Other'} to be the sum of the columns \li{'Dining Out', 'Out With Friends'} and \li{'Netflix'}.
+\item Identify which column, other than \li{'Living Expenses'}, correlates most with \li{'Living Expenses'} and which column, other than \li{'Other'}, correlates most with \li{'Other'}.
+This can indicate which columns in the budget affect the overarching categories the most.
 \end{enumerate}
 Return the names of each of those columns as a tuple.
 The first should be of the column corresponding to \li{'Living Expenses'} and the second to \li{'Other'}.
@@ -482,7 +464,7 @@ For the examples below, we will use the following data:
 >>> mathInfo = pd.DataFrame({'ID': mathID, 'Grade': mathGd, 'Math_Major':
 ...		major})
 \end{lstlisting}
-Before querying our data, it is important to know some of its basic properties,
+Before querying our data, it is helpful to know some of its basic properties,
 such as number of columns, number of rows, and the datatypes of the columns.
 This can be done by simply calling the \li{info()} method on the desired
 \li{DataFrame}:
@@ -500,7 +482,7 @@ dtypes: float64(1), int64(1), object(1)
 
 \subsection*{Masks}
 Sometimes, we only want to access data from a single column.
-For example if we wanted to only access the \li{ID} of the students in the \li{studentInfo} DataFrame, then we would use the following syntax.
+For example if we want to only access the \li{ID} of the students in the \li{studentInfo} \li{DataFrame}, then we would use the following syntax.
 \begin{lstlisting}
    # Get the ID column from studentInfo
    >>> studentInfo.ID # or studentInfo['ID']
@@ -515,7 +497,7 @@ For example if we wanted to only access the \li{ID} of the students in the \li{s
    7   7
    8   8
 \end{lstlisting}
-If we wanted to access multiple columns at once we can use a list of column names.
+If we want to access multiple columns at once we can use a list of column names.
 \begin{lstlisting}
    # Get the ID and Age columns.
    >>> studentInfo[['ID', 'Age']]
@@ -532,7 +514,7 @@ If we wanted to access multiple columns at once we can use a list of column name
 \end{lstlisting}
 
 Now we can access the specific columns that we want.
-However some of these columns may still contain data points that we don't want to consider.
+However, some of these columns may still contain data points that we don't want to consider.
 In this case we can build a mask.
 Each mask that we build will return a pandas \li{Series} object with a \li{bool} value at each index indicating if the condition is satisfied.
 
@@ -549,7 +531,7 @@ Each mask that we build will return a pandas \li{Series} object with a \li{bool}
 
 We can also create compound masks with multiple statements.
 We do this using the same syntax you would use for a compound mask in a normal NumPy array.
-Useful operators are: \li{&}, the \li{AND} operator; \li{|}, the \li{OR} operator; and $\sim$, the \li{NOT} operator.
+Useful operators are \li{&}, the \li{AND} operator; \li{|}, the \li{OR} operator; and $\sim$, the \li{NOT} operator.
 
 \begin{lstlisting}
    # Get all student names where Class = 'J' OR Class = 'Sp'.
@@ -561,28 +543,28 @@ Useful operators are: \li{&}, the \li{AND} operator; \li{|}, the \li{OR} operato
    6         Matt
    7    Alexander
    Name: Name, dtype: object
-   # Ghis can also be acomplished with the following command:
+   # This can also be acomplished with the following command:
    # studentInfo[studentInfo['Class'].isin(['J','Sp'])]['Name']
 \end{lstlisting}
 
 \begin{problem}\label{prob:rate}
 Read in the file \li{crime_data.csv} as a pandas object.
 The file contains data on types of crimes in the U.S. from 1960 to 2016.
-Set the index as the column 'Year'.
+Set the index as the column \li{'Year'}.
 Answer the following questions using the pandas methods learned in this lab.
 The answer of each question should be saved as indicated.
-Return the answers to each question as a tuple (i.e. \li{(answer_1,answer_2,answer_3)}).
+Return the answers to all three questions as a tuple (i.e. \li{(answer_1,answer_2,answer_3)}).
 
 \begin{enumerate}
-	\item Identify the three crimes that have a mean over 1,500,000.
+	\item Identify the three crimes that have a mean yearly number of occurences over 1,500,000.
 	Of these three crimes, which two are very correlated?
 	Which of these two crimes has a greater maximum value?
 	Save the title of this column as a variable to return as the answer.
-	\item Examine the data since 2000.
+	\item Examine the data from 2000 and later.
 	Sort this data (in ascending order) according to number of murders.
-	Find the years where Aggravated Assault is greater than 850,000.
+	Find the years where aggravated assault is greater than 850,000.
    Save the indices (the years) of the masked and reordered \li{DataFrame} as a NumPy array to return as the answer.
-	\item What year had the highest \li{crime rate}?
+	\item What year had the highest crime rate?
 	In this year, which crime was committed the most?
 	What percentage of the total crime that year was it?
 	Save this value as a float.
@@ -685,7 +667,7 @@ Hint: You can change the column type the same way you'd change a numpy array typ
 Some time series datasets come without explicit labels but have instructions for deriving timestamps.
 For example, a list of bank account balances might have records from the beginning of every month, or heart rate readings could be recorded by an app every 10 minutes.
 Use \li{pd.date\_range()} to generate a \li{DatetimeIndex} where the timestamps are equally spaced.
-The function is analogous to \li{np.arange()} and has the following parameters.
+The function is analogous to \li{np.arange()} and has the following parameters:
 \begin{table}[H]
 \begin{center}
     \begin{tabular}{r|l}
@@ -831,6 +813,7 @@ Return the DateTimeIndex of the day with the largest gain and the day with the l
 
 More information on how to use \li{datetime} with Pandas is in the additional material section.
 This includes working with \li{Periods} and more analysis with time series.
+
 \pagebreak
 
 \section*{Additional Material}
@@ -999,7 +982,7 @@ The bounds of a \li{PeriodIndex} object can be shifted by adding or subtracting 
 
 \begin{lstlisting}
 # Shift index by 1
->>> p _= 1
+>>> p -= 1
 >>> p
 PeriodIndex(['2010Q1', '2010Q2', '2010Q3', '2010Q4'],
             dtype='int64', freq='Q-DEC')

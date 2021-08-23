@@ -191,7 +191,9 @@ Using $\mu$ and $\Sigma$ as defined previously and using an initial state $\math
 \begin{problem}
 Write a function that uses the Metropolis Hastings algorithm to draw from the posterior distribution over the mean $\mu$ and variance $\sigma^2$. Use the given functions and algorithm \ref{alg:metropolis} to complete the problem.
 
-Your function should return an array of draws, an array of the log probabilities, and an acceptance rate. Use the following code to check your work. Plot the first 500 log probabilities, the $\mu$ samples and posterior distribution, and the $\sigma^2$ samples and posterior distribution. The results should be \textit{similar} to Figures \ref{fig:logprobs} and \ref{fig:metropolis_results}.
+	Your function should return an array of draws, an array of the log probabilities, and an acceptance rate. Use the following code to check your work. Using the seaborn.kdeplot function, plot the first 500 log probabilities, the $\mu$ samples and posterior distribution, and the $\sigma^2$ samples and posterior distribution. The results should be \textit{similar} to Figures \ref{fig:logprobs} and \ref{fig:metropolis_results}.
+
+When comparing \texttt{a} to the acceptance, remember to use \texttt{log(a)} as we are in log space.
 
 
 \begin{lstlisting}
@@ -248,6 +250,7 @@ def random_lattice(n):
 \end{figure}
 
 \begin{problem} % Calculate the energy of the spin configuration.
+\label{problem2}
 Write a function that accepts a spin configuration $\sigma$ for a lattice as a NumPy array.
 Compute the energy $H(\sigma)$ of the spin configuration.
 Be careful to not double count site pair interactions!
@@ -302,6 +305,7 @@ Do not explicitly construct the new lattice for $\sigma^*$.
 Write a function that accepts a float $\beta$ and spin configuration energies $H(\sigma)$ and $H(\sigma^*)$.
 Using \eqref{eq:ising-acceptance}, calculate whether or not the new spin configuration $\sigma^*$ should be accepted (return \li{True} or \li{False}).
 Consider doing the calculations in log space.
+(Hint: np.random.binomial() might be useful)
 \label{prob:ising-acceptance}
 \end{problem}
 
@@ -312,7 +316,7 @@ Note that we don't expect these values to converge to a specific value, but rath
 
 \begin{problem}
 Write a function that accepts a float $\beta>0$ and integers $n$, \li{n_samples}, and \li{burn_in}.
-Initialize an $n\times n$ lattice for a spin configuration $\sigma$.
+Initialize an $n\times n$ lattice for a spin configuration $\sigma$ using Problem \ref{problem2}.
 Use the Metropolis algorithm to (potentially) update the lattice \li{burn_in} times.
 \begin{enumerate}
     \item Use Problem \ref{prob:ising-flip-site} to choose a site for possibly flipping the spin, thus defining a potential new configuration $\sigma^*$.
@@ -322,6 +326,7 @@ Use the Metropolis algorithm to (potentially) update the lattice \li{burn_in} ti
     \item Track $-\beta H(\sigma)$ at each iteration (independent of acceptance).
 \end{enumerate}
 After the burn-in period, continue the iteration \li{n_samples} times, also recording every $100$th sample (to prevent memory failure).
+The acceptance rate is counted after the burn-in period.
 Return the samples, the sequence of weighted energies $-\beta H(\sigma)$, and the acceptance rate.
 
 Test your sampler on a $100 \times 100$ grid with $200000$ total iterations, with \li{n_samples} large enough so that you will keep $50$ samples, for $\beta = 0.2, 0.4, 1$.
@@ -329,6 +334,8 @@ Plot the proportional log probabilities, as well as a late sample from each test
 How does the ferromagnetic material behave differently with differing temperatures?
 Recall that $\beta$ is an inverse function of temperature.
 You should see more structure with lower temperature, as illustrated in Figure \ref{fig:ising-results}.
+
+To show the spin configuration, use \li{plt.imshow(L,cmap='gray')}.
 \end{problem}
 
 \begin{figure}

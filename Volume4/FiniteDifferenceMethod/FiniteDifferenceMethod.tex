@@ -1,6 +1,8 @@
 \lab{The Finite Difference Method}{The Finite Difference Method}
 \label{lab:finitedifference2}
 
+\objective{The finite difference method provides a solid foundation for solving partial differential equations. Understanding and applying finite difference is key to understanding numerical solutions to PDEs.}
+
 A \textbf{finite difference} for a function $f(x)$ is an expression of the form $f(x+s)-f(x+t)$.
 Finite differences can give a good approximation of derivatives.
 
@@ -246,7 +248,7 @@ As before, we can remove two equations to modify the system to obtain an $(n-1)\
 
 
 \begin{problem}
-Use equation \eqref{eqn:practical_fin_dif} to solve the singularly perturbed BVP \eqref{eqn:singular_perturbed_BVP} with $\epsilon = 1/10$, $f(x) = -1$, $\alpha=1$, and $\beta=3$ on a grid with $n=30$ subintervals. Graph the solution.
+Use equation \eqref{eqn:practical_fin_dif} to solve the singularly perturbed BVP \eqref{eqn:singular_perturbed_BVP} on the interval $[0,1]$ with $\epsilon = 1/10$, $f(x) = -1$, $\alpha=1$, and $\beta=3$ on a grid with $n=30$ subintervals. Graph the solution.
 This BVP is called singularly perturbed because of the location of the parameter $\epsilon$.
 For $\epsilon = 0$ the ODE has a drastically different character - it then becomes first order, and can no longer support two boundary conditions.
     \label{prob:finitedifference2:prob1}
@@ -254,7 +256,7 @@ For $\epsilon = 0$ the ODE has a drastically different character - it then becom
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=10cm]{figure2.pdf}
+\includegraphics[width=10cm]{figures/figure2.pdf}
 \caption{The solution to Problem \ref{prob:finitedifference2:prob1}.
 The solution gets steeper near $x = 1$ as $\epsilon $ gets small.}
 \end{figure}
@@ -303,7 +305,7 @@ plt.show()
 \section*{A heuristic test for convergence}
 \begin{figure}[ht]
 \centering
-\includegraphics[width=12cm]{example_convergence.pdf}
+\includegraphics[width=12cm]{figures/example_convergence.pdf}
 \caption{Demonstration of second order convergence for the finite difference approximation \eqref{fd_operator} of the BVP given in \eqref{eqn:singular_perturbed_BVP} with $\epsilon = .5$. } \label{fig:finitedifference2}
 \end{figure}
 
@@ -325,18 +327,20 @@ Thus on a log-log plot of $E(h)$ vs. $h$, these values should be on a straight l
 
 
 \begin{problem}
-Visualize the $\mathcal{O}(h^2)$ convergence of this finite difference method by producing a loglog plot similar to Figure \ref{fig:finitedifference2}, except in the case $\epsilon=.1$. Implement a function \li{singular_bvp} to compute the finite difference solution to \ref{eqn:singular_perturbed_BVP}. Using $n = 5 \times 2^0,5 \times 2^1, \dots ,5 \times 2^9$ subintervals, compute 10 approximate solutions. 
+Implement a function \li{singular_bvp} to compute the finite difference solution to \ref{eqn:singular_perturbed_BVP}.
+Using $n = 5 \times 2^0,5 \times 2^1, \dots ,5 \times 2^9$ subintervals, compute 10 approximate solutions. 
+Use these to visualize the $\mathcal{O}(h^2)$ convergence of the finite difference method from Problem \ref{prob:finitedifference2:prob1} by producing a loglog plot of error against subinterval count; this will be similar to Figure \ref{fig:finitedifference2}, except with $\epsilon=0.1$.
 
-
-To produce the plot, treat the approximation with $n = 5 \times 2^9$ subintervals as the "true solution", and measure the error for the other approximations against it. Note that, since the number of subintervals for each approximation is a multiple of 2, we can compute the $L_{\infty}$ error for the $n=5 \times 2^j$ approximation by using the \li{step} argument in the array slicing syntax:
+To produce the plot, treat the approximation with $n = 5 \times 2^9$ subintervals as the "true solution", and measure the error for the other approximations against it. Note that, since the ratios of numbers of subintervals between approximations are multiples of 2, we can compute the $L_{\infty}$ error for the $n=5 \times 2^j$ approximation by using the \li{step} argument in the array slicing syntax:
 \begin{lstlisting}
-# best approximation
+# best approximation; the vector has length 5*2^9+1
 sol_best = singular_bvp(eps,alpha,beta,f,5*(2**9))
 
-# approximation with 5*(2^j) intervals
+# approximation with 5*(2^j) intervals; the vector has length 5*2^j+1
 sol_approx = singular_bvp(eps,alpha,beta,f,5*(2**j))
 
-# approximation error
+# approximation error; slicing results in a vector of length 5*2^j+1,
+#    which allows it to be compared
 error = np.max(np.abs(sol_approx - sol_best[::2**(9-j)]))
 \end{lstlisting}
 \end{problem}
@@ -344,7 +348,7 @@ error = np.max(np.abs(sol_approx - sol_best[::2**(9-j)]))
 \begin{problem}
 Extend your finite difference code to the case of a general second order linear BVP with boundary conditions:
 \begin{align*}
-	&{ } a_1(x)y'' +a_2(x)y'+ a_3(x) y = f(x), \quad x \in (a,b),\\
+	&{ } a_1(x)y''(x) +a_2(x)y'(x)+ a_3(x) y(x) = f(x), \quad x \in (a,b),\\
 	&{ } y(a) = \alpha, \quad y(b) = \beta.
 \end{align*}
 Use your code to solve the boundary value problem
@@ -362,7 +366,7 @@ Be sure to modify the finite difference operator $D_h$ in \eqref{fd_operator} co
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=10cm]{figure3.pdf}
+\includegraphics[width=10cm]{figures/figure3.pdf}
 \caption{The solution to Problem \ref{prob:finitedifference2:prob3}.
 % The solution gets steeper near $x = 1$ as $\epsilon $ gets small.
 }
@@ -374,33 +378,33 @@ The next few problems will help you test your finite difference code.
 \begin{problem}
 Numerically solve the boundary value problem
 \begin{align*}
-	\epsilon y'' + xy' = -\epsilon \pi^2 \cos(\pi x) - \pi x \sin(\pi x), \\
+	\epsilon y''(x) + xy'(x) = -\epsilon \pi^2 \cos(\pi x) - \pi x \sin(\pi x), \\
 	y(-1) = -2, \quad y(1) = 0,
 \end{align*}
-for $\epsilon = 0.1, 0.01,$ and $0.001$. Use a grid with $n=150$ subintervals.
+for $\epsilon = 0.1, 0.01,$ and $0.001$. Use a grid with $n=150$ subintervals. Plot your solutions.
 \label{prob:finitedifference2:prob4}
 \end{problem}
 
 \begin{problem}
 Numerically solve the boundary value problem
 \begin{align*}
-	(\epsilon +x^2)y'' + 4xy' + 2y = 0, \\
+	(\epsilon +x^2)y''(x) + 4xy'(x) + 2y(x) = 0, \\
 	y(-1) = 1/(1+\epsilon), \quad y(1) = 1/(1+\epsilon),
 \end{align*}
-for $\epsilon = 0.05, 0.02$. Use a grid with $n=150$ subintervals.
+for $\epsilon = 0.05, 0.02$. Use a grid with $n=150$ subintervals. Plot your solutions.
 \label{prob:finitedifference2:prob5}
 \end{problem}
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=11cm]{figure4.pdf}
+\includegraphics[width=11cm]{figures/figure4.pdf}
 \caption{The solution to Problem \ref{prob:finitedifference2:prob4}.
 }
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[width=11cm]{figure5.pdf}
+\includegraphics[width=11cm]{figures/figure5.pdf}
 \caption{The solution to Problem \ref{prob:finitedifference2:prob5}.
 }
 \end{figure}

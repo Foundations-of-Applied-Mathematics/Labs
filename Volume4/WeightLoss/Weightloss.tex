@@ -4,18 +4,18 @@
 The first  system looks at the relationship between a predator and its prey. 
 The second model is a weight change model based on thermodynamics and kinematics.}
 
-\section*{ODE Solvers}
-Initial Value Problems (IVPs) are a systems of one or more ordinary differential equations (ODEs) with defined initial conditions. In some cases, these can be solved by hand, but in real life it is more practical to use numerical solvers. For this lab you will use the  \li{solve_ivp} solver from the \li{scipy.integrate} library.
+% \section*{ODE Solvers}
+% Initial Value Problems (IVPs) are a systems of one or more ordinary differential equations (ODEs) with defined initial conditions. In some cases, these can be solved by hand, but in real life it is more practical to use numerical solvers. For this lab you will use the  \li{solve_ivp} solver from the \li{scipy.integrate} library.
 
-\li{solve_ivp} solves a system of ODEs given by $dy/dt = f(t, y),\quad y(t_0)=y_0$, where $y$ can be a vector. The solver takes as parameters the callable function $f$, the time boundaries \li{(t0,tf)}, the initial condition \li{y_0}, and an optional keyword argument \li{t_eval} that designates the times at which the solver will store the solution. Then \li{solve_ivp} returns a bunch object containing an array \li{y} with shape \li{(len(y_0), len(t))}, where each column gives the \li{y} values for one time point. The syntax for \li{solve_ivp} is shown below.
-\begin{lstlisting}
-from scipy.integrate import solve_ivp
-sol = solve_ivp(f, (t0,tf), y0, t_eval=t)
-\end{lstlisting}
-Assuming that $f$, $y0$, $t_0$, $t_f$, and $t$ are previously defined as explained above, \li{sol.y} is a vector containing the solution to the IVP and can be visualized by plotting each row of \li{sol.y} against the time domain or by plotting the rows against each other.
+% \li{solve_ivp} solves a system of ODEs given by $dy/dt = f(t, y),\quad y(t_0)=y_0$, where $y$ can be a vector. The solver takes as parameters the callable function $f$, the time boundaries \li{(t0,tf)}, the initial condition \li{y_0}, and an optional keyword argument \li{t_eval} that designates the times at which the solver will store the solution. Then \li{solve_ivp} returns a bunch object containing an array \li{y} with shape \li{(len(y_0), len(t))}, where each column gives the \li{y} values for one time point. The syntax for \li{solve_ivp} is shown below.
+% \begin{lstlisting}
+% from scipy.integrate import solve_ivp
+% sol = solve_ivp(f, (t0,tf), y0, t_eval=t)
+% \end{lstlisting}
+% Assuming that $f$, $y0$, $t_0$, $t_f$, and $t$ are previously defined as explained above, \li{sol.y} is a vector containing the solution to the IVP and can be visualized by plotting each row of \li{sol.y} against the time domain or by plotting the rows against each other.
 
 \section*{Predator-Prey Model} 
-ODEs are commonly used to model relationships between predator and prey populations. For example, consider the populations of wolves, the predator, and rabbits, the prey), in Yellowstone National Park. Let $r(t)$ and $w(t)$ represent the rabbit and wolf populations respectively at time $t$, measured in years. 
+ODEs are commonly used to model relationships between predator and prey populations. For example, consider the populations of wolves, the predator, and rabbits, the prey, in Yellowstone National Park. Let $r(t)$ and $w(t)$ represent the rabbit and wolf populations respectively at time $t$, measured in years. 
 We will make a few assumptions to simplify our model:
 
 \begin{itemize}
@@ -32,7 +32,7 @@ This leads to the following system of ODEs:
 	\end{split}\label{eqn: Pred-Prey}
 \end{align}
 
-\begin{figure}
+\begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{figures/Predator_Prey.png}
 \caption{The solution to the system found in \eqref{eqn: Pred-Prey}}
@@ -40,13 +40,12 @@ This leads to the following system of ODEs:
 \end{figure}
 
 
-
 \begin{problem}
-As mentioned above, the \li{solve_ivp} solver requires a callable function representing the right hand side of the IVP. 
 Define the function \li{predator_prey()} that accepts the current $r(t)$ and $w(t)$ values as a 1d array $y$, and the current time $t$, 
 %a 1d array $y$ representing the current rabbit and wolf populations and a float $t$ representing the current time. 
 and returns the right hand side of \eqref{eqn: Pred-Prey} as an ndarray. 
-Use $\alpha=1.0$, $\beta=0.5$, $\delta=0.75$, and $\gamma=0.25$ as your growth parameters.
+Use $\alpha=1.0$, $\beta=0.5$, $\delta=0.75$, and $\gamma=0.25$ as your growth parameters.\\
+Hint: you will want to use \li{solve_ivp}.
 %\begin{lstlisting}
 %def predator_prey(y, t):
 %	'''
@@ -394,7 +393,7 @@ Then the nondimensional logistic equations are
 
 \begin{problem}
 Define a new function \li{Logistic_Model()} that takes in the current predator and prey populations $y$ and the current time $t$ and returns the right hand side of \eqref{logistic_pred_prey} as a tuple. Use \li{solve_ivp} to compute solutions $(U,V)$ of \eqref{logistic_pred_prey}
-for initial conditions $(1/3, 1/3)$ and $(1/2, 1/5)$.
+for initial conditions $(1/3, 1/3)$ and $(1/2, 1/5)$ with $(t0,tf)=(0,13)$.
 Do this for parameter values $\eta$, $\rho = 1$, $0.3$ and also for values $\eta$, $\rho = 1$, $1.1$.
 
 Create a phase portrait for the logistic equations using both sets of parameter values.
@@ -675,15 +674,6 @@ def fat_mass(BW, age, H, sex):
 %Define the function \li{weight_odesystem()} as given in \eqref{eqn:compartment} using the functions \li{forbes()} and \li{energy_balance()} provided. 
 
 Consider the initial value problem corresponding to \eqref{eqn:compartment}.
-\begin{align}
-	\begin{split}
-\dfrac{dF(t)}{dt} &= \frac{(1-p(t)) EB(t)}{\rho_F},\\
-\dfrac{dL(t)}{dt} &= \frac{p(t) EB(t)}{\rho_L},\\
-F(0) &= F_0, \\
-L(0) &= L_0.
-	\end{split}\label{eqn:weight_prob1}
-\end{align}
-
 The following function returns the fat mass of an individual based on body weight (kg), age (years), height (meters), and sex. Use this function to define initial conditions $F_0$ and $L_0$ for the IVP above: $F_0= fat\_mass(args^*)$, $L_0 = BW - F_0$.%Using the result of this function and the provided body weight, you can define initial conditions $F_0$ and $L_0$ for the IVP above, with $F_0 =$\li{fat_mass(args^*)} and $L_0 = BW - F_0$.
 \begin{lstlisting}
 def fat_mass(BW, age, H, sex):
@@ -703,6 +693,7 @@ Use \eqref{eqn:K2} and the original intake and phyical activity levels to comput
 %Using \li{scipy.integrate.ode}, find and graph the solution curve for this single-stage weightloss intervention over a period of 5 years. 
 
 Note the provided code requires quantities in metric units (kilograms, meters, days) while our graph is converted to units of pounds and days.
+Use the conversions $1$ lb $=2.204$ kg, $1$ ft $=0.305$ m, and $1$ yr $=365$ days.
 \end{problem}
 
 \begin{problem}

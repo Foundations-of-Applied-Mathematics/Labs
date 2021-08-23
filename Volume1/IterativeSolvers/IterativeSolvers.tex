@@ -204,27 +204,36 @@ Your function should be robust enough to accept systems of any size.
 To test your function, generate a random $\b$ with \li{np.random.random()} and use the following function to generate an $n\times n$ matrix $A$ for which the Jacobi method is guaranteed to converge.
 Run the iteration, then check that $A\x^{(k)}$ and $\b$ are close using \li{np.allclose()}.
 
+\begin{comment} We have to create the strictly diagonally dominant matrix as a sparse 
+    matrix in order to be more efficient, but we need to be able to use this as a regular 
+    ndarray or a CSR sparse matrix depending solely on whether we're using it in problen 4 
+    or not, I thought this might be a good solution using the code provided from GitHub. 
+    See code for method diag_dom() in problem 1.
+\end{comment}
+
 \begin{lstlisting}
-def diag_dom(n, num_entries=None):
+def diag_dom(n, num_entries=None, as_sparse=False):
     """Generate a strictly diagonally dominant (n, n) matrix.
     Parameters:
         n (int): The dimension of the system.
         num_entries (int): The number of nonzero values.
             Defaults to n^(3/2)-n.
+        as_sparse: If True, an equivalent sparse CSR matrix is returned.
     Returns:
         A ((n,n) ndarray): A (n, n) strictly diagonally dominant matrix.
     """
     if num_entries is None:
         num_entries = int(n**1.5) - n
-    A = np.zeros((n,n))
-    rows = np.random.choice(np.arange(0,n), size=num_entries)
-    cols = np.random.choice(np.arange(0,n), size=num_entries)
+    A = sparse.dok_matrix((n,n))
+    rows = np.random.choice(n, size=num_entries)
+    cols = np.random.choice(n, size=num_entries) 
     data = np.random.randint(-4, 4, size=num_entries)
     for i in range(num_entries):
         A[rows[i], cols[i]] = data[i]
+    B = A.tocsr()          # convert to row format for the next step
     for i in range(n):
-        A[i,i] = np.<<sum>>(np.<<abs>>(A[i])) + 1
-    return A
+        A[i,i] = abs(B[i]).sum() + 1
+    return A.tocsr() if as_sparse else A.toarray()
 \end{lstlisting}
 
 Also test your function on random $n \times n$ matrices.
@@ -416,12 +425,17 @@ rowend = A.indptr[i+1]
 Aix = A.data[rowstart:rowend] @ x[A.indices[rowstart:rowend]]
 \end{lstlisting}
 
-To test your function, cast the result of \li{diag_dom()} as a sparse matrix.
+\begin{comment} Now diag_dom returns the matrix as an ndarray by default, 
+    but it actually constructs it as a sparse matrix using the code given. 
+    Only when we need it as a CSR matrix, we just pass as_csr=True inside the function call. 
+    This way, the audience doesn't need to modify anything except for the way in which they 
+    create the matrix to be used for testing problem 4:
+\end{comment}
+
+To test your function, remeber to call \li{diag_dom()} using \li{as_sparse=True}
 
 \begin{lstlisting}
->>> from scipy import sparse
-
->>> A = sparse.csr_matrix(diag_dom(50000))
+>>> A = diag_dom(50000, as_sparse=True)
 >>> b = np.random.random(50000)
 \end{lstlisting}
 \end{problem}

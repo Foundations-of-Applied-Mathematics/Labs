@@ -21,26 +21,26 @@ The standard Kalman filter assumes that:
 (3) we receive noisy measurements about the state of the system at each iteration.
 More formally, letting $\mathbf{x}_{k}$ denote the state of the system at time $k$, we have
 \begin{equation}
-\mathbf{x}_{k+1} = F_{k} \mathbf{x}_{k} + B_{k}\mathbf{u}_{k} + \boldsymbol{\epsilon}_{k}
+\mathbf{x}_{k+1} = F_{k} \mathbf{x}_{k} + G_{k}\mathbf{u}_{k} + \mathbf{w}_{k}
 \label{eq:state}
 \end{equation}
-where $F_{k}$ is a state-transition model, $B_{k}$ is a control-input model, $\mathbf{u}_{k}$ is a control vector, and $\boldsymbol{\epsilon}_{k}$ is the noise present in state $k$.
+where $F_{k}$ is a state-transition model, $G_{k}$ is a control-input model, $\mathbf{u}_{k}$ is a control vector, and $\mathbf{w}_{k}$ is the noise present in state $k$.
 This noise is assumed to be drawn from a multivariate Gaussian distribution with zero mean and covariance matrix $Q_{k}$.
 The control-input model and control vector allow the assumption that the state can be additionally influenced by some other factor than the linear state-transition model.
 
 We further assume that the states are ``hidden,'' and we only get the noisy observations
 \begin{equation}
-\mathbf{z}_{k} = H_{k}\mathbf{x}_{k} + \boldsymbol{\delta}_{k}
+\mathbf{z}_{k} = H_{k}\mathbf{x}_{k} + \mathbf{v}_{k}
 \label{eq:obs}
 \end{equation}
-where $H_{k}$ is the observation model mapping the state space to the observation space, and $\boldsymbol{\delta}_{k}$ is the observation noise present at iteration $k$.
+where $H_{k}$ is the observation model mapping the state space to the observation space, and $\mathbf{v}_{k}$ is the observation noise present at iteration $k$.
 As with the aforementioned error, we assume that this noise is drawn from a multivariate Gaussian distribution with zero mean and covariance matrix $R_{k}$.
 
 The dynamics stated above are all taken to be linear.
-Thus, for our purposes, the operators $F_k$, $B_k$, and $H_k$ are all matrices, and $\mathbf{x}_k$, $\mathbf{u}_k$, $\mathbf{z}_k$, and $\boldsymbol{\delta}_k$ are all vectors.
+Thus, for our purposes, the operators $F_k$, $G_k$, and $H_k$ are all matrices, and $\mathbf{x}_k$, $\mathbf{u}_k$, $\mathbf{z}_k$, and $\mathbf{v}_k$ are all vectors.
 
 We will assume that the transition and observation models, the control vector, and the noise covariances are constant, i.e. for each $k$, we will replace $F_{k}, H_k, \mathbf{u}_{k}, Q_{k},$ and $R_{k}$ with $F, H, \mathbf{u}, Q,$ and $R$.
-We will also assume that $B = I$ is the identity matrix, so it can safely be ignored.
+We will also assume that $G = I$ is the identity matrix, so it can safely be ignored.
 
 \begin{problem}
 Begin implementing a \li{KalmanFilter} class by writing an initialization method that stores the transition and observation models, noise covariances, and control vector.
@@ -101,10 +101,10 @@ We now turn our attention to the observation model.
 Imagine that a radar sensor captures (noisy) measurements of the projectile's position as it travels through the air.
 At each time step, the radar transmits the observation $z = (z_x, z_y)$ given by
 \begin{align*}
-z_x &= s_x + \delta_x\\
-z_y &= s_y + \delta_y,
+z_x &= s_x + v_x\\
+z_y &= s_y + v_y,
 \end{align*}
-where $(\delta_x, \delta_y)$ is a noise vector assumed to be drawn from a multivariate Gaussian with mean zero and some known covariance.
+where $(v_x, v_y)$ is a noise vector assumed to be drawn from a multivariate Gaussian with mean zero and some known covariance.
 These equations indicate the appropriate choice of observation model.
 
 \begin{problem}
@@ -358,7 +358,7 @@ Returning to the projectile example, we can now predict the point of origin.
 
 \begin{problem}
 Using your state estimate $\widehat{\mathbf{x}}_{250}$, predict the point of origin of the projectile along with
-all states leading up to time step $250$.
+all states leading up to time step $250$. Note that you may have to take a few extra time steps to predict the point of origin.
 (The point of origin is the first point along the trajectory where the $y$ coordinate is $0$.)
 Plot these predicted states (in cyan) together with the original state sequence.
 Zoom in to see how accurate your prediction is.

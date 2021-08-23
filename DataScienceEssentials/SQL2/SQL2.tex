@@ -177,7 +177,7 @@ Join statements can also be supplemented with \lsql{WHERE} clauses like regular 
 
 >>> cur.execute("SELECT * "
 ...             "FROM StudentInfo AS SI INNER JOIN MajorInfo AS MI "
-...             "ON SI.MajorID = MI.MajorID;").fetchall()
+...             "ON SI.MajorID == MI.MajorID;").fetchall()
 <<[(401767594, 'Michelle Fernandez', 1, 1, 'Math'),
  (553725811, 'Roberta Cook', 2, 2, 'Science'),
  (886308195, 'Rene Cross', 3, 3, 'Writing'),
@@ -189,14 +189,15 @@ Join statements can also be supplemented with \lsql{WHERE} clauses like regular 
 # Select the names and ID numbers of the math majors.
 >>> cur.execute("SELECT SI.StudentName, SI.StudentID "
 ...             "FROM StudentInfo AS SI INNER JOIN MajorInfo AS MI "
-...             "ON SI.MajorID = MI.MajorID "
+...             "ON SI.MajorID == MI.MajorID "
 ...             "WHERE MI.MajorName == 'Math';").fetchall()
 <<[('Cassandra Holland', 341324754), ('Michelle Fernandez', 401767594)]>>
 \end{lstlisting}
 
 \begin{problem} % Simple inner join.
 Write a function that accepts the name of a database file.
-Assuming the database to be in the format of Tables \ref{table:sql2-student-majorinfo}--\ref{table:sql2-student-grades}, query the database for the list of the names of students who have a B grade in any course (not a B-- or a B+).
+Assuming the database to be in the format of Tables \ref{table:sql2-student-majorinfo}--\ref{table:sql2-student-grades}, query the database for the list of the names of students who have a B grade in any course (not a B-- or a B+). 
+Be sure to return a list of strings, not a list of tuples of strings.
 \end{problem}
 
 \subsection*{Outer Joins} % ---------------------------------------------------
@@ -228,7 +229,7 @@ Compare the following table and code to Table \ref{table:sql2-inner-join-temp}.
 \begin{lstlisting}
 >>> cur.execute("SELECT * "
 ...             "FROM StudentInfo AS SI LEFT OUTER JOIN MajorInfo AS MI "
-...             "ON SI.MajorID = MI.MajorID;").fetchall()
+...             "ON SI.MajorID == MI.MajorID;").fetchall()
 <<[(401767594, 'Michelle Fernandez', 1, 1, 'Math'),
  (678665086, 'Gilbert Chapman', None, None, None),
  (553725811, 'Roberta Cook', 2, 2, 'Science'),
@@ -269,8 +270,8 @@ The following example performs an additional join on Table \ref{table:sql2-left-
 ...             "FROM StudentInfo AS SI LEFT OUTER JOIN MajorInfo AS MI "
 ...             "ON SI.MajorID == MI.MajorID "
 ...             "INNER JOIN StudentGrades AS SG "
-...             "ON SI.StudentID = SG.StudentID "
-...             "WHERE SG.Grade = 'C';").fetchall()
+...             "ON SI.StudentID == SG.StudentID "
+...             "WHERE SG.Grade == 'C';").fetchall()
 <<[('Michelle Fernandez', 'Math'),
  ('Roberta Cook', 'Science'),
  ('Cameron Kim', 'Art'),
@@ -304,6 +305,10 @@ Only include results for students that are actually taking Calculus, but be care
 Many data sets can be naturally sorted into groups.
 The \lsql{GROUP BY} command gathers rows from a table and groups them by a certain attribute.
 The groups are then combined by one of the \emph{aggregate functions} \lsql{AVG()}, \lsql{MIN()}, \lsql{MAX()}, \lsql{SUM()}, or \lsql{COUNT()}.
+Each of these functions accepts the name of the column to be operated on.
+Note that the first four of these require the column to hold numerical data.
+Since our database has no such data, we will delay examples of using the functions other than \lsql{COUNT()} until later.
+
 The following code groups the rows in Table \ref{table:sql2-student-grades} by \li{studentID} and counts the number of entries in each group.
  % (the number of courses that student is enrolled in).
 
@@ -367,6 +372,7 @@ For instance, the result set of the previous example can be filtered down to onl
 \begin{problem} % HAVING
 Write a function that accepts a database file.
 Query the database for the list of the names of courses that have at least 5 student enrolled in them.
+Be sure to return a list of strings.
 \end{problem}
 
 \section*{Other Miscellaneous Commands} % =====================================
@@ -398,7 +404,7 @@ This is always the very last statement in a query.
 \begin{problem} % COUNT(), ORDER BY.
 Write a function that accepts a database file.
 Query the given database for tuples of the form \li{(MajorName, N)} where \li{N} is the number of students in the specified major.
-Sort the results in ascending order by the count \li{N}, and then in alphabetic order by MajorName.
+Sort the results in descending order by the count \li{N}, and then in alphabetic order by MajorName.
 Include \textbf{Null} majors.
 \end{problem}
 
@@ -477,6 +483,9 @@ Separate queries can be made from result sets by enclosing the entire query in p
 For these sorts of operations, it is very important to carefully label the columns resulting from a subquery.
 
 \begin{lstlisting}
+# Count how many declared and undeclared majors there are
+# The subquery changes NULL values in MajorID to 'Undeclared' and
+#    non-NULL to 'Declared'.
 >>> cur.execute("SELECT majorstatus, COUNT(*) AS majorcount "
 ...             "FROM ( "                                   # Begin subquery.
 ...                 "SELECT StudentName, CASE "
@@ -488,9 +497,38 @@ For these sorts of operations, it is very important to carefully label the colum
 [('Declared', 7), ('Undeclared', 3)]
 \end{lstlisting}
 
+Subqueries can also be joined with other tables, as in the following example.
+Note also that a subquery can be used to create numerical data out of non-numerical data, which can then be passed into any of the aggregate functions.
+\begin{lstlisting}
+# Find the proportion of classes each student has an A+, A, or A- in.
+# The inner query creates a column 'gradeisa' which is 1 if the student's grade
+#    is A+, A, or A-, and 0 otherwise.
+>>> cur.execute("SELECT SI.StudentName, AVG(SG.gradeisa) "
+...             "FROM ("
+...                 "SELECT StudentID, CASE Grade "
+...                     "WHEN 'A+' THEN 1 "
+...                     "WHEN 'A' THEN 1 "
+...                     "WHEN 'A-' THEN 1 "
+...                     "ELSE 0 END AS gradeisa "
+...                 "FROM StudentGrades) AS SG "
+...             "INNER JOIN StudentInfo AS SI "
+...             "ON SG.StudentID == SI.StudentID "
+...             "GROUP BY SG.StudentID;").fetchall()
+[('Cameron Kim', 0.3333333333333333),
+ ('Kristopher Tran', 0.5),
+ ('Alfonso Phelps', 0.0),
+ ('Cassandra Holland', 0.5),
+ ('Michelle Fernandez', 0.0),
+ ('Roberta Cook', 0.0),
+ ('Sammy Burke', 1.0),
+ ('Gilbert Chapman', 0.6666666666666666),
+ ('Mercedes Hall', 0.3333333333333333),
+ ('Rene Cross', 1.0)]
+\end{lstlisting}
+
 \begin{problem} % Average GPA.
 Write a function that accepts the name of a database file.
-Query the database for tuples of the form \li{(StudentName, N, GPA)} where \li{N} is the number of courses that the specified student is enrolled in and \li{GPA} is their grade point average based on the following point system.
+Query the database for tuples of the form \li{(StudentName, N, GPA)} where \li{N} is the number of courses that the specified student is enrolled in and \li{GPA} is their grade point average based on the following point system:
 
 \begin{center}
 \begin{tabular}{lclclcl}

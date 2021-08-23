@@ -165,6 +165,33 @@ When using FuncAnimation, it is essential that a reference is kept to the instan
 The animation is advanced by a timer and if a reference is not held for the object, \li{Python} will automatically garbage collect and the animation will stop.
 \end{info}
 
+\subsection*{Embedding Animations}
+Some systems may struggle with using \li{plt.show()} to display an animation.
+In this case, it may be easier to embed the animation using the HTML5 API. 
+Jupyter notebooks use HTML to display their contents, so we can leverage this and use HTML5's video capabilities to insert video directly into a notebook.
+
+To embed the video directly into a notebook using HTML5 you must use the \li{IPython.display} module.
+This module will be able to interpret an encoded HTML5 video, which \li{matplotlib.animation} can create.
+This method tends to be much more simple than rendering the animation to an \li{.mp4} file and then embedding that file into a notebook, as it does not require an outside encoder, and it tends to be encounter fewer bugs than using \li{plt.show()}.
+Here is a snippet you may reference to embed an animation using \li{IPyton.display}
+\begin{lstlisting}
+# required import statements
+from IPython.display import HTML
+import matplotlib.pyplot as plt
+from matplotlib import animation
+
+# disable interactive mode
+plt.ioff()
+''' 
+Here we would insert whatever code needed to create the animation
+such as instantiating the fig object and defining the update function
+'''
+# create animation
+ani = animation.FuncAnimation(fig, update, frames=N, interval=i)
+# render as html5 and embed
+HTML(ani.to_html5_video())
+\end{lstlisting}
+
 \begin{problem}
 Use the FuncAnimation class to animate the function $y=\sin(x+0.1t)$ where $x \in [0,2\pi]$, and $t$ ranges from $0$ to $100$ seconds. 
 \end{problem}
@@ -225,12 +252,15 @@ The key difference between 2D and 3D animations is that the \li{.set_data()} met
 Instead, set the \li{x} and \li{y} values with \li{.set_data()} as before, and then set the \li{z} values with \li{.set_3d_properties()}.
 The \li{.set_3d_properties()} function call is also made inside the update function. 
 
-\subsubsection*{Saving Animations}
 Animation in 3D requires more careful consideration than in the 2D case.
 When \li{matplotlib} displays a 3D plot, it does so in an interactive figure that allows the user to change the camera angle and position.
 Since 3D rendering is more computationally expensive than 2D rendering, interactive views of 3D animations often have poor framerates and choppy rendering.
-The solution is to use the \li{matplotlib.animation} module's \li{FuncAnimation.save()} method.
-With an installed video encoder, this allows Matplotlib to render a video file of the animation, which can then be displayed inline inside a Jupyter Notebook, or viewed using any video player supporting the chosen filetype. 
+The solution is to use the tools in the \li{matplotlib.animation} module to render the animation and then embed that rendered animation within a Jupyter Notebook.
+This can be done in two ways: embedding the video directly using an HTML5 API, or encoding the animation to an \li{.mp4} video and embedding that video.
+Embedding the video directly tends to be easier, as \li{matplotlib} does not come with an \li{.mp4} video encoder, while it can encode video for HTML5.
+
+\subsubsection*{Saving Animations}
+Saving the animation by encoding it to a \li{.mp4} file will allow you to display the video inline inside a Jupyter Notebook, or view it using any video player supporting the chosen filetype. 
 
 Unfortunately, Matplotlib does not come with a built-in video encoder.
 The \li{matplotlib.animation} module supports several third-party encoders. FFmpeg is a lightweight solution which can be obtained from: \href{https://www.ffmpeg.org/download.html}{https://www.ffmpeg.org/download.html}.
@@ -240,13 +270,16 @@ This turns off matplotlib's interactive mode until \li{plt.ion()} is called.
 After creating the animation object, use its \li{.save()} method with the desired filename to render and save the video. The following code is given for reference:
 
 \begin{lstlisting}
->>> animation.writer = animation.writers['ffmpeg']
->>> plt.ioff()    # Turn off interactive mode to hide rendering animations
->>>
->>> # Code to create figure, axes, update function
->>>
->>> ani = animation.FuncAnimation(fig,update,frames)
->>> ani.save('my_animation.mp4')
+animation.writer = animation.writers['ffmpeg']
+plt.ioff()    # Turn off interactive mode to hide rendering animations
+
+# Code to create figure, axes, update function
+ani = animation.FuncAnimation(fig,update,frames,interval)
+ani.save('my_animation.mp4')
+\end{lstlisting}
+To display the \li{.mp4} video in a Jupyter Notebook, run the following code in a separate markdown cell:
+\begin{lstlisting}
+<video src="planet_ani.mp4" controls>
 \end{lstlisting}
 
 \begin{problem}
@@ -254,13 +287,7 @@ Each row of the arrays in \li{orbits.npz} gives the position of the planets at e
 Create a 3D animation of the planet orbits.
 Display lines for the trajectories of the orbits and points for the current positions of the planets at each point in time.
 Your \li{update()} function will need to return a list of Line3D objects, one for each orbit trajectory and one for each planet position marker.
-Using \li{animation.save()}, save your animated plot as "planet\_ani.mp4". 
-
-To display the mp4 video in a Jupyter Notebook, run the following code in a markdown cell:
-
-\begin{lstlisting}
-<video src="planet_ani.mp4" controls>
-\end{lstlisting}
+Embed your animated plot.
 \end{problem}
 
 \section*{Surface Plotting}

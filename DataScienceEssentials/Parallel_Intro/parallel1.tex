@@ -9,8 +9,20 @@ In this lab, we explore the basic principles of parallel computing by introducin
 }
 
 \section*{Parallel Architectures} % ===========================================
+%Silly metaphor
+Imagine that you are in charge of constructing a very large building.
+You could, in theory, do all of the work yourself, but that would take so long that it simply would be impractical.
+Instead, you hire workers, who collectively can work on many parts of the building at once.
+Managing who does what task takes some effort, but the overall effect is that the building will be constructed many times faster than if only one person was working on it.
+This is the essential idea behind parallel computing.
+% instead of people constructing a building, we have one or more processes running code.
 
 A \emph{serial} program is executed one line at a time in a single process.
+This is analogous to a single person creating a building.
+Since modern computers have multiple processor cores, serial programs only use a fraction of the computer's available resources.
+This is beneficial for smooth multitasking on a personal computer because multiple programs can run at once without interrupting each other.
+
+%%%%%
 \begin{comment} % Takes up space and is somewhat confusing.
 This can be visualized as a program that runs all of its computations on a single processor or core.
 Figure \ref{fig:htop} visualizes what this would look like by using the Linux command \li{htop}.
@@ -30,30 +42,45 @@ This command shows which programs are running, how many resources they are using
   \label{fig:htop}
 \end{figure}
 \end{comment}
-Since modern computers have multiple processor cores, serial programs only use a fraction of the computer's available resources.
-This can be beneficial for smooth multitasking on a personal computer because programs can run uninterrupted on their own core.
-However, to reduce the runtime of large computations, it is beneficial to devote all of a computer's resources (or the resources of many computers) to a single program.
-In theory, this parallelization strategy can allow programs to run $N$ times faster where $N$ is the number of processors or processor cores that are accessible.
-Communication and coordination overhead prevents the improvement from being quite that good, but the difference is still substantial.
+%%%%
 
-A \emph{supercomputer} or \emph{computer cluster} is essentially a group of regular computers that share their processors and memory.
-There are several common architectures that combine computing resources for parallel processing, and each architecture has a different protocol for sharing memory and processors between \emph{computing nodes}, the different simultaneous processing areas.
+For smaller computations, running serially is fine.
+However, some tasks are large enough that running serially could take days, months, or in some cases years.
+In these cases it is beneficial to devote all of a computer's resources (or the resources of many computers) to a single program by running it in \emph{parallel}.
+Each processor can run part of the program on some of the inputs, and the results can be combined together afterwards.
+In theory, using $N$ processors at once can allow the computation to run $N$ times faster.
+Even though communication and coordination overhead prevents the improvement from being quite that good, the difference is still substantial.
+
+A \emph{computer cluster} or \emph{supercomputer} is essentially a group of regular computers that share their processors and memory.
+There are several common architectures that are used for parallel computing, and each architecture has a different protocol for sharing memory, processors, and tasks between \emph{computing nodes}, the different simultaneous processing areas.
 Each architecture offers unique advantages and disadvantages, but the general commands used with each are very similar.
+
+In this lab, we will explore the usage and capabilities of parallel computing using Python's iPyParallel package.
+iPyParallel can be installed with either pip or conda:
+\begin{lstlisting}
+$ pip install ipyparallel
+\end{lstlisting}
+\begin{lstlisting}
+$ conda install ipyparallel
+\end{lstlisting}
 
 \subsection*{The iPyParallel Architecture} % ----------------------------------
 
-In most circumstances, processors communicate and coordinate with a message-passing system such as the standard \emph{Message Passing Interface} (MPI).
-Many basic commands used for parallel programming with MPI are implemented by Python's \li{ipyparallel} package.
+%In most circumstances, processors communicate and coordinate with a message-passing system such as the standard \emph{Message Passing Interface} (MPI).
+%Many basic commands used for parallel programming with MPI are implemented by Python's \li{ipyparallel} package.
 % The iPyParallel architecture gives each node its own processing and memory space.
 % Once constructed, the nodes are coordinated with a master process, directed by the client.
-There are three main parts of the iPyParallel architecture.
+There are three main parts of the iPyParallel architecture:
 \begin{itemize}
-\item \emph{Client}: The main human-written program that is being run.
+\item \emph{Client}: The main program that is being run.
 \item \emph{Controller}: Receives directions from the client and distributes instructions and data to the computing nodes.
 Consists of a \emph{hub} to manage communications and \emph{schedulers} to assign processes to the engines.
-\item \emph{Engines}: The individual computing nodes.
-Each engine is like a separate Python process, each with its own namespace, and computing resources.
+\item \emph{Engines}: The individual processors.
+Each engine is like a separate Python terminal, each with its own namespace and computing resources.
 \end{itemize}
+
+Essentially, a Python program using iPyParallel creates a \li{Client} object connected to the cluster that allows it to send tasks to the cluster and retreive their results.
+The engines run the tasks, and the controller manages which engines run which tasks.
 
 \begin{comment} % OLD
 The \texttt{iPyParallel} architecture can be understood as a \emph{controller} that distributes messages (or commands) and \emph{engines} that receive the messages and run the processes.
@@ -70,11 +97,10 @@ A diagram of the pieces of this architecture can be seen in Figure \ref{fig:ipya
 \end{figure}
 
 \subsection*{Setting up an iPyParallel Cluster} % -----------------------------
-
-Anaconda includes iPyParallel, so it can be installed with \li{conda install ipyparallel}.
-Establishing a cluster on multiple machines requires a bit of extra setup, which is detailed in the Additional Material section.
-For now, we demonstrate how to use a single machine with multiple processor cores as a cluster.
-The following commands initialize parts or all of a cluster in a terminal window.
+Before being able to use iPyParallel in a script or interpreter, it is necessarty to start an iPyParallel cluster.
+We demonstrate here how to use a single machine with multiple processor cores as a cluster.
+Establishing a cluster on multiple machines requires additional setup, which is detailed in the Additional Material section.
+The following commands initialize parts or all of a cluster when run in a terminal window:
 
 \begin{table}[H]
 \begin{tabular}{r|l}
@@ -87,10 +113,11 @@ Command & Description \\ \hline
 
 Each of these processes can be stopped with a keyboard interrupt (\li{Ctrl+C}).
 By default, the controller uses JSON files in \path{UserDirectory/.ipython/profile-default/security/} to determine its settings.
-Once a controller is running, it acts like a server listening for client connections from engine processes.
-Engines connect by default to a controller with the settings defined in the aforementioned JSON files.
-There is no limit to the number of engines that can be started in their own terminal windows and connected to the controller, but it is recommended to only use as many engines areas as there are cores to maximize efficiency.
-Once started, each engine has its own ID number on the controller that is used for communication.
+Once a controller is running, it acts like a server, listening connections from clients and engines.
+%Engines connect by default to a controller with the settings defined in the aforementioned JSON files.
+Engines will connect automatically to the controller when they start running.
+There is no limit to the number of engines that can be started in their own terminal windows and connected to the controller, but it is recommended to only use as many engines as there are cores to maximize efficiency.
+%Once started, each engine has its own ID number on the controller that is used for communication.
 
 \begin{warn} % Do everything in the same directory.
 The directory that the controller and engines are started from matters.
@@ -182,25 +209,31 @@ There is more than one way to do this, but the easiest way is to use the \li{Dir
 
 \begin{problem} % Dummy problem.
 Write a function that initializes a \li{Client} object, creates a \li{DirectView} with all available engines, and imports \li{scipy.sparse} as \li{sparse} on all engines.
+Return the \li{DirectView}.
 \end{problem}
 
 % The \li{DirectView} gives control of the available engines to the user and allows them to interact with each engine individually or as a group.
 % Each engine can be likened to its own iPython terminal with a namespace in which variables, functions, and imports must be defined individually.
 
 \subsection*{Managing Engine Namespaces} % ------------------------------------
+Before continuing, set the \li{DirectView} you are using to use blocking:
+\begin{lstlisting}
+>>> dview.block = True
+\end{lstlisting}
+This affects the way that functions called using the \li{DirectView} return their values.
+Using blocking makes the process simpler, so we will use it initially.
+What blocking is will be explained later.
 
 \subsubsection*{Push and Pull} % - - - - - - - - - - - - - - - - - - - - - - -
 
 The \li{push()} and \li{pull()} methods of a \li{DirectView} object manage variable values in the engines.
 Use \li{push()} to set variable values and \li{pull()} to get variables.
-Each method has an easy shortcut via indexing.
+Each method also has a shortcut via indexing.
 
 \begin{lstlisting}
->>> dview.block = True      # IMPORTANT!! Blocking will be explained later.
-
 # Initialize the variables 'a' and 'b' on each engine.
 >>> dview.push({'a':10, 'b':5})         # OR dview['a'] = 10; dview['b'] = 5
-<<[None, None, None, None]>>            # Output from each engine
+<<[None, None, None, None]>>                # Output from each engine
 
 # Check the value of 'a' on each engine.
 >>> dview.pull('a')                     # OR dview['a']
@@ -232,8 +265,9 @@ Pull the variables back and make sure they haven't changed.
 
 Parallelization almost always involves splitting up collections and sending different pieces to each engine for processing.
 The process is called \emph{scattering} and is usually used for dividing up arrays or lists.
-The inverse process of pasting a collection back together is called \emph{gathering}.
-This method of distributing and collecting a dataset is the foundation of the prominent MapReduce algorithm, a common model for processing large data sets using parallelization.
+The inverse process of pasting a collection back together is called \emph{gathering} and is usually used on the results of processing.
+%This method of distributing and collecting a dataset is the foundation of the prominent MapReduce algorithm, a common model for processing large data sets using parallelization.
+This method of distributing a dataset and collecting the results is common for processing large data sets using parallelization.
 
 \begin{lstlisting}
 >>> import numpy as np
@@ -315,8 +349,7 @@ The iPyParallel equivalent, the \li{<<map>>()} method of the \li{DirectView} cla
 Simply put, it accepts a dataset, splits it between the engines, executes a function on the given elements, returns the results, and combines them into one object.
 % The \texttt{map} function does have a blocking parameter, but, like the \texttt{apply} function, it also has children, \li{map_sync} and \li{map_async}.
 % A couple of examples follow.
-This function also represents a key component in the MapReduce algorithm.
-
+%This function also represents a key component in the MapReduce algorithm.
 
 \begin{lstlisting}
 >>> num_list = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -343,15 +376,17 @@ Parallel commands can be implemented two ways.
 The difference is subtle but extremely important.
 
 \begin{itemize}
-\item \emph{Blocking}: The controller places commands on the specified engines' execution queues, then ``blocks'' execution until every engine finishes its task.
-The main program halts until the answer is received from the controller.
+\item \emph{Blocking}: %The controller places commands on the specified engines' execution queues, then ``blocks'' execution until every engine finishes its task.
+%The main program halts until the answer is received from the controller.
+The main program sends tasks to the controller, and then waits for all of the engines to finish their tasks before continuing (the controller "blocks" the program's execution).
 This mode is usually best for problems in which each node is performing the same task.
-\item \emph{Non-Blocking}: The controller places commands on the specified engines' execution queues, then immediately returns an \li{AsyncResult} object that can be used to check the execution status and eventually retrieve the actual result.
-The main program continues without waiting for responses.
+\item \emph{Non-Blocking}:
+The main program sends tasks to the controller, and then continues without waiting for responses.
+Instead of the results, functions return an \li{AsyncResult} object that can be used to check the execution status and eventually retrieve the actual result.
 \end{itemize}
 
-The execution methods \li{execute()}, \li{<<apply>>()}, and \li{<<map>>()}, as well as \li{push()}, \li{pull()}, \li{scatter()}, and \li{gather()}, each have a keyword argument \li{block} that specifies whether or not to using blocking.
-If not specified, the argument defaults to the \li{block} attribute of the \li{DirectView}.
+Whether a function uses blocking is determined by default by the \li{block} attribute of the \li{DirectView}
+The execution methods \li{execute()}, \li{<<apply>>()}, and \li{<<map>>()}, as well as \li{push()}, \li{pull()}, \li{scatter()}, and \li{gather()}, each have a keyword argument \li{block} that can instead be used to specify whether or not to using blocking.
 Alternatively, the methods \li{apply_sync()} and \li{map_sync()} always use blocking, and \li{apply_async()} and \li{map_async()} always use non-blocking.
 
 % TODO: %time each segment.
@@ -370,37 +405,44 @@ Wall time: 13.9 s>>
 Wall time: 7.08 s>>
 
 # The non-blocking method is faster, but we still need to get its results.
->>> block_results[1]        # This list holds actual result values.
-<<[5.9734047365913572,
- 5.1895936886345959,
- 4.9088268102823909,
- 4.8920224621657855]>>
+# Both methods produced a list, although the contents are different
+>>> block_results[10]  # This list holds actual result values from each engine.
+<<[3.833061790352166,
+4.8943956129713335,
+4.268791758626886,
+4.73533677711277]>>
+
 >>> responses[10]           # This list holds AsyncResult objects.
 <<<AsyncResult: <lambda>:finished>>>
+# We can get the actual results by using the get() method of each AsyncResult
 >>> <p<%time>p> nonblock_results = [r.get() for r in responses]
 <<CPU times: user 3.52 ms, sys: 11 mms, total: 3.53 ms
 Wall time: 3.54 ms>>          # Getting the responses takes little time.
+
+>>> nonblock_results[10]    # This list also holds actual result values
+<<[5.652608204341693,
+4.984164642641558,
+4.686288406810953,
+5.275735658763963]>>
 \end{lstlisting}
-
-As was demonstrated above, when non-blocking is used, commands can be continuously sent to engines before they have finished their previous task.
+When non-blocking is used, commands can be continuously sent to engines before they have finished their previous task.
 This allows them to begin their next task without waiting to send their calculated answer and receive a new command.
-However, this requires a design that incorporates check points to retrieve answers and enough memory to store response objects.
-
-Table \ref{table:asyncresult} details the methods of the \li{AsyncResult} object.
+However, this requires a design that incorporates checkpoints to retrieve answers and enough memory to store response objects.
 
 \begin{table}[H] % AsyncResult methods
-\centering
-\begin{tabular}{l|l}
-Class Method & Description
-\\ \hline
-\li{wait(timeout)} & Wait until the result is available or until \li{timeout} seconds pass.\\& This method always returns \texttt{None}. \\
-\li{ready()} & Return whether the call has completed. \\
-\li{successful()} & Return whether the call completed without raising an exception.\\& Will raise \texttt{AssertionError} if the result is not ready. \\
-\li{get(timeout)} & Return the result when it arrives. If \li{timeout} is not \texttt{None} and the \\& result does not arrive within \li{timeout} seconds then \li{TimeoutError}\\& is raised.
-\end{tabular}
-\caption{All information from \url{https://ipyparallel.readthedocs.io/en/latest/details.html\#AsyncResult}.}
+  \centering
+  \begin{tabular}{l|l}
+  Class Method & Description
+  \\ \hline
+  \li{wait(timeout)} & Wait until the result is available or until \li{timeout} seconds pass.\\%& This method always returns \texttt{None}. \\
+  \li{ready()} & Return whether the call has completed. \\
+  \li{successful()} & Return whether the call completed without raising an exception.\\& Will raise \texttt{AssertionError} if the result is not ready. \\
+  \li{get(timeout)} & Return the result when it arrives. If \li{timeout} is not \texttt{None} and the \\& result does not arrive within \li{timeout} seconds then \li{TimeoutError}\\& is raised.
+  \end{tabular}
+  \caption{All information from \url{https://ipyparallel.readthedocs.io/en/latest/details.html\#AsyncResult}.}
 \label{table:asyncresult}
 \end{table}
+Table \ref{table:asyncresult} details the methods of the \li{AsyncResult} object.
 
 % The \li{DirectView} variable \li{block} controls the default format.
 % Blocking can also be entered as a parameter in most functions.
@@ -411,19 +453,23 @@ Class Method & Description
 % \end{lstlisting}
 
 There are additional magic methods supplied by \li{iPyParallel} that make some of these operations easier.
-These methods are contained in the Additional Material section.
-More information on \li{iPyParallel} architecture, interface, and methods at \url{https://ipyparallel.readthedocs.io/en/latest/index.html}.
-
+These methods are explained in the Additional Material section.
+More information on \li{iPyParallel} architecture, interface, and methods can also be found at \url{https://ipyparallel.readthedocs.io/en/latest/index.html}.
 
 \begin{problem}
 Write a function that accepts an integer $n$.
-Instruct each engine to make $n$ draws from the standard normal distribution, then hand back the minimum, maximum, and mean draw to the client.
-Print the results.
-If you have four engines running, your output should resemble the following:
+Instruct each engine to make $n$ draws from the standard normal distribution, then hand back the mean, minimum, and maximum draws to the client.
+Return the results in three lists.
+
+If you have four engines running, your results should resemble the following:
 \begin{lstlisting}
-<<means = [0.0031776784, -0.0058112042, 0.0012574772, -0.0059655951]>>
-<<maxs = [4.0388107, 4.3664958, 4.2060184, 4.3391623]>>
-<<mins = [-4.1508589, -4.3848019, -4.1313324, -4.2826519]>>
+>>> means, mins, maxs = problem3(1000000)
+>>> means
+<<[0.0031776784, -0.0058112042, 0.0012574772, -0.0059655951]>>
+>>> mins
+<<[-4.1508589, -4.3848019, -4.1313324, -4.2826519]>>
+>>> maxs
+<<[4.0388107, 4.3664958, 4.2060184, 4.3391623]>>
 \end{lstlisting}
 \label{prob:parallel-apply-basic}
 \end{problem}
@@ -436,6 +482,7 @@ For $n = 1000000, 5000000, 10000000, 15000000,$
 \item Time how long it takes to do the same process serially. Make $n$ draws and then calculate and record the statistics, but use a \li{for} loop with $N$ iterations, where $N$ is the number of engines running.
 \end{enumerate}
 Plot the execution times against $n$.
+%Create a function that plots the execution times against $n$.
 You should notice an increase in efficiency in the parallel version as the problem size increases.
 \end{problem}
 
@@ -481,12 +528,12 @@ As a result, it is very commonly used today and has many applications, such as t
 \item Graphic rendering
 \item Facial recognition with large databases
 \item Numerical integration
-\item Calculating Discrete Fourier Transforms
+\item Calculating discrete Fourier transforms
 \item Simulation of various natural processes (weather, genetics, etc.)
 \item Natural language processing
 \end{itemize}
-In fact, there are many problems that are only possible to solve through parallel computing because solving them serially would take too long.
-In these types of problems, even the parallel solution could take years.
+In fact, there are many problems that are only feasible to solve through parallel computing because solving them serially would take too long.
+With some of these problems, even the parallel solution could take years.
 Some brute-force algorithms, like those used to crack simple encryptions, are examples of this type of problem.
 
 The problems mentioned above are well suited to parallel computing because they can be manipulated in such a way that running them on multiple processors results in a significant run time improvement.
@@ -551,8 +598,8 @@ Return this sum.
 The phrase \emph{parallel computing} refers to designing an architecture and code that makes the best use of computing resources for a problem.
 Occasionally, this will require nodes to be interdependent on each other for previous results.
 This contributes to a slower result because it requires a great deal of communication latency, but is sometimes the only method to parallelize a function.
-Although important, the ability to effectively communicate between engines has not been added to \texttt{iPyParallel}.
-It is, however, possible in an MPI framework and will be covered in a later lab.
+Although important, the ability to effectively communicate between engines has not been added to iPyParallel.
+It is, however, possible in an MPI framework and will be covered in the MPI lab.
 
 % Old problem
 %\begin{problem}
@@ -597,6 +644,7 @@ It is, however, possible in an MPI framework and will be covered in a later lab.
 \newpage
 \section*{Additional Material}
 
+\begin{comment} %Redundant
 \subsection*{Installation and Initialization}
 
 If you have not already installed \li{ipyparallel}, you may do so using the conda package manager.
@@ -606,6 +654,7 @@ $ conda update conda
 $ conda update anaconda
 $ conda install ipyparallel
 \end{lstlisting}
+\end{comment}
 
 \subsection*{Clusters of Multiple Machines}
 
@@ -639,7 +688,7 @@ In order to avoid this, the use of SSH Keys from computer to computer is recomme
 
 
 \subsection*{Magic Methods \& Decorators}
-To be more usable, the \texttt{iPyParallel} module has incorporated a few magic methods and decorators for use in an interactive iPython or Python terminal.
+To be more easily usable, the \texttt{iPyParallel} module has incorporated a few magic methods and decorators for use in an interactive iPython or Python terminal.
 
 \subsubsection*{Magic Methods}
 The \texttt{iPyParallel} module has a few magic methods that are very useful for quick commands in iPython or in a Jupyter Notebook.
@@ -724,11 +773,6 @@ Examples of these decorators are as follows.
 %If you put the \li{\%\%px} magic at the beginning of a cell of code, that cell of code will be executed on each engine.
 %This tool is very useful for designing and debugging parallel algorithms.
 %\end{info}
-
-\subsection*{Connecting \texttt{iPyParallel} with MPI}
-The \texttt{iPyParallel} cluster can be imbued with the ability to interpret MPI commands.
-More information on making this connection can be found at \url{https://ipyparallel.readthedocs.io/en/latest/mpi.html}.
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%% Old Problems %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{comment}
