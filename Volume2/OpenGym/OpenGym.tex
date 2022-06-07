@@ -249,7 +249,66 @@ Q-learning requires 3 hyperparameters:
 \item \li{gamma}: the discount factor. The discount factor determines how important the reward of the current action is compared to the following action.
 \item \li{epsilon}: the maximum value. This is the max reward that can be earned from a future action (not the current).
 \end{enumerate}
-These hyperparameters can be changed to created different Q-tables.
+These hyperparameters can be changed to create different Q-tables. The following function will generate the optimal Q-table.
+
+\begin{lstlisting}
+def find_qvalues(env,alpha=.1,gamma=.6,epsilon=.1):
+    """
+    Use the Q-learning algorithm to find qvalues.
+    Parameters:
+        env (str): environment name
+        alpha (float): learning rate
+        gamma (float): discount factor
+        epsilon (float): maximum value
+    Returns:
+        q_table (ndarray nxm)
+    """
+    # Make environment
+    env = gym.make(env)
+    # Make Q-table
+    q_table = np.zeros((env.observation_space.n,env.action_space.n))
+
+    # Train
+    for i in range(1,100001):
+        # Reset state
+        state = env.reset()
+
+        epochs, penalties, reward, = 0,0,0
+        done = False
+
+        while not done:
+            # Accept based on alpha
+            if random.uniform(0,1) < epsilon:
+                action = env.action_space.sample()
+            else:
+                action = np.argmax(q_table[state])
+
+            # Take action
+            next_state, reward, done, info = env.step(action)
+
+            # Calculate new qvalue
+            old_value = q_table[state,action]
+            next_max = np.max(q_table[next_state])
+
+            new_value = (1-alpha) * old_value + alpha * (reward + gamma * next_max)
+            q_table[state, action] = new_value
+
+            # Check if penalty is made
+            if reward == -10:
+                penalties += 1
+
+            # Get next observation
+            state = next_state
+            epochs += 1
+
+        # Print episode number
+        if i % 100 == 0:
+            clear_output(wait=True)
+            print(f"Episode: {i}")
+
+    print("Training finished.")
+    return q_table
+\end{lstlisting}
 
 \begin{problem}
 The environment \li{"Taxi-v3"} shows a taxi on a city grid.

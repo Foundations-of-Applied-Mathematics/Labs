@@ -5,139 +5,199 @@
 
 \section*{Advection-Diffusion of Heat in a Fluid}
 
+%%%% Old explanation
+\begin{comment}
 We begin with the heat equation
 \begin{align*}
 y_t = \epsilon y_{xx} + f(x) %\label{FEM:diffusion}
 \end{align*}
 where $f(x)$ represents any heat sources in the system, and $\epsilon y_{xx}$ models the diffusion of heat.
 We wish to study the distribution of heat in a fluid that is moving at some constant speed $a$.
-This can be modelled by adding an advection or transport term to the heat equation, giving us
+This can be modelled by adding an \textit{advection} or \textit{transport} term to the heat equation, giving us
 \begin{align*}
 y_t + ay_x = \epsilon y_{xx} + f(x).
 \end{align*}
-We consider a fluid flowing through a pipe from $x = 0$ to $x = 1$ with  speed $a = 1$, and as it travels it is warmed at a constant rate $f= 1$.
-We will impose the condition that $y = 2$ at $x = 0$, so that the fluid is already at a constant temperature as it enters the pipe. 
+We consider the scenario of a fluid flowing through a pipe from $x = 0$ to $x = 1$ with  speed $a = 1$, and as it travels it is warmed at a constant rate $f= 1$.
+Suppose that the fluid is already at a known temperature \(y=2\) as it enters the pipe.
+This imposes the boundary condition \(y(0)=2\).
 
 These conditions yield 
 \begin{align*}
 	&{ } y_t + y_x = \epsilon y_{xx} + 1, \quad 0 < x < 1, \\
 	&{ } y(0) = 2
 \end{align*}
-As time increases we expect the temperature of the fluid in the pipe to reach a steady state distribution, with $y_t = 0$. The heat distribution then satisfies 
+As time progresses, we expect the temperature of the fluid in the pipe to reach a steady state distribution, with $y_t = 0$. The heat distribution then satisfies 
 \begin{align*}
 \begin{split}
 &{ } \epsilon y'' - y' = -1, \quad 0 < x < 1,\\
 &{ } y(0) = 2.
 \end{split}
 \end{align*}
-This problem is not fully defined, since it has only one boundary condition.
+This problem is not fully specified, since it is a linear second-order ODE but has only one boundary condition.
 Suppose a device is installed on the end of the pipe that nearly instantaneously brings the heat of the water up to $y = 4$.
-Physically we expect this extra heat that is introduced at $x = 1$ to diffuse backward through the water in the pipe. This leads to a well defined BVP, 
+Physically, we expect this extra heat that is introduced at $x = 1$ to diffuse backward through the water in the pipe. This leads to a well defined BVP 
 \begin{align}
 	\begin{split}
 	&{ } \epsilon y'' - y' = -1, \quad 0 < x < 1, \\
 	&{ } y(0) = 2, \quad y(1) = 4.
 	\end{split}\label{eqn:FEM_steady_state}
 \end{align}
+\end{comment}
+
+%%%%%%%%%%
+
+We wish to study the distribution of heat in a fluid that is moving at some constant speed $a$.
+Let \(y\) denote the temperature of the fluid at any given location and time.
+The equation modeling this situation can be obtained from the differential form of the conservation law, where the flux is the sum of a diffusive term \(-\epsilon y_x\) and an advection (or transport) term \(ay\):
+\[
+J = ay - \epsilon y_x
+\]
+The one-dimension conservation law states that \(y\) must then obey the partial differential equation \(
+y_t + J_x = f(x)
+\), where \(f\) represents heat sources in the system.
+Since \(J_x = ay_x-\epsilon y_{xx}\), we obtain the \textit{advection-diffusion equation}
+\begin{align*}
+y_t+ay_x &=\epsilon y_{xx} +  f(x).
+\end{align*}
+As time progresses, we expect the temperature of the fluid in the pipe to reach a steady state distribution, with $y_t = 0$.
+Once this steady state has been reached, the heat distribution \(y\) then satisfies the ODE
+\begin{align*}
+\epsilon y'' -ay' = -f(x).
+\end{align*}
+
+We consider the scenario of a fluid flowing through a pipe from $x = 0$ to $x = 1$ with  speed $a = 1$, and as it travels it is warmed at a constant rate $f(x)= 1$.
+Note that since this a second-order ODE, we need two boundary conditions.
+Suppose that the fluid is already at a known temperature \(y=2\) as it enters the pipe.
+This imposes the boundary condition \(y(0)=2\).
+Suppose further that a device is installed on the end of the pipe that nearly instantaneously brings the heat of the water up to $y = 4$.
+Physically, we expect this extra heat that is introduced at $x = 1$ to diffuse backward through the water in the pipe and thus influence the steady-state temperature.
+Putting this together leads to a well defined BVP:
+\begin{align}
+	\begin{split}
+	&{ } \epsilon y'' - y' = -1, \quad 0 < x < 1, \\
+	&{ } y(0) = 2, \quad y(1) = 4.
+	\end{split}\label{eqn:FEM_steady_state}
+\end{align}
+The analytic solution for \(\epsilon=0.1\) is shown in Figure \ref{fig:FEM_analytic_solution}.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\textwidth]{FEM_solution.pdf}
-\caption{The solution of \eqref{eqn:FEM_steady_state} for $\epsilon = .1$.}
+\includegraphics[width=\textwidth]{figures/FEM_solution.pdf}
+\caption{The analytic solution of \eqref{eqn:FEM_steady_state} for $\epsilon = 0.1$.}
 \label{fig:FEM_analytic_solution}
 \end{figure}
 
 \section*{The Weak Formulation}
-Consider the equation
+Stepping back momentarily, consider the equation
 \begin{align}
 	\begin{split}
-	&{ }\epsilon y'' - y' = f, \quad 0 < x < 1,\\
+	&{ }\epsilon y'' - y' = -f, \quad 0 < x < 1,\\
 	&{ }y(0) = \alpha, \quad y(1) = \beta .
 	\end{split}\label{eqn:FEM_eqn1}
 \end{align}
-To find the solution $y$ using the finite element method, we reframe the problem and look at what is known as its weak formulation.
+To approximate the solution $y$ using the finite element method, we reframe the problem into one involving integrals, known as its \textit{weak formulation}.
 
 Let $w$ be a smooth function on $[0,1]$ satisfying $w(0) = w(1) = 0$.
 Multiplying \eqref{eqn:FEM_eqn1} by $w$ and integrating over $[0,1]$ yields
 \begin{align*}
-	\int_0^1 f w &= \int_0^1 \epsilon y''w - y'w, \\
-	&= \int_0^1 -\epsilon y'w' - y'w.
+	\int_0^1 -f w\,dx &= \int_0^1 (\epsilon y''w - y'w)\, dx, \\
+	&= \int_0^1 (-\epsilon y'w' - y'w)\,dx,
 \end{align*}
-Define a bilinear function $a$ and a linear function $l$ by
+where the second equality follows by integration by parts.
+For notational convenience, define the functionals $a$ and $l$ by
 \begin{align*}
-a(y,w) &= \int_0^1 -\epsilon y'w' - y'w,\\
-l(w) &= \int_0^1 f w.
+a(y,w) &= \int_0^1 -\epsilon y'w' - y'w\,dx,\\
+l(w) &= \int_0^1 -f w\,dx.
 \end{align*}
-Rather than trying to solve \eqref{eqn:FEM_eqn1}, we instead consider the problem of finding a function $y$ such that
+Then, any solution to \eqref{eqn:FEM_eqn1} will also satisfy
 \begin{align}
-	a(y,w) &= l(w), \quad \forall \, w \in V_0,
+	a(y,w) &= l(w)
 	\label{eqn:FEM_integral_form}
 \end{align}
-where $V$ is some appropriate vector space that is expected to allow us to approximate the solution $y$, and $V_0 = \{w \in V|w(0) = w(1) = 0\}$.
-(For example, we could consider the space of functions that are piecewise linear with vertices at a fixed set of points.
-This example is discussed further below.)
-This equation is called the weak formulation of \eqref{eqn:FEM_eqn1}.
+This equation is the \textit{weak formulation} of \eqref{eqn:FEM_eqn1}.
+Note that any solution to the original ODE is also a solution to the weak formulation.
+However, solutions to the weak formulation need not be solutions to the original ODE, as they may not even be differentiable everywhere.
+While this may seem like an undesirable property, it allows us to use a wider variety of functions to approximate the true solution.
 
-Let $\mathrm{P}_n$ be some partition of $[0,1]$, $0 = x_0 < x_1< \ldots < x_{n} = 1$, and let $V_n$ be the finite-dimensional vector space of continuous functions $v$ on $[0,1]$ where $v$ is linear on each subinterval $[{x_j,x_{j+1}}]$.
+Now, we choose some appropriate vector space \(V\) of functions, and consider the problem of finding a function $y\in V$ that satisfies the weak formulation \eqref{eqn:FEM_integral_form} for all $w\in V_0 = \{w \in V|w(0) = w(1) = 0\}$.
+The \textit{finite element method} consists of choosing \(V\) to be some set of piecewise polynomial functions.
+In this lab, we will consider the case of using piecewise linear functions.
+
+\section*{The Finite Element Method}
+
+Let $\mathrm{P}_n$ be some partition of $[0,1]$, $0 = x_0 < x_1< \ldots < x_{n} = 1$, and let $V_n$ be the set of continuous linear piecewise functions $v$ on $[0,1]$ such that $v$ is linear on each subinterval $[x_j,x_{j+1}]$.
 These subintervals are the finite elements for which this method is named.
-$V_n$ has dimension $n+1$, since there are $n+1$ degrees of freedom for continuous piecewise linear functions in $V$.
-Let $V_{n0}$ be the subspace of $V_n$ of dimension $n-1$ whose elements are zero at the endpoints of $[0,1]$, and let $\triangle x_n = \max_{0 \leq j \leq n-1}|x_{j+1} - x_j|$.
+Note that $V_n$ has dimension $n+1$, since each of the continuous piecewise linear functions in $V$ are uniquely determined by their values at the \(n+1\) points \(x_0,x_1\ldots,x_n\).
+Let $V_{n,0}$ be the subspace of $V_n$ of dimension $n-1$ whose elements are zero at the endpoints of $[0,1]$.
+%We now seek to find a convenient basis for \(V_n\) in order to apply \eqref{eqn:FEM_integral_form}
 
-Let $\{\mathrm{P}_n\}$ be a sequence of partitions that are refinements of each other, such that $\triangle x_n \to 0$ as $n \to \infty$.
-Then in particular $V_1 \subset V_2 \subset \ldots \subset V_n \ldots \subset V$.
-For each partition $\mathrm{P}_n$ we can look for an approximation $y_n \in V_n$ for the true solution $y$; if this is done  correctly then $y_n \to y$ as $n \to \infty$.
+%Now, consider $\{\mathrm{P}_n\}$ be a sequence of partitions that are refinements of each other, such that $\triangle x_n \to 0$ as $n \to \infty$.
+%Then in particular $V_1 \subset V_2 \subset \ldots \subset V_n \ldots \subset V$.
+%For each partition $\mathrm{P}_n$ we can find an approximation $y_n \in V_n$ for the true solution $y$; if this is done correctly then $y_n \to y$ as $n \to \infty$.
 
-\section*{The Numerical Method}
-Consider a partition $\mathrm{P}_5 = \{x_0, x_1, \ldots, x_5\}$.
-We will define some basis functions $\phi_i$, $i = 0, \ldots, 5$ for the corresponding vector space $V_5$.
 Let the $\phi_i$ be the hat functions 
 \[\phi_i(x) = \begin{cases}
-(x - x_{i-1})/h_i \quad \quad\text{ if } x \in [x_{i-1},x_i]\\
- (x_{i+1} - x)/h_{i+1} \quad \text{ if } x \in [x_{i},x_{i+1}]\\
-0 \quad \quad \quad \quad \quad \quad \quad \,\,\text{ otherwise}
+(x - x_{i-1})/h_i &\text{ if } x \in [x_{i-1},x_i]\\
+ (x_{i+1} - x)/h_{i+1}  &\text{ if } x \in [x_{i},x_{i+1}]\\
+0 &\text{ otherwise}
 \end{cases}\]
 where $h_i = x_i - x_{i-1}$; see Figures \ref{fig:FEM_one_basis_function} and \ref{fig:FEM_basis_functions}. 
+These hat functions form a basis for $V_n$.
+Note that the points \(x_0,\ldots,x_n\) need not be evenly spaced, and the \(h_i\) do not need to be equal.
+This is in fact one of the major strengths of this approach, as it allows adapting the points in the partition to the problem, which can reduce the error in the approximation.
+When applied to PDEs, it also is a simple way to handle unusually-shaped domains.
+
+We now can write our approximate solution for \(y\) and the arbitrary function \(w\) as a linear combination of these basis elements, which will enable us to solve the system numerically.
+In particular, we can write \(\hat{y}(x)=\sum_{i=0}^n k_i \phi_i(x)\), where the \(k_i\) are to be determined.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\textwidth]{one_basis_function.pdf}
-\caption{The basis function $\phi_3$.}
+\includegraphics[width=\textwidth]{figures/one_basis_function.pdf}
+\caption{The basis function $\phi_3$, when the \(x_i\) are evenly spaced.}
 \label{fig:FEM_one_basis_function}
 \end{figure}
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\textwidth]{basis_functions.pdf}
-\caption{Basis functions for $V_5$.}
+\includegraphics[width=\textwidth]{figures/basis_functions.pdf}
+\caption{The six basis functions for $V_5$, when the \(x_i\) are evenly spaced.}
 \label{fig:FEM_basis_functions}
 \end{figure}
 
-We look for an approximation $\hat{y} = \sum_{i=0}^5 k_i \phi_i \in V_5$ of the true solution $y$; to do this we must determine appropriate values for the constants $k_i$.
+To make things more concrete, consider the case of \(n=5\) with the partition $\mathrm{P}_5 = \{x_0, x_1, \ldots, x_5\}$.
+We look for an approximation $\hat{y} = \sum_{i=0}^5 k_i \phi_i \in V_5$ of the true solution $y$; to do this, we must determine appropriate values for the constants $k_i$.
 We impose the condition on $\hat{y}$ that 
-\[a(\hat{y},w) = l(w) \quad \forall \, w \in V_{5}.\]
-Equivalently, we require that 
+\[a(\hat{y},w) = l(w)\]
+for all \(w \in V_{5,0}\).
+This can be written equivalently as 
 \[a \left( \sum_{i=0}^5 k_i \phi_i,\phi_j \right) = l(\phi_j) \quad \text{for } j = 1,2,3,4,\]
-since $\phi_1, \phi_2, \phi_3, \phi_4$ form a basis for $V_{5}$.
-
-Since $a$ is bilinear, we obtain 
+since \(a\) and \(l\) are linear in \(w\) and $\phi_1, \phi_2, \phi_3, \phi_4$ form a basis for $V_{5,0}$.
+Since $a$ is also linear in \(y\), we further obtain 
 \[\sum_{i=0}^5 k_i  a ( \phi_i,\phi_j ) = l(\phi_j) \quad \text{for } j = 1,2,3,4.\]
-To satisfy the boundary conditions, we also require that $k_0 = \alpha$, $k_5 = \beta$.
-These equations can be written in matrix form as
+To satisfy the boundary conditions, we necessarily have that $k_0 = \alpha$, $k_5 = \beta$.
+These equations can be written together in matrix form as
 \begin{align} AK = \Phi,\label{eqn:FEM_linear_system}\end{align}
 where
 \[A = \left[\begin{array}{cccccc}1 & 0 & 0 & 0 & 0 & 0 \\a(\phi_0,\phi_1) & a(\phi_1,\phi_1) & a(\phi_2,\phi_1) & 0 & 0 & 0 \\0 & a(\phi_1,\phi_2) & a(\phi_2,\phi_2) & a(\phi_3,\phi_2) & 0 & 0 \\0 & 0 & a(\phi_2,\phi_3) & a(\phi_3,\phi_3) & a(\phi_4,\phi_3) & 0 \\0 & 0 & 0 & a(\phi_3,\phi_4) & a(\phi_4,\phi_4) & a(\phi_5,\phi_4) \\0 & 0 & 0 & 0 & 0 &1\end{array}\right]\]
 and
 \[K = \left[\begin{array}{c}k_0 \\k_1 \\k_2 \\k_3 \\k_4 \\k_5\end{array}\right] , \quad\Phi =  \left[\begin{array}{c}\alpha \\l(\phi_1) \\l(\phi_2) \\l(\phi_3) \\l(\phi_4) \\\beta\end{array}\right].\]
 
-Note that $a(\phi_i,\phi_j) = 0$ for most values of $i, j$ (that is, when the hat functions do not have overlapping domains).
-Thus the finite element method results in a sparse linear system.
+Note that since $a(\phi_i,\phi_j) = 0$ for most values of $i, j$ (in particular, when the hat functions do not have overlapping domains), the finite element method results in a sparse linear system.
 To compute the coefficients of \eqref{eqn:FEM_linear_system} we begin by evaluating some integrals.
 Since
-\[\phi_i'(x) = \begin{cases}
+\begin{align*}
+\phi_i(x) &= \begin{cases}
+(x - x_{i-1})/h_i &\text{ if } x \in [x_{i-1},x_i]\\
+ (x_{i+1} - x)/h_{i+1}  &\text{ if } x \in [x_{i},x_{i+1}]\\
+0 &\text{ otherwise}
+\end{cases}
+\\
+\phi_i'(x) &= \begin{cases}
 1/h_i \quad \quad \quad \, \text{for } x_{i-1} < x < x_i,\\
  -1/h_{i+1} \quad \text{ for } x_{i} < x < x_{i+1},\\
 0 \quad \quad \quad \quad \, \text{ otherwise},
-\end{cases}\]
+\end{cases}
+\end{align*}
 we obtain
 \begin{align*}
 \int_0^1  \phi_i'\phi_j' &= \begin{cases}
@@ -149,19 +209,21 @@ we obtain
 - 1/2 \quad \,\text{ if } j=i+1,\\
 1/2 \quad \quad \text{ if } j=i-1,\\
 0 \quad \quad \quad \text{ otherwise},
-\end{cases} \\
+\end{cases}
+\end{align*}
+which can be put together to obtain (for \(f(x)=1\))
+\begin{align*}
 a(\phi_i,\phi_j) &= \begin{cases}
 \epsilon/h_{i+1} + 1/2 \quad \quad \, \text{ if } j=i+1,\\
 -\epsilon/h_i -\epsilon/h_{i+1} \quad  \text{ if } j=i,\\
 \epsilon/h_i - 1/2 \quad \quad \quad \, \text{ if } j=i-1,\\
 0 \quad \quad \quad \quad \quad \quad \,\,\,\,\,\,\, \text{ otherwise},
 \end{cases}\\
-l(\phi_j) &= -(1/2)(h_j + h_{j+1}).
+l(\phi_j) &= -\frac{1}{2}(h_j + h_{j+1}).
 \end{align*}
 Equation \eqref{eqn:FEM_linear_system} may now be solved using any standard linear solver. 
-To handle the large number of elements required for Problem \ref{prob:FEM_accuracy_comparison}, you will want to use the tridiagonal algorithm provided in several of the earlier labs 
-% (for example Lab \ref{lab:finitedifference1}), 
-or the banded matrix solver included in \li{scipy.linalg}.
+To handle the large number of elements required for Problem \ref{prob:FEM_accuracy_comparison}, you will want to use sparse matrices from \li{scipy.sparse}.
+
 
 \begin{problem}
 Use the finite element method to solve
@@ -175,6 +237,10 @@ where $\alpha = 2, \beta = 4$, and $\epsilon = 0.02$.
 Use $N = 100$ finite elements ($101$ grid points).
 Compare your solution with the analytic solution
 \[y(x) = \alpha + x + (\beta - \alpha - 1 ) \frac{e^{x/\epsilon} -1}{e^{1/\epsilon} -1}.\]
+
+Hint: 
+One additional nice consequence of this setup is that the approximation \(\hat{y}\) is exactly the piecewise linear function that connects the points \((x_i, k_i)\).
+This means that the solution can be plotted very simply using \li{plt.plot(x, k)}, where \li{x} and \li{k} are arrays of the \(x_i\) and \(k_i\).
 \end{problem}
 
 \begin{problem}
@@ -189,8 +255,8 @@ clustered_grid = np.linspace(0,1,15)**(1./8)
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\textwidth]{FEM_compare_methods.pdf}
-\caption{We plot two finite element approximations using 15 grid points. }
+\includegraphics[width=\textwidth]{figures/FEM_compare_methods.pdf}
+\caption{Two finite element approximations using 15 grid points, with different spacings. }
 \label{fig:FEM_compare_methods}
 \end{figure}
 
@@ -204,15 +270,17 @@ Low order methods generally require more floating point operations, so roundoff 
 The finite element method introduced here is a second order method, even though the approximate solution is piecewise linear.
 (To see this, note that if the grid points are evenly spaced, the matrix $A$ in \eqref{eqn:FEM_linear_system} is exactly the same as the matrix for the second order centered finite difference method.)
 
-Solve \eqref{eqn:FEM_exercise} with the finite element method using $N = 2^i$  finite elements, $i = 4, 5, \ldots, 21$.
-Use a log-log plot to graph the error; see Figure \ref{fig:FEM_error_2nd_order}.
+Solve \eqref{eqn:FEM_exercise} with the finite element method using $N = 2^i$ evenly-spaced finite elements, $i = 4, 5, \ldots, 21$.
+Remember to use sparse matrices, as this greatly reduces the memory and computation needed for the larger \(N\).
+Compute the error as the maximum absolute value of the difference of the values of the approximate and true solutions at each of the \(x_i\).
+Use a log-log plot to graph the error, and compare with Figure \ref{fig:FEM_error_2nd_order}.
 \end{problem}
 
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\textwidth]{FEM_error_2nd_order.pdf}
-\caption{Error for the second order finite element method, as the number of subintervals $n$ grows. Round-off error eventually overwhelms the approximation. }
+\includegraphics[width=\textwidth]{figures/FEM_error_2nd_order.pdf}
+\caption{Error for the second order finite element method, as the number of subintervals $N$ grows. Round-off error eventually overwhelms the approximation. }
 \label{fig:FEM_error_2nd_order}
 \end{figure}
 

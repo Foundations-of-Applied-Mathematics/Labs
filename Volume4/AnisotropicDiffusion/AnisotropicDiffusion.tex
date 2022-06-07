@@ -68,7 +68,7 @@ from matplotlib import cm, pyplot as plt
 from imageio import imread
 
 # To read in an image, convert it to grayscale, and rescale it.
-picture = imread('balloon.png', as_gray=True) * 1./255
+picture = imread('balloon.jpg', as_gray=True) * 1./255
 
 # To display the picture as grayscale
 plt.imshow(picture, cmap=cm.gray)
@@ -175,9 +175,9 @@ Measure the difference between pixels using the $2$-norm.
 Use the corresponding vector versions of the boundary conditions given in Problem \ref{prob:anisdiff_bw}.
 
 \begin{lstlisting}
-def anisdiff_color(U, N, lambda_, sigma):
+def anisdiff_color(U, N, lambda_, g):
     """ Run the Anisotropic Diffusion differencing scheme
-    on the array U of grayscale values for an image.
+    on the array U of color values for an image.
     Perform N iterations, use the function g = e^{-x^2/sigma^2}
     to limit diffusion across boundaries in the image.
     Operate on U inplace to optimize performance. """
@@ -208,7 +208,7 @@ from numpy.random import randint
 
 image = imread('balloon.jpg', as_gray=True)
 x, y = image.shape
-for i in xrange(x*y//100):
+for i in range(x*y//100):
 	image[randint(x),randint(y)] = 127 + randint(127)
 \end{lstlisting}
 
@@ -220,7 +220,7 @@ Hint: Don't forget to rescale.
 \end{problem}
 
 
-\section*{Minimum Bias (Optional)}
+\section*{Minimum Bias}
 
 This sort of anisotropic diffusion can be very effective, but, depending on the image, it may also smear out edges that do not have large differences between them.
 An example of this limitation can be seen in Figure \ref{fig:anisdif_smearing}
@@ -228,13 +228,13 @@ An example of this limitation can be seen in Figure \ref{fig:anisdif_smearing}
 \begin{figure}
 \begin{minipage}[b]{.45\linewidth}
 \centering
-\includegraphics[width=\textwidth]{baloons_resized_bw.jpg}
+\includegraphics[width=\textwidth]{original_color_img_prob2.jpg}
 \caption*{original image}
 \end{minipage}
 \hspace{0.5cm}
 \begin{minipage}[b]{0.45\linewidth}
 \centering
-\includegraphics[width=\textwidth]{baloons_resized_bw_50.jpg}
+\includegraphics[width=\textwidth]{50_iterations_color_prob2.jpg}
 \caption*{after 50 iterations}
 \end{minipage}
 \caption{Smearing of similar colors when using an anisotropic diffusion filter.}
@@ -255,8 +255,7 @@ As long as you leave $\lambda \leq \frac{1}{4}$ and you have scaled the pixels t
 To demonstrate the action of such a filter, we make changes to random pixels in the color version of the same photo and use both filters to remove the noise we have added.
 Below, we include an example where we have added noise to the color version of that same picture, then used a minimum-biased filter to diminish the noise and the original filter to smooth what remains.
 
-\begin{problem*}
-(Optional)
+\begin{problem}
 
 Implement the minimum-biased finite difference scheme described above.
 Add noise to \li{balloons_color.jpg} using the provided code below, and clean it using your implementation.
@@ -265,14 +264,14 @@ Show the original image, the noised image, and the cleaned image.
 \begin{lstlisting}
 image = imread('balloons_color.jpg')
 x,y,z = image.shape
-for dim in xrange(z):
-    for i in xrange(x*y//100):
+for dim in range(z):
+    for i in range(x*y//100):
         # Assign a random value to a random place
         image[randint(x),randint(y),dim] = 127 + randint(127)
 \end{lstlisting}
 Hint: Don't forget to rescale.
 
-\end{problem*}
+\end{problem}
 
 \newpage
 \vfill

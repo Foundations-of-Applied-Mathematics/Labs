@@ -1,10 +1,11 @@
-\lab{Conservation laws and heat flow}{Heat Flow}
+\lab{Conservation Laws and Heat Flow}{Heat Flow}
 \label{lab:HeatFlow}
 
-A conservation law is a balance law, and corresponds to an equation that describes how a quantity is balanced in some system throughout a given process.
-(Consider how this is related to conservation laws in physics.)
-For example, suppose we are keeping track of some measurable quantity in a physical system (e.g. heat, water, etc).
-The fundamental conservation law then states that the rate of change of the total quantity in the system is equal to the rate of the quantity flowing into the system plus the rate at which the quantity is produced by sources inside the system.
+Many physical phenomena have a conservation law associated with them.
+For instance, matter, energy, and momentum are all conserved quantities.
+The \textit{fundamental conservation law} states that the rate of change of the total quantity in the system is equal to the rate that the quantity enters the system plus the rate at which the quantity is produced by sources inside the system.
+While this is a \textit{global} property, we can use it to obtain a \textit{local} differential equation that the concentration of the quantity must obey everywhere in the system.
+Because of this, conservation laws are very important in modeling a wide variety of phenomena.
 
 \section*{Derivation of the Conservation equation in multiple dimensions}
 Suppose $\Omega$ is a region in $\mathbb{R}^n$, and $V \subset \Omega$ is bounded with a reasonably well-behaved boundary $\partial V$.
@@ -24,37 +25,42 @@ If $u$ and $J$ are sufficiently smooth functions, then we have
 \[ \frac{d}{dt} \int_V u\, d\vec{x} = \int_V u_t \, d\vec{x},\]
 and
 \[ \int_{\partial V} \vec{J}\cdot \vec{n}\, dA = \int_V \nabla \cdot \vec{J}\, d\vec{x} .\]
-Since this holds for all nice subsets $V \subset \Omega$ with $V$ arbitrarily small, we obtain the differential form of the conservation law for $u$:
+Putting these together yields
+\[
+\int_Vu(\vec x,t)\,d\vec x = \int_V\left(
+-\nabla\cdot \vec{J} + g(\vec{x},t,u)
+\right)\,d\vec x
+\]
+Since this holds for all nice subsets $V \subset \Omega$ with $V$ arbitrarily small, the integrands must be equal everywhere, and we obtain the differential form of the conservation law for $u$:
 \[ u_t + \nabla \cdot \vec{J} = g(\vec{x},t,u) ,\]
-where $\nabla$ is the gradient function and $\nabla \cdot \vec{J} = \frac{\partial J_1}{\partial x_1} + \dots + \frac{\partial J_n}{\partial x_n}$
+where $\nabla$ is the gradient operator and $\nabla \cdot \vec{J} = \frac{\partial J_1}{\partial x_1} + \dots + \frac{\partial J_n}{\partial x_n}$
 
 \section*{Constitutive Relations}
-Currently our conservation law appears in the form
-\[u_t + \nabla \cdot \vec{J} = g(\vec{x},t,u).\]
-Thus the conservation law consists of one equation and 2 unknowns ($u$ and $J$).
-To this equation we add other equations, called constitutive relations, which are used to fully determine the system.
+So far, our conservation law consists of 2 unknowns ($u$ and $J$) but only 1 equation.
+To this equation we need to add other equations, called \textit{constitutive relations}, which are used to fully determine the system.
 
-For example, suppose we wish to describe the flow of heat.
+For example, suppose we wish to model the flow of heat.
 Since heat flows from warmer regions to colder regions, and the rate of heat flow depends on the difference in temperature between regions, we usually assume that the flux vector $\vec{J}$ is given by
 \[\vec{J}(x,t) = -\nu \nabla u(x,t),\]
-where $\nu$ is a diffusion constant and $\nabla u(x,t) = \left[ \partial_{x_1}u \dots \partial_{x_n}u\right]^T$.
+where $\nu$ is called the diffusion constant and $\nabla u(x,t) = \left[ \partial_{x_1}u, \dots, \partial_{x_n}u\right]^T$.
 This constitutive relation is called Fick's law, and is the basic model for any diffusive process.
 Substituting into the conservation law we obtain
 \[u_t -\nu \Delta u(x,t) = g(\vec{x},t,u)\]
-where $\Delta$ is the Laplacian operator, and $\Delta u(x,t) = \frac{\partial ^2 u}{\partial x_1^2}+\dots+ \frac{\partial ^2 u}{\partial x_n^2}$.
-The function $g$ represents heat sources/sinks within the region.
+where $\Delta$ is the Laplacian operator:
+\[\Delta u(x,t) = \frac{\partial ^2 u}{\partial x_1^2}+\dots+ \frac{\partial ^2 u}{\partial x_n^2}.\]
+The function $g$ represents heat sources and sinks within the region.
 
 \section*{Numerically modeling heat flow}
-Consider the heat flow equation in one dimension together with appropriate initial conditions and homogeneous Dirichlet boundary conditions:
+Consider the heat flow equation in one dimension together with an appropriate initial condition \(u(x,0)=f(x)\), homogeneous Dirichlet boundary conditions, and \(g(x,t,u)=0\):
 \begin{align*}
 	&{ } u_t = \nu u_{xx}, \quad x \in [a,b],\quad t \in [0,T], \\
 	&{ } u(a,t) = 0,\quad u(b,t) = 0,\\
 	&{ } u(x,0) = f(x).
 \end{align*}
-We will look for an approximation $U^j_i$ to $u(x_i,t_j)$ on the grid $x_i = a +  hi$, $t_j = kj$, where $h$ and $k$ are small changes in $x$ and $t$ respectively and $i$ and $j$ are indices.
-Note that the index $i$ ranges over different spacial grid points and the index $j$ ranges over different time steps.
-We will denote the approximate value of $u$ at the $i$'th grid point and the $j$'th time step as $U_i^j$.
+We will create an approximation $U^j_i$ to $u(x_i,t_j)$ on the grid $x_i = a +  hi$, $t_j = kj$, where $h$ and $k$ are small changes in $x$ and $t$ respectively and $i$ and $j$ are indices; so, \(U_i^j\) denotes the approximate value of $u$ at the $i$-th grid point and the $j$-th time step.
+%Note that the index $i$ ranges over different spacial grid points and the index $j$ ranges over different time steps.
 
+\begin{comment}
 A common method for modeling ordinary and partial differential equations is the finite difference method, so-named because equations containing derivatives are replaced with equations containing difference schemes.
 These difference schemes can often be found using Taylor's theorem.
 For example, the equation
@@ -74,6 +80,17 @@ we obtain a second-order centered difference approximation to $u_{xx}(x_i,t)$:
 \begin{align*}
 	u_{xx}(x_i,t_j) &= \frac{u(x_i + h,t_j )-2 u(x_i,t_j)- u(x_i - h,t_j)}{h^2} + \mathcal{O}(h^2).
 \end{align*}
+\end{comment}
+
+As before, we will use the finite difference method to create this approximation.
+Recall that by using Taylor's theorem, we have the first-order forward difference approximation
+\begin{align*}
+	u_t(x,t) = \frac{u(x,t+k) - u(x,t)}{k} + \mathcal{O}(k).
+\end{align*}
+and the second-order centered difference approximation
+\begin{align*}
+	u_{xx}(x_i,t_j) &= \frac{u(x_i + h,t_j )-2 u(x_i,t_j)- u(x_i - h,t_j)}{h^2} + \mathcal{O}(h^2).
+\end{align*}
 
 \begin{figure}
 \centering
@@ -82,7 +99,8 @@ we obtain a second-order centered difference approximation to $u_{xx}(x_i,t)$:
 \label{fig:heatexercise1a}
 \end{figure}
 
-These difference approximations give us the $\mathcal{O}(h^2 + k)$ explicit method
+\noindent
+Applying these difference approximations give us the $\mathcal{O}(h^2 + k)$ explicit method
 \begin{align}
 	\begin{split}
 	\frac{U_{i}^{j+1} - U_{i}^{j}}{k} &= \nu \frac{U_{i+1}^{j}- 2U_{i}^{j} + U_{i-1}^{j} }{h^2} ,\\
@@ -94,35 +112,39 @@ This method can be written in matrix form as
 where $A$ is the tridiagonal matrix given by
 \[A = \left[\begin{array}{cccccc}1 & 0 & & & \\ \lambda & 1-2\lambda & \lambda & & \\ & \ddots & \ddots & \ddots & \\ & & \lambda & 1-2\lambda & \lambda \\  &  &  & 0 & 1\end{array}\right],\]
 $\lambda = \nu k/h^2$, and $U^j$ represents the approximation at time $t_j$.
-We can get this method started by using the initial condition given in our problem, so that $U_{i}^{0} = f(x_i)$.
+We can initialize this method using the initial condition given in our problem, which tells us that $U_{i}^{0} = f(x_i)$.
 
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth]{heatexercise1b.pdf}
-\caption{The graph of $U^{4}$, the approximation to the solution $u(x,t=.4)$ for Problem \ref{prob:heat_exercise1}.}
+\caption{The graph of $U^{4}$, the approximation to the solution $u(x,t=0.4)$ for Problem \ref{prob:heat_exercise1}.}
 \label{fig:heatexercise1b}
 \end{figure}
 
 \begin{info}
-Finite difference schemes, though they can be \emph{represented} using matrix multiplication, should not be \emph{implemented} using raw matrix multiplication.
-Using NumPy, it is best to vectorize the difference scheme so that you do not have to loop over the spatial indices.
-If you are using a language with faster loops (like C, C++, Fortran, or Cython), it could work well to loop directly through the indices in both time and space.
+Note that the matrix representing the finite difference scheme is very \emph{sparse}, which is typical of finite difference schemes.
+While represeting finite difference schemes with matrices can be an effective method, especially for implicit schemes, it is very important that a sparse matrix format is used.
+Otherwise, performance will be dramaticaly negatively impacted.
+In Python, since looping is slow, the best alternative is to vectorize the difference scheme.
+This approach can in fact be even better than using matrices for explicit schemes, such as the one we are using here, as it avoids needing to store the matrix in memory.
 \end{info}
 
-To account for boundary conditions using this differencing scheme, simply set the boundary points to the appropriate values in the initial conditions, then avoid modifying them as you update for each time step.
-This would be the equivalent of replacing the first and last rows of the matrix representation of the differencing scheme with the first and last rows of the identity matrix.
+To account for our constant boundary conditions using this differencing scheme, simply set the boundary points to the appropriate values in the initial conditions, then avoid modifying them as you update for each time step.
+Note that the first and last rows of the matrix representation of the differencing scheme are the same as the first and last rows of the identity matrix.
+This has the effect of keeping the boundary points the same as in the previous step, and thus the same as in the initial condition.
 
 \begin{problem}
 \label{prob:heat_exercise1}
 Consider the initial/boundary value problem
 \begin{align}
 	\begin{split}
-	&{ } u_t = .05 u_{xx}, \quad x \in [0,1], \quad t \in [0,1]\\
+	&{ } u_t = 0.05 u_{xx}, \quad x \in [0,1], \quad t \in [0,1]\\
 	&{ } u(0,t) = 0,\quad u(1,t) = 0,\\
-	&{ } u(x,0) = 2\max\{.2 - |x-.5|,0\}.
+	&{ } u(x,0) = 2\max\{0.2 - |x-0.5|,0\}.
 	\end{split}
 \end{align}
-Approximate the solution $u(x,t)$ at time $t = .4$ by taking 6 subintervals in the $x$ dimension and 10 subintervals in time.
+Approximate the solution $u(x,t)$ by taking 6 subintervals in the $x$ dimension and 10 subintervals in time.
+Plot the solution at the times \(t=0, t=0.4,\) and \(t=1\).
 The graphs for $U^0$ and $U^{4}$ are given in Figures \ref{fig:heatexercise1a} and \ref{fig:heatexercise1b}.
 \end{problem}
 
@@ -183,9 +205,9 @@ Animate your results.
 
 Explicit methods usually have a stability condition, called a CFL condition (for Courant-Friedrichs-Lewy).
 For method \ref{eqn:firstorder_explicit} the CFL condition that must be satisfied is that
-\[\lambda \leq \frac{1}{2}.\]
+\[\lambda=\frac{\nu k}{h^2} \leq \frac{1}{2}.\]
 Repeat your computations using 140 subintervals in the $x$ dimension and 66 subintervals in time. Animate the results.
-For these values the CFL condition is broken; you should easily see the result of this instability in the approximation $U^{66}$.
+For these values, the CFL condition is broken; you should be able to clearly see the result of this instability in the approximation $U^{66}$.
 \end{problem}
 
 \begin{figure}
@@ -202,7 +224,8 @@ To derive the Crank-Nicolson method, we use the following approximations:
 	u_t(x_i,t_{j+1/2}) &= \frac{u(x_i,t_{j+1}) - u(x_i,t_j)}{k} + \mathcal{O}(k^2), \\
 	u_{xx}(x_i,t_{j+1/2}) &= \frac{u_{xx}(x_i,t_{j+1}) + u_{xx}(x_i,t_j)}{2} + \mathcal{O}(k^2).
 \end{align*}
-The first equation is a Finite Difference approximation, and the second is a midpoint approximation. These approximations give the method
+The first equation is a finite difference approximation for \(u_t\), and the second is a midpoint approximation applied to \(u_{xx}\). 
+These approximations give the relation
 \begin{align}
 	\begin{split}
 	\frac{U^{j+1}_i - U^j_i}{k} &= \frac{1}{2}\left( \frac{U^j_{i+1} - 2U^j_{i} + U^j_{i-1}}{h^2} + \frac{U^{j+1}_{i+1} - 2U^{j+1}_{i} + U^{j+1}_{i-1}}{h^2}  \right) ,\\
@@ -220,11 +243,11 @@ where $\lambda = \nu k/(2h^2)$, and $U^j$ represents the approximation at time $
 Note that here we have defined $\lambda$ differently than we did before!
 
 How do we know if a numerical approximation is reasonable?
-One way to determine this is to compute solutions for various step sizes $h$ and see if the solutions are converging to something.
+One way to determine this is to compute solutions for various step sizes $h$ and see if the solutions are converging to something, which we hope to be the true solution.
 To be more specific, suppose our finite difference method is $\mathcal{O}(h^p)$ accurate.
-This means that the error $E(h) \approx Ch^p$ for some constant $C$ as $h \to 0$ (i.e., for $h>0$ small enough).
+This means that the error $E(h) \approx Ch^p$ for some constant $C$ as $h \to 0$ (that is, for $h>0$ small enough).
 
-So compute the approximation $y_k$ for each stepsize $h_k$, $h_1 > h_2> \ldots>h_m.$
+So, we will compute the approximation $y_k$ for each stepsize $h_k$, $h_1 > h_2> \ldots>h_m.$
 We will think of $y_m$ as the true solution.
 Then the error of the approximation for stepsize $h_k, k < m,$ is
 \begin{align*}
@@ -250,14 +273,16 @@ Using the Crank Nicolson method, numerically approximate the solution $u(x,t)$ o
 	&{ } u(x,0) = \max\{1 - x^2,0\}.
 	\end{split}
 \end{align}
-Demonstrate that the numerical approximation at $t = 1$ converges to  $u(x,t=1)$.
+Note that this is an implicit linear scheme; hence, the most efficient way to find \(U^{j+1}\) is to create the matrix \(B\) as a sparse matrix and use \li{scipy.sparse.linalg.spsolve}.
+
+Demonstrate that the numerical approximation at $t = 1$ converges.
 Do this by computing $U$ at $t=1$ using $20,40,80,160,320$, and $640$ steps.
 Use the same number of steps in both time and space.
 Reproduce the loglog plot shown in Figure \ref{fig:heatexercise3}.
-The slope of the line there shows the proper rate of convergence.
+The slope of the line there shows the order of convergence.
 
 To measure the error, use the solution with the smallest $h$ (largest number of intervals) as if it were the exact solution, then sample each solution only at the x-values that are represented in the solution with the largest $h$ (smallest number of intervals).
 Use the $\infty$-norm on the arrays of values at those points to measure the error.
 
-Notice that, since the Crank-Nicolson method is unconditionally stable, there is no CFL condition and we can use the same number of intervals in time and space.
+Notice that, since the Crank-Nicolson method is unconditionally stable, there is no CFL condition, and we can safely use the same number of intervals in time and space.
 \end{problem}

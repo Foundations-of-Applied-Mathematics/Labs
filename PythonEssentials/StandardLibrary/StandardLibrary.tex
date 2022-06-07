@@ -332,7 +332,7 @@ NameError: name 'display' is not defined>>
 Data: [0, 1, 2, 3]
 \end{lstlisting}
 
-\begin{problem} % Problem: create and use a simple module.
+\begin{problem} % Problem 3: create and use a simple module.
 Create a module called \texttt{calculator.py}.
 Write a function \li{sum()} that returns the sum of two arguments and a function \li{product()} that returns the product of two arguments.
 Also use \li{import} to add the \li{sqrt()} function from the \li{math} module to the namespace.
@@ -423,11 +423,10 @@ To see the entire module's namespace, use the \li{tab} key.
 
 <g<In [2]:>g> math?
 <<Type:        module
-String form: <module 'math' from '~/anaconda/lib/python3.6/>> # ...
-<<File:        ~/anaconda/lib/python3.6/lib-dynload/>> # ...
-<<Docstring:
-This module is always available.  It provides access to the
-mathematical functions defined by the C standard.>>
+String form: <module 'math' (built-in)>
+Docstring:
+This module provides access to the mathematical functions 
+defined by the C standard.>>
 
 # Type the module name, a period, then press tab to see the module's namespace.
 <g<In [3]:>g> math.   # Press 'tab'.
@@ -442,10 +441,8 @@ mathematical functions defined by the C standard.>>
     copysign()  fabs()      inf         log1p()     sqrt()>>
 
 <g<In [3]:>g> math.sqrt?
-<<Docstring:
-sqrt(x)
-
-Return the square root of x.
+<<Signature: math.sqrt(x, /)
+Docstring: Return the square root of x.
 Type:      builtin_function_or_method>>
 \end{lstlisting}
 
@@ -500,7 +497,7 @@ The \emph{power set} of a set $A$, denoted $\mathcal{P}(A)$ or $2^A$, is the set
 For example, the power set of the set $A = \{a, b, c\}$ is $2^A = \{\emptyset, \{a\}, \{b\}, \{c\}, \{a,b\}, \{a,c\}, \{b,c\}, \{a,b,c\}\}$.
 
 Write a function that accepts an iterable $A$.
-Use an \li{itertools} function to compute the power set of $A$ as a list of sets (why couldn't it be a set of sets in Python?).
+Use an \li{itertools} function to compute and return the power set of $A$ as a list of sets (why couldn't it be a set of sets in Python?).
 The empty set should be returned as \li{set()}.
 % \\(Hint: The power set of a set with $n$ elements should have exactly $2^n$ elements.)
 \end{problem}
@@ -580,42 +577,55 @@ is useful for measuring how long it takes for code to run: record the time just 
 
 \subsection*{The Sys Module} % ------------------------------------------------
 
-The \li{sys} (system) module includes methods for interacting with the Python interpreter.
-For example, \li{sys.argv} is a list of arguments passed to the interpreter when it runs a Python file.
+The \li{sys} (system) module includes methods for interacting with the Python interpreter. For our purposes, we care about the instance that you call a .py file in the command line or in your ipython terminal using either `python' followed by the name of a .py file or `\%run' followed by the name of a .py file. One command we will use is \li{sys.argv}; which returns a list containing the .py file name and all arguments that were passed to the interpreter. This way we can interact with these initial arguments and execute certain parts of our code if the arguments satisfy certain conditions. This will be implemented in problem 5. Note, command line arguments are passed in after the name of the .py file and are separated by spaces like so:
+
+\begin{lstlisting}
+# the 'python' command followed by a .py file followed by any arguments	
+$ python yourProgram.py argument1 argument2 argument3  
+
+# the equivalent form in an ipython terminal
+<g<In[1]:>g> <p<%run>p> yourProgram.py argument1 argument2 argument3  		
+\end{lstlisting}
+
+Now we can execute code based on the command line arguments by inserting the use of the \li{sys} module in our .py file:
 
 \begin{lstlisting}
 # example3.py
-"""Read a single command line argument and print it in all caps."""
+"""If there are two command line arguments  after the .py file  name, print a descriptive statment."""
 import sys
 
-if len(sys.argv) == 2:
-    print(sys.argv[1].upper())
+if len(sys.argv) == 3:  # if there's two arguments and the file name
+    print("the first command line argument is " + sys.argv[1]) 
+    print("the second command line argument is " + sys.argv[2]) 
 else:
-    print("Exactly one extra command line argument is required")
-    print("System Arguments:", sys.argv)
+    print("um... I need two after the .py file. This is not two:")
+    print(sys.argv)
 \end{lstlisting}
 
-Now provide command line arguments for the program to process.
+Now provide command line arguments for the program to process.\\ \\
 
 \begin{lstlisting}
-$ python example3.py                # No extra command line arguments.
-<<Exactly one extra command line argument is required
-System Arguments: ['example3.py']>>
+# No extra command line arguments.
+$ python example3.py                
+<<Output: 
+um... I need two after the .py file. This is not two:
+['example3.py']>>
 
-$ python example3.py hello          # One extra command line argument.
-<<HELLO>>
-
-$ python example3.py <<with 2 many arguments>>
-<<Exactly one extra command line argument is required
-System Arguments: ['example3.py', 'with', '2', 'many', 'arguments']>>
+# With two arguments the if statement executes.
+$ python example3.py crunchy juicy   
+<<Output:
+the first command line argument is crunchy
+the second command line argument is juicy>>
 \end{lstlisting}
 
-Note that the first command line argument is always the filename, and that \li{sys.argv} is always a list of strings, even if a number is provided on the command line.
+Note that the first command line argument is always the filename, so that is always the first element of the sys.argv list. This is why we have the if statement execute if the length of the list is 3 even though we want it to execute when there are 2 command line arguments. Also, \li{sys.argv} is always a list of strings. If a number is provided on the command line, it is converted to a string when it is stored in\li{sys.argv}.
 In IPython, command line arguments are specified after the \li{<p<\%run>p>} command.
 
 \begin{lstlisting}
-<g<In [1]:>g> <p<%run>p> example3.py hello
-<<HELLO>>
+<g<In [1]:>g> <p<%run>p> example3.py 42 too many
+<<Output:
+um... I need two after the .py file. This is not two:
+['example3.py', '42', 'too', 'many']>>
 \end{lstlisting}
 
 Another way to get input from the program user is to prompt the user for text.
@@ -636,7 +646,7 @@ Like command line arguments, the user's input is parsed as a string.
 16                                  # Note that y contains an integer.
 \end{lstlisting}
 
-\begin{problem} % Problem: shut the box.
+\begin{problem} % Problem 5: shut the box.
 \emph{Shut the box} is a popular British pub game that is used to help children learn arithmetic.
 The player starts with the numbers 1 through 9, and the goal of the game is to eliminate as many of these numbers as possible.
 At each turn the player rolls two dice, then chooses a set of integers from the remaining numbers that sum up to the sum of the dice roll.
@@ -645,8 +655,8 @@ The game ends when none of the remaining integers can be combined to the sum of 
 For a demonstration, see \url{https://www.youtube.com/watch?v=mwURQC7mjDI}.
 
 Modify your solutions file so that when the file is run with the correct command line arguments (but \textbf{not} when it is imported), the user plays a game of shut the box.
-The provided module \texttt{box.py} contains some functions that will be useful in your implementation of the game.
-You do not need to understand exactly how the functions work, but you do need to be able to import and use them correctly.
+The provided module \texttt{box.py} contains two functions that will be useful in your implementation of the game. \\
+You do not need to understand exactly how the functions work, but you do need to be able to import and use them correctly. Their functionality is outlined at the beginning of each function declaration.
 Your game should match the following specifications:
 
 \begin{itemize}
@@ -654,7 +664,7 @@ Your game should match the following specifications:
 If there are not exactly three command line arguments, do not start the game.
 \item Track the player's remaining numbers, starting with 1 through 9.
 \item Use the \li{random} module to simulate rolling two six-sided dice.
-However, if the sum of the player's remaining numbers is 6 or less, role only one die.
+However, if the sum of the player's remaining numbers is 6 or less, roll only one die.
 \item The player wins if they have no numbers left, and they lose if they are out of time or if they cannot choose numbers to match the dice roll.
 \item If the game is not over, print the player's remaining numbers, the sum of the dice roll, and the number of seconds remaining.
 Prompt the user for numbers to eliminate.

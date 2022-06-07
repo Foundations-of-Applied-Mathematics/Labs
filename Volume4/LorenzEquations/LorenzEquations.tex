@@ -5,22 +5,22 @@ Demonstrate methods for visualizing the evolution of a system.}
 
 Chaos is everywhere.
 It can crop up in unexpected places and in remarkably simple systems, and a great deal of work has been done to describe the behavior of chaotic systems.
-One primary characteristic of chaos is that small changes in initial conditions result in large changes over time in the solution curves.
+One primary characterization of chaos is that small changes in initial conditions result in large changes over time in the solution curves.
 
 \section*{The Lorenz System}
 One of the earlier examples of chaotic behavior was discovered by Edward Lorenz.
 In 1963, while working to study atmospheric dynamics, he derived the simple system of equations
 \begin{align*}
-\frac{\partial x}{\partial t} &= \sigma \left(y - x\right) \\
-\frac{\partial y}{\partial t} &= \rho x - y - x z \\
-\frac{\partial z}{\partial t} &= x y - \beta z
+\frac{d x}{d t} &= \sigma \left(y - x\right) \\
+\frac{d y}{d t} &= \rho x - y - x z \\
+\frac{d z}{d t} &= x y - \beta z
 \end{align*}
 where $\sigma$, $\rho$, and $\beta$ are all constants.
 After deriving these equations, he plotted the solutions and observed some unexpected behavior.
 For appropriately chosen values of $\sigma$, $\rho$, and $\beta$, the solutions did not tend toward any steady fixed points, nor did the system permit any stable cycles.
 The solutions did not tend off toward infinity either.
-With further work, he began the study of what was called a \textit{strange attractor}.
-This system, though relatively simple, exhibits chaotic behavior.
+This began the study of what was called a \textit{strange attractor}.
+Although relatively simple, this system exhibits chaotic behavior.
 
 \begin{comment}
 \subsection*{Plotting and Interacting}
@@ -66,7 +66,10 @@ Do not run \li{\%matplotlib inline} with this code. You will crash your kernel.
 \end{comment}
 
 \begin{problem}
-Write a function that implements the Lorenz equations. Let $\sigma=10$, $\rho=28$, $\beta=\frac{8}{3}$. Make a 3D plot of a solution to the Lorenz equations, where the initial conditions $x_0,y_0,z_0$ are each drawn randomly from a uniform distribution on $[-15,15]$. As usual, use \li{scipy.integrate.odeint} to compute an approximate solution. Compare your results with Figure \ref{fig:Single_Lorenz}.
+Write a function that implements the Lorenz equations. Let $\sigma=10$, $\rho=28$, $\beta=\frac{8}{3}$. 
+Make a 3D plot of a solution to the Lorenz equations, where the initial conditions $x_0,y_0,z_0$ are each drawn randomly from a uniform distribution on $[-15,15]$ and for \(t\) in the range \([0,25]\). 
+As usual, use \li{scipy.integrate.solve_ivp} to compute an approximate solution. 
+Compare your results with Figure \ref{fig:Single_Lorenz}.
 \end{problem}
 
 
@@ -77,9 +80,12 @@ Write a function that implements the Lorenz equations. Let $\sigma=10$, $\rho=28
 \end{figure}
 
 \section*{Basin of Attraction}
-Notice in the first problem that the solution tended to a 'nice' region. This region is a basin of attraction, and the set of numerical values towards which a system will converge to is an \textbf{attractor}. Consider what happens when we change up the initial conditions.
+Notice in the first problem that the solution tended to a certain region, called an \textit{attractor}. 
+The \textit{basin of attraction} of an attractor is the set of initial conditions that tend towards the attractor.
+We will investigate the basin of attraction of the Lorenz system by changing the initial conditions.
 \begin{problem}
-To better visualize the Lorenz attractor, produce a single 3D plot displaying three solutions to the Lorenz equations, each with random initial conditions (as before). Compare your results with Figure \ref{fig:Multiple_Lorenz}.
+To better visualize the Lorenz attractor, produce a single 3D plot displaying three solutions to the Lorenz equations, each with random initial conditions as before. 
+Compare your results with Figure \ref{fig:Multiple_Lorenz}.
 \end{problem}
 
 \begin{figure}
@@ -89,12 +95,19 @@ To better visualize the Lorenz attractor, produce a single 3D plot displaying th
 \end{figure}
 
 \section*{Chaos}
-Chaotic systems exhibit high sensitivity to initial conditions. This means that a small difference in initial conditions may result in solutions that diverge significantly from each other. However, chaotic systems are not \textit{random}. According to Lorenz, chaos is "when the present determines the future, but the approximate present does not approximately determine the future."
+Chaotic systems exhibit high sensitivity to initial conditions. 
+This means that a small difference in initial conditions will generally result in solutions that diverge significantly from each other. 
+However, chaotic systems are not \textit{random}. 
+An explanation given by Lorenz is that chaos is "when the present determines the future, but the approximate present does not approximately determine the future."
 
 \begin{problem}
-Use \li{matplotlib.animation.FuncAnimation} to produce a 3D animation of two solutions to the Lorenz equations with nearly identical initial conditions. To make the initial conditions, draw $x_0,y_0,z_0$ as before, and then make a second initial condition by adding a small perturbation to the first (Hint: try using \li{np.random.randn(3)*(1e-10)} for the perturbation). Note that it may take several seconds before the separation between the two solutions will be noticeable.
+Use \li{matplotlib.animation.FuncAnimation} to produce a 3D animation of two solutions to the Lorenz equations with nearly identical initial conditions. To make the initial conditions, draw $x_0,y_0,z_0$ as before, and then make a second initial condition by adding a small perturbation to the first (try using \li{np.random.randn(3)*(1e-10)} for the perturbation). Note that it may take several seconds before the separation between the two solutions will be noticeable.
 
-The animation should display a point marker as well as the past trajectory curve for each solution. Save your animation as \li{lorenz_animation.mp4}.
+The animation should display a point marker as well as the past trajectory curve for each solution. 
+Save your animation as \li{lorenz_animation1.mp4}.
+
+Hint: to ensure that the two numerical solutions have the same timesteps, you can use the \li{t_eval} argument of \li{solve_ivp}.
+Using this argument causes \li{solve_ivp} to return the solution's values at the points you pass in.
 \end{problem}
 
 In a chaotic system, round-off error implicit in a numerical method can also cause divergent solutions. For example, using a Runge-Kutta method with two different values for the stepsize $h$ on identical initial conditions will still result in approximations that differ in a chaotic fashion.
@@ -168,7 +181,9 @@ It's time to put all your know-how to good use.
 \end{comment}
 
 \begin{problem}
-The \li{odeint} function allows user to specify error tolerances (similar to setting a value of $h$ in a Runge-Kutta method). Using a single initial condition, produce two approximations by using the \li{odeint} arguments (\li{atol=1e-15, rtol=1e-13}) for the first approximation and (\li{atol=1e-12, rtol=1e-10}) for the second.
+Even differences due to small numerical errors can cause solutions of chaotic systems to diverge from each other.
+The \li{solve_ivp} function allows user to specify error tolerances (similar to setting a value of $h$ in a Runge-Kutta method). 
+Using a single initial condition, produce two approximations by using the \li{solve_ivp} arguments \li{(atol=1e-15, rtol=1e-13)} for the first approximation and \li{(atol=1e-12, rtol=1e-10)} for the second.
 
 As in the previous problem, use \li{FuncAnimation} to animation both solutions. Save the animation as \li{lorenz_animation2.mp4}.
 \end{problem}
@@ -178,7 +193,7 @@ If our system is very chaotic, then even small round off errors in your computer
 
 \begin{problem}
 Now set one initial condition.
-Use \li{odeint} to solve the system, but use the arguments \li{atol=1E-14}, \li{rtol=1E-12}, and then again with \li{atol=1E-15}, \li{rtol=1E-13}.
+Use \li{solve_ivp} to solve the system, but use the arguments \li{atol=1E-14}, \li{rtol=1E-12}, and then again with \li{atol=1E-15}, \li{rtol=1E-13}.
 Animate both solutions on the same plot.
 \end{problem}
 \end{comment}
@@ -195,7 +210,7 @@ For the Lorenz system (and for the parameter values specified in this lab), expe
 
 \begin{figure}
 \includegraphics[width=\textwidth]{figures/semilog.pdf}
-\caption{A semilog plot of the separation between two solutions to the Lorenz equations together with a fitted line that gives a rough estimate of the Lyapunov exponent of the system.}
+\caption{A semilog plot of the separation between two solutions to the Lorenz equations together with a fitted line that gives an estimate of the Lyapunov exponent of the system.}
 \label{fig:lyapunov_exponent}
 \end{figure}
 
@@ -230,7 +245,7 @@ Estimate the Lyapunov exponent of the Lorenz equations by doing the following:
 \begin{itemize}
 	\item Produce an initial condition that already lies in the attractor. This can be done by using a random "dummy" initial condition, approximating the resulting solution to the Lorenz system for a short time, and then using the endpoint of that solution (which is now in the attractor) as the desired initial condition.
 	\item Produce a second initial condition by adding a small perturbation to the first (as before).
-	\item For both initial conditions, use \li{odeint} to produce approximate solutions for $0 \leq t \leq 10$
+	\item For both initial conditions, use \li{solve_ivp} to produce approximate solutions for $0 \leq t \leq 10$
 	\item Compute $\|\delta(t)\|$ by taking the norm of the vector difference between the two solutions for each value of $t$.
 	\item Use \li{scipy.stats.linregress} to calculate a best-fit line for $\log(\|\delta(t)\|)$ against $t$.
 	\item The slope of the best-fit line is an approximation for the Lyapunov exponent $\lambda$
@@ -238,7 +253,7 @@ Estimate the Lyapunov exponent of the Lorenz equations by doing the following:
 \end{itemize}
 Produce a plot similar to Figure \ref{fig:lyapunov_exponent} by using \li{plt.semilogy}.
 
-Hint: Remember that the best-fit line you calculated corresponds to a best-fit exponential for $\|\delta(t)\|$. If \li{a} and \li{b} are the slope and intercept of the best-fit line, the best-fit exponential can be plotted using \li{plt.semilogy(t,np.exp(a*t+b)}.
+Hint: Remember that the best-fit line you calculated corresponds to a best-fit exponential for $\|\delta(t)\|$. If \li{a} and \li{b} are the slope and intercept of the best-fit line, the best-fit exponential can be plotted using \li{plt.semilogy(t,np.exp(a*t+b))}.
 	
 
 \end{problem}
