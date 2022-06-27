@@ -143,9 +143,7 @@ In the following code, the three processes perform different operations on the s
 \lstinputlisting[style=FromFile]{separateCode.py}
 
 \begin{problem}
-Write a program in which processes with an even rank print ``Hello'' and process with an odd rank print ``Goodbye.''
-Print the process number along with the ``Hello'' or ``Goodbye''
-(for example, ``Goodbye from process 3'').
+Write a program which determines the rank \li{n} of the calling process and prints ``Hello from process \li{n}'' if \li{n} is even and ``Goodbye from process \li{n}'' if \li{n} is odd.
 \end{problem}
 
 \section*{Message Passing between Processes}
@@ -171,8 +169,9 @@ Parameters:
 \end{description}
 \end{description}
 
-The \li{buf} object is not as simple as it appears. It must contain a pointer to a Numpy array. It cannot, for example, simply pass a string.
-The string would have to be packaged inside an array first.
+The \li{buf} object is not as simple as it appears. It must contain a pointer to a Numpy array. 
+For example, a string must be packaged inside an array before it can be passed.
+The \li{tag} object can help distinguish between data if multiple pieces of data are being sent/received by the same processes.
 
 \begin{description}
 \item[Comm.Recv(buf, source=0, tag=0, Status status=None)]
@@ -189,16 +188,29 @@ Example:
 \end{description}
 
 \begin{problem}
-Write a script that runs on two processes and passes an $n$ by $1$ vector of random values from one process to the other.
-Write it so that the user passes the value of $n$ in as a command-line argument.
+Write a script that runs on two (and only two!) processes and passes a random numpy array of length \li{n} from the root process to process $1$.
+Write it so that the user passes in the value of \li{n} as a command-line argument. 
 The following code demonstrates how to access command-line arguments.
 \begin{lstlisting}
 from sys import argv
-
-# Pass in the first command line argument as n.
+    
+# The first command line argument is saved as n.
 n = int(argv[1])
 \end{lstlisting}
+Process $1$ should instantiate a zero array of length \li{n} before the root process generates its random array and sends it to process $1$.
+Print the array and process number from each process.
+The output should reflect the following for \li{n} $ = 4$.
+\begin{lstlisting}[style=ShellOutput]
+$ mpiexec -n 2 python problem2.py 4
+
+Process 1: Before checking mailbox: vec=[ 0.  0.  0.  0.]
+Process 0: Sent: vec=[ 0.03162613  0.38340242  0.27480538  0.56390755]
+Process 1: Recieved: vec=[ 0.03162613  0.38340242  0.27480538  0.56390755]
+\end{lstlisting}
+
+\noindent Hint: if the number of processes is not $2$, you can abort the program with \li{COMM.Abort()}.
 \end{problem}
+
 
 \begin{info}
 \li{Send()} and \li{Recv()} are referred to as \emph{blocking} functions.
@@ -210,6 +222,11 @@ If a process calls \li{Irecv()} and doesn't find a message ready to be picked up
 This can be used to dramatically improve performance.
 \end{info}
 
+\begin{info}
+    When calling \li{Comm.Recv}, you can allow the calling process to accept a message from any process that happened to be sending to the receiving process.
+    This is done by setting source to a predefined MPI constant, \li{source=ANY_SOURCE} (note that you would first need to import this with from \li{mpi4py.MPI import ANY_SOURCE} or use the syntax \li{source=MPI.ANY_SOURCE}).
+\end{info}
+
 \begin{problem}
 Write a script in which the process with rank $i$ sends a random value to the process with rank $i+1$ in the global communicator.
 The process with the highest rank will send its random value to the root process.
@@ -218,12 +235,28 @@ For communication, only use \li{Send()} and \li{Recv()}.
 The program should work for any number of processes.
 % Hint: Remember that \li{Send()} and \li{Recv()} are blocking functions but that Send.
 Does the order in which \li{Send()} and \li{Recv()} are called matter?
-\end{problem}
 
-\begin{info}
-When calling \li{Comm.Recv}, you can allow the calling process to accept a message from any process that happened to be sending to the receiving process.
-This is done by setting source to a predefined MPI constant, \li{source=ANY_SOURCE} (note that you would first need to import this with from \li{mpi4py.MPI import ANY_SOURCE} or use the syntax \li{source=MPI.ANY_SOURCE}).
-\end{info}
+Print what each process starts with and what each process receives.
+The output should reflect the following (note that both the values and order will vary).
+\begin{lstlisting}[style=ShellOutput]
+$ mpiexec -n 2 python problem3.py
+
+Process 1 started with [ 0.79711384]
+Process 1 received [ 0.54029085]
+Process 0 started with [ 0.54029085]
+Process 0 received [ 0.79711384]
+
+
+$ mpiexec -n 3 python problem3.py
+
+Process 2 started with [ 0.99893055]
+Process 0 started with [ 0.6304739]
+Process 1 started with [ 0.28834079]
+Process 1 received [ 0.6304739]
+Process 2 received [ 0.28834079]
+Process 0 received [ 0.99893055]
+\end{lstlisting}
+\end{problem}
 
 \section*{Application: Monte Carlo Integration}
 
@@ -245,12 +278,18 @@ $ python pi.py
 The $n$-dimensional \emph{open unit ball} is the set $U_n = \{\x\in\mathbb{R}^n\mid \|\x\|_2 < 1\}$.
 Write a script that accepts integers $n$ and $N$ on the command line.
 Estimate the volume of $U_n$ by drawing $N$ points over the $n$-dimensional domain $[-1,1]\times[-1,1]\times\cdots\times[-1,1]$ on each available process except the root process (for a total of $(r-1)N$ draws, where $r$ is the number of processes).
-Have the root process print the volume estimate.
+Have the root process print the volume estimate given by the entire set of $(r-1)N$ points.
 \\(Hint: the volume of $[-1,1]\times[-1,1]\times\cdots\times[-1,1]$ is $2^n$.)
 
 When $n=2$, this is the same experiment outlined above so your function should return an approximation of $\pi$.
-The volume of the $U_3$ is $\frac{4}{3}\pi \approx 4.18879$, and the volume of $U_4$ is $\frac{\pi^2}{2} \approx 4.9348$.
+The volume of $U_3$ is $\frac{4}{3}\pi \approx 4.18879$, and the volume of $U_4$ is $\frac{\pi^2}{2} \approx 4.9348$.
 Try increasing the number of sample points $N$ or processes $r$ to see if your estimates improve.
+The output of a $4$ process estimate of $U_2$ with $2000$ draws should reflect the following.
+\begin{lstlisting}[style=ShellOutput]
+$ mpiexec -n 4 python problem4.py 2 2000
+
+Volume of 2-D unit ball: 3.13266666667
+\end{lstlisting}
 \end{problem}
 
 \begin{info}

@@ -55,7 +55,9 @@ In the interactive shell, the \li{SparkSession} object - the main entrypoint to 
 When running Spark in a standard Python script (or in IPython) you need to define this object explicitly. The code box below outlines how to do this. 
 It is standard practice to name your \li{SparkSession} object \li{spark}.
 
-It is important to note that when you are finished with a \li{SparkSession} you should end it by calling \li{spark.stop()}.
+\begin{warn}
+It is important that when you are finished with a \li{SparkSession} you should end it by calling \li{spark.stop()}.
+\end{warn}
 
 \begin{info}
 While the interactive shell is very robust, it may be easier to learn Spark in an environment that you are more familiar with (like IPython). 
@@ -103,13 +105,17 @@ We will use the Titanic dataset\footnote{https://web.stanford.edu/class/archive/
 The example below shows various ways to load the Titanic dataset as an RDD.
 
 \begin{lstlisting}
-# SparkSession available as spark
+# initialize your SparkSession object
+>>> spark = SparkSession\
+...         .builder\
+...         .appName("app_name")\
+...         .getOrCreate()
+
 # load the data directly into an RDD
 >>> titanic = spark.sparkContext.textFile('titanic.csv')
 
 # the file is of the format
-#Pclass,Survived,Name,Sex,Age,Sibsp,Parch,Ticket,Fare
-
+# Pclass,Survived,Name,Sex,Age,Sibsp,Parch,Ticket,Fare
 # Survived | Class | Name | Sex | Age | Siblings/Spouses Aboard | Parents/Children Aboard | Fare
 
 >>> titanic.take(2)
@@ -126,6 +132,9 @@ The example below shows various ways to load the Titanic dataset as an RDD.
 >>> titanic_parallelize.take(2)
 [array(['0', '3', ..., 'male', '22', '1', '0', '7.25'], dtype=object),
  array(['1', '1', ..., 'female', '38', '1', '0', '71.2833'], dtype=object)]
+ 
+ # end SparkSession
+ >>> spark.stop()
 \end{lstlisting}
 
 \begin{warn}
@@ -144,6 +153,12 @@ One of the most commonly used transformations is the \li{map(func)}, which creat
 Similarly, \li{flatMap(func)} creates an RDD with the flattened results of \li{map(func)}.
 
 \begin{lstlisting}
+# initialize your SparkSession object
+>>> spark = SparkSession\
+...         .builder\
+...         .appName("app_name")\
+...         .getOrCreate()
+
 # use map() to format the data
 >>> titanic = spark.sparkContext.textFile('titanic.csv')
 >>> titanic.take(2)
@@ -164,7 +179,6 @@ Similarly, \li{flatMap(func)} creates an RDD with the flattened results of \li{m
 
 The \li{filter(func)} transformation returns a new RDD containing only the elements that satisfy \li{func}. In this case, \li{func} should be a callable python function that returns a Boolean. 
 The elements of the RDD that evaluate to \li{True} are included in the new RDD while those that evaluate to \li{False} are excluded.
-
 
 \begin{lstlisting}
 # create a new RDD containing only the female passengers
@@ -232,7 +246,14 @@ A great transformation to help validate or explore your dataset is \li{distinct(
 # sort by number of passengers in each class, ascending order
 >>> pclass.sortBy(lambda row: row[1]).collect()
 [('2', 184), ('1', 216), ('3', 487)]
+
+# end SparkSession
+>>> spark.stop()
 \end{lstlisting}
+
+\begin{warn}
+Note that you must use \li{.collect()} to extract data from an RDD. Using \li{.collect()} will return an array.
+\end{warn}
 
 \begin{problem}
 Write a function that accepts the name of a text file with default \li{filename=huck\_finn.txt}.\footnote{https://www.gutenberg.org/files/76/76-0.txt}
@@ -332,6 +353,7 @@ Creating a DataFrame from an existing text, csv, or JSON file is generally easie
 The DataFrame API also has arguments to deal with file headers or to automatically infer the schema.
 
 \begin{lstlisting}
+# note that you should initialize your spark object first
 # load the titanic dataset using default settings
 >>> titanic = spark.read.csv('titanic.csv')
 >>> titanic.show(2)
@@ -513,7 +535,7 @@ only showing top 3 rows
 \begin{problem}
 Write a function with keyword argument \li{filename='titanic.csv'}. 
 Load the file into a PySpark DataFrame and find (1) the number of women on-board, (2) the number of men on-board, (3) the survival rate of women, and (4) the survival rate of men. 
-Return these four values in the order given.
+Return these four values in the order given as a tuple of floats.
 \label{prob:spark-df-easy}
 \end{problem}
 
@@ -526,16 +548,17 @@ the first line of the file is a header, containing the following seven columns:\
 
 \li{lsoa\_code}: LSOA code (think area code) where the crime was committed\\
 \indent\li{borough}: London borough were the crime was committed\\
-\indent\li{major\_category}: major (read: general) category of the crime\\
-\indent\li{minor\_category}: minor (read: specific) category of the crime\\
+\indent\li{major\_category}: major or general category of the crime\\
+\indent\li{minor\_category}: minor or specific category of the crime\\
 \indent\li{value}: number of occurrences of this crime in the given \li{lsoa\_code}, \li{month}, and \li{year}\\
 \indent\li{year}: year the crime was committed\\
 \indent\li{month}: month the crime was committed\\
 
-Write a function that accepts three keyword arguments: \li{crimefile='london\_crime\_by\_lsoa.csv'}, \li{incomefile='london\_income\_by\_borough.csv'}, and \li{major\_cat='Robbery'}. Load the two files as PySpark DataFrames. 
-Use them to create a new DataFrame containing, for each borough, the total number of crimes for the given major\_category (\li{major\_cat}) and the median income. 
-Order the DataFrame by the average crime rate, descending. 
-The final DataFrame should have three columns: \li{borough}, \li{average\_crime\_rate}, \li{median-08-16} (column names may be different).
+Write a function that accepts three keyword arguments: \\
+\li{crimefile='london\_crime\_by\_lsoa.csv'}, \li{incomefile='london\_income\_by\_borough.csv'}, and \li{major\_cat='Robbery'}. Load the two files as PySpark DataFrames. 
+Use them to create a new DataFrame. The new DataFrame will contain a row for each borough and have columns for borough, total number of crimes for the given major category (\li{major\_cat}), and median income. 
+Order the DataFrame by the total number of crimes for \li{major\_cat}, descending. 
+The final DataFrame should have three columns: \li{borough}, \li{major_cat_total_crime}, and \li{median-08-16} (column names may be different).
 
  
 Convert the DataFrame to a numpy array using \li{np.array(df.collect())}, and create a scatter plot of the number of murders by the median income for each borough. 
@@ -692,7 +715,7 @@ For complete documentation, visit https://spark.apache.org/docs/latest/api/pytho
 \end{lstlisting}
 
 Use \li{randomSplit([0.75, 0.25], seed=11)} to split your data into train and test sets before fitting the model. 
-Return the \li{accuracy}, \li{weightedRecall}, and \li{weightedPrecision} for your model, in the given order.
+Return the \li{accuracy}, \li{weightedRecall}, and \li{weightedPrecision} for your model, in the given order as a tuple.
 
 Hint: to calculate the accuracy of a classifer in PySpark, use \li{
     accuracy = MCE(labelCol='survived',metricName='accuracy').evaluate(predictions)}.

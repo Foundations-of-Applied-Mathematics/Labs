@@ -195,7 +195,7 @@ Table \ref{table:numpy-poly1d} lists some attributes and methods of the \li{np.p
     \hline
     \li{coeffs} & The $n+1$ coefficients, from greatest degree to least. \\
     \li{order} & The polynomial degree ($n$). \\
-    \li{roots} & The $n-1$ roots. \\
+    \li{roots} & The $n$ roots of the polynomial. \\
     \\
     Method & Returns \\
     \hline
@@ -419,7 +419,7 @@ The power method is limited by a few assumptions.
 First, not all square matrices $A$ have a dominant eigenvalue.
 However, the Perron-Frobenius theorem guarantees that if all entries of $A$ are positive, then $A$ has a dominant eigenvalue.
 Second, there is no way to choose an $\x_0$ that is guaranteed to have a nonzero projection onto the span of the eigenvectors corresponding to $\lambda$, though a random $\x_0$ will almost surely satisfy this condition.
-Even with these assumptions, a rigorous proof that the power method converges is most convenient with tools from spectral calculus.
+Even with these assumptions, a rigorous proof that the power method converges is most convenient with tools from spectral calculus, and as such will not be pursued here.
 % See the Volume 1 text for details.
 
 \begin{problem} % Implement the power method.
@@ -507,10 +507,12 @@ c           & d - \lambda
 \label{eq:qr-algorithm-roots}
 \end{align}
 which has a closed form solution via the quadratic equation.
-This implies that complex eigenvalues come in conjugate pairs.
+This also demonstrates that complex eigenvalues come in conjugate pairs.
 
 \subsubsection*{Hessenberg Preconditioning} % - - - - - - - - - - - - - - - - -
 
+A matrix in \emph{upper Hessenberg form} is one that has all entries below the first subdiagonal equal to zero.
+This is similar to an upper triangular matrix, except that the entries directly below the diagonal are also allowed to be nonzero.
 The QR algorithm works more accurately and efficiently on matrices that are in upper Hessenberg form, as upper Hessenberg matrices are already close to triangular.
 Furthermore, if $H = QR$ is the QR decomposition of upper Hessenberg $H$ then $RQ$ is also upper Hessenberg, so the almost-triangular form is preserved at each iteration.
 Putting a matrix in upper Hessenberg form before applying the QR algorithm is called \emph{Hessenberg preconditioning}.
@@ -575,6 +577,7 @@ Consider the following implementation details.
 \end{itemize}
 
 Test your function on small random symmetric matrices, comparing your results to SciPy's \li{scipy.linalg.eig()}.
+While the QR algorithm works on arbitrary matrices, it has better convergence properties for symmetric matrices, which makes them better for testing.
 To construct a random symmetric matrix, note that $A + A\trp$ is always symmetric.
 % How many iterations are necessary?
 % How small does \li{tol} have to be?

@@ -1,14 +1,14 @@
 \lab{Regular Expressions}{Regular Expressions}
 \objective{Cleaning and formatting data are fundamental problems in data science.
 Regular expressions are an important tool for working with text carefully and efficiently, and are useful for both gathering and cleaning data.
-This lab introduces regular expression syntax and common practices, including an application to a data cleaning problem.
+This lab introduces regular expression syntax and common practices, including an application to a data cleaning problem. This link may be helpful as a reference: https://docs.python.org/3/library/re.html
 }
 
-% TODO: Important links!
+% should the other link be in here?
 % \url{https://docs.python.org/3/howto/regex.html}
 % \url{https://docs.python.org/3/library/re.html}
 
-A \emph{regular expression} or \emph{regex} is a string of characters that follows a certain syntax to specify a pattern.
+A \emph{regular expression} or \emph{regex} is a string of characters that follows a certain syntax to specify a pattern, like generalized shorthand for strings.
 Strings that follow the pattern are said to \emph{match} the expression (and vice versa).
 A single regular expression can match a large set of strings, such as the set of all valid email addresses.
 
@@ -21,10 +21,9 @@ Consider learning to use regular expressions in Vim or your favorite text editor
 \section*{Regular Expression Syntax in Python} % ==============================
 
 The \li{re} module implements regular expressions in Python.
-The function \li{re.<<compile>>()} takes in a regular expression string and returns a corresponding \emph{pattern} object, which has methods for determining if and how other strings match the pattern.
-For example, the \li{search()} method returns \li{None} for a string that doesn't match, and a \emph{match} object for a string that does.
+The function \li{re.<<compile>>()} takes in a regular expression string and returns a corresponding \emph{pattern} object, which has methods for determining if and how other strings match the pattern. You can think of the re.compile object as a box with a certain shape cut out of the bottom. When a lot of differently shaped objects are put into the box and shaken around only the objects with the same exact shape as the one cut out of the box will fall out. One method that \li{re.<<compile>>()} uses is the \li{search()} method, which returns \li{None} for a string that doesn't match, and a \emph{match} object for a string that does match.
 
-Note the \li{match()} method for pattern objects only matches strings that satisfy the pattern \textbf{at the beginning} of the string.
+The \li{match()} method is different than the match object mentioned previously. The match method only matches strings that satisfy the pattern \textbf{at the beginning} of the string.
 To answer the question ``does any part of my target string match this regular expression?'' always use the \li{search()} method.
 
 \begin{lstlisting}
@@ -43,7 +42,7 @@ To answer the question ``does any part of my target string match this regular ex
 \end{lstlisting}
 
 Most of the functions in the \li{re} module are shortcuts for compiling a pattern object and calling one of its methods.
-Using \li{re.<<compile>>()} is good practice because the resulting object is reusable, while each call to \li{re.search()} compiles a new (but redundant) pattern object.
+Using \li{re.<<compile>>()} is good practice because the resulting object (analagously, the box you made) is reusable, while each call to \li{re.search()} compiles a new (but redundant) pattern object.
 For example, the following lines of code are equivalent.
 \begin{lstlisting}
 >>> bool(re.<<compile>>("cat").search("catfish"))
@@ -51,7 +50,8 @@ For example, the following lines of code are equivalent.
 >>> bool(re.search("cat", "catfish"))
 <<True>>
 \end{lstlisting}
-
+\raggedright
+Assigning re.compile("cat").search("catfish") or re.search("cat","catfish") without the bool() around them to variables will create match objects.
 
 \begin{problem} % Easy regular expression, construct test cases.
 Write a function that compiles and returns a regular expression pattern object with the pattern string \li{"python"}.
@@ -71,12 +71,12 @@ The resulting string interprets backslashes as actual backslash characters, rath
 For example, to match the string \li{"\$3.99? Thanks."}, use \li{r"\\\$3\\.99\\? Thanks\\."}.
 
 \end{enumerate}
-Without raw strings, every backslash in has to be written as a double backslash, which makes many regular expression patterns hard to read (\li{"\\\\\$3\\\\.99\\\\? Thanks\\\\."}).
+Without raw strings, every backslash has to be written as a double backslash, which makes many regular expression patterns hard to read (\li{"\\\\\$3\\\\.99\\\\? Thanks\\\\."}).
 
 \begin{problem}
 Write a function that compiles and returns a regular expression pattern object that matches the string \li{"^\{@\}(?)[\%]\{.\}(*)[_]\{&\}\$"}.
 
-Hint: There are online sites like \url{https://regex101.com/} that can help you check your answers.
+\textbf{Hint:} There are online sites like \url{https://regex101.com/} that can help check answers. Consider building regex expressions one character at a time at this website.
 \label{prob:regex-metacharacter-literals}
 \end{problem}
 
@@ -112,6 +112,10 @@ Write a function that compiles and returns a regular expression pattern object t
 \li{"Book store"} & \li{"Mattress store"} & \li{"Grocery store"} \\
 \li{"Book supplier"} & \li{"Mattress supplier"} & \li{"Grocery supplier"} \\
 \end{tabular}
+
+\raggedright
+\textbf{Hint:} The naive way to do this is create a very long chain of \li{or} operators with the exact phrases as options. Instead, think about dividing it into two groups of \li{or} operators where the first group picks the first word and the second groups picks the second word.
+
 \end{problem}
 
 \subsection*{Character Classes} % ---------------------------------------------
@@ -277,7 +281,7 @@ A \emph{valid python parameter definition} is defined as the concatenation of th
 \begin{itemize}
     \item any valid python identifier
     \item any number of spaces
-    \item (optional) an equals sign followed by any number of spaces and ending with one of the following: any real number, a single quote followed by any number of non-single-quote characters followed by a single quote, or any valid python identifier
+    \item (optional) an equals sign followed by any number of spaces and ending with one of the following three things: any real number, a single quote followed by any number of non-single-quote characters followed by a single quote (ex: 'example'), or any valid python identifier
 \end{itemize}
 
 Define a function that compiles and returns a regular expression pattern object that matches any valid Python parameter definition.
@@ -291,16 +295,18 @@ Note that some strings which would be valid in python will not be for this probl
 
 \centering
 \begin{tabular}{c|lllll}
-Matches: & \li{"Mouse"} & \li{"compile"} & \li{"_123456789"} & \li{"__x__"} & \li{"while"} \\ \hline
-Non-matches: & \li{"3rats"} & \li{"err*r"} & \li{"sq(x)"} & \li{"sleep()"} & \li{"     x"}
+Matches: & \li{"Mouse"} & \li{"_num = 2.3"} & \li{"arg_ = 'hey'"} & \li{"__x__"} & \li{"var24"} \\ \hline
+Non-matches: & \li{"3rats"} & \li{"_num = 2.3.2"} & \li{"arg_ = 'one'two"} & \li{"sq(x)"} & \li{"     x"}
 \end{tabular}
 
 
 \centering
 \begin{tabular}{c|lllll}
-Matches: & \li{"max=4.2"} & \li{"string= ''"} & \li{"num_guesses"} \\ \hline
-Non-matches: & \li{"300"} & \li{"is_4=(value==4)"} & \li{"pattern = r'^one|two fish\$'"}
-\end{tabular}
+Matches: & \li{"max=total"} & \li{"string= ''"} & \li{"num_guesses"} \\ \hline
+Non-matches: & \li{"max=2total"} & \li{"is_4=(value==4)"} & \li{"pattern = r'^one|two fish\$'"}
+\end{tabular} \\
+\raggedright
+\textbf{Hint:} It may seem more efficient to keep the equals sign part of the expression outisde of your \li{or} group (parentheses with pipelines) but that is a really tricky way to do it. It is easier to include the equals sign and space in each case individually. For example, $(=\backslash s^*...|=\backslash s^*...|...)$ instead of $(=\backslash s^*(...|...|...))$.
 \end{problem}
 
 
@@ -388,11 +394,10 @@ A Python \emph{block} is composed of several lines of code with the same indenta
 Blocks are delimited by key words and expressions, followed by a colon.
 Possible key words are \li{if}, \li{elif}, \li{else}, \li{for}, \li{while}, \li{try}, \li{except}, \li{finally}, \li{with}, \li{def}, and \li{class}.
 Some of these keywords require an expression to precede the colon (\li{if}, \li{elif}, \li{for}, etc.).
-Some require no expressions to precede the colon (\li{else}, \li{finally}), and \li{except} may or may not have an expression before the colon.
+Some require no expressions to precede the colon (\li{else}, \li{finally}), and \li{except} may or may not have an expression before the colon. 
 
 Write a function that accepts a string of Python code and uses regular expressions to place colons in the appropriate spots.
-Assume that every colon is missing in the input string.
-Return the string of code with colons in the correct places.
+Assume that every colon is missing in the input string and that any keyword that should have an expression after it does. (Note that this will simplify your regex expression since you won't have to design it to handle cases where some colons are present or to detect the key words that need expressions versus ones that don't.) Return the string of code with colons in the correct places.
 
 \begin{lstlisting}
 """
@@ -420,6 +425,8 @@ while k > i:
 print(p)
 """
 \end{lstlisting}
+\raggedright
+
 \end{problem}
 
 \section*{Extracting Text with Regular Expressions} % ======================
@@ -484,6 +491,9 @@ The first two entries of the completed dictionary are given below.
 # ...
 }
 \end{lstlisting}
+\raggedright
+\textbf{Hint:} Think about creating a separate re.compile() object to `catch' each piece of identifying information. Extract and clean each picece individually and build your dictionary incrementally. If the piece of information exists for a specific person, reformat and assign it to that pesron's dictionary. If the information doesn't exist assign it to be \li{None}.
+
 \end{problem}
 
 
