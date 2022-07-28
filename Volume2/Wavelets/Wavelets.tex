@@ -101,8 +101,7 @@ This filter highlights the small changes found in the signal and extracts the de
 
 The two primary operations of the algorithm are the discrete convolution and downsampling, denoted $*$ and $DS$, respectively.
 First, a signal is convolved with both filters.
-The resulting arrays will be twice the size of the original signal because the frequency of the sample will have changed by a factor of 2.
-To remove this redundant information, the resulting arrays are \emph{downsampled}.
+The convolutions fold the signal back on itself so the resulting array is the same size but half the information is duplicated, \emph{downsampling} is then required to eliminate the repeated information.
 % Downsampling is the process of removing unimportant entries from an array.
 In the context of this lab, a \emph{filter bank} is the combined process of convolving with a filter, and then downsampling.
 The result will be an array of approximation coefficients $A$ and an array of detail coefficients $D$.
@@ -114,7 +113,7 @@ Given an array \textbf{x}, the averaging filter produces an array \textbf{y} whe
 In other words, the averaging filter convolves an array with the array $L=\begin{bmatrix}\frac{1}{2} & \frac{1}{2}\end{bmatrix}$.
 This filter preserves the main idea of the data.
 The corresponding highpass filter is the distance filter.
-Given an array \textbf{x}, the distance filter produces an array \textbf{y} where $y_n$ is the distance between $x_n$ and $x_{n-1}$.
+Given an array \textbf{x}, the distance filter produces an array \textbf{y} where $y_n$ is the distance between $x_n$ and $x_{n-1}$ ($|x_n - x_{n-1}|$).
 In other words, the difference filter convolves an array with the array $H=\begin{bmatrix}-\frac{1}{2}&\frac{1}{2}\end{bmatrix}$.
 This filter preserves the details of the data.
 
@@ -266,7 +265,9 @@ coeffs = dwt(noisysin, L, H, 4)
 \end{lstlisting}
 
 Plot the original signal with the approximation and detail coefficients and verify that they match the plots in Figure \ref{fig:dwt1D}.
-\\ (Hint: Use array broadcasting).
+\\ (Hint: Use array broadcasting). 
+
+Note: the plots in your jupyter notebook \textit{do not} have to be labeled exactly like those in \ref{fig:dwt1D}. As long as the signals are clearly visible that is enough.
 \label{prob:dwt1D}
 \end{problem}
 
@@ -316,10 +317,10 @@ This process is continued with the newly obtained approximation coefficients and
 
 \begin{problem} % Inverse wavelet transform
 Write a function that performs the inverse wavelet transform.
-The function should accept a list of arrays (of the same form as the output of Problem \ref{prob:dwt1D}), a reverse low-pass filter, and a reverse high-pass filter.
+The function should accept three things as arguments: a list of arrays (of the same form as the output of Problem \ref{prob:dwt1D}), a reverse low-pass filter, and a reverse high-pass filter.
 The function should return a single array, which represents the recovered signal.
 
-Note that the input list of arrays has length $n+1$ (consisting of $A_n$ together with $D_n, D_{n-1}, \ldots, D_1$), so your code should perform the process given above $n$ times.
+Note that the input list of arrays has length $n+1$ (consisting of $A_n$ together with $D_n, D_{n-1}, \ldots, D_1$). Your code should run once per $D_i$ matrix so it should execute a total of $n$ times.
 
 To test your function, first perform the inverse transform on the noisy sine wave that you created in the first problem.
 Then, compare the original signal with the signal recovered by your inverse wavelet transform function using \li{np.allclose()}.
@@ -368,10 +369,10 @@ See Figure \ref{fig:filter bank2d}.
 \node[main,right of=Hi2] (A4) {};
 \node[main,right of=Lo3] (A5) {};
 \node[main,right of=Hi3] (A6) {};
-\node[right of=A3] (LLj1) {$LL_{j+1}$};
-\node[right of=A4] (LHj1) {$LH_{j+1}$};
-\node[right of=A5] (HLj1) {$HL_{j+1}$};
-\node[right of=A6] (HHj1) {$HH_{j+1}$};
+\node[right of=A3] (LLj1) {$LL_{j+1}$ (A)};
+\node[right of=A4] (LHj1) {$LH_{j+1}$ (H)};
+\node[right of=A5] (HLj1) {$HL_{j+1}$ (V)};
+\node[right of=A6] (HHj1) {$HH_{j+1}$ (D)};
 
 \node[above right=1.6cm and -.25cm of Lo1] {$rows$};
 \node[above right=.1cm and -.25cm of Lo2] {$columns$};
@@ -405,10 +406,10 @@ See Figure \ref{fig:filter bank2d}.
 \end{figure}
 
 When implemented as an iterative filter bank, each pass through the filter bank yields one set of approximation coefficients plus three sets of detail coefficients.
-More specifically, if the two-dimensional array $X$ is the input to the filter bank, the arrays $LL$, $LH$, $HL$, and $HH$ are obtained.
-$LL$ is a smoothed approximation of $X$ (similar to $A_n$ in the one-dimensional case), and the other three arrays contain detail coefficients that capture high-frequency oscillations in
-vertical, horizontal, and diagonal directions.
-The arrays $LL$, $LH$, $HL$, and $HH$ are known as \emph{subbands}.
+More specifically, if the two-dimensional array $X$ is the input to the filter bank, the arrays $Approx$, $H$, $V$, and $D$ are obtained.
+$Approx$ is a smoothed approximation of $X$ (similar to $A_n$ in the one-dimensional case), and the other three arrays contain detail coefficients that capture high-frequency oscillations in
+horizontal ($H$), vertical ($V$), and diagonal ($D$) directions.
+The arrays $A$, $H$, $V$, and $D$ are known as \emph{subbands}.
 Any or all of the subbands can be fed into a filter bank to further decompose the signal into additional subbands.
 This decomposition can be represented by a partition of a rectangle, called a \emph{subband pattern}.
 The subband pattern for one pass of the filter bank is shown in Figure \ref{fig:2dsubbands}, with an example of an image decomposition given in Figure \ref{fig:dwt2D}.
@@ -421,10 +422,10 @@ The subband pattern for one pass of the filter bank is shown in Figure \ref{fig:
 \draw[thick] (4,-2) -- (8,-2);
 
 \node[draw=none]()at(0,0){$X$};
-\node[draw=none]()at(5,1){$LL$};
-\node[draw=none]()at(7,1){$LH$};
-\node[draw=none]()at(5,-1){$HL$};
-\node[draw=none]()at(7,-1){$HH$};
+\node[draw=none]()at(5,1){$A$};
+\node[draw=none]()at(7,1){$H$};
+\node[draw=none]()at(5,-1){$V$};
+\node[draw=none]()at(7,-1){$D$};
 \draw[->, >=stealth', thick, shorten <=.2cm, shorten >=.2cm]
     (2,0)--(4,0);
 \end{tikzpicture}
@@ -451,7 +452,7 @@ The subband pattern for one pass of the filter bank is shown in Figure \ref{fig:
                     \includegraphics[width=\linewidth]{figures/mandrill4.png}
        \end{subfigure}
     \caption{Subbands for the mandrill image after one pass through the filter bank.
-    Note how the upper left subband ($LL$) is an approximation of the original Mandrill image, while the other
+    Note how the upper left subband ($A$) is an approximation of the original Mandrill image, while the other
     three subbands highlight the stark vertical, horizontal, and diagonal changes in the image.\\
     Original image source: \url{http://sipi.usc.edu/database/}.}
     \label{fig:dwt2D}
@@ -494,9 +495,9 @@ The function \li{pywt.dwt2()} calculates the subbands resulting from one pass th
 The second positional argument specifies the type of wavelet to be used in the transform.
 The \li{mode} keyword argument sets the extension mode, which determines the type of padding used in the convolution operation.
 For the problems in this lab, always use \li{mode='per'}, which is the periodic extension.
-The function \li{dwt2()} returns a list.
-The first entry of the list is the $LL$, or approximation, subband.
-The second entry of the list is a tuple containing the remaining subbands, $LH$, $HL$, and $HH$ (in that order).
+The function \li{dwt2()} returns a tuple.
+The first entry of the list is the $A$, or approximation, subband.
+The second entry of the list is a separate tuple containing the remaining subbands, $H$, $V$, and $D$ (in that order).
 \begin{comment}
 These subbands can be plotted as follows:
 
@@ -531,6 +532,7 @@ The supported families and their wavelet instances can be listed by executing th
 <<['coif1', 'coif2', 'coif3', 'coif4', 'coif5', 'coif6', 'coif7', 'coif8', 'coif9', 'coif10', 'coif11', 'coif12', 'coif13', 'coif14', 'coif15', 'coif16', 'coif17']>>
 \end{lstlisting}
 
+It's important to note that the names from the wavelist are what we use when we call \li{dwt2}. Sometimes the name of a family will also exist as a wavelet transform in the wave list, but not always.
 Different wavelets have different properties; the most suitable wavelet is dependent on the specific application.
 For example, the morlet wavelet is closely related to human hearing and vision.
 Note that not all of these families work with the function \li{pywt.dwt2()}, because they are continuous wavelets.
@@ -571,10 +573,13 @@ Explore the two-dimensional wavelet transform by completing the following:
     \item Compare the subband patterns of the haar, symlet, and coiflet wavelets of the raccoon picture by plotting the subbands after one pass through the filter bank.
     The haar subband should have more detail than the symlet subband, and the symlet subband should have more detail than the coiflet wavelet.
 \end{enumerate}
+
+A few Hints: for plotting, find a function that will plot an image given an array. Also, when plotting the transformations that represent the horizontal, vertical, or diagonal components of the image take \li{np.abs()} of the array when you plot it. This will radicalize the array and make its detections easier to view. Finally, you will run into an error if you try to use just \'sym\' as an arguement. Consider why this could be and how you might find the proper argument to use.
 \end{problem}
 
 The function \li{pywt.wavedec2()} is similar to \li{pywt.dwt2()}, but it also includes a keyword argument, \li{level}, which specifies the number of times to pass an image through the filter bank.
-It will return a list of subbands, the first of which is the final approximation subband, while the remaining elements are tuples which contain sets of detail subbands ($LH$, $HL$, and $HH$).
+It will return a list of subbands, the first of which is the final approximation subband, while the remaining elements are tuples which contain sets of detail subbands ($H$, $V$, and $D$). For example, if I were to call pywt.wavedec2 with level=4, the output would be of the form [Approx, (H4,V4,D4),(H3,V3,D3),(H2,V2,D2),(H1,V1,D1)].
+
 If \li{level} is not specified, the number of passes through the filter bank will be the maximum level where the decomposition is still useful.
 The function \li{pywt.waverec2()} accepts a list of subband patterns (like the output of \li{pywt.wavedec2()} or \li{pywt.dwt2()}), a name string denoting the wavelet, and a keyword argument
 \li{mode} for the extension mode.
@@ -674,11 +679,18 @@ In fact, noise variance estimation in images is a research area in its own right
 
 \begin{problem}
 Write two functions that accept a list of wavelet coefficients in the usual form, as well as a threshold value. Each function returns the thresholded wavelet coefficients (also in the usual form). The first function should implement hard thresholding and the second should implement soft thresholding.
-While writing these two functions, remember that only the detail coefficients are thresholded, so the first entry of the input coefficient list should remain unchanged.
+While writing these two functions, remember that only the detail coefficients (meaning the elements of H,V, or D arrays) are thresholded, so the first entry of the input coefficient list (The A matrix) should remain unchanged. 
 
 To test your functions, perform hard and soft thresholding on \texttt{noisy\_darkhair.png} and plot the resulting images together.
 When testing your function, use the Daubechies 4 wavelet and four sets of detail coefficients (\li{level=4} when using \li{wavedec2()}).
 For soft thresholding use $\tau=20$, and for hard thresholding use $\tau=40$.
+
+\noindent Some notes:
+\begin{enumerate}
+\item Masking will be helpful however it's important to consider the order in which you change values since adjusting certain values by $\tau$ initially can skew which conditions that value satisfies. Use your masks in a safe order.
+\item In previous problems there was only one tuple of detail coefficients now there may be more. Make sure your code is robust enough to handle any number of tuples of detail coefficients.
+\end{enumerate}
+ 
 \end{problem}
 
 \begin{comment}
@@ -784,7 +796,7 @@ The image is processed by the following formula:
 M' = \frac{M-m}{s},
 \]
 where $M$ is the original image matrix, $M'$ is the processed image, $m$ is the mean pixel value, and $s = \max\{\max(M) - m, m - \min(M)\}/128$
-(here $\max(M)$ and $\min(M)$ refer to the maximum and minimum pixel values in the matrix).
+(here $\max(M)$ and $\min(M)$ refer to the maximum and minimum pixel values in the matrix). We've provided the code for this part of the algorithm.
 
 
 \begin{comment}
@@ -799,17 +811,17 @@ we use the following commands:
 \end{lstlisting}
 \end{comment}
 
-\begin{problem}
-Implement the preprocessing step as well as its inverse by implementing the class methods \li{pre_process()} and \li{post_process()}.
-Each method accepts a NumPy array (the image) and returns the processed image as a NumPy array.
-In the \li{pre_process()} method, calculate the values of $m$ and $s$ given above and store them in the class attributes \li{_m} and \li{_s}.
-\end{problem}
+%\begin{problem}
+%Implement the preprocessing step as well as its inverse by implementing the class methods \li{pre_process()} and \li{post_process()}. You are essentially just coding the before mentioned function and its inverse.
+%Each method accepts a NumPy array (the image) and returns the processed image as a %NumPy array.
+%In the \li{pre_process()} method, calculate the values of $m$ and $s$ given above and store them in the class attributes \li{_m} and \li{_s}.
+%\end{problem}
 
 \subsubsection*{WSQ: Calculating the Wavelet Coefficients}
 The next step in the compression algorithm is decomposing the image into subbands of wavelet coefficients.
 In this implementation of the WSQ algorithm, the image is decomposed into five sets of detail coefficients (\li{level=5}) and one approximation subband, as shown in Figure \ref{fig:wavelets-subbands}.
 Each of these subbands should be placed into a list in the same ordering as in Figure \ref{fig:wavelets-subbands} (another way to consider this ordering is the approximation subband followed by
-each level of detail coefficients $[LL_5, LH_5, HL_5, HH_5, LH_4, HL_4,\dots ,HH_1]$).
+each level of detail coefficients $[A, H_5, V_5, D_5, H_4, V_4,\dots ,D_1]$).
 
 \begin{problem}
 Implement the class method \li{decompose()}.
@@ -863,7 +875,9 @@ where $Z_k$ and $Q_k$ are dependent on the subband.
 They determine how much compression is achieved.
 If $Q_k=0$, all coefficients are mapped to 0.
 
-Selecting appropriate values for these parameters is a tricky problem in itself, and relies on heuristics based on the statistical properties of the wavelet coefficients.
+An array of detail coefficients (such as $H$) can be quantized by running each value of the array through the piecewise function.
+
+Selecting appropriate values for $Z_k$ and $Q_k$ is a tricky problem in itself, and relies on heuristics based on the statistical properties of the wavelet coefficients.
 The methods that calculate these values have already been initialized.
 
 Quantization is not a perfectly invertible process.
@@ -918,7 +932,7 @@ Download bitstring using the following command:
 \begin{lstlisting}
 $ pip install bitstring
 \end{lstlisting}
-Import the package with the following line of code:
+You will not use bitstring functions in this lab. but the code provided in the lab does call functions from the bitstring module. So you'll need to import the package with the following line of code:
 \begin{lstlisting}
 >>> import bitstring as bs
 \end{lstlisting}
@@ -1169,8 +1183,7 @@ The number of bits in the encoding can be calculated by adding up the lengths of
 Implement the method \li{get_ratio()} by calculating the ratio of compression.
 The function should not accept any parameters and should return the compression ratio.
 
-Your compression algorithm is now complete!
-You can test your class with the following code.
+Your compression algorithm is now complete! Test your class with the following code.
 The compression ratio should be approximately 18.
 \begin{lstlisting}
 # Try out different values of r between .1 to .9.
@@ -1206,7 +1219,7 @@ The official standard for the WSQ algorithm is slightly different from the versi
 One of the largest differences is the subband pattern that is used in the official algorithm; this pattern is demonstrated in Figure \ref{fig:wavelets-subbands2}.
 The pattern used may seem complicated and somewhat arbitrary, but it is used because of the relatively good empirical results when used in compression.
 This pattern can be obtained by performing a single pass of the 2-dimensional filter bank on the image then passing each of the resulting subbands through the filter bank resulting in 16 total subbands.
-This same process is then repeated with the $LL$, $LH$ and $HL$ subbands of the original approximation subband creating 46 additional subbands.
+This same process is then repeated with the $A$, $H$ and $V$ subbands of the original approximation subband creating 46 additional subbands.
 Finally, the subband corresponding to the top left of Figure \ref{fig:wavelets-subbands2} should be passed through the 2-dimensional filter bank a single time.
 
 \begin{comment}
