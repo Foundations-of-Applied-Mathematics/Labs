@@ -77,14 +77,14 @@ Combining both the AR$(p$) and MA($q$) models, we get an ARMA($p,q$) model which
 
 Not all ARMA models are covariance stationary. 
 However, many time series can be made covariance stationary by differencing.
-Let $\nabla Z_t$ represent the time series $Y_t = Z_t - Z_{t-1}$ obtained by taking a difference of the terms. 
+Let $\delta Z_t$ represent the time series $Y_t = Z_t - Z_{t-1}$ obtained by taking a difference of the terms. 
 If the trend is linear a first difference is usually stationary.
-If the trend is quadratic a second difference may be necessary $\nabla ^2 Z_t = \nabla ( \nabla Z_t)$.
+If the trend is quadratic a second difference may be necessary $\delta ^2 Z_t = \delta ( \delta Z_t)$.
 An $\text{ARIMA}(p,d,q)$ model is a discrete-time stochastic process $(Z_t)_{t \in \mathbb{Z}}$ satisfying the equation
 
 \begin{align}
     \label{eq:arima:def}
-    \nabla ^ d Z_t = \mathbf{c} + \underbrace{\left(\sum_{i=1}^p \Phi_{i}\mathbf{y_{t - i}}\right)}_\text{AR(p)} +  
+    \delta ^ d Z_t = \mathbf{c} + \underbrace{\left(\sum_{i=1}^p \Phi_{i}\mathbf{y_{t - i}}\right)}_\text{AR(p)} +  
     \underbrace{\left(\sum_{j=1}^{q} \Theta_{j}\boldsymbol{\epsilon_{t-j}} \right)}_\text{MA(q)} + \text{ } \boldsymbol{\epsilon_t}
 \end{align}
 
@@ -119,13 +119,15 @@ Let $\epsilon_i\sim\mathscr{N}(0,1)$ for all $i$.
 Use your function to predict the next $n$ values of the time series. 
 The time series that should be used is the first difference of the time series found in the file \li{weather.npy}, which we denote $\{z_t\}_{t=1}^T$.
 This is done because we want the time series to be covariance stationary.
-The function should accept a parameter $p$, $q$, and $n$ (the number of observations to predict).
+The function should accept as parameters $p$, $q$, and $n$, where $p$ is the order of the autoregressive model, $q$ is the order of the moving average model, and $n$ is the number of observations to predict.
 Plot the observed differences $\{z_t\}_{t=1}^T$ followed by your predicted observations of $z_t$.
+
+\noindent Hint: you might find \li{np.diff()} to be usefull.
 
 The file \li{weather.npy} contains data on the temperature in Provo, Utah from 7:56 PM May 13, 2019 to 6:56 PM May 16, 2019, taken every hour.
 
 Use this file to test your code.
-For $p=2$, $q=1$, and $T=20$, your plot should look similar to Figure \ref{fig:ARMA:naive}, however, due to the variance of the error $\epsilon_t$, the plot will not look exactly like Figure \ref{fig:ARMA:naive}.
+For $p=2$, $q=1$, and $n=20$, your plot should look similar to Figure \ref{fig:ARMA:naive}, however, due to the variance of the error $\epsilon_t$, the plot will not look exactly like Figure \ref{fig:ARMA:naive}.
 The predictions may be higher or lower on the x-axis.
 \label{prob:arma:naive}
 \end{problem}
@@ -227,21 +229,21 @@ Given that each conditional distribution is Gaussian, the likelihood can then be
 
 \begin{problem}
 \label{prob:arma:likelihood}
-Write a function \li{arma_likelihood()} that returns the log-likelihood of an ARMAmodel, given a time series $\{z_t\}_{t=1}^T$.
-This function should accept a \li{file} with the observations and each of the parameters in $\Theta$. 
-In this case, using \li{weather.npy}, the time series should be the change in temperature.
-This means to take the first difference of the time series found in the file \li{weather.npy} as done in the first problem.
+Write a function \li{arma_likelihood()} that returns the log-likelihood of an ARMA model, given a time series $\{z_t\}_{t=1}^T$.
+This function should accept \li{filename} which contains the observations, and it should accept as parameters each parameter in $\Theta$. 
+In this case, the time series should be the change in temperature of \li{weather.npy}, which is the first difference of the time series found in \li{weather.npy}, as was done in the first problem.
 Return the log-likelihood of the $\text{ARMA}(p,q)$ model as a \li{float}.
 
-Use the \li{state_space_rep()} function provided to create $F,Q,$ and $H$.
-A \li{kalman()} filter has been provided to calculate the means and covariances of each observation.
+Use the \li{state_space_rep()} function provided to generate $F,Q,$ and $H$.
+The function \li{kalman()} has also been provided to calculate the means and covariances of each observation.
 
-(Hint: Calling the function \li{kalman()} on a time series will return an array whose values are $x_{k\mid k-1}$ and an array whose values are $P_{k\mid k-1}$ for each $k\leq n$.
-Remember that the time series should have $\mu$ subtracted when using \li{kalman()}.)
+\noindent Hint: calling the function \li{kalman()} on a time series will return an array whose values are $x_{k\mid k-1}$ and an array whose values are $P_{k\mid k-1}$ for each $k\leq n$.
+Remember that the time series should have $\mu$ subtracted when using \li{kalman()}.
 
 When done correctly, your function should match the following output:
 \begin{lstlisting}
->>> arma_likelihood(file='weather.npy', phis=np.array([0.9]), thetas=np.array([0]), mu=17., std=0.4)
+>>> arma_likelihood(filename='weather.npy', phis=np.array([0.9]), 
+                    thetas=np.array([0]), mu=17., std=0.4)
 -1375.1805469978776
 \end{lstlisting}
 \end{problem}
@@ -268,12 +270,13 @@ Use the following code to run this routine.
 
 >>> # assume p, q, and time_series are defined
 >>> def f(x): # x contains the phis, thetas, mu, and std
->>>     return -1*arma_likelihood(filename, phis=x[:p], thetas=x[p:p+q], mu=x[-2],std=x[-1])
+>>>     return -1*arma_likelihood(filename, phis=x[:p], thetas=x[p:p+q], 
+                                    mu=x[-2], std=x[-1])
 >>> # create initial point
->>> x0 = np.zeros(p+q+2)
+>>> x0 = np.zeros(p + q + 2)
 >>> x0[-2] = time_series.mean()
 >>> x0[-1] = time_series.std()
->>> sol = minimize(f,x0, method = "SLSQP")
+>>> sol = minimize(f,  x0, method = "SLSQP")
 >>> sol = sol['x']
 \end{lstlisting}
 
@@ -287,12 +290,12 @@ The order of the model which minimizes the AIC is then the optimal model.
 
 \begin{problem}
 \label{prob:model-identification}
-Write a function \li{model_identification()} that accepts a \li{file} containing the time series data and two integers, $p$ and $q$. 
-Return each parameter in $\Theta$ that minimizes the AIC of an ARMA($i,j$) model, given that $1\leq i \leq p$ and $1\leq j \leq q$.
+Write a function \li{model_identification()} that accepts \li{filename} containing the time series data and parameters $p_max$ and $q_max$ as integers. 
+Return each parameter in $\Theta$ that minimizes the AIC of an ARMA($i,j$) model, given that $1\leq i \leq \text{\li{p_max}}$ and $1\leq j \leq \text{\li{q_max}}$.
 
 Your code should produce the following output (it may take awhile to run):
 \begin{lstlisting}
->>> model_identification(filename='weather.npy',p=4,q=4)
+>>> model_identification(filename='weather.npy', p_max=4, q_max=4)
 (array([ 0.7213538]), array([-0.26246426]), 0.359785001944352, 1.5568374351425505)
 \end{lstlisting}
 \end{problem}
@@ -325,25 +328,25 @@ Once computed, only the predict step is needed to find the future means and cova
 
 \begin{problem}
 \label{prob:arma:forecast}
-Write a function \li{arma_forecast()} that accepts a \li{file} containing a time series, the parameters for an ARMA model, and the number $n$ of observations to forecast.
+Write a function \li{arma_forecast()} that accepts \li{filename} containing a time series, the parameters for an ARMA model, and the number $n$ of observations to forecast.
 Calculate the mean and covariance of the future $n$ observations using a Kalman filter.
 Plot the original observations as well as the \li{mean} for each future observation.
 Plot a 95\% confidence interval (2 standard deviations away from the mean) around the means of future observations.
 Return the means and standard deviations calculated.
-
-(Hint: The standard deviation is the square root of the covariance calculated.)
+\noindent Hint: the standard deviation is the square root of the covariance calculated.
 
 The following code should create a plot similar to Figure \ref{fig:forecasted}.
 
 \begin{lstlisting}
 >>> # Get optimal model as found in the previous problem
->>> phis, thetas, mu, std =np.array([ 0.72135856]), array([-0.26246788]), 0.35980339870105321, 1.5568331253098422)
+>>> phis, thetas, mu, std = np.array([0.72135856]), np.array([-0.26246788]), 0.35980339870105321, 1.5568331253098422
 
 >>> # Forecast optimal mode
->>> arma_forecast(filename='weather.npy', phis=phis, thetas=thetas, mu=mu, std=std)
+>>> arma_forecast(filename='weather.npy', phis=phis, thetas=thetas, 
+                    mu=mu, std=std, n=30)
 \end{lstlisting}
 
-How does this plot compare to the naive ARMA model made in Problem \ref{prob:arma:naive}?
+\noindent How does this plot compare to the naive ARMA model made in Problem \ref{prob:arma:naive}?
 \end{problem}
 
 \section*{Statsmodel ARMA}
@@ -387,15 +390,15 @@ model.predict(start=0,end=len(data)+30)
 \end{lstlisting}
 
 \begin{problem}
-Write a function \li{sm_arma()} that accepts a \li{file} containing a time series, maximum integer values for $p$ and $q$, and the number $n$ of values to predict.
-Use \li{statsmodels} to perform model identification as in Problem \ref{prob:model-identification}, where the order of ARMA($i,j$) satisfies $1\leq i \leq p$ and $1 \leq j \leq q$.
+Write a function \li{sm_arma()} that accepts \li{filename} containing a time series, integer values for \li{p_max} and \li{q_max}, and the number $n$ of values to predict.
+Use \li{statsmodels} to perform model identification as in Problem \ref{prob:model-identification}, where the order of ARMA($i,j$) satisfies $1\leq i \leq$ \li{p_max} and $1 \leq j \leq$ \li{q_max}.
 Ensure the model is fit using the MLE.
 
 Use the optimal model to predict $n$ future observations of the time series.
 Plot the original observations along with the mean of each future observations given by \li{statsmodels}.
 Return the AIC of the optimal model.
 
-For $p=3, q=3$, and $n=30$, your graph should look similar to Figure \ref{fig:sm}.
+For $\text{\li{p_max}}=3, \text{\li{q_max}}=3$, and $n=30$, your graph should look similar to Figure \ref{fig:sm}.
 How does this graph compare to Problem \ref{prob:arma:naive}? Problem \ref{prob:arma:forecast}?
 \label{prob:statsmodels}
 \end{problem}
@@ -403,7 +406,7 @@ How does this graph compare to Problem \ref{prob:arma:naive}? Problem \ref{prob:
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{figures/sm.pdf}
-\caption{Statsmodel ARMA(3,1) forecast on \li{weather.npy}.}
+\caption{Statsmodel ARMA(3,3) forecast on \li{weather.npy}.}
 \label{fig:sm}
 \end{figure}
 
@@ -470,7 +473,7 @@ Note that when fitting a VARMAX model setting the parameter \li{ic} to \li{aic} 
 Write a function \li{sm_varma()} that accepts start and end dates for forecasting.
 Use the statsmodels VARMAX class to forecast on macroeconomic data between the start and end dates.
 Use AIC as the criterion for model selection when fitting the model.
-Plot the prediction, original data and  a 95\% confidence interval (2 standard deviations away from the mean) around the future observations.
+Plot the prediction, original data and a 95\% confidence interval (2 standard deviations away from the mean) around the future observations.
 Return the AIC of the chosen model.
 The plot should be similar to Figure \ref{fig:econ}.
 
@@ -488,8 +491,8 @@ The following code shows how to obtain the data.
 >>> df = df[['realgdp','realcons','realinv']]
 \end{lstlisting}
 
-In the dataset 'realgdp' is the real gross domestic product, 'realcons' is real personal consumption expenditures, and 'realinv' is real gross private domestic investment.
-Since personal consumption and domestic investment are components of gross domestic product it is reasonable to assume these time series will be useful in predicting one another.
+The dataset \li{'realgdp'} contains the real gross domestic product, \li{'realcons'} contains real personal consumption expenditures, and \li{'realinv'} contains real gross private domestic investment.
+Since personal consumption and domestic investment are components of gross domestic product, it is reasonable to assume these time series will be useful in predicting one another.
 
 \end{problem}
 

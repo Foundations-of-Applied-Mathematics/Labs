@@ -323,31 +323,43 @@ $f(x,y) = \left[\begin{array}{c} x^2 \\ x+y \end{array}\right]$.
 
 Many machine learning algorithms and structures, especially neural networks, rely on the gradient of a cost or objective function.
 To facilitate their research, several organizations have recently developed Python packages for numerical differentiation.
-For example, the Harvard Intelligent Probabilistic Systems Group (HIPS) started developing \li{autograd} in 2014 (\url{https://github.com/HIPS/autograd}) and Google released \li{tangent} in 2017 (\url{https://github.com/google/tangent}).
-These tools are incredibly robust: they can differentiate functions with NumPy routines,\footnote{See \url{https://github.com/HIPS/autograd/blob/master/docs/tutorial.md} for which features Autograd supports.} \li{if} statements, \li{while} loops, and even recursion.
+For example, the Harvard Intelligent Probabilistic Systems Group (HIPS) started developing \li{autograd} in 2014 (\url{https://github.com/HIPS/autograd}) and Google 
+created JAX (\url{https://github.com/google/jax}) as a successor to \li{autograd}.
+Popular deep learning libraries also contain automatic differentiation libraries.
+These tools use an algorithm known as \emph{automatic differentiation} that is incredibly robust: they can differentiate functions with NumPy routines, \li{if} statements, \li{while} loops, and even recursion.
 % They are therefore beneficial for calculating derivatives of unconventional or very complex functions.
-We conclude with a brief introduction to Autograd.\footnote{Autograd is not included in Anaconda; install it with \texttt{pip install autograd}.}
 
-Autograd's \li{grad()} accepts a scalar-valued function and returns its gradient as a function that accepts the same parameters as the original.
-% The following code computes the derivative of $e^{\sin\left(\cos\left(x\right)\right)}$ at $x=1$ using Autograd.
-To support most of the NumPy features, Autograd comes with its own thinly-wrapped version of Numpy, \li{autograd.numpy}.
-Import this version of NumPy as \li{anp} to avoid confusion.
+We conclude with a brief introduction to JAX.
+JAX is not included in Anaconda.
+It can be installed as follows on Mac and Linux:
+\begin{lstlisting}
+pip install "jax[cpu]"
+\end{lstlisting}
+Installation directly via \li{pip} is not currently supported on Windows, however.
+Some unofficial builds for Windows are available at \url{https://github.com/cloudhan/jax-windows-builder}.
+JAX also has additional installation options that allow it to do computations on a GPU using the CUDA library.
+See \url{https://github.com/google/jax#installation} for additional options for these cases.
+
+
+JAX's \li{grad()} accepts a scalar-valued function and returns its gradient as a function that accepts the same parameters as the original.
+To support most of the NumPy features, JAX comes with its own thinly-wrapped version of Numpy, \li{jax.numpy}.
+Import this version of NumPy as \li{jnp} to avoid confusion.
 
 \begin{lstlisting}
->>> from autograd import numpy as anp       # Use autograd's version of NumPy.
->>> from autograd import grad
+>>> from jax import numpy as jnp            # Use JAX's version of NumPy.
+>>> from jax import grad
 
->>> g = lambda x: anp.exp(anp.sin(anp.cos(x)))
+>>> g = lambda x: jnp.exp(jnp.sin(jnp.cos(x)))
 >>> dg = grad(g)                            # dg() is a callable function.
 >>> dg(1.)                                  # Use floats as input, not ints.
--1.2069777039799139
+DeviceArray(-1.2069776, dtype=float32, weak_type=True)
 \end{lstlisting}
 
 \begin{comment} % Not enough room, and not useful later.
-Autograd can differentiate a function as many times as desired.
+JAX can differentiate a function as many times as desired.
 
 \begin{lstlisting}
->>> f = lambda x: anp.sin(x) + 3**anp.cos(x)
+>>> f = lambda x: jnp.sin(x) + 3**jnp.cos(x)
 
 # Calculate the first derivative.
 >>> df = grad(f)
@@ -361,15 +373,14 @@ Autograd can differentiate a function as many times as desired.
 \end{comment}
 
 Functions that \li{grad()} produces do not support array broadcasting, meaning they do not accept arrays as input.
-Autograd's \li{elementwise_grad()} returns functions that can accept arrays, like using \li{"numpy"} as an argument in SymPy's \li{sy.lambdify()}.
+The easiest way to create a function is to use \li{jnp.vectorize()} on the derivative.
+%Autograd's \li{elementwise_grad()} returns functions that can accept arrays, like using \li{"numpy"} as an argument in SymPy's \li{sy.lambdify()}.
 
 \begin{lstlisting}
->>> from autograd import elementwise_grad
-
->>> pts = anp.array([1, 2, 3], dtype=anp.<<float>>)
->>> dg = elementwise_grad(g)        # Calculate g'(x) with array support.
->>> dg(pts)                         # Evaluate g'(x) at each of the points.
-array([-1.2069777 , -0.55514144, -0.03356146])
+>>> pts = jnp.array([1, 2, 3], dtype=<<float>>)
+>>> dg = jnp.vectorize(grad(g))        # Calculate g'(x) with array support.
+>>> dg(pts)                            # Evaluate g'(x) at each of the points.
+DeviceArray([-1.2069776 , -0.5551414 , -0.03356146], dtype=float32)
 \end{lstlisting}
 
 % >>> g = lambda x: anp.exp(anp.sin(anp.cos(x)))
@@ -378,7 +389,7 @@ array([-1.2069777 , -0.55514144, -0.03356146])
 
 
 SymPy would have no trouble differentiating $g(x)$ in these examples.
-However, Autograd can also differentiate Python functions that look nothing like traditional mathematical functions.
+However, JAX can also differentiate Python functions that look nothing like traditional mathematical functions.
 For example, the following code computes the Taylor series of $e^{x}$ with a loop.
 
 \begin{lstlisting}
@@ -386,15 +397,16 @@ For example, the following code computes the Taylor series of $e^{x}$ with a loo
 
 >>> def taylor_exp(x, tol=.0001):
 ...     """Compute the Taylor series of e^x with terms greater than tol."""
-...     result, i, term = 0, 0, x
-...     while anp.abs(term) > tol:
+...     result, i, term = 0, 0, 1
+...     while jnp.abs(term) > tol:
 ...         term = x**i / int(factorial(i))
 ...         result, i = result + term, i + 1
 ...     return result
 ...
 >>> d_exp = grad(taylor_exp)
->>> print(d_exp(2., .1), d_exp(2., .0001))
-7.26666666667 7.38899470899
+>>> d_exp(2., .1), d_exp(2., .0001)
+(DeviceArray(7.266667, dtype=float32, weak_type=True),
+ DeviceArray(7.3889947, dtype=float32, weak_type=True))
 \end{lstlisting}
 
 \begin{problem} % Take the derivative of a recursive function.
@@ -403,9 +415,9 @@ The \emph{Chebyshev Polynomials} satisfy the recursive relation
 T_0(x) = 1,\qquad T_1(x) = x,\qquad T_n(x) = 2xT_{n-1}(x) - T_{n-2}(x).
 \]
 Write a function that accepts an array $x$ and an integer $n$ and recursively computes $T_n(x)$.
-Use Autograd and your first function to create a function for $T_n'(x)$.
+Use JAX and your first function to create a function for $T_n'(x)$.
 Use this last function to plot each $T_n'(x)$ over the domain $[-1, 1]$ for $n=0,1,2,3,4$.
-\\(Hint: Use \li{anp.ones_like(x)} to handle the case when $n = 0$.)
+\\(Hint: Use \li{jnp.ones_like(x)} to handle the case when $n = 0$.)
 \end{problem}
 
 \begin{problem} % Compare differentiation methods.
@@ -417,16 +429,18 @@ Write a function that accepts an integer $N$ and performs the following experime
 Time how long the entire process takes, including calling your function (each iteration).
 \item Time how long it takes to get an approximation $\tilde{f}'(x_0)$ of $f'(x_0)$ using the fourth-order centered difference quotient from Problem \ref{prob:difference-quotient-convergence}.
 Record the absolute error $|f'(x_0) - \tilde{f}'(x_0)|$ of the approximation.
-\item Time how long it takes to get an approximation $\bar{f}'(x_0)$ of $f'(x_0)$ using Autograd (calling \li{grad()} every time).
+\item Time how long it takes to get an approximation $\bar{f}'(x_0)$ of $f'(x_0)$ using JAX (calling \li{grad()} every time).
 Record the absolute error $|f'(x_0) - \bar{f}'(x_0)|$ of the approximation.
 \end{enumerate}
 
-Plot the computation times versus the absolute errors on a log-log plot with different colors for SymPy, the difference quotient, and Autograd.
+Plot the computation times versus the absolute errors on a log-log plot with different colors for SymPy, the difference quotient, and JAX.
 For SymPy, assume an absolute error of \li{1e-18} (since only positive values can be shown on a log plot).
 
 For $N=200$, your plot should resemble the following figure.
-Note that SymPy has the least error but the most computation time, and that the difference quotient takes the least amount of time but has the most error.
-Autograd might be considered a ``happy medium,'' a least for this problem.
+Note that SymPy has the least error but longer computation time, and that the difference quotient takes the least amount of time but has the most error.
+%JAX might be considered a ``happy medium,'' a least for this problem.
+JAX, on the other hand, does not appear to be as well-suited to this particular problem.
+However, for more complicated functions and functions of multiple variables, it tends to be a ``happy medium'' between the two, with faster runtime than SymPy.
 
 \begin{figure}[H]
     \includegraphics[width=.7\textwidth]{figures/efficiency.pdf}
@@ -438,59 +452,44 @@ Autograd might be considered a ``happy medium,'' a least for this problem.
 
 \section*{Additional Material} % ==============================================
 
-\subsection*{More Autograd} % -------------------------------------------------
+\subsection*{More JAX} % -------------------------------------------------
 
-For scalar-valued functions with multiple inputs, the parameter \li{argnum} specifies the variable that the derivative is computed with respect to.
-Providing a list for \li{argnum} gives several outputs.
+For scalar-valued functions with multiple inputs, the parameter \li{argnums} specifies the variable that the derivative is computed with respect to.
+Providing a list for \li{argnums} gives several outputs.
 
 \begin{lstlisting}
 >>> f = lambda x,y: 3*x*y + 2*y - x
 
 # Take the derivative of f with respect to the first variable, x.
->>> dfdx = grad(f, argnum=0)            # Should be dfdx(x,y) = 3y - 1,
+>>> dfdx = grad(f, argnums=0)            # Should be dfdx(x,y) = 3y - 1,
 >>> dfdx(5., 1.)                        # so dfdx(5,1) = 3 - 1 = 2.
-2.0
+DeviceArray(2., dtype=float32, weak_type=True)
 
 # Take the gradient with respect to the second variable, y.
->>> dfdy = grad(f, argnum=1)            # Should be dfdy(x,y) = 3x + 2,
+>>> dfdy = grad(f, argnums=1)            # Should be dfdy(x,y) = 3x + 2,
 >>> dfdy(5., 1.)                        # so dfdy(5,1) = 15 + 2 = 17.
-17.0
+DeviceArray(17., dtype=float32, weak_type=True)
 
 # Get the full gradient.
->>> grad_f = grad(f, argnum=[0,1])
->>> anp.array(grad_f(5., 1.))
-array([  2.,  17.])
+>>> grad_f = grad(f, argnums=[0,1])
+>>> jnp.array(grad_f(5., 1.))
+DeviceArray([ 2., 17.], dtype=float32)
 \end{lstlisting}
 
-Finally, Autograd's \li{jacobian()} can differentiate vector-valued functions.
+Finally, JAX's \li{jacobian()} can differentiate vector-valued functions.
 % The following example shows how to find the Jacobian of $f(x,y) = \left[\begin{array}{c} x^2 \\ x+y \end{array}\right]$.
 
 \begin{lstlisting}
->>> from autograd import jacobian
+>>> from jax import jacobian
 
->>> f = lambda x: anp.array([x[0]**2, x[0]+x[1]])
+>>> f = lambda x: jnp.array([x[0]**2, x[0]+x[1]])
 >>> f_jac = jacobian(f)
->>> f_jac(anp.array([1., 1.]))
-array([[ 2.,  0.],
-       [ 1.,  1.]])
+>>> f_jac(jnp.array([1., 1.]))
+DeviceArray([[2., 0.],
+             [1., 1.]], dtype=float32)
 \end{lstlisting}
 
-\subsection*{Google Tangent} % ------------------------------------------------
-
-Google's \li{tangent} package is similar to Autograd, both in purpose and syntax.
-However, Tangent differentiates code ahead of time, while Autograd waits until the last second to actually do any calculations.
-Tangent also tends to be slightly faster than Autograd.
-
-\begin{lstlisting}
->>> import tangent              # Install with 'pip install tangent'.
-
->>> def f(x):                   # Tangent does not support lambda functions,
-...     return x**2 - x + 3
-...
->>> df = tangent.grad(f)
->>> df(10)                      # ...but the functions do accept integers.
-19.0
-\end{lstlisting}
+% There used to be a section on Tangent, but it's now deprecated.
 
 \begin{comment} % NOT FINISHED! ...and not really necessary.
 \subsection*{Convergence of the Centered Difference Quotient} % ---------------

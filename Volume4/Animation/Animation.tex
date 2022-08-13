@@ -1,7 +1,7 @@
 \lab{Introduction to Matplotlib: 3D Plotting and Animations}{Introduction to Matplotlib: 3D Plotting and Animations}
 \label{lab:lab0}
 
-\objective{3D plots and animations are useful in visualizing solutions to ODEs and PDEs found in many dynamics and control problems.
+\objective{Animations and 3D plots are useful in visualizing solutions to ODEs and PDEs found in many dynamics and control problems.
 In this lab we explore the functionality contained in the 3D plotting and animation libraries in Matplotlib.}
  
 \section*{Introduction}
@@ -53,7 +53,7 @@ This is an interactive regime that allows animations to be displayed without cre
 \end{info}
 \end{comment}
 
-\section*{Animation Background}
+\section*{Animation Basics}
 The animation library in Matplotlib contains a class called \li{FuncAnimation}.
 We will use this class throughout this lab. \li{FuncAnimation} requires a user-defined \textit{update} function that controls the plot for each frame of the animation. 
 This grants the user wide flexibility and control of the resulting animation.
@@ -165,14 +165,45 @@ When using FuncAnimation, it is essential that a reference is kept to the instan
 The animation is advanced by a timer and if a reference is not held for the object, \li{Python} will automatically garbage collect and the animation will stop.
 \end{info}
 
+\subsubsection*{Saving Animations}
+The simplest way to save an animation is to encode it to a \li{.mp4} file, which will allow you to display the video inline inside a Jupyter Notebook, or view it using any video player supporting the chosen filetype.
+
+Unfortunately, Matplotlib does not come with a built-in video encoder.
+The \li{matplotlib.animation} module supports several third-party encoders. FFmpeg is a lightweight solution which can be obtained from \href{https://www.ffmpeg.org/download.html}{https://www.ffmpeg.org/download.html}.
+When available, FFmpeg is generally chosen as the default, but you may need to specify to Matplotlib to use it:
+\begin{lstlisting}
+animation.writer = animation.writers['ffmpeg']
+\end{lstlisting}
+
+To prevent the animation from displaying while it is being rendered as video, use \li{plt.ioff()}.
+This turns off matplotlib's interactive mode until \li{plt.ion()} is called.
+After creating the animation object, use its \li{.save()} method with the desired filename to render and save the video. The following code is given for reference:
+
+\begin{lstlisting}
+plt.ioff()    # Turn off interactive mode to hide rendering animations
+
+# Code to create figure, axes, and update function goes here
+# ...
+ani = animation.FuncAnimation(fig, update, frames, interval)
+ani.save('my_animation.mp4')
+\end{lstlisting}
+To display the \li{.mp4} video in a Jupyter Notebook, place the following HTML code in a separate markdown cell:
+\begin{lstlisting}
+<video src="my_animation.mp4" controls>
+\end{lstlisting}
+
 \subsection*{Embedding Animations}
-Some systems may struggle with using \li{plt.show()} to display an animation.
-In this case, it may be easier to embed the animation using the HTML5 API. 
+While saving animations to a file has the advantage that the animation will persist if the notebook is closed and reopened, it tends to be much slower than directly embedding the animation in the notebook.
+Directly embedding can thus be useful in the process of creating an animation by allowing faster experimentation.
+
+After creating an animation, calling \li{plt.show()} will attempt to embed it; however, some systems may struggle to display an animation in this way.
+When this is the case, it may be easier to embed the animation using the HTML5 API. 
 Jupyter notebooks use HTML to display their contents, so we can leverage this and use HTML5's video capabilities to insert video directly into a notebook.
 
 To embed the video directly into a notebook using HTML5 you must use the \li{IPython.display} module.
 This module will be able to interpret an encoded HTML5 video, which \li{matplotlib.animation} can create.
 This method tends to be much more simple than rendering the animation to an \li{.mp4} file and then embedding that file into a notebook, as it does not require an outside encoder, and it tends to be encounter fewer bugs than using \li{plt.show()}.
+However, the animation generally does not persist if the notebook is closed and reopened.
 Here is a snippet you may reference to embed an animation using \li{IPyton.display}
 \begin{lstlisting}
 # required import statements
@@ -187,28 +218,29 @@ Here we would insert whatever code needed to create the animation
 such as instantiating the fig object and defining the update function
 '''
 # create animation
-ani = animation.FuncAnimation(fig, update, frames=N, interval=i)
+ani = animation.FuncAnimation(fig, update, frames, interval)
 # render as html5 and embed
 HTML(ani.to_html5_video())
 \end{lstlisting}
 
+\begin{warn}
+Note that animations that are embedded in the notebook using \li{plt.show()} or \li{HTML()} \textbf{\emph{do not}} persist if the notebook is closed and reopened.
+While this method can be useful for more quickly testing animations, \textbf{\emph{do not}} use this method for embedding the final animations of your finished lab, as the grader will not be able to view your animations.
+Rather, save the animation to an \li{.mp4} file and embed the created file.
+When pushing your lab, be sure to also add and push the video files you create.
+\end{warn}
+
 \begin{problem}
 Use the FuncAnimation class to animate the function $y=\sin(x+0.1t)$ where $x \in [0,2\pi]$, and $t$ ranges from $0$ to $100$ seconds. 
+Save your animation to a file and embed that into the notebook.
 \end{problem}
 
 \section*{3D Plotting Introduction}
 3D plotting is very similar to 2D plotting.
 The main difference is that a set of 3D axes must be created within the figure object.
-A 3D axes object is created using the additional keyword argument \li{projection='3d'}, as shown below. Note that the Axes3D submodule must first be imported in order to create the 3D axis.
-
-\begin{comment}
-Like animations, 3D plotting also requires the initialization of a figure object.
-After creating a figure object, you can create a 3D axis object by calling \li{gca()} or \li{add_subplot(111)} on the figure object with the keyword argument \li{projection='3d'} as shown below. Both of these functions return a 3D axis object. Note, the 3d projection argument is contained in the Axes3D library. 
-\end{comment}
+A 3D axes object is created using the additional keyword argument \li{projection='3d'}:
 
 \begin{lstlisting}
->>> from mpl_toolkits.mplot3d import Axes3D
->>>
 >>> # Create figure object.
 >>> fig = plt.figure()
 >>>
@@ -217,16 +249,6 @@ After creating a figure object, you can create a 3D axis object by calling \li{g
 \end{lstlisting}
 
 \subsection*{3D Static Plotting}
-\begin{comment}, as shown below. 
-
-\begin{lstlisting}
->>> x = np.linspace(0,5,10)
->>> y = np.linspace(1,3,10)
->>> z = np.linspace(-1,-1,10)
->>> plt.plot(x, y, z)
->>> plt.show()
-\end{lstlisting}
-\end{comment}
 
 When the axes object is explicitly defined, plots are generated by calling the chosen plot function (such as \li{ax.plot()} on the axes object.
 Additional information on the use of axes objects can be found here: \href{https://matplotlib.org/api/axes\_api.html}{https://matplotlib.org/api/axes\_api.html}.
@@ -240,7 +262,7 @@ Use \li{np.load('orbits.npz')} to load the data for the four planets' orbits.
 Create a 3D plot of the orbits, and compare your results with Figure \ref{lab0:3dplot}.
 \end{problem}
 
-\begin{figure}[H]
+\begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/orbits.png}
 \caption{The solution to Problem 2.}
@@ -255,32 +277,7 @@ The \li{.set_3d_properties()} function call is also made inside the update funct
 Animation in 3D requires more careful consideration than in the 2D case.
 When \li{matplotlib} displays a 3D plot, it does so in an interactive figure that allows the user to change the camera angle and position.
 Since 3D rendering is more computationally expensive than 2D rendering, interactive views of 3D animations often have poor framerates and choppy rendering.
-The solution is to use the tools in the \li{matplotlib.animation} module to render the animation and then embed that rendered animation within a Jupyter Notebook.
-This can be done in two ways: embedding the video directly using an HTML5 API, or encoding the animation to an \li{.mp4} video and embedding that video.
-Embedding the video directly tends to be easier, as \li{matplotlib} does not come with an \li{.mp4} video encoder, while it can encode video for HTML5.
-
-\subsubsection*{Saving Animations}
-Saving the animation by encoding it to a \li{.mp4} file will allow you to display the video inline inside a Jupyter Notebook, or view it using any video player supporting the chosen filetype. 
-
-Unfortunately, Matplotlib does not come with a built-in video encoder.
-The \li{matplotlib.animation} module supports several third-party encoders. FFmpeg is a lightweight solution which can be obtained from: \href{https://www.ffmpeg.org/download.html}{https://www.ffmpeg.org/download.html}.
-
-To prevent the animation from displaying while it is being rendered as video, use \li{plt.ioff()}.
-This turns off matplotlib's interactive mode until \li{plt.ion()} is called.
-After creating the animation object, use its \li{.save()} method with the desired filename to render and save the video. The following code is given for reference:
-
-\begin{lstlisting}
-animation.writer = animation.writers['ffmpeg']
-plt.ioff()    # Turn off interactive mode to hide rendering animations
-
-# Code to create figure, axes, update function
-ani = animation.FuncAnimation(fig,update,frames,interval)
-ani.save('my_animation.mp4')
-\end{lstlisting}
-To display the \li{.mp4} video in a Jupyter Notebook, run the following code in a separate markdown cell:
-\begin{lstlisting}
-<video src="planet_ani.mp4" controls>
-\end{lstlisting}
+This is what calling \li{plt.plot()} attempts to do; instead, it is much better to either render the animation to a file and then embed the file, or to use the HTML5 API to embed it, as discussed above.
 
 \begin{problem}
 Each row of the arrays in \li{orbits.npz} gives the position of the planets at evenly spaced time points. The arrays correspond to 1400 points in time over a 700 day period (beginning on 2018-5-30).

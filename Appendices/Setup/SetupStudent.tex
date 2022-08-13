@@ -79,6 +79,29 @@ On your newly created Bitbucket repository page (\texttt{https://bitbucket.org/<
 Enter your instructor's Bitbucket username under \textbf{Users} and click \textbf{Add}.
 Select the blue \textbf{Write} button so your instructor can read from and write feedback to your repository.
 
+\item \emph{Create an SSH key}.
+This step needs to be done only once on each computer that you want to be able to use to access your repository.
+If you have multiple repositories on the same computer, you do \emph{not} need to repeat this step for each one.
+To create an SSH key,
+in a shell application (Terminal on Linux or Mac, or Git Bash (\url{https://gitforwindows.org/}) on Windows), enter the following command:
+\begin{lstlisting}
+$ ssh-keygen
+\end{lstlisting}
+Press the Enter or Return key to accept the default file location.
+It will then prompt to enter a passphrase; this acts as a password to use the SSH key.
+If you do not want a passphrase, leave it blank and press Enter again.
+The key will then be created.
+The file for the key will be placed in in the \li{/home/<username>/.ssh} directory on Linux; in \li{/Users/<username>/.ssh} on macOS; and in \li{/c/users/<username>/.ssh} on Windows.
+
+Now that the key is created, you need to add it to your Bitbucket account.
+From Bitbucket, choose \textbf{Personal settings} and then \textbf{SSH keys}.
+Click \textbf{Add key} and enter a label (what it is doesn't matter).
+Now, using the file explorer, navigate to the SSH key you created, and open the \emph{public key} file.
+The file will be called something like \li{id_rsa.pub}; do \emph{NOT} use \li{id_rsa} (without the \li{.pub} extension).
+Copy the contents of this file, paste it into the Key field on Bitbucket, and press Save.
+
+For more options and some troubleshooting information, refer to \url{https://support.atlassian.com/bitbucket-cloud/docs/set-up-an-ssh-key/}.
+
 \item \emph{Connect your folder to the new repository}.
 \label{step:connect-folder}
 In a shell application (Terminal on Linux or Mac, or Git Bash (\url{https://gitforwindows.org/}) on Windows), enter the following commands.
@@ -95,7 +118,7 @@ README.md             # This means README.md is in the working directory.
 
 # Connect this folder to the online repository.
 $ git init
-$ git remote add origin https://<name>@bitbucket.org/<name>/<repo>.git
+$ git remote add origin git@bitbucket.org:<name>/<repo>.git
 
 # Record your credentials.
 $ git config --local user.name "your name"
@@ -121,7 +144,7 @@ README.md
 
 # Connect this folder to the online repository.
 $ git init
-$ git remote add origin https://greek314@bitbucket.org/greek314/acmev1.git
+$ git remote add origin git@bitbucket.org:greek314/acmev1.git
 
 # Record credentials.
 $ git config --local user.name "archimedes"
@@ -134,10 +157,20 @@ $ git push origin master
 \end{lstlisting}
 
 At this point you should be able to see the files on your repository page from a web browser.
-If you enter the repository URL incorrectly in the \li{git remote add origin} step, you can reset it with the following line.
+If you enter the repository URL incorrectly in the \li{git remote add origin} step, you can reset it with the following line:
 \begin{lstlisting}
-$ git remote <<set>>-url origin https://<name>@bitbucket.org/<name>/<repo>.git
+$ git remote <<set>>-url origin git@bitbucket.org:<name>/<repo>.git
 \end{lstlisting}
+\begin{info}
+You may get the an error like the following when you run \li{git push}:
+\begin{lstlisting}
+<<remote: Bitbucket Cloud recently stopped supporting account passwords for Git authentication.>>
+...
+<<fatal: Authentication failed for 'https://bitbucket.org/<name>/<repo>.git/'>>
+\end{lstlisting}
+If this error occurs, your repository URL is in the wrong format; most likely, you used the \li{https} version instead of what is shown above.
+You can use the \li{<<git remote set-url origin>>} command to fix this issue as well.
+\end{info}
 
 \item \emph{Download data files}.
 \label{step:download-data}
@@ -169,7 +202,7 @@ If you want your repository on another computer after completing steps \ref{step
 $ <b<cd>b> ~/Desktop/<<or>>/something/
 
 # Clone the folder from the online repository.
-$ git clone https://<name>@bitbucket.org/<name>/<repo>.git <foldername>
+$ git clone git@bitbucket.org:<name>/<repo>.git <foldername>
 
 # Record your credentials in the new folder.
 $ <b<cd>b> <foldername>
@@ -266,7 +299,7 @@ This repository must be manually synchronized with the online repository via two
 \begin{info}
 When pulling updates with \li{git pull origin master}, your terminal may sometimes display the following message.
 \begin{lstlisting}
-Merge branch 'master' of https://bitbucket.org/<name>/<repo> into master
+Merge branch 'master' of git@bitbucket.org:<name>/<repo> into master
 
 # Please enter a commit message to explain why this merge is necessary,
 # especially if it merges an updated upstream into a topic branch.
@@ -298,7 +331,7 @@ $ git push origin master                            # Push updates.
 # Pull any updates from the online repository (such as TA feedback).
 $ <b<cd>b> ~/Desktop/Student-Materials/
 $ git pull origin master
-From https://bitbucket.org/username/repo
+From bitbucket.org:username/repo
  * branch            master     -> FETCH_HEAD
 Already up-to-date.
 
@@ -335,7 +368,7 @@ Delta compression using up to 2 threads.
 Compressing objects: 100% (2/2), done.
 Writing objects: 100% (3/3), 327 bytes | 0 bytes/s, done.
 Total 3 (delta 0), reused 0 (delta 0)
-To https://username@bitbucket.org/username/repo.git
+To git@bitbucket.org:username/repo.git
    5742a1b..fed9b34  master -> master>>
 
 $ git status
