@@ -60,7 +60,7 @@ class KalmanFilter(object):
         H : ndarray of shape (m,n)
             The observation model.
         R : ndarray of shape (m,m)
-            The covariance matric for observation noise.
+            The covariance matrix for observation noise.
         u : ndarray of shape (n,)
             The control vector.
         """
@@ -120,8 +120,8 @@ Instantiate a \li{KalmanFilter} object with these values.
 \begin{figure}
     \centering
     \begin{tabular}{cc}
-    \includegraphics[width=.45\textwidth]{states_evolution} &
-    \includegraphics[width=.45\textwidth]{obs_evolution}
+    \includegraphics[width=.45\textwidth]{figures/states_evolution} &
+    \includegraphics[width=.45\textwidth]{figures/obs_evolution}
     \end{tabular}
     \caption{State sequence (left) and sampling of observation sequence (right).}
     \label{fig:evolution}
@@ -130,6 +130,7 @@ Instantiate a \li{KalmanFilter} object with these values.
 We now wish to simulate a sequence of states and observations from the dynamical system.
 In addition to the system parameters, we need an initial state $\mathbf{x}_0$ to get started.
 Computing the subsequent states and observations is simply a matter of following equations \ref{eq:state} and \ref{eq:obs}.
+Bear in mind that the initial state $\mathbf{x}_0$ does not have added noise, but the initial observation and all subsequent states and observations take noise into account.
 
 \begin{problem}
 Add a method to your \li{KalmanFilter} class to generate a state and observation sequence by evolving the system from a given initial state (the function \li{numpy.random.multivariate_normal} will be useful).
@@ -156,10 +157,10 @@ def evolve(self,x0,N):
     pass
 \end{lstlisting}
 
-Simulate the true and observed trajectory of a projectile with initial state
-\[
-\mathbf{x}_0 = \left( \begin{array}{c} 0\\ 0 \\ 300 \\ 600\end{array} \right).
-\]
+\noindent To test your code, simulate the true and observed trajectories of a projectile with initial state
+\begin{equation*}
+    \mathbf{x}_0 = \left( \begin{array}{c} 0\\ 0 \\ 300 \\ 600\end{array} \right).
+\end{equation*}
 Approximately 1250 time steps should be sufficient for the projectile to hit the ground (i.e. for the $y$ coordinate to return to 0).
 Your results should qualitatively match those given in Figure \ref{fig:evolution}.
 \label{prob:simulation}
@@ -233,8 +234,8 @@ def estimate(self,x,P,z):
 \begin{figure}
     \centering
     \begin{tabular}{cc}
-    \includegraphics[width=.45\textwidth]{estimate_macro} &
-    \includegraphics[width=.45\textwidth]{estimate_micro}
+    \includegraphics[width=.45\textwidth]{figures/estimate_macro} &
+    \includegraphics[width=.45\textwidth]{figures/estimate_micro}
     \end{tabular}
     \caption{State estimates together with observations and true state sequence (detailed view on the right).}
     \label{fig:estimates}
@@ -293,8 +294,8 @@ def predict(self,x,k):
 \begin{figure}
     \centering
     \begin{tabular}{cc}
-    \includegraphics[width=.45\textwidth]{impact_macro} &
-    \includegraphics[width=.45\textwidth]{impact_micro}
+    \includegraphics[width=.45\textwidth]{figures/impact_macro} &
+    \includegraphics[width=.45\textwidth]{figures/impact_micro}
     \end{tabular}
     \caption{Predicted vs. actual point of impact (detailed view on right).}
     \label{fig:impact}
@@ -302,12 +303,22 @@ def predict(self,x,k):
 
 We can use this prediction routine to estimate where the projectile will hit the surface.
 \begin{problem}
-Using the final state estimate $\widehat{\mathbf{x}}_{800}$ that you obtained in Problem \ref{prob:state_estimate}, predict the future states of
-the projectile until it hits the ground.
+Using the final state estimate $\widehat{\mathbf{x}}_{800}$ that you obtained in Problem \ref{prob:state_estimate}, predict the future states of the projectile until it hits the ground.
 Predicting approximately the next $450$ states should be sufficient.
 
 Plot the actual state sequence together with the predicted state sequence (as a yellow curve), and observe how near the prediction is to the actual point of impact.
 Your results should be similar to those shown in Figure \ref{fig:impact}.
+The following code will help you plot both the actual and predicted state sequences together in a nice plot.
+\begin{lstlisting}
+>>> s,o = kal.evolve(x0,1250)
+>>> predicted = kal.predict(estimates[:,-1],450)
+
+>>> # create a dynamic xlim to always plot both sequences together
+>>> x1 = s[0,:][np.where(s[1,:]>=0)][-1]
+>>> x2 = predicted[0,:][np.where(predicted[1,:]>=0)][-1]
+>>> plt.xlim(min(x1,x2)-50, max(x1,x2)+50)
+\end{lstlisting}
+
 \end{problem}
 
 In the absence of observations, we can also reverse the system and iterate backward in time to infer information about states of the system prior to measured observations.
@@ -323,8 +334,8 @@ Considering again that $\mathbb{E}\left[\boldsymbol{\epsilon}_{k}\right] = 0$ at
 \begin{figure}[htb]
     \centering
     \begin{tabular}{cc}
-    \includegraphics[width=.45\textwidth]{origin_macro} &
-    \includegraphics[width=.45\textwidth]{origin_micro}
+    \includegraphics[width=.45\textwidth]{figures/origin_macro} &
+    \includegraphics[width=.45\textwidth]{figures/origin_micro}
     \end{tabular}
     \caption{Predicted vs. actual point of origin (detailed view on right).}
     \label{fig:origin}
@@ -360,7 +371,7 @@ Returning to the projectile example, we can now predict the point of origin.
 Using your state estimate $\widehat{\mathbf{x}}_{250}$, predict the point of origin of the projectile along with
 all states leading up to time step $250$. Note that you may have to take a few extra time steps to predict the point of origin.
 (The point of origin is the first point along the trajectory where the $y$ coordinate is $0$.)
-Plot these predicted states (in cyan) together with the original state sequence.
+Plot these predicted states (in green) together with the original state sequence.
 Zoom in to see how accurate your prediction is.
 Your plots should be similar to Figure \ref{fig:origin}.
 \label{prob:origin_pt}

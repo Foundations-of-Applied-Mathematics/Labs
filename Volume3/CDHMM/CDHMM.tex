@@ -1,7 +1,7 @@
 \lab{Speech Recognition using CDHMMs}{Speech Recognition using CDHMMs}
 \objective{Understand how speech recognition via CDHMMs works, and implement a simplified speech recognition system.}
 
-\subsection{Continuous Density Hidden Markov Models}
+\section*{Continuous Density Hidden Markov Models}
 Some of the most powerful applications of Hidden Markov Models, speech and voice recognition, result from allowing the observation space to be continuous instead of discrete.
 These are called Continuous Density Hidden Markov Models (CDHMMs), and they have two standard formulations: Gaussian HMMs and Gaussian Mixture Model HMMs (GMMHMMs).
 The former is a special case of the latter, so we will just discuss GMMHMMs in this lab.
@@ -22,7 +22,7 @@ is simply a Gaussian HMM.
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{mixture}
+\includegraphics[width=\textwidth]{figures/mixture.pdf}
 \caption{The probability density function of a mixture of Gaussians with four components.}
 \label{fig:mixture}
 \end{figure}
@@ -38,20 +38,23 @@ Let's define a full GMMHMM with $N=3$ states, components of dimension $M = 2$, a
 \begin{lstlisting}
 >>> import numpy as np
 
-# 3x3 transition matrix 
->>> A = np.array([[.6, .3, .1], [.2, .3, .5], [.7, .1, .2]])
+# NxN transition matrix 
+>>> A = np.array([[.3, .3, .4], [.2, .3, .5], [.3, .2, .5]])
 
-# 3x5 collection of component weights
->>> weights = np.array([[.5, .1, .25, .09, 0.6], [0, .4, .3, .2, .1], [.1, .3, .2, .1, .3]])
+# NxK collection of component weights
+>>> weights = np.array([[.3, .2, .1, .2, .2], [.1, .3, .3, .2, .1], 
+                        [.1, .3, .2, .1, .3]])
 
-# 3x5x2 collection of component means
->>> means = np.array([np.floor(np.random.uniform(-20, 20, size = (5, 2))) for i in range(3)])
+# NxKxM collection of component means
+>>> means = np.array([np.floor(np.random.uniform(-100, 100, size = (5, 4))) 
+                        for i in range(3)])
 
-# 3x5x(2x2) collection of component covariance matrices       
->>> covars = np.array([[np.floor(np.random.uniform(1, 20))*np.eye(2) for i in range(5)] for j in range(3)])
+# NxKx(MxM) collection of component covariance matrices       
+>>> covars = np.array([[np.floor(np.random.uniform(1, 20))*np.eye(4) 
+                        for i in range(5)] for j in range(3)])
 
-# (3,) ndarray initial state distribution 
->>> pi = np.array([.4, .1, .5]) 
+# (N,) ndarray initial state distribution 
+>>> pi = np.array([.15, .15, .7])
 
 # Save the model parameters 
 >>> gmm = [A, weights, means, covars, pi]
@@ -66,17 +69,19 @@ Now we can iteratively sample from our GMMHMM as follows:
 \end{itemize}
 
 \begin{lstlisting}
-# choose initial state
+# Steps to randomly sample from GMMHMM
+
+# Choose initial state
 >>> state = np.argmax(np.random.multinomial(1, pi))
 
-# steps to randomly sample from GMMHMM
-# randomly select a component using the probability weights of the current state
+# Randomly select component using the probability weights of current state
 >>> sample_component = np.argmax(np.random.multinomial(1, weights[state,:]))
 
-# sample an observation from the selected GMM Gaussian component 
->>> sample = np.random.multivariate_normal(means[state, sample_component, :], covars[state, sample_component, :, :])
+# Sample an observation from the selected GMM Gaussian component 
+>>> sample = np.random.multivariate_normal(means[state, sample_component, :], 
+                        covars[state, sample_component, :, :])
 
-# obtain the next state using the transition matrix
+# Obtain the next state using the transition matrix
 >>> state = np.argmax(np.random.multinomial(1, A[:, state]))
 \end{lstlisting}
 
@@ -84,7 +89,7 @@ Figure \ref{fig:samples} shows an observation sequence generated from a GMMHMM w
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{samples}
+\includegraphics[width=\textwidth]{figures/samples.pdf}
 \caption{An observation sequence generated from a GMMHMM with two mixture components and two states.
 The observations (points in the plane) are shown as solid dots, the color indicating from which
 state they were generated. The connecting dotted lines indicate the sequential order of the observations.}
@@ -113,14 +118,13 @@ Test your function by running it on the gmmhmm given in the example, with $T=900
 Use \li{sklearn.decomposition.PCA} with 2 components to plot the observations in two-dimensional space. 
 Color the observations by state. How many clusters do you see?
 \end{problem}
-\newpage
 
 The classic problems for which we normally use discrete observation HMMs can also be solved by using CDHMMs, though with continuous observations it is much more difficult to keep things numerically stable.
 We will not have you implement any of the three problems for CDHMMs yourself; instead, you will use a stable module we will provide for you.
 Note, however, that the techniques for solving these problems are still based on the forward-backward algorithm; the implementation may be trickier, but the mathematical
 ideas are virtually the same as those for discrete HMMs.
 
-\subsection*{Speech Recognition and Hidden Markov Models}
+\section*{Speech Recognition and Hidden Markov Models}
 Hidden Markov Models are the basis of modern speech recognition systems. However, a fair amount of signal processing must precede the HMM stage, and there are other
 components of speech recognition, such as language models, that we will not address in this lab.
 
@@ -130,23 +134,20 @@ The audio to be processed is divided into small frames of approximately $30$ ms.
 Industrial-grade speech recognition systems do not train a GMMHMM for each word in a vocabulary (that would be ludicrous for a large vocabulary), but rather on \emph{phonemes}, or distinct sounds. The English language has $44$ phonemes, yielding $44$ different GMMHMMs. As you could imagine, this greatly facilitates the problem of speech recognition.  Each and every word can be represented by some combination of these $44$ distinct sounds.  By correctly classifying a signal by its phonemes, we can determine what word was spoken. Doing so is beyond the scope of this lab, so we will simply train GMMHMMs on five words/phrases: biology, mathematics, political science, psychology, and statistics.
 
 \begin{problem}
-Samples.zip contains 30 recordings for each of the words/phrases mathematics, biology, political science, psychology, and statistics. 
-Remove the files that end in 00 (eg. Biology00.wav).
-These audio samples are 2 seconds in
-duration, recorded at a rate of 44100 samples per second, with samples stored as 16-bit signed
-integers in WAV format. 
-Load the recordings into Python using $scipy.io.wavfile.read$.
+The \li{Samples} folder contains 30 recordings for each of the words/phrases mathematics, biology, political science, psychology, and statistics. 
+Remove the files that end in 00 (eg. \li{Biology00.wav}).
+These audio samples are 2 seconds in duration, recorded at a rate of 44100 samples per second, with samples stored as 16-bit signed integers in WAV format. 
+Load the recordings into Python using \li{scipy.io.wavfile.read}.
 
-Extract the MFCCs from each sample using code from the file MFCC.py.
+Extract the MFCCs from each sample using code from the file MFCC.py. 
 Store the MFCCs for each word in a separate list. 
-You should have five lists, each containing
-30 MFCC arrays, corresponding to each of the five words under consideration. 
+You should have five lists, each containing 30 MFCC arrays, corresponding to each of the five words under consideration. 
 
 To load and extract, use the following code:
 
 \begin{lstlisting}
->>> samplerate, data = wavfile.read(file) # load wavfile 
->>> model = MFCC.extract(data, show = False) # extract MFCC
+>>> samplerate, data = wavfile.read(file)     # Load wavfile 
+>>> model = MFCC.extract(data, show = False)  # Extract MFCC
 \end{lstlisting}
 \end{problem}
 
@@ -159,51 +160,32 @@ For training, we will use the python package called {\tt hmmlearn}, as this is a
 To facilitate random restarts, we need a function to provide initializations for the initial state distribution and the transition matrix.
 
 Let \li{data} be a list of arrays, where each array is the output of the MFCC extraction for a speech sample.
-Using a function \li{initialize()} that returns a random initial state distribution and row-stochastic transition matrix, we can train a GMMHMM with $5$ states
-and $3$ mixture components and view its score as follows:
+Using a function \li{initialize()} that returns a random initial state distribution and row-stochastic transition matrix, we can train a GMMHMM with 5 states and 3 mixture components and view its score as follows:
+
 \begin{lstlisting}
 >>> import numpy as np # Import packages 
 >>> from hmmlearn import hmm
->>> startprob, transmat = initialize(5) # Get probabilities and transition matrices 
->>> model = hmm.GMMHMM(n_components=5, covariance_type="diag", init_params = "mc") # Initialize model
->>> model.startprob_ = startprob # Set probabilities and transition matrices 
->>> model.transmat_ = transmat
->>> data = train_samples[word] # Reshape data for hmmlearns fit method
+
+>>> data = train_samples[word] # Reshape data for hmmlearn's fit method
 >>> lengths = [data[0].shape[0]] * len(data)
 >>> data_collected = np.vstack(data)
+
+# Get probabilities and transition matrices 
+>>> startprob, transmat = initialize(5) 
+>>> model = hmm.GMMHMM(n_components=5, covariance_type="diag", 
+                        init_params="mc") # Initialize model
+>>> model.startprob_ = startprob # Set probabilities and transition matrices 
+>>> model.transmat_ = transmat
+
 >>> model.fit(data_collected) # Fit the model
->>> model.monitor_.history[-1] # Check the score
+>>> model.monitor_.history[-1] # Check the score (log-likelihood)
 \end{lstlisting}
-
-%>>> import gmmhmm as hmm
-%>>> startprob, transmat = initialize(5)
-%>>> model = hmm.GMMHMM(n_components=5, n_mix=3, transmat=transmat, startprob=startprob, cvtype='diag')
-%>>> # these values for covars_prior and var should work well for this problem
-%>>> model.covars_prior = 0.01
-%>>> model.fit(samples, init_params='mc', var=0.1)
-%>>> print(model.logprob)
-
-\begin{warn}
-The process for problem 3 could take up to a couple of hours. 
-Since you will not want to run this
-more than once, you may want to save the best model for each word to disk using the pickle
-module so you can use it later.
-\begin{lstlisting}
->>> import pickle
->>> temp = {word: best_model}
->>> with open(word, "wb") as out:
-...    pickle.dump(temp, out)
-\end{lstlisting}
-\end{warn}
 
 \begin{problem}
-Partition each list of MFCCs into a training set of 20 samples, and a test set of
-the remaining 10 samples.
-Using the training sets, train a GMMHMM on each of the words from the previous problem
-with at least 10 random restarts (reinitializing and creating a new model).
-Use $n\_components=5$ and $initialize(5)$.  
-Keep the best model for each word (the one with the highest
-log-likelihood). 
+Randomly split each list of MFCCs into a training set of 20 samples and a test set of the remaining 10 samples.
+Using the training sets, train a GMMHMM on each of the words from the previous problem with at least 10 random restarts (reinitializing and creating a new model).
+Use \li{n\_components=5} and \li{initialize(5)} to train your GMMHMMs with 5 states.  
+Save the best model for each word (the one with the highest log-likelihood). 
 \end{problem}
 
 Given a trained model, we would like to compute the score of a new sample.
@@ -211,18 +193,19 @@ Letting \li{obs} be an array of MFCCs for a speech sample we do this as follows:
 \begin{lstlisting}
 >>> score = model.score(obs)
 \end{lstlisting}
-We classify a new speech sample by scoring it against each of the 5 trained GMMHMMs, and returning the word corresponding to the GMMHMM with the highest score.
+We classify a new speech sample by scoring it against each of the five trained GMMHMMs, and returning the word corresponding to the GMMHMM with the highest score.
 
 
 \begin{problem}
-Classify the 10 test samples for each word. 
+Find the classification accuracies of the five GMMHMMs, and return a dictionary where the words/phrases are the keys, and the values are the percent accuracies. 
+    
+To find the accuracies of your GMMHMMs, implement the following.
+Iterate through each sample of each test set, and score each model on that sample using \li{model.score(sample)}.
+The predicted class for that sample is the class of the model that yielded the highest score.
 
-How does your system perform? Which words are the hardest to correctly classify?
-Make a dictionary containing the accuracy of the classification of your five testing sets. 
-Specifically, the words/phrases will be the keys, and the values will be the percent accuracy. 
-For example, to find the accuracy for the biology model score (\li{model.score(sample)}) each model on all 10 samples in the biology test set. 
-The predicted class for each sample is the class of the model with the highest score.
-The accuracy of the biology model is the number of words in the biology test set that the biology model gave the highest score for over ten, since there were 10 words in the test set.
+The accuracy of each GMMHMM model is the percentage of correct predicted classes.
+For example, the accuracy of the mathematics model is the number of samples in the mathematics test set whose predicted class was mathematics, divided by the number of samples in the mathematics test set (which should be 10).
+
 \end{problem}
 
 

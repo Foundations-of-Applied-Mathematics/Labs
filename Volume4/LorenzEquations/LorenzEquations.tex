@@ -2,6 +2,7 @@
 % \epigraph{\textit{Chaos: When the present determines the future, but the approximate present does not approximately determine the future.}}{Edward Lorenz}
 \objective{Investigate the behavior of a system that exhibits chaotic behavior.
 Demonstrate methods for visualizing the evolution of a system.}
+\labdependencies{Animation,IVPBVPIntro}
 
 Chaos is everywhere.
 It can crop up in unexpected places and in remarkably simple systems, and a great deal of work has been done to describe the behavior of chaotic systems.
@@ -30,7 +31,7 @@ Below is some sample code to help you out.
 
 \begin{lstlisting}
 from matplotlib import rcParams, pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
 rcParams['figure.figsize'] = (16,10)     #Affects output size of graphs.
 '''
 Code up your X, Y, Z values
@@ -101,13 +102,11 @@ However, chaotic systems are not \textit{random}.
 An explanation given by Lorenz is that chaos is "when the present determines the future, but the approximate present does not approximately determine the future."
 
 \begin{problem}
-Use \li{matplotlib.animation.FuncAnimation} to produce a 3D animation of two solutions to the Lorenz equations with nearly identical initial conditions. To make the initial conditions, draw $x_0,y_0,z_0$ as before, and then make a second initial condition by adding a small perturbation to the first (try using \li{np.random.randn(3)*(1e-10)} for the perturbation). Note that it may take several seconds before the separation between the two solutions will be noticeable.
+\label{lorenz:prob:chaos}
+Use \li{matplotlib.animation.FuncAnimation} to produce a 3D animation of two solutions to the Lorenz equations with nearly identical initial conditions. To make the initial conditions, draw $x_0,y_0,z_0$ as before, and then make a second initial condition by adding a small perturbation to the first (try using \li{np.random.randn(3)*(1e-8)} for the perturbation). Note that it may take several seconds before the separation between the two solutions will be noticeable. Evaluate on \li{t_span=(0,50)} and use the \li{t_eval} argument of \li{solve_ivp}, with \li{t_eval=np.linspace(0,50,3000)}. Using this argument causes \li{solve_ivp} to return the solution's values at the points you pass in.
 
 The animation should display a point marker as well as the past trajectory curve for each solution. 
 Save your animation as \li{lorenz_animation1.mp4}.
-
-Hint: to ensure that the two numerical solutions have the same timesteps, you can use the \li{t_eval} argument of \li{solve_ivp}.
-Using this argument causes \li{solve_ivp} to return the solution's values at the points you pass in.
 \end{problem}
 
 In a chaotic system, round-off error implicit in a numerical method can also cause divergent solutions. For example, using a Runge-Kutta method with two different values for the stepsize $h$ on identical initial conditions will still result in approximations that differ in a chaotic fashion.
@@ -185,7 +184,7 @@ Even differences due to small numerical errors can cause solutions of chaotic sy
 The \li{solve_ivp} function allows user to specify error tolerances (similar to setting a value of $h$ in a Runge-Kutta method). 
 Using a single initial condition, produce two approximations by using the \li{solve_ivp} arguments \li{(atol=1e-15, rtol=1e-13)} for the first approximation and \li{(atol=1e-12, rtol=1e-10)} for the second.
 
-As in the previous problem, use \li{FuncAnimation} to animation both solutions. Save the animation as \li{lorenz_animation2.mp4}.
+As in the previous problem, use \li{FuncAnimation} to animation both solutions. Save the animation as \li{lorenz_animation2.mp4}. Use the same \li{t_span} and \li{t_eval} arguments as in problem \ref{lorenz:prob:chaos}.
 \end{problem}
 
 \begin{comment}
@@ -245,15 +244,15 @@ Estimate the Lyapunov exponent of the Lorenz equations by doing the following:
 \begin{itemize}
 	\item Produce an initial condition that already lies in the attractor. This can be done by using a random "dummy" initial condition, approximating the resulting solution to the Lorenz system for a short time, and then using the endpoint of that solution (which is now in the attractor) as the desired initial condition.
 	\item Produce a second initial condition by adding a small perturbation to the first (as before).
-	\item For both initial conditions, use \li{solve_ivp} to produce approximate solutions for $0 \leq t \leq 10$
+	\item For both initial conditions, use \li{solve_ivp} to produce approximate solutions for $0 \leq t \leq 10$.
 	\item Compute $\|\delta(t)\|$ by taking the norm of the vector difference between the two solutions for each value of $t$.
 	\item Use \li{scipy.stats.linregress} to calculate a best-fit line for $\log(\|\delta(t)\|)$ against $t$.
-	\item The slope of the best-fit line is an approximation for the Lyapunov exponent $\lambda$
+	\item The slope of the best-fit line is an approximation for the Lyapunov exponent $\lambda$.
 	
 \end{itemize}
-Produce a plot similar to Figure \ref{fig:lyapunov_exponent} by using \li{plt.semilogy}.
+Produce a plot similar to Figure \ref{fig:lyapunov_exponent} by using \li{plt.semilogy}. 
 
-Hint: Remember that the best-fit line you calculated corresponds to a best-fit exponential for $\|\delta(t)\|$. If \li{a} and \li{b} are the slope and intercept of the best-fit line, the best-fit exponential can be plotted using \li{plt.semilogy(t,np.exp(a*t+b))}.
+Hint: Remember that the best-fit line you calculated corresponds to a best-fit exponential for $\|\delta(t)\|$. If \li{a} and \li{b} are the slope and intercept of the best-fit line, the best-fit exponential can be plotted using \li{plt.semilogy(t,np.exp(a*t+b))}. Use the \li{t_eval} argument of \li{solve_ivp} (as in problem \ref{lorenz:prob:chaos}) for both solutions to the Lorenz equation so that you can compute $\|\delta(t)\|$ for the same time steps.
 	
 
 \end{problem}

@@ -2,6 +2,7 @@
 \label{lab:finitedifference2}
 
 \objective{The finite difference method provides a solid foundation for solving partial differential equations. Understanding and applying finite difference is key to understanding numerical solutions to PDEs.}
+\labdependencies{NumericalIVP}
 
 A \textbf{finite difference} for a function $f(x)$ is an expression of the form $f(x+s)-f(x+t)$.
 Finite differences can give a good approximation of derivatives.
@@ -252,6 +253,8 @@ Use equation \eqref{eqn:practical_fin_dif} to solve the singularly perturbed BVP
 This BVP is called singularly perturbed because of the location of the parameter $\epsilon$.
 For $\epsilon = 0$ the ODE has a drastically different character - it then becomes first order, and can no longer support two boundary conditions.
     \label{prob:finitedifference2:prob1}
+
+Hint: Use \li{np.linalg.solve} to solve for $U$.
 \end{problem}
 
 \begin{figure}[h]
@@ -329,7 +332,7 @@ Thus on a log-log plot of $E(h)$ vs. $h$, these values should be on a straight l
 \begin{problem}
 Implement a function \li{singular_bvp} to compute the finite difference solution to \ref{eqn:singular_perturbed_BVP}.
 Using $n = 5 \times 2^0,5 \times 2^1, \dots ,5 \times 2^9$ subintervals, compute 10 approximate solutions. 
-Use these to visualize the $\mathcal{O}(h^2)$ convergence of the finite difference method from Problem \ref{prob:finitedifference2:prob1} by producing a loglog plot of error against subinterval count; this will be similar to Figure \ref{fig:finitedifference2}, except with $\epsilon=0.1$.
+Use these to visualize the $\mathcal{O}(h^2)$ convergence of the finite difference method from Problem \ref{prob:finitedifference2:prob1} by producing a loglog plot of error against subinterval count; this will be similar to Figure \ref{fig:finitedifference2}, except with $\epsilon=0.1$. Also plot $h^2$ on the same plot, as in Figure \ref{fig:finitedifference2}.
 
 To produce the plot, treat the approximation with $n = 5 \times 2^9$ subintervals as the "true solution", and measure the error for the other approximations against it. Note that, since the ratios of numbers of subintervals between approximations are multiples of 2, we can compute the $L_{\infty}$ error for the $n=5 \times 2^j$ approximation by using the \li{step} argument in the array slicing syntax:
 \begin{lstlisting}
@@ -344,6 +347,26 @@ sol_approx = singular_bvp(eps,alpha,beta,f,5*(2**j))
 error = np.max(np.abs(sol_approx - sol_best[::2**(9-j)]))
 \end{lstlisting}
 \end{problem}
+
+Consider a similar, but somewhat generalized ODE of the form in (\ref{eqn:singular_perturbed_BVP}),
+
+\begin{align*}
+	&{ } a_1(x)y''(x) +a_2(x)y'(x) +a_3(x)y(x) = f(x), \quad x \in (a,b),\\
+	&{ } y(a) = \alpha, \quad y(b) = \beta.
+\end{align*}
+The functional coefficients $a_1, a_2, a_3$ can be treated similarly to constant coefficients, but with each row corresponding to a gridpoint in $x$ (but not including the endpoints).
+
+\begin{gather*}
+\frac{1}{h^2} \left((-2a_1(x_1) + a_3(x_1))U_1 + \left(a_1(x_1) - a_2(x_1)\frac{h}{2}\right)U_1 \right) = f(x_1) -\alpha\frac{a_1(x_0) - a_2(x_0)(h/2)}{h^2}\\
+\frac{1}{h^2} \left(\left(a_1(x_2) + a_2(x_2)\frac{h}{2}\right) U_1 + (- 2a_1(x_2) + a_3(x_2)h^2)U_2 + \left(a_1(x_2) - a_2(x_2)\frac{h}{2} \right)U_3 \right) = f(x_2)\\
+\vdots \\
+\frac{1}{h^2} \left( \left(a_1(x_{n-2}) + a_2(x_{n-2})\frac{h}{2}\right) U_{n-3} + (- 2a_1(x_{n-2}) + a_3(x_{n-2})h^2)U_{n-2} + \right.\\
+	\left. \left(a_1(x_{n-2}) - a_2(x_{n-2})\frac{h}{2} \right)U_{n-1} \right) = f(x_{n-2})\\
+\frac{1}{h^2} \left( \left(a_1(x_{n-1}) + a_2(x_{n-1})\frac{h}{2}\right) U_{n-2} + (- 2a_1(x_{n-1}) + a_3(x_{n-1})h^2)U_{n-1} \right)\\
+= f(x_{n-1}) - \beta\left(\frac{a_1(x_{n-1})}{h^2}+ \frac{a_2(x_{n-1})}{2h}\right)
+\end{gather*}
+
+This can (and should) be put into matrix form to be solved. It was not done here because it requires more page space than is available.
 
 \begin{problem}
 Extend your finite difference code to the case of a general second order linear BVP with boundary conditions:

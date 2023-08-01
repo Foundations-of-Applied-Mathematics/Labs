@@ -203,6 +203,7 @@ Avoid using \li{la.inv()} to calculate $D^{-1}$, but use \li{la.norm()} to calcu
 Your function should be robust enough to accept systems of any size.
 To test your function, generate a random $\b$ with \li{np.random.random()} and use the following function to generate an $n\times n$ matrix $A$ for which the Jacobi method is guaranteed to converge.
 Run the iteration, then check that $A\x^{(k)}$ and $\b$ are close using \li{np.allclose()}.
+There is a file called \li{test_iterative_solvers.py} that contains prewritten unit tests to test your function for this problem.
 
 \begin{comment} We have to create the strictly diagonally dominant matrix as a sparse 
     matrix in order to be more efficient, but we need to be able to use this as a regular 
@@ -238,7 +239,6 @@ def diag_dom(n, num_entries=None, as_sparse=False):
 
 Also test your function on random $n \times n$ matrices.
 If the iteration is non-convergent, the successive approximations will have increasingly large entries.
-
 \label{prob:jacobi}
 \end{problem}
 
@@ -435,10 +435,15 @@ Aix = A.data[rowstart:rowend] @ x[A.indices[rowstart:rowend]]
 To test your function, remeber to call \li{diag_dom()} using \li{as_sparse=True}
 
 \begin{lstlisting}
->>> A = diag_dom(50000, as_sparse=True)
->>> b = np.random.random(50000)
+>>> A = diag_dom(1000, as_sparse=True)
+>>> b = np.random.random(1000)
 \end{lstlisting}
 \end{problem}
+
+\begin{unittest}
+There is a file called \li{test_iterative_solvers.py} that contains prewritten unit tests for Problem 1.
+There is a place for you to add your own unit tests to test your function for Problem 4, which will be graded.
+\end{unittest}
 
 \subsection*{Successive Over-Relaxation} % ------------------------------------
 
@@ -540,7 +545,7 @@ Note the block structure (empty blocks are all zeros).
 \arrayrulecolor{lightgray}
 -4 & 1 & 0 & 0 & 1 & 0 & 0 & 0 &   &   &   &   &   &   &   &  \\
 1 & -4 & 1 & 0 & 0 & 1 & 0 & 0 &   &   &   &   &   &   &   &  \\
-0 & 1 & -4 & 0 & 0 & 0 & 1 & 0 &   &   &   &   &   &   &   &  \\
+0 & 1 & -4 & 1 & 0 & 0 & 1 & 0 &   &   &   &   &   &   &   &  \\
 0 & 0 & 1 & -4 & 0 & 0 & 0 & 1 &   &   &   &   &   &   &   &  \\ \hline
 1 & 0 & 0 & 0 & -4 & 1 & 0 & 0 & 1 & 0 & 0 & 0 &   &   &   &  \\
 0 & 1 & 0 & 0 & 1 & -4 & 1 & 0 & 0 & 1 & 0 & 0 &   &   &   &  \\
@@ -692,16 +697,6 @@ The entire procedure is summarized in Algorithm \ref{alg:jacobi}.
 Hint: The slice \li{U[:-2,1:-1]} references the upper neighbors of the interior points of $U$ and \li{U[1:-1,2:]} references the right neighbors. How can you reference the lower and left neighbors?
 
 Use the following code to visualize your results.
-%% This does 3D visualization, but it's easier (and better) as a heat map.
-% from mpl_toolkits.mplot3d import Axes 3D
-
-%     x, y = np.linspace(0, 1, n), np.linspace(0, 1, n)
-%     X, Y = np.meshgrid(x, y)
-%     fig = plt.figure()
-%     ax = fig.gca(projection='3d')
-%     ax.plot_surface(X, Y, U, rstride=5)
-%     plt.show()
-
 \begin{lstlisting}
 from matplotlib import pyplot as plt
 

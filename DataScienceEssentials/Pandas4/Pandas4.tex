@@ -1,7 +1,7 @@
 \lab{GeoPandas}{GeoPandas}
 
 
-\objective{GeoPandas is a package designed to organize and manipulate geographic data, It combines the data manipulation tools of pandas with the geometric capabilities of the Shapely package. In this lab, we explore the basic data structures of GeoSeries and GeoDataFrames and their functionalities.}
+\objective{GeoPandas is a package designed to organize and manipulate geographic data. It combines the data manipulation tools of pandas with the geometric capabilities of the Shapely package. In this lab, we explore the basic data structures of GeoSeries and GeoDataFrames and their functionalities.}
 
 
 \section*{Installation} %============================
@@ -63,7 +63,7 @@ Method/Attribute & Description\\
 # Find bounds of Egypt
 >>> egypt.bounds
          minx    miny         maxx      maxy
-47   24.70007    22.0     36.86623  31.58568
+163   24.70007    22.0     36.86623  31.58568
 \end{lstlisting}
 
 \section*{Creating GeoDataFrames} %============================
@@ -74,8 +74,8 @@ This GeoSeries column is used when a spatial method, like \li{distance()}, is us
 Therefore all attributes and methods used for GeoSeries can also be used on GeoDataFrame objects.
 
 A GeoDataFrame can be made from a pandas DataFrame.
-At least one of the columns in the DataFrame should contain geometric information.
-This column containing geometric information can be converted to a GeoSeries using the \li{apply()} method.
+One of the columns in the DataFrame should contain geometric information.
+That column can be converted to a GeoSeries using the \li{apply()} method.
 At this point, the Pandas DataFrame can be cast as a GeoDataFrame.
 Assign which column will be the \li{geometry} using either the \li{geometry} keyword in the constructor or the \li{set_geometry()} method afterwards.
 
@@ -175,7 +175,7 @@ The following example plots the shapes in the \li{world} GeoDataFrame.
 
 \begin{figure}[H]
 \begin{center}
-\includegraphics[scale=.55]{figures/worldmap.pdf}
+\includegraphics[scale=.7]{figures/worldmap.pdf}
 \end{center}
 \label{world-map}
 \caption{World map}
@@ -187,7 +187,7 @@ In the following example, the file \li{airports.csv}, containing the coordinates
 
 \begin{lstlisting}
 # Set outline of world countries as base
->>> fig,ax = plt.subplots(figsize=(10,7), ncols=1, nrows=1)
+>>> fig, ax = plt.subplots(figsize=(10,4), ncols=1, nrows=1)
 >>> base = world.boundary.plot(edgecolor='black', ax=ax, linewidth=1)
 
 # Load airport data and convert to a GeoDataFrame
@@ -205,7 +205,7 @@ In the following example, the file \li{airports.csv}, containing the coordinates
 
 \begin{figure}[H]
 \begin{center}
-\includegraphics[scale=.6]{figures/airports.pdf}
+\includegraphics[scale=.7]{figures/airports.pdf}
 \end{center}
 \label{airport-map}
 \caption{Airport map}
@@ -214,10 +214,11 @@ In the following example, the file \li{airports.csv}, containing the coordinates
 \begin{problem}
 Read in the file \li{airports.csv} as a pandas DataFrame.
 Create three convex hulls around the three sets of airports listed below.
-This can be done by passing in lists of the airports' coordinates to a \li{shapely.geometry.Polygon} object.
+This can be done by passing in lists of the airports' coordinates (Longitude and Latitude zipped together) to a \li{shapely.geometry.Polygon} object.
 
-Create a new GeoDataFrame with these three Polygons as entries.
-Plot this GeoDataFrame on top of an outlined world map.
+Then, create a new GeoDataFrame using a dictionary with key \li{'geometry'} and with a list of these three Polygons as the value.
+Plot this GeoDataFrame, and then plot the outlined world map on top of it.
+
 \begin{itemize} %These could also be listed by 4-character ICAO codes, but listing the names makes the problem more exciting/realistic. Probably.
 	\item Maio Airport, Scatsta Airport, Stokmarknes Skagen Airport, Bekily Airport, K. D. Matanzima Airport, RAF Ascension Island
 	\item Oiapoque Airport, Maio Airport, Zhezkazgan Airport, Walton Airport, RAF Ascension Island, Usiminas Airport, Piloto Osvaldo Marques Dias Airport
@@ -260,7 +261,7 @@ In the following example, we use \li{sum} as the \li{aggfunc} so that each conti
 >>> world = world[['continent', 'geometry', 'gdp_per_cap']]
 
 # Dissolve world GeoDataFrame by continent
->>> continent = world.dissolve(by = 'continent', aggfunc='sum')
+>>> continent = world.dissolve(by='continent', aggfunc='sum')
 \end{lstlisting}
 
 
@@ -280,13 +281,13 @@ To change the CRS, use the method \li{to_crs()}.
 \begin{lstlisting}
 # Check CRS of world GeoDataFrame
 >>> print(world.crs)
-epsg:4326
+EPSG:4326
 
 # Change CRS of world to Mercator
 # inplace=True ensures that we modify world instead of returning a copy
 >>> world.to_crs(3395, inplace=True)
 >>> print(world.crs)
-epsg:3395
+EPSG:3395
 \end{lstlisting}
 
 GeoPandas accepts many different CRSs; a reference can be found at \url{www.spatialreference.org}.
@@ -335,24 +336,24 @@ This is done by passing in the parameter \li{column} into the \li{plot()} method
 
 \begin{problem}
 The file \li{county_data.gpkg.zip} contains information about US counties.\footnote{Source: \url{http://www2.census.gov/geo/tiger/GENZ2016/shp/cb_2016_us_county_5m.zip}}
-After unzipping, use the command \li{gpd.read_file('county_data.gpkg')} to create a GeoDataFrame of this information.
+After unzipping, use the command \li{geopandas.read_file('county_data.gpkg')} to create a GeoDataFrame of this information.
 Each county's shape is stored in the \li{geometry} column.
-Use this to plot all US counties two times, first using the default CRS and then using EPSG:5071.
+Use this to plot the boundaries of all US counties two times, first using the default CRS and then using EPSG:5071.
 
-Next, create a new GeoDataFrame that merges all counties within a single state.
+Next, create a new GeoDataFrame that combines (\li{dissolve}) all counties within each state (\li{by='STATEFP'}).
 Drop regions with the following STATEFP codes: 02, 15, 60, 66, 69, 72, 78.
-Plot this GeoDataFrame to see an outline of all 48 contiguous states.
-Ensure a CRS  of EPSG:5071.
+Plot the boundary of this GeoDataFrame to see an outline of all 48 contiguous states.
+Ensure a CRS of EPSG:5071.
 \label{problem:us_counties}
 \end{problem}
+
 \begin{info}
 \li{.gpkg} files are actually structured as a directory that contains several files that each contain parts of the data.
 For instance, \li{county_data.gpkg} consists of the files \li{county_data.cpg}, \li{county_data.dbf}, \li{county_data.prj}, \li{county_data.shp}, and \li{county_data.shx}.
 Be sure that these files are placed directly in the first level of folders, and not in further subdirectories.\\
 To use this file in Google Colab, upload the zipped file and extract it with the following code:
 \begin{lstlisting}
-county = files.upload()
-!unzip county_data.gpkg.zip
+!unzip 'county_data.gpkg.zip'
 \end{lstlisting}
 It then can be loaded:
 \begin{lstlisting}
@@ -393,18 +394,21 @@ Other options include \li{contains} and \li{within}.
 \end{lstlisting}
 
 \begin{problem}
-Load in the file \li{nytimes.csv}\footnote{Source: \url{https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv}} as a DataFrame.
+Load in the file \li{nytimes.csv}\footnote{Source: \url{https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv}} as a Pandas DataFrame.
 This file includes county-level data for the cumulative cases and deaths of Covid-19 in the US, starting with the first case in Snohomish County, Washington, on January 21, 2020.
-Begin by converting the \li{date} column into a \li{DatetimeIndex}.
 
-Next, use county FIPS codes to merge your GeoDataFrame from Problem \ref{problem:us_counties} with the DataFrame you just created.
-A FIPS code is a 5-digit unique identifier for geographic locations.
-Ignore rows in the Covid-19 DataFrame with unknown FIPS codes as well as all data from Hawaii and Alaska.
+Merge the county GeoDataFrame from \li{county_data.gpkg} with the \li{nytimes} DataFrame on the county \li{fips} codes (a FIPS code is a 5-digit unique identifier for geographic locations).
+Note that the \li{fips} column of the \li{nytimes} DataFrame stores entries as floats, but the county GeoDataFrame stores FIPS codes as strings, with the first two digits in the \li{STATEFP} column and the last three digits in the \li{COUNTYFP} column.
+Thus, you will need to add these two columns together and then convert them into floats so they can be merged with the \li{fips} column in the \li{nytimes} DataFrame.
 
-Note that the \li{fips} column of the Covid-19 DataFrame stores entries as floats, but the county GeoDataFrame stores FIPS codes as strings, with the first two digits in the \li{STATEFP} column and the last three in the \li{COUNTYFP} column.
+Drop the regions from the county GeoDataFrame with the same \li{STATEFP} codes as in Problem \ref{problem:us_counties}.
+Also, make sure to change the CRS of the county GeoDataFrame to EPSG:5071 \emph{before} you merge the two DataFrames (this will make the code run much faster).
 
-Once you have completed the merge, plot the cases from March 21, 2020 on top of your state outline map from Problem \ref{problem:us_counties}, using the CRS of EPSG:5071.
-Finally, print out the name of the county with the most cases on March 21, 2020 along with its case count.
+Plot the cases from March 21, 2020, and then plot your state outline map from Problem \ref{problem:us_counties} on top of that (with a CRS of EPSG:5071).
+Include a colorbar using the arguments \li{legend=True} and \li{cmap='PuBu_r'} in the \li{plot} function.
+Finally, print out the name of the county with the most cases on March 21, 2020, along with its case count.
+
+\noindent Hint: every state should have multiple covid cases.
 \label{problem:merge_covid}
 \end{problem}
 
@@ -416,7 +420,7 @@ Note also that you can reverse any colormap by adding \li{_r} to the end.
 The following example demonstrates some plotting features, using country GDP as in Figure \ref{figure:gdp_map}.
 
 \begin{lstlisting}
->>> fig, ax = plt.subplots(figsize=(15,7), ncols=1, nrows=1)
+>>> fig, ax = plt.subplots(figsize=(10,4), ncols=1, nrows=1)
 >>> world.plot(column='gdp_md_est', cmap='plasma_r',
 ...			ax=ax, legend=True, edgecolor='gray')
 
@@ -429,7 +433,7 @@ The following example demonstrates some plotting features, using country GDP as 
 
 \begin{figure}[H]
 \begin{center}
-\includegraphics[scale=.75]{figures/world_linear.pdf}
+\includegraphics[scale=.7]{figures/world_linear.pdf}
 \end{center}
 \caption{World map showing country GDP}
 \label{figure:linear_world}
@@ -442,7 +446,7 @@ Depending on the purpose of the graph, Figure \ref{figure:log_world} may be more
 \begin{lstlisting}
 >>> from matplotlib.colors import LogNorm
 >>> from matplotlib.cm import ScalarMappable
->>> fig, ax = plt.subplots(figsize=(15,6), ncols=1, nrows=1)
+>>> fig, ax = plt.subplots(figsize=(10,7), ncols=1, nrows=1)
 
 # Set the norm using data bounds
 >>> data = world.gdp_md_est
@@ -456,7 +460,7 @@ Depending on the purpose of the graph, Figure \ref{figure:log_world} may be more
 >>> cbar = fig.colorbar(ScalarMappable(norm=norm, cmap='plasma_r'),
 ...			ax=ax, orientation='horizontal', pad=0, label='GDP')
 
->>> ax.set_title('Country Area on a Log Scale')
+>>> ax.set_title('GDP on a Log Scale')
 >>> ax.set_yticks([])
 >>> ax.set_xticks([])
 >>> plt.show()
@@ -464,32 +468,32 @@ Depending on the purpose of the graph, Figure \ref{figure:log_world} may be more
 
 \begin{figure}[H]
 \begin{center}
-\includegraphics[scale=.65]{figures/world_log.pdf}
+\includegraphics[scale=.7]{figures/world_log.pdf}
 \end{center}
 \caption{World map showing country GDP using a log scale}
 \label{figure:log_world}
 \end{figure}
 
 \begin{problem}
-As in Problem \ref{problem:merge_covid}, plot your state outline map from Problem \ref{problem:us_counties} on top of a map of the Covid-19 cases from March 21, 2020.
+As in Problem \ref{problem:merge_covid}, plot your state outline map from Problem \ref{problem:us_counties} on top of a map of Covid-19 cases from March 21, 2020 (each with a CRS of EPSG:5071).
 This time, however, use a log scale.
-Use EPSG:5071 for the CRS.
 Pick a good colormap (the counties with the most cases should generally be darkest) and be sure to display a colorbar.
+\label{problem:log_plot}
 \end{problem}
 
 \begin{problem}
-In this problem, you will create an animation of the spread of Covid-19 through US counties from January 21, 2020 to June 21, 2020.
+In this problem, you will create an animation of the spread of Covid-19 through US counties from January 21, 2020, through June 21, 2020.
+You will use the same GeoDataFrame you used in Problems \ref{problem:merge_covid} and \ref{problem:log_plot} (with a CRS of EPSG:5071).
 Use a log scale and a good colormap, and be sure that you're using the same norm and colorbar for the whole animation.
-Use EPSG:5071 for the projection.
 
 As a reminder, below is a summary of what you will need in order to animate this map.
 You may also find it helpful to refer to the animation section included with the Volume 4 lab manual.
 
-%------------------------------------------- Is that ok to say?
 \begin{enumerate}
 	\item Set up your figure and norm. Be sure to use the highest case count for your \li{vmax} so that the scale remains uniform.
-	\item Write your \li{update} function. This should plot the cases from a given day.
+	\item Write your \li{update} function. This should plot the cases from a given day as well as the state boundaries.
 	\item Set up your colorbar. Do this outside the \li{update} function to avoid adding a new colorbar each day.
-	\item Create the animation and embed it.
+	\item Create a \li{FuncAnimation} object. Check to make sure everything displays properly before you save it.
+	\item Save the animation to a file, and embed it into the notebook.
 \end{enumerate}
 \end{problem}

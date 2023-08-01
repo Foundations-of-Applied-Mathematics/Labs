@@ -1,0 +1,467 @@
+\lab{Data Cleaning}{Data Cleaning}
+\objective{The quality of a data analysis or model is limited by the quality of the data used. In this lab we learn techniques for cleaning data, creating features, and determining feature importance.}
+
+Data cleaning is the process of identifying and correcting bad data.
+This could be data that is missing, duplicated, irrelevant, inconsistent, incorrect, in the wrong format, or otherwise does not make sense.
+Though it can be tedious, data cleaning is the most important step of data analysis.
+Without accurate and legitimate data, any results or conclusions are suspect and may be incorrect.
+
+We will demonstrate common issues with data and how to correct them using the following dataset.
+It consists of family members and some basic details.
+
+\begin{lstlisting}
+# Example dataset
+>>> df = pd.read_csv('toy_dataset.csv')
+
+>>>
+          Name  Age        name         DOB Marital_Status
+0     John Doe   30        john  01/01/2010       Divorcee
+1     Jane Doe   29    	   jane	 12/02/1990       Divorced
+2   Jill smith   40         NaN  03/04/1980        married
+3   Jill smith   40  	   jill  03/04/1980        married
+4   jack smith  100        jack    4/4/1980       marrieed
+5  Jenny Smith    5         NaN  05/05/2015            NaN
+6  JAmes Smith    2         NaN  20/06/2018         single
+7        Rover    2         NaN  05/05/2018            NaN
+
+
+
+   Height  Weight    Marriage_Len      Spouse
+0    72.0     175               5         NaN
+1     5.5     125               5    John Doe
+2    64.0     120              10  Jack Smith
+3    64.0     120             NaN  jack smith
+4     1.8     220              10  jill smith
+5   105.0      40             NaN         NaN
+6    27.0      25  Not Applicable         NaN
+7    36.0      50             NaN         NaN
+
+\end{lstlisting}
+
+
+
+\subsection*{Data Type}
+
+We can check the data type in Pandas using \li{dtype}.
+A \li{dytpe} of \li{object} means that the data in that column contains either strings or mixed \li{dtypes}. 
+These fields should be investigated to determine if they contain mixed datatypes.
+In our toy example, we would expect that \li{Marriage_Len} is numerical, so an object \li{dtype} is suspicious. 
+Looking at the data, we see that \li{James} has \li{Not Applicable}, which is a string.
+
+
+\begin{lstlisting}
+# Check validity of data
+# Check Data Types
+>>> df.dtypes
+Name               object
+Age                 int64
+name               object
+DOB                object
+Marital_Status     object
+Height            float64
+Weight              int64
+Marriage_Len       object
+Spouse             object
+dtype: object
+
+
+\end{lstlisting}
+
+
+\subsection*{Duplicates} 
+Duplicates can be easily identified in Pandas using the \li{duplicated()} function.
+When no parameters are passed, it returns a DataFrame of the first duplicates.
+We can identify rows that are duplicated in only some columns by passing in the column names.
+The \li{keep} parameter has three possible values, first, last, and False.
+False keeps all duplicated values, while first and last keep only the first and last instances, respectively.
+
+\begin{lstlisting}
+# Display duplicated rows
+>>> df[df.duplicated()]
+Empty DataFrame
+Columns: [Name, Age, name, DOB, Marital_Status, Height, Weight, Marriage_Len, Spouse]
+Index: []
+
+# Display rows that have duplicates in some columns
+>>> df[df.duplicated(['Name','DOB','Marital_Status'],keep=False)]
+         Name  Age  name         DOB Marital_Status  Height  Weight Marriage_Len      Spouse
+2  Jill smith   40   NaN  03/04/1980        married    64.0     120           10  Jack Smith
+3  Jill smith   40  jill  03/04/1980        married    64.0     120          NaN  jack smith
+\end{lstlisting}
+
+\subsection*{Range}
+We can check the range of values in a numeric column using the \li{min} and \li{max} attributes.
+If a column corresponds to the temperature in Salt Lake City, measured in degrees Farenheit, then a value over $110$ or below $0$ should make you suspicious, since those would be extreme values for Salt Lake City.  
+In fact, checking the all-time temperature records for Salt Lake shows that the values in this column should never be more than $107$ and never less than $-30$. 
+Any values outside that range are almost certainly errors and should probably be reset to $NaN$, unless you have special information that allows you to impute more accurate values.
+
+Other options for looking at the values include line plots, histograms, and boxplots.
+Some other useful Pandas commands for evaluating the breadth of a dataset include \li{df.nunique()} (which returns a series giving the name of each column and the number of unique values in each column), \li{pd.unique()} (which returns an array of the unique values in a series), and \li{value_counts()} (which counts the number of instances of each unique value in a column, like a histogram).
+
+\begin{lstlisting}
+# Count the number of unique values in each row
+>>> df.nunique()
+Name              7
+Age               6
+name              2
+DOB               7
+Marital_Status    5
+Height            7
+Weight            7
+Marriage_Len      4
+Spouse            4
+dtype: int64
+
+
+# Print the unique Marital_Status values
+>>> pd.unique(df['Marital_Status'])
+array(['Divorcee', 'Divorced', 'married', 'marrieed', nan, 'single'],
+      dtype=object)
+
+
+# Count the number of each Marital_Status values
+>>> df['Marital_Status'].value_counts()
+married     2
+single      1
+marrieed    1
+Divorcee    1
+Divorced    1
+Name: Marital_Status, dtype: int64
+
+\end{lstlisting}
+
+\subsection*{Missing Data}
+The percentage of missing data is the completeness of the data. 
+All uncleaned data will have missing values, but datasets with large amounts of missing data, or lots of missing data in key columns, are not going to be as useful.
+Pandas has several functions to help identify and count missing values.
+In Pandas, all missing data is considered a \li{NaN} and does not affect the dtype of a column.
+\li{df.isna()} returns a boolean DataFrame indicating whether each value is missing.
+\li{df.notnull()} returns a boolean DataFrame with \li{True} where a value is not missing.
+Information on how to deal with missing data is described in later sections. 
+
+\begin{lstlisting}
+# Count number of missing data points in each column
+>>> df.isna().sum()
+Name              0
+Age               0
+name              6
+DOB               0
+Marital_Status    2
+Height            0
+Weight            0
+Marriage_Len      2
+Spouse            4
+dtype: int64
+\end{lstlisting}
+
+
+\subsection*{Consistency}
+Consistency measures how cohesive the data is, both within the dataset and across multiple datasets.
+For example, in our toy dataset \li{Jack Smith} is $100$ years old, but his birth year is $1980$.
+Data is inconsistent across datasets when the data points should be the same and are different.
+This could be due to incorrect entries or syntax errors.
+
+It is also important to be consistent in units of measure.
+Looking at the \li{Height} column in our dataset, we see values ranging from $1.8$ to $105$.
+This is likely the result of different units of measure.  
+It is also important to be consistent across multiple datasets. 
+
+All features should also have a consistent type and standard formatting (like capitalization).
+Syntax errors should be fixed, and white space at the beginning and ends of strings should be removed.
+Some data might need to be padded so that it's all the same length.
+
+
+\begin{table}[H]
+
+\centering
+  \begin{tabular}{r|l}
+	Method & Description \\
+	\hline
+	series.str.lower() & Convert to all lower case\\
+	series.str.upper() & Convert to all upper case\\
+	series.str.strip() & Remove all leading and trailing white space\\
+	series.str.lstrip() & Remove leading white space\\
+	series.str.replace(" ","")& Remove all spaces\\
+	series.str.pad() & Pad strings\\
+	\end{tabular}
+\caption{Pandas String Formatting Methods}
+\end{table}
+
+
+\begin{problem}
+The \li{g\_t\_results.csv} file is a set of parent-reported scores on their child's Gifted and Talented tests. 
+The two tests, \li{OLSAT} and \li{NNAT}, are used by NYC to determine if children are qualified for gifted programs.
+The OLSAT Verbal has $16$ questions for Kindergarteners and 30 questions for first, second, and third graders.
+The NNAT has $48$ questions. Each test assigns 1 point to each question asked (so there are no non integer scores).
+Using this dataset, answer the following questions.
+
+\begin{enumerate}
+\item What column has the highest number of null values and what percent of its values are null? Print the answer as a tuple with (column name, percentage). 
+Make sure the second value is a percent.
+
+\item List the columns that should be numeric that aren't. Print the answer as a tuple.
+
+\item How many third graders have scores outside the valid range for the OLSAT Verbal Score? Print the answer
+
+\item How many data values are missing (NaN)? Print the number.
+
+\end{enumerate}
+\end{problem}
+
+\subsection*{Cleaning}
+There are many aspects and methods of cleaning; here are a few ways of doing so.
+ 
+\subsubsection*{Unwanted Data}
+Removing unwanted data typically falls into two categories, duplicated data and irrelevant data.
+Irrelevant data consists of observations that don't fit the specific problem you are trying to solve or don't have enough variation to affect the model.
+We can drop duplicated data using the \li{duplicated()} function described above with \li{drop()} or \li{drop_duplicates}.
+\subsubsection*{Missing Data}
+Some commonly suggested methods for handling data are removing the missing data and setting the missing values to some value based on other observations.
+However, missing data can be informative and removing or replacing missing data erases that information.
+Removing missing values from a dataset might result in losing significant amounts of data or even in a less accurate model. Retaining the missing values can help increase accuracy.
+\\
+
+\noindent We have several options to deal with missing data: 
+\begin{itemize}
+\item Dropping missing data is the easiest method.
+Dropping rows or columns should only be done if there is less than $90\%-95\%$ of the data available.
+If dropping missing data is inappropriate, you may instead choose to estimate the missing values which can be done by solving the mean, mode, median, randomly choosing from a distribution, linear regression, or hot-decking, to name a few.
+
+\item Hot-decking is when you fill in the data based on similar observations.
+It can be applied to numerical and categorical data, unlike many of the other options listed above.
+Sequential hot-decking sorts the column with missing data based on an auxiliary column and then fills in the data with the value from the next available data point. K-Nearest Neighbors can also be used to identify similar data points.
+
+\item The last option is to flag the data as missing. 
+This retains the information from missing data and removes the missing data (by replacing it).
+For categorical data, simply replace the data with a new category.
+For numerical data, we can fill the missing data with $0$, or some value that makes sense, and add an indicator variable for missing data.
+\end{itemize}
+
+\begin{lstlisting}
+## Replace missing data
+import numpy as np
+
+# Add an indicator column based on missing Marriage_Len
+>>> df['missing_ML'] =df['Marriage_Len'].isna()
+
+# Fill in all missing data with 0
+>>> df['Marriage_Len'] = df['Marriage_Len'].fillna(0)
+
+# Change all other NaNs to missing
+>>> df = df.fillna('missing')
+
+# Change Not Applicable row to NaNs
+>>> df = df.replace('Not Applicable',np.nan)
+
+# Drop rows will NaNs
+>>> df = df.dropna()
+
+
+>>> df
+          Name  Age         DOB Marital_Status
+0     JOHN DOE   30  01/01/2010       divorcee
+1     JANE DOE   29  12/02/1990       divorced
+2   JILL SMITH   40  03/04/1980        married
+3   JACK SMITH   40    4/4/1980        married
+4  JENNY SMITH    5  05/05/2015        missing
+
+   Height  Weight Marriage_Len      Spouse  missing_ML
+0    72.0     175            5     missing       False
+1    68.0     125            5    John Doe       False
+2    64.0     120           10  Jack Smith       False
+3    71.0     220           10  jill smith       False
+4    41.0      40            0     missing        True
+\end{lstlisting}
+
+\subsubsection*{Nonnumerical Values Misencoded as Numbers}
+Missing data should always be stored in a form that cannot accidentally be incorporated into the model. 
+This is typically done by storing missing values as NaN. 
+Some algorithms will not run on data with NaN values, in which case you may choose to fill missing data with a string \li{'missing'. }
+Many datasets have recorded missing values with a $0$ or some other number. You should verify that this does not occur in your dataset.
+
+
+Categorical data are also often encoded as numerical values. 
+These values should not be left as numbers that can be computed with. 
+For example, postal codes are shorthand for locations, and there is no numerical meaning to the code. 
+It makes no sense to add, subtract, or multiply postal codes, so it is important to not do so. 
+It is good practice to convert this kind of non-numeric data into strings or other data types that cannot be computed with. 
+
+
+\subsubsection*{Ordinal Data}
+
+Ordinal data is data that has a meaningful order but the differences between the values aren’t consistent or meaningful. 
+For example, a survey question might ask about your level of education, with $1$ being high-school graduate, $2$ bachelor’s degree, $3$ master’s degree, and $4$ doctoral degree. 
+These values are called ordinal data because it is meaningful to talk about an answer of $1$ being less than an answer of $2$, but the difference between $1$ and $2$ is not necessarily the same as the difference between $3$ and $4$. 
+Subtracting, taking the average, and other algebraic methods do not make a lot of sense with ordinal data. 
+
+
+\begin{problem}
+\li{imdb.csv} contains a small set of information about 99 movies. Valid movies for this dataset should be longer than $30$ minutes long, should have a positive \li{imdb_score}, and have a \li{title_year} after $2000$.
+\\
+
+\noindent Clean the data set by doing the following in order: 
+
+\begin{enumerate}
+
+ \item Remove duplicate rows by dropping the first or last. Print the shape of the dataframe after removing the rows.
+
+ \item Drop all rows that contain missing data. Print the shape of the dataframe after removing the rows.
+
+ \item Remove rows that have data outside of the valid data ranges described above.
+ 
+ \item Identify and drop columns with three or fewer different values. Print a tuple with the names of the columns dropped.
+
+ \item Convert the titles to all lower case.
+
+\end{enumerate}
+Print the first five rows of your dataframe.
+\end{problem}
+
+\section*{Feature Engineering}
+
+Constructing new features is called \emph{feature engineering}.
+Once new features are created, we can analyze how much a model depends on each feature. 
+Features with low importance probably do not contributed much and could potentially be removed.
+
+Discrete Fourier transforms and wavelet decomposition often reveal important properties of data collected over time (\emph{called time-series}), like sound, video, economic indicators, etc.  In many such settings it is useful to engineer new features from a  wavelet decomposition, the DFT, or some other function of the data.
+
+\subsubsection{Engineering for Categorical Variables}
+
+Categorical features are those that take only a finite number of values, and usually no categorical value has a numerical meaning, even if it happens to be number.  
+For example in an election dataset, the names of the candidates in the race are categorical, and there is no numerical meaning (neither ordering nor size) to numbers assigned to candidates based soley on their names.  
+
+Consider the following election data.
+\begin{center}
+\texttt{
+\begin{tabular}{lll}
+Ballot number & For Governor & For President\\
+\hline
+001 & Herbert & Romney\\
+002 & Cooke & Romney\\
+003 & Cooke & Obama\\
+004 & Herbert & Romney\\
+005 & Herbert & Romney\\
+006 & Cooke & Stein
+\end{tabular}}
+\end{center}
+
+
+A common mistake occurs when someone assigns a number to each categorical entry (say 1 for Cooke, 2 for Herbert, 3 for Romney, etc.).  
+While this assignment is not, in itself, inherently incorrect, it is incorrect to use the value of this number in a statistical model.  
+Whenever you encounter categorical data that is encoded numerically like this, immediately change it either to non-numerical form (``Cooke,'' ``Herbert,'' ``Romney,''\dots) or apply \emph{one-hot encoding} or \emph{dummy variable encoding}.
+\footnote{Yes, these are silly names, but they are the most common names for it. Unfortunately, it is probably too late to change these now.} 
+To do this construct a new feature for every possible value of the categorical variable, and assign the value $1$ to that feature if the variable takes that value and zero otherwise.  
+Pandas makes one-hot encoding simple:
+
+\begin{lstlisting}
+# one-hot encoding 
+df = pd.get_dummies(df, columns=['For President']])
+
+\end{lstlisting}
+
+The previous dataset, when the presidential race is one-hot encoded, becomes\\
+\begin{center}
+\texttt{\begin{tabular}{lllll}
+Ballot number & Governor & Romney & Obama & Stein\\
+\hline
+001 & Herbert & 1 & 0 & 0\\
+002 & Cooke & 1 & 0 & 0\\
+003 & Cooke & 0 & 1 & 0\\
+004 & Herbert &1 & 0 & 0\\
+005 & Herbert & 1 & 0 & 0\\
+006 & Cooke & 0 & 0 & 1
+\end{tabular}}
+\end{center}
+Note that the sum of the terms of the one-hot encoding in each row is $1$, corresponding to the fact that every ballot had exactly one presidential candidate.
+
+When the gubernatorial race is also one-hot encoded, this becomes\\
+\begin{center}
+\texttt{\begin{tabular}{llllll}
+Ballot number & Cooke & Herbert & Romney & Obama & Stein\\
+\hline
+001 & 0 & 1 & 1 & 0 & 0\\
+002 & 1 & 0 & 1 & 0 & 0\\
+003 & 1 & 0 & 0 & 1 & 0\\
+004 & 0 & 1 &1 & 0 & 0\\
+005 & 0 & 1 & 1 & 0 & 0\\
+006 & 1 & 0 & 0 & 0 & 1
+\end{tabular}}
+\end{center}
+Now the sum of the terms of the one-hot encodings in each row is $2$, corresponding to the fact that every ballot had two names---one gubernatorial candidate and one presidential candidate.
+
+Summing the columns of the one-hot-encoded data gives the total number of votes for the candidate of that column.   
+So the numerical values in the one-hot encodings are actually numerically meaningful, and summing the entries gives meaningful information.
+One-hot encoding also avoids the pitfalls of incorrectly using numerical proxies for categorical data.  
+
+The main disadvantage of one-hot encoding is that it is an inefficient representation of the data.  
+ If there are $C$ categories and $n$ datapoints, a one-hot encoding takes an $n\times 1$-dimensional feature and turns it into an $n\times C$ sparse matrix. 
+  But there are ways to store these data efficiently and still maintain the benefits of the one-hot encoding. 
+
+\begin{warn}
+When performing linear regression, it is good practice to add a constant column to your dataset and to remove one column of the one-hot encoding of each categorical variable.
+This is done because the constant column is a linear combination of the one-hot encoded columns causing the matrix to fail to be invertible and can cause identifiability problems. 
+
+The standard way to deal with this is to remove one column of the one-hot embedding for each categorical variable.  For example, with the elections dataset above, we could remove the Cooke (governor variable) and Romney (presidential variable) columns. Doing that means that in the new dataset a row sum of $0$ corresponds to a ballot with a vote for Cooke and a vote for Romney, while a $1$ in any column indicates how the ballot differed from the base choice of Cooke and Romney.
+
+When using pandas, you can drop the first column of a one-hot encoding by passing in \li{drop\_first=True}.
+\end{warn}
+
+
+\begin{problem}
+\label{prob:boston-housing}
+Load \li{housing.csv} into a dataframe with \li{index_col=0}. Descriptions of the features are in \li{housing\_data\_description.txt}.  
+The goal is to construct a regression model that predicts SalePrice using the other features of the dataset.  Do this as follows:
+
+\begin{enumerate}
+	\item Identify and handle the missing data.  Hint: Dropping every row with some missing data is not a good choice because it gives you an empty dataframe.  What can you do instead?
+	
+	\item Create two new features:
+		\begin{enumerate}
+			\item \li{Remodeled}: Whether or not a house has been remodeled with a \li{Y} if it has been remodeled, or a \li{N} if it has not.
+			\item \li{TotalPorch}: Using the 5 different porch/deck columns, create a new column that provides the total square footage of all the decks and porches for each house. 
+		\end{enumerate}
+    
+	\item Identify the variable with nonnumerical values that are misencoded as numbers.  One-hot encode it. (Hint: don't forget to remove one of the encoded columns to prevent collinearity with the constant column).
+    
+    \item Add a constant column to the dataframe.
+
+    \item Save a copy of the dataframe.
+
+	\item Choose four categorical features that seem very important in predicting SalePrice. One-hot encode these features, and remove all other categorical features.
+		
+	\item Run an OLS (Ordinary Least Squares) regression on your model.  
+\end{enumerate}
+	
+Print a list of the ten features that have the highest coefficients in your model.
+Print the summary for the dataset as well. 
+\\
+
+\noindent To run an OLS model in python, use the following code.
+\begin{lstlisting}
+import statsmodels.api as sm
+
+# In our case, y is SalesPrice, and X is the rest of the dataset. 
+>>> results = sm.OLS(y, X).fit()
+
+# Print the summary
+>>> results.summary()
+
+# Convert the summary table to a dataframe
+>>> results_as_html = results.summary().tables[1].as_html()
+>>> result_df = pd.read_html(results_as_html, header=0, index_col=0)[0]
+\end{lstlisting}
+\end{problem}
+
+\begin{problem}
+
+Using the copy of the dataframe you created in Problem 4, one-hot encode all the categorical variables.
+Print the shape of you database, and Run OLS.
+
+Print the ten features that have the highest coefficient in your model and the summary.
+Write a couple of sentences discussing which model is better and why.
+
+\end{problem}
+
+\begin{comment}
+\url{https://docs.google.com/spreadsheets/d/1oJBaH2x369leRtL19HD8n1oZlGqwK9Yz9b14ppUEhXg/edit#gid=439114268} birth quarter affects percentiles
+\end{comment}

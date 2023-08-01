@@ -1,5 +1,6 @@
 \lab{Wave Phenomena}{Wave Phenomena}
 \label{lab:waveeqn}
+\labdependencies{Animation,FiniteDifferenceMethod,HeatFlow}
 
 \section*{Advection Equation}
 The advection equation (or transport equation) is given by $u_t + s u_x = 0$, where $s$ is a nonzero constant.
@@ -30,8 +31,8 @@ In $(x,t)$ coordinates the solution is
 \[u(x,t) = F(x-st) + G(x+st)\]
 Thus the general solution of the wave equation is the sum of two parts: one is a signal traveling to the right with constant speed $|s|$, and the other is a signal traveling to the left with speed $|s|$.
 
-The wave equation is usually seen in the context of an initial boundary value problem.
-This takes the form
+
+Given two homogeneous Dirichlet boundary conditions (for the second-order spatial derivative) and two sets of initial conditions (because the second-order time derivative), the wave equation takes the form
 \begin{align*}
 	u_{tt} &= s^2 u_{xx}, \quad 0 < x < l, \quad t > 0,\\
 	u(0,t) &= u(l,t) = 0, \\
@@ -40,8 +41,9 @@ This takes the form
 \end{align*}
 
 \subsection*{Numerical solution of the wave equation}
-We look to approximate $u(x,t)$ on a grid of points $(x_j,t_m)_{j=0,m=0}^{J,M}$.
+We look to approximate $u(x,t)$ on a grid of points $(x_j,t_m)_{j=0,m=0}^{J,M}$, so that.
 Denote the approximation to $u(x_j,t_m)$ by $U_{j}^{m}$.
+Note that the superscipt index $m$ denotes the time index and runs from $0$ to $M$, while the subscript $j$ denotes the spatial index and runs from $0$ to $J$.
 Recall that the centered approximations in space and time are
 \begin{align*}
 D_{tt} U_{j}^{m} = \frac{U_{j}^{m+1} -2 U_{j}^{m} + U_{j}^{m-1}}{(\triangle t)^2} ,\\
@@ -55,10 +57,14 @@ The resulting method is given by
 \end{align*}
 where $ \lambda  =  s(\triangle t)/(\triangle x)$.
 This method may be written in matrix form as
-\[U^{m+1} = AU^{m} - U^{m-1} \]
+\begin{align}
+U^{m+1} = AU^{m} - U^{m-1} 
+\end{align}
 where
-\[A =
-\left[\begin{array}{cccc}2(1-\lambda^2) & \lambda^2 &  &  \\ \lambda^2 & 2(1-\lambda^2) & \lambda^2 &  \\ \ddots & \ddots & \ddots &  \\ & \lambda^2 & 2(1-\lambda^2) & \lambda^2 \\  &  & \lambda^2 & 2(1-\lambda^2)\end{array}\right]\]
+\begin{align}
+A =
+\left[\begin{array}{cccc}2(1-\lambda^2) & \lambda^2 &  &  \\ \lambda^2 & 2(1-\lambda^2) & \lambda^2 &  \\ \ddots & \ddots & \ddots &  \\ & \lambda^2 & 2(1-\lambda^2) & \lambda^2 \\  &  & \lambda^2 & 2(1-\lambda^2)\end{array}\right]
+\end{align}
 and
 \[U^m = \left[\begin{array}{c}U_{1}^{m} \\U_{2}^{m} \\\vdots \\U_{J-1}^{m}\end{array}\right]\]
 
@@ -77,7 +83,9 @@ Recalling that the solution $u(x,t)$ satisfies the wave equation, we substitute 
 	u(x_j,t_1) &= u(x_j, 0) +  g(x_j) \triangle t+ s^2 f''(x_j)\frac{\triangle t^2}{2} +  u_{ttt}(x_j,t_1^*) \frac{\triangle t^3}{6}.
 \end{align*}
 Ignoring the third order term, we obtain a second order approximation for the second time step:
-\[U_{j}^{1}= U_{j}^{0} + g(x_j) \triangle t+ s^2 f''(x_j) \frac{\triangle t^2}{2}, \quad 1 \leq j \leq J-1\]
+\begin{align}
+U_{j}^{1}= U_{j}^{0} + g(x_j) \triangle t+ s^2 f''(x_j) \frac{\triangle t^2}{2}, \quad 1 \leq j \leq J-1
+\end{align}
 or if $f$ is not readily differentiable,
 \[U_{j}^{1}= U_{j}^{0} + g(x_j) \triangle t+ \frac{\lambda^2}{2} (U^0_{j-1} -2 U^0_j + U^0_{j+1})\]
 This method is conditionally stable; the CFL condition (a necessary condition for convergence of PDEs) is that $\lambda \leq 1$.
@@ -91,7 +99,7 @@ Consider the initial boundary value problem
 	u(x,0) &= \sin(2 \pi x),\\
 	u_t(x,0) &= 0.
 \end{align*}
-Numerically approximate the solution $u(x,t)$ for $t \in \left[0,.5\right]$.
+Numerically approximate the solution $u(x,t)$ for $t \in \left[0,0.5\right]$.
 Use $J=50$ subintervals in the $x$ dimension and $M=50$ subintervals in the $t$ dimension.
 Animate the results.
 Compare your results with the analytic solution $u(x,t) = \sin{(2 \pi x)} \cos{(2 \pi t)}$ graphically.
@@ -100,7 +108,7 @@ See Figure \ref{fig:prob1}.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{prob1.pdf}
+\includegraphics[width=\textwidth]{figures/prob1.pdf}
 \caption{$u(x,t=0)$.}
 \label{fig:prob1}
 \end{figure}
@@ -112,8 +120,8 @@ Consider the initial boundary value problem
 \begin{align*}
 	u_{tt} &= u_{xx}, \\
 	u(0,t) &= u(1,t) = 0, \\
-	u(x,0) &= .2e^{-m^2(x-1/2)^2}\\
-	u_t(x,0) &= .4m^2(x-1/2)e^{-m^2(x-1/2)^2}.
+	u(x,0) &= 0.2e^{-m^2(x-1/2)^2}\\
+	u_t(x,0) &= 0.4m^2(x-1/2)e^{-m^2(x-1/2)^2}.
 \end{align*}
 The solution of this problem is a Gaussian pulse.
 It travels to the right at a constant speed.
@@ -129,7 +137,7 @@ See \ref{fig:waveeqn:prob2}.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{prob2.pdf}
+\includegraphics[width=\textwidth]{figures/prob2.pdf}
 \caption{$u(x,t=0)$.}
 \label{fig:waveeqn:prob2}
 \end{figure}
@@ -140,7 +148,7 @@ Consider the initial boundary value problem
 \begin{align*}
 	u_{tt} &= u_{xx}, \\
 	u(0,t) &= u(1,t) = 0, \\
-	u(x,0) &= .2e^{-m^2(x-1/2)^2}\\
+	u(x,0) &= 0.2e^{-m^2(x-1/2)^2}\\
 	u_t(x,0) &= 0.
 \end{align*}
 The initial condition separates into two smaller, slower-moving pulses, one traveling to the right and the other to the left.
@@ -181,14 +189,14 @@ See Figure \ref{fig:prob4}.
 \centering
 \begin{subfigure}{.49\textwidth}
 \centering
-\includegraphics[width=\linewidth]{prob4.pdf}
+\includegraphics[width=\linewidth]{figures/prob4.pdf}
 \caption{$u(x,t=0)$.}
 \end{subfigure}
 %
 \begin{subfigure}{.49\textwidth}
 \centering
-\includegraphics[width=\linewidth]{prob4_t1.pdf}
-\caption{$u(x,t = .1)$.}
+\includegraphics[width=\linewidth]{figures/prob4_t1.pdf}
+\caption{$u(x,t = 0.1)$.}
 \end{subfigure}
 \caption{The graphs for Problem \ref{prob:prob4} at various times $t$.}
 \label{fig:prob4}
@@ -222,10 +230,10 @@ It models both the process of transport with the nonlinear advection term $(u^2/
 
 Let us look for a traveling wave solution $u(x,t) = \hat{u}(x-st)$ for Burgers equation.
 We transform \eqref{eqn:Burgers_pde} into the moving frame $(x,t) \to (\bar{x},\bar{t}) = (x-st, t)$. In this frame \eqref{eqn:Burgers_pde} becomes
-\begin{align}
+\begin{align*}
 	u_{\bar{t}} - s u_{\bar{x}}+ \left(\frac{u^2}{2} \right)_{\bar{x}} = \nu u_{\bar{x}\bar{x}}
-	\label{eqn:Burgers_pde_moving_frame}
-\end{align}
+	%\label{eqn:Burgers_pde_moving_frame}
+\end{align*}
 
 This new frame of reference corresponds to an observer moving along with the wave, so that the wave appears stationary as the observer studies it.
 Thus, $\hat{u}_{\bar{t}} = 0$, so that the wave profile $\hat{u}$ satisfies the ordinary differential equation
@@ -251,7 +259,11 @@ Usually at this point, the traveling wave must be numerically solved using the p
 However, the profile ODE for Burgers is simple enough that it is possible to obtain an analytic solution.
 The traveling wave is  given by
 
-\[\hat{u}(x) = s - a \tanh \left(\frac{ax }{2\nu} + \delta\right)\]
+\begin{align}
+\hat{u}(x) = s - a \tanh \left(\frac{ax }{2\nu} + \delta\right)
+\label{eqn:waveeqn:uhat}
+\end{align}
+
 where $a = (u_- - u_+)/2$ and $\delta$ is fixed real number.
 We get a family of solutions because any translation of a traveling wave solution is also a traveling wave solution.
 
@@ -318,7 +330,7 @@ Numerically solve the initial value problem
 	&{ } u_t -su_x + uu_x = u_{xx}, \quad x \in (-\infty,\infty),\\
 	&{ } u(x,0) = \hat{u}(x)+v(x),
 \end{align*}
-for $t \in [0,1]$.
+for $t \in [0,1]$, where $\hat{u}$ is given in \eqref{eqn:waveeqn:uhat} with $\nu=1$ and $\delta=0$.
 Let the perturbation $v(x)$ be given by
 \[v(x) = 3.5(\sin{(3x)} + 1)\frac{1}{\sqrt{2\pi}} \exp{(-x^2/2)}\]
 And let the initial condition be $u(x, 0) = \hat{u}(x) + v(x)$
@@ -337,13 +349,13 @@ In this case, use \li{scipy.optimize.fsolve}.
 \centering
 \begin{subfigure}{.49\textwidth}
 \centering
-\includegraphics[width=\linewidth]{prob5_initial.pdf}
+\includegraphics[width=\linewidth]{figures/prob5_initial.pdf}
 \caption{$u(x,t=0)$.}
 \end{subfigure}
 %
 \begin{subfigure}{.49\textwidth}
 \centering
-\includegraphics[width=\linewidth]{prob5_ufinal_utilda.pdf}
+\includegraphics[width=\linewidth]{figures/prob5_ufinal_utilda.pdf}
 \caption{$u(x,t = 1)$ vs $\hat{u}$.}
 \end{subfigure}
 \caption{The graphs for Problem \ref{prob:prob5}}

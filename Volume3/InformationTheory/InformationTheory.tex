@@ -1,0 +1,284 @@
+\lab{Information Theory and Wordle}{Information Theory}
+\objective{Use the information theory concept of entropy to create an algorithm for playing the popular word game Wordle.}
+
+\section*{Wordle}
+Wordle is a word game\footnote{It was particularly popular on the internet in 2022.} where you have 6 guesses to guess a five-letter word. 
+Every time a guess is made, you receive some information about how close your guess is to the correct answer.
+Letters in the guess that are in the correct location are colored green; letters that are present in the secret word but not in the correct location are colored yellow; and letters that aren't present in the secret word are colored gray.
+An example game is given in Figure \ref{fig:wordle-example}.
+
+\begin{figure}[H]
+	\includegraphics{figures/wordle-example.png}
+	\caption{
+	\label{fig:wordle-example}
+	An example game of Wordle. 
+	Here, the secret word is ``train.''
+	Green tiles mean the letter is in the correct location; yellow tiles mean the letter is in the secret word but not at that location; and grey tiles mean the letter is not in the secret word.
+	}
+\end{figure}
+
+In the official version, the secret word is chosen at random from a fixed list of 2309 words.
+Additionally, there is a list of 12953 words that are allowed to be used as guesses; the guess we make cannot be any arbitrary string of 5 characters, but must always must be one of these words.
+While it is possible to only select guesses that might be the secret word, we can often get more information by making other guesses.
+
+\begin{problem}
+	Write a function \li{get_guess_result()} that accepts a guess and the secret word, and returns the colors of the guess as a list.
+	Label correct letters with the number 2, letters in the wrong location with 1, and incorrect letters with 0.
+
+There are some technicalities with how the guess is colored when multiple of the same letter are present.
+In order to get these cases correct, have your function follow the following rules:
+\begin{enumerate}
+\item All letters in the guess that are correct in the correct location are marked green.
+\item Any other letters in the guess that are in the secret word but not in the right location are marked yellow.
+\item However, there will not be more copies of a letter marked yellow or green than there are copies of that letter in the secret word. 
+For instance, if the secret word has one letter \li{e} and the guess has three, only one of them will be marked yellow or green.
+The letters are marked yellow from left to right.
+\item All other letters are marked gray.
+\end{enumerate}
+	
+	Here are some examples you can use to test your code:
+\begin{lstlisting}
+>>> get_guess_result("excel", "boxed")
+[0, 1, 0, 2, 0]
+>>> get_guess_result("stare", "train")
+[0, 1, 2, 1, 0]
+>>> get_guess_result("green", "pages")
+[1, 0, 0, 2, 0]
+>>> get_guess_result("abate", "vials")
+[0, 0, 2, 0, 0]
+>>>  get_guess_result("robot", "older")
+[1, 1, 0, 0, 0]
+\end{lstlisting}
+	
+	Hint: Find some way to keep track of which letters in the secret word have been matched to.
+	Since strings are immutable, it may also be helpful to turn the guess and secret word into lists if you need to modify them.
+\end{problem}
+
+\subsection*{Computing Guess Results}
+We will be creating an algorithm to play Wordle.
+The lists of possible secret words and allowed guesses are in the files \li{possible_secret_words.txt} and \li{allowed_guesses.txt}, respectively.
+These can be loaded using the provided function \li{load_words()}.
+
+As part of this algorithm, we will need to use the guess results for every pair of possible secret word and allowed guess.
+Rather than computing these each time, we will compute these once and save the results in an array.
+For convenience, we have provided this array for you in \li{all_guess_results.npy}, which can be loaded using the function \li{np.load()}.
+
+Each row of this array corresponds to one of the allowed guess, and each column corresponds to a secret word, in the same order as the wordlists.
+To make certain computations later work better, each guess has been condensed to a single ternary (base 3) number.
+For instance, the list \li{[1,0,2,2,1]} becomes the number \(1\cdot 3^0 + 0\cdot 3^1+2\cdot 3^2+2\cdot 3^3+1\cdot 3^4=154\).
+For an example of using the array, let \li{i=1388} be the index of a given guess (``boxes'') and \li{j=1914} be the index of a given secret word (``steel'').
+Then we have the following:
+\begin{lstlisting}
+# The results of guessing "boxes" for every secret word
+>>> all_guess_results[i]
+array([  1, 109,  28, ...,  28, 108,   6])
+# The results of every guess for the secret word "steel"
+>>> all_guess_results[:,j]
+array([ 54,   9,   0, ...,   0, 135,   0])
+# The result of guessing "boxes" for the secret word "steel"
+>>> all_guess_results[i,j]
+135
+# 135 is equivalent to [0, 0, 0, 2, 1]
+\end{lstlisting}
+
+Our objective is to create some strategy to play Wordle as effectively as possible.
+Simply choosing the word that is most likely to be the secret word is ineffective, as there is no reason to prefer any word over another as long as both are consistent with the information we have.
+A much better strategy is to maximize the amount of information each of our guesses gives us, which we will quantify by using entropy.
+
+
+\section*{Information and Entropy}
+
+\emph{Entropy} is the expected amount of information we would gain by knowing the result of a random variable.
+A natural way to define the information of an event \(A\) is as \(-\log_2 P(A)\).\footnote{This choice of definition has a number of desirable properties for information: information is non-negative, the information of two independent events is the sum of their individual informations, and information is a continuous function of the probability of an event.
+In fact, this is the \emph{only} function with this property, up to choice of logarithm base; refer to the Volume 3 textbook for more details.
+The base-2 logarithm is often used because it represents the number of bits needed to encode the information.}
+The entropy of a random variable \(X\), which we denote \(H(X)\), is then defined as
+\[
+H(X)= \mathbb{E}\left[-\log_2 P(X=x)\right]=-\sum_x P(X=x)\log_2 P(X=x).
+\] 
+%where the sum version comes from the Law of the Unconscious Statistician.
+A loose interpretation is that if a random variable has lower entropy, then we know more about what its value will be even if we haven't observed it yet, and observing it usually will give little information.
+At one extreme, if a discrete random variable has zero entropy, then it is necessarily constant.%almost surely, to be technical
+On the other hand, if a random variable has higher entropy, then we know less about its result and observing it typically will give more information.
+If we know a random variable lives in a certain set, the highest possible entropy it can have is if it is uniformly distributed.
+
+For Wordle, since we don't know the secret word, it is reasonable to consider it as a random variable.
+This gives the secret word a value of entropy, which we can use to choose a guess that is likely to give more information.
+Denote the secret word as \(W\) and the result of making a guess \(g\) as \(R(g)\).
+For any guess, the result $R(g)$ of the guess is entirely determined by $W$; since we don't know the secret word, this makes $R(g)$ also a random variable.
+
+There are two approaches we can take to make a strategy out of this.
+First, we can try to minimize the entropy of the variable \(W|R(g)\).
+This essentially is trying to find the guess that will on average minimize how much we don't know about the secret word after we know the result of the guess.
+Second, we can try to maximize the entropy of the variable \(R(g)\).
+This amounts to finding which guess is expected to give the most information.
+
+These two approaches are in fact equivalent, as
+\[
+H(W|R(g)) = H((W,R(g))) -H(R(g)) = H(W)-H(R(g))
+,
+\]
+where \(H((W,R(g)))\) denotes the entropy of the joint random variable \((W,R(g))\) (\textit{not} the cross entropy).
+To see this equality, note that for random variables \(X,Y\) we have
+\[
+-\log_2 P(X|Y)
+=-\log_2\frac{P(X,Y)}{P(Y)}
+=-\log_2 P(X,Y)
++\log_2 P(Y).
+\]
+Taking the expectation of both sides implies that
+\[
+H(X|Y)=H((X,Y))-H(Y).
+\]
+Additionally, the value of \(R(g)\) is completely determined by \(W\), so \(H((W,R(g))) = H(W)\).
+The entropy of \(R(g)\) ends up being more straightforward to calculate, so this is the approach we take for the remainder of the lab.
+
+We now seek to calculate the entropy of \(R(g)\), the result of the guess, for each guess \(g\) we can make.
+This is given by
+\begin{align*}
+H(R(g)) &=
+-\sum_r P(R(g)=r)\log_2 P(R(g)=r)
+\\&=
+-\sum_r P(R(g,W)=r)\log_2 P(R(g,W)=r).
+\end{align*}
+Since we assumed a uniform distribution over the set of possible secret words, the probability \(P(R(g,W)=r)\) is the proportion of secret words that yield the same result \(r\) given the same guess \(g\).
+
+To find the entropy of a guess, we thus need only to compute the probability of each unique guess result, and then apply the equation above.
+This sum will need to be evaluated for each individual guess that we can make.
+
+As an example, suppose that we know the secret word is one of the words ``boney'', ``disco'', ``marsh", ``stock'', or ``visor'', and we are evaluating the guess ``boxes''.
+The result of this guess for each of these words is as follows:
+\begin{center}
+\begin{tabular}{r|l}
+Secret word & Guess result \\ \hline
+boney & (2,2,0,2,0) \\
+disco & (0,1,0,0,1) \\
+marsh & (0,0,0,0,1) \\
+stock & (0,1,0,0,1) \\
+visor & (0,1,0,0,1)
+\end{tabular}
+\end{center}
+There are three distinct possible results: (2,2,0,2,0), with probability \(\frac{1}{5}\); (0,1,0,0,1), with probability \(\frac{3}{5}\); and (0,0,0,0,1), with probability \(\frac{1}{5}\).
+Using the above formula gives the entropy of this guess as
+\[
+-\frac{1}{5}\log_2\frac{1}{5}
+-\frac{3}{5}\log_2\frac{3}{5}
+-\frac{1}{5}\log_2\frac{1}{5}
+\approx 1.3710
+\]
+
+\begin{problem}\label{infotheory:prob:entropies}
+	Write a function that accepts the array of all guess results (as in \li{all_guess_results.npy}) and calculates the entropy of each guess.
+	Return the guess with the highest entropy.
+
+	Hint: \li{np.unique} with the argument \li{return_counts=True} will return an array with the number of occurrences of each of the different values in a one-dimensional array.
+	By looping over each allowed guesses, you can use this function to compute the entropy quickly.
+	Beware that applying this function directly to multidimensional arrays results in different behavior, however.
+\end{problem}
+
+After we make a guess, we want to find the posterior distribution for the secret word given the guesses we've made.
+Bayes' Rule gives
+\[
+P(W=w|R(g)=r)=\frac{P(R(g)=r|W=w)P(W=w)}{P(R(g)=r)}.
+\]
+First, we look at the term \(P(R(g)=r|W=w)\).
+If we know the secret word \(W\), then for any guess \(g\), the result \(R(g)\) is uniquely determined.
+Thus, this probability is either 0 or 1, depending on whether the guess result we observed is the result that would be seen if \(w\) is the secret word.
+For instance, with the secret word \(w=\text{``steel''}\) and the guess \(g=\text{``boxes''}\), we have
+\[
+P(R(g)=r|W=w)=\begin{cases}
+1 & r=[0,0,0,2,1] \\
+0 & \text{otherwise}
+\end{cases};
+\]
+that is, the only value of \(r\) for which the probability is not zero is \(r=[0,0,0,2,1]\), which is the result of making that guess.
+
+Now, \(P(W=w)\) is a constant, and \(P(R(g)=r)\) is constant for all secret words that have \(P(R(g)=r|W=w)\neq 0\), since these all have the same value of \(R(g)\).
+So, the posterior distribution is just a uniform distribution over the set of possible secret words that give $R(g_\text{made})=r_\text{observed}$, i.e. the same result for our guess as we observed.
+Finding the optimal next guess to make is then equivalent to repeating the same process as before with a smaller initial list of possible secret words.
+
+\begin{problem}\label{infotheory:prob:filter}
+	Create a function that filters the list of possible secret words after making a guess.
+	
+	Accept the array of all guess results (as in \li{all_guess_results.npy}), the list of allowed guesses, the list of possible secret words, the guess that was made, and the guess's result (as a list of integers).
+	Return a filtered list of possible words that are still possible after knowing the result of a guess.
+	Also return a filtered version of the array of all guess results that only contains the results for the secret words still possible after making the guess.
+	This smaller array will be used in later steps of the game.
+	
+	If our guess is ``boxes'' and the guess result is \li{[0,0,0,2,1]}, then the list of remaining words should have length 47 and the array of guess results should have shape \li{(12953, 47)}.
+	
+	Hint: to find the index of a word in either of the wordlists, use the \li{.index()} function.
+	
+	Hint part 2: The most efficient way to do this problem is with \emph{boolean masking}.
+	If \li{A} is any numpy array and \li{mask} is a 1-D array of True/False values, then \li{A[mask]} will return the portion of \li{A} where \li{mask} is true.
+	This can be used even if \li{A} is multidimensional, and on dimensions other than the first; for instance, \li{A[:,mask]} will use the mask for the second dimension of the array.
+	
+\end{problem}
+\begin{info}
+Note that although we filter down the list of possible secret words, we do not do anything similar for the list of allowed guesses.
+As the game goes on and we make more guesses, the list of words that could still be the secret word shrinks, while the list of words we are allowed to guess stays the same.
+Sometimes words that we know cannot possibly be the secret word might give us more information than words which might be the secret word, so it can be beneficial to guess them anyways.
+\end{info}
+
+Before we assemble our algorithm for playing Wordle, we would like a benchmark.
+A simple strategy to compare to is to select an allowed guess at random until we know the secret word.
+
+\begin{problem}\label{problem:benchmark_algorithm}
+	The file \li{wordle.py} contains a class called \li{WordleGame} that can be used to simulate games of Wordle.\footnote{This class uses the \lif{colorama} package to format terminal output. If needed, it can easily be installed with \lif{pip install colorama}.}
+	Instantiate one of these, use the \li{start_game()} function to start a game, and use the \li{make_guess()} function to make a guess.
+
+	Write a function that accepts a \li{WordleGame} and starts and plays a game using the strategy of randomly selecting words.
+	At each step of the game:
+	\begin{itemize}
+		\item If we know the secret word (our list of possible guesses has length 1), guess that word.
+		\item Otherwise, choose a guess at random from the list of allowed guesses.
+		\item Filter the list of possible words using your function from Problem \ref{infotheory:prob:filter} to only those that are still possible knowing the result of the guess.
+		\item Repeat until the secret word has been guessed.
+	\end{itemize}
+	Use \li{game.is_finished()} to check if the game has been finished.
+	Return the number of guesses needed to guess the secret word (including guessing the word, not just determining it).
+	
+	To visualize this algorithm, pass the argument \li{display=True}, and the \li{WordleGame} will print out each word as it is guessed.
+\end{problem}
+
+\begin{problem}\label{problem:wordle_algorithm}
+	Write a function that accepts a \li{WordleGame} object and starts and plays a game using the strategy of maximizing the entropy of each guess.
+	At each step:
+	\begin{itemize}
+		\item If we know the secret word (our list of possible secret words has length 1), guess that word
+		\item Otherwise, compute the entropies using your function from Problem \ref{infotheory:prob:entropies}, and make the guess that has the highest entropy
+		\item Filter the possible secret words using your function from Problem \ref{infotheory:prob:filter} to only those that we still know are possible
+		\item Repeat until the secret word has been guessed
+	\end{itemize}
+	Use \li{game.is_finished()} to check at each step if the game has been finished.
+	Return the number of guesses needed to guess the secret word.
+\end{problem}
+
+\begin{problem}
+	Write a function that accepts an integer \(n\) and simulates that many games of Wordle using each of the above algorithms.
+	Return the average number of guesses each required to find the secret word.
+	Compare their performance; the approach using the entropy should require about half as many guesses on average.
+\end{problem}
+
+The \li{WordleGame} object also has a version you can play in the terminal, which can be started using the \li{play_game_interactive()} method.
+You can use this to also compare your own performance to that of your algorithm.
+
+\begin{comment}
+% idk if this is important
+% It is interesting though and was done by 3b1b iirc
+\section*{Additional Material}
+It is possible to attempt to look ahead more than a single guess.
+For two guesses, this amounts to finding the guess \(g\) that maximizes the expected entropy
+\[
+H(R(g)) + \mathbb{E}\left[\max_{g'} H(R(g')|R(g))\right].
+\]
+Basically, we want to maximize the amount of information we get from the two guesses; however, how much information we can expect from the second guess \(g'\) depends on the result of the first guess, so we need to maximize the expected information we can get from the second guess in addition to the first.
+
+This is more complicated to implement.
+The computational complexity is also exponential in the number of guesses one looks ahead, and quickly becomes unmanageable.
+Handling the edge cases optimally when the number of possible secret words becomes small also becomes more complicated. 
+For instance, if we are looking two guesses ahead and there are three possible secret words left, there are likely to be many pairs of guesses that eliminate two secret words, but there may be a way to do so with a single guess; this setup does not distinguish the two.
+Really, this mostly just means we need to formulate what we mean by ``optimal'' more carefully; that is, we need to create a cost function for the whole problem, rather than simply maximizing the entropy.
+
+%include links
+\end{comment}

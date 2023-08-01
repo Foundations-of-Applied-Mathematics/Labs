@@ -77,14 +77,14 @@ Combining both the AR$(p$) and MA($q$) models, we get an ARMA($p,q$) model which
 
 Not all ARMA models are covariance stationary. 
 However, many time series can be made covariance stationary by differencing.
-Let $\delta Z_t$ represent the time series $Y_t = Z_t - Z_{t-1}$ obtained by taking a difference of the terms. 
+Let $\delta Z_t$ represent the time series $z_t = Z_t - Z_{t-1}$ obtained by taking a difference of the terms. 
 If the trend is linear a first difference is usually stationary.
 If the trend is quadratic a second difference may be necessary $\delta ^2 Z_t = \delta ( \delta Z_t)$.
 An $\text{ARIMA}(p,d,q)$ model is a discrete-time stochastic process $(Z_t)_{t \in \mathbb{Z}}$ satisfying the equation
 
 \begin{align}
     \label{eq:arima:def}
-    \delta ^ d Z_t = \mathbf{c} + \underbrace{\left(\sum_{i=1}^p \Phi_{i}\mathbf{y_{t - i}}\right)}_\text{AR(p)} +  
+    \delta ^ d Z_t = \mathbf{c} + \underbrace{\left(\sum_{i=1}^p \Phi_{i}z_{t - i}\right)}_\text{AR(p)} +  
     \underbrace{\left(\sum_{j=1}^{q} \Theta_{j}\boldsymbol{\epsilon_{t-j}} \right)}_\text{MA(q)} + \text{ } \boldsymbol{\epsilon_t}
 \end{align}
 
@@ -92,8 +92,9 @@ An $\text{ARIMA}(p,d,q)$ model is a discrete-time stochastic process $(Z_t)_{t \
 \subsection*{Finding Parameters}
 
 One of the most difficult parts of using an ARMA($p,q$) model is identifying the proper parameters of the model.
-For simplicity, at the beginning of this lab we discuss univariate ARMA models with parameters $\{\phi_i\}_{i=1}^p$, $\{\theta_i\}_{i=1}^q$, $\mu$, and $\sigma$, where $\mu$ and $\sigma$ are the mean and variance of the error.
+For simplicity, at the beginning of this lab we discuss univariate ARMA models with parameters $\{\phi_i\}_{i=1}^p$, $\{\theta_i\}_{i=1}^q$, $\mu$, and $\sigma$, where $\mu$ and $\sigma$ are the mean and standard deviation of the error.
 Note that $\{\phi_i\}_{i=1}^p$ and $\{\theta_i\}_{i=1}^q$ determine the order of the ARMA model.
+For this lab, we will let $\mathbf{c}=0$.
 
 A naive way to use an ARMA model is to choose $p$ and $q$ based on intuition.
 Figure \ref{fig:correlations} showed that there is a strong correlation between $z_t$ and $z_{t-1}$ and between $z_t$ and $z_{t-2}$.
@@ -113,26 +114,23 @@ Thus, a naive choice for our model is an ARMA($2,1)$ model.
 \end{figure}
 
 \begin{problem}
-Write a function \li{arma_forecast_naive()} that builds an ARMA(p,q) model where the values of $\phi_i=.5$ and $\theta_i=.1$ for all $i$.
-Let $\epsilon_i\sim\mathscr{N}(0,1)$ for all $i$.
+Write a function \li{arma_forecast_naive()} that builds an ARMA(p,q) model. 
+Your function should accept as parameters $p$, $q$, and $n$, where $p$ is the order of the autoregressive model, $q$ is the order of the moving average model, and $n$ is the number of observations to predict.
+Assume \li{c}$ = 0$, and let $\phi_i=.5$, $\theta_i=.1$, and $\epsilon_i\sim\mathscr{N}(0,1)$ for all $i$.
 
-Use your function to predict the next $n$ values of the time series. 
-The time series that should be used is the first difference of the time series found in the file \li{weather.npy}, which we denote $\{z_t\}_{t=1}^T$.
-This is done because we want the time series to be covariance stationary.
-The function should accept as parameters $p$, $q$, and $n$, where $p$ is the order of the autoregressive model, $q$ is the order of the moving average model, and $n$ is the number of observations to predict.
-Plot the observed differences $\{z_t\}_{t=1}^T$ followed by your predicted observations of $z_t$.
+Use your function to predict the next $n$ values of the time series found in \li{weather.npy}.
+This file contains data on the temperature in Provo, Utah from 7:56 PM May 13, 2019 to 6:56 PM May 16, 2019, taken every hour.
+This time series is NOT covariance stationary, so to make it covariance stationary, take its first difference (Hint: you might find \li{np.diff()} helpful).
+We denote the new covariance stationary time series as $\{z_t\}_{t=1}^T$.
+Predict the next $n$ observations by iterating through equation \ref{eq:arima:def}.
 
-\noindent Hint: you might find \li{np.diff()} to be usefull.
-
-The file \li{weather.npy} contains data on the temperature in Provo, Utah from 7:56 PM May 13, 2019 to 6:56 PM May 16, 2019, taken every hour.
-
-Use this file to test your code.
+Run your code on \li{weather.npy}, and plot the observed differences $\{z_t\}_{t=1}^T$ followed by your predicted observations of $z_t$.
 For $p=2$, $q=1$, and $n=20$, your plot should look similar to Figure \ref{fig:ARMA:naive}, however, due to the variance of the error $\epsilon_t$, the plot will not look exactly like Figure \ref{fig:ARMA:naive}.
-The predictions may be higher or lower on the x-axis.
+The predictions may be higher or lower on the $y$-axis.
 \label{prob:arma:naive}
 \end{problem}
 
-Let $\Theta = \{\phi_i, \theta_j, \mu, \sigma_a^2\}$ be the set of parameters
+Let $\Theta = \{\phi_i, \theta_j, \mu, \sigma\}$ be the set of parameters
 for an $\text{ARMA}(p,q)$ model.
 Suppose we have a set of observations $\{z_t\}_{t=1}^n$.
 Our goal is to find the $p,q$, and $\Theta$ that maximize the likelihood of the ARMA model given the data.
@@ -170,7 +168,7 @@ $r = \max(p, q+1)$. Define
         1 & \theta_1 & \theta_2 & \cdots & \theta_{r-1}
     \end{bmatrix}\\
     Q &= \begin{bmatrix}
-        \sigma_a^2 & 0 & \cdots & 0\\
+        \sigma & 0 & \cdots & 0\\
         0 & 0 & \cdots & 0\\
         \vdots & \vdots & \cdots & \vdots\\
         0 & 0 & \cdots & 0
@@ -213,34 +211,34 @@ steps.
 \subsubsection*{Likelihood via Kalman Filter}
 
 We assumed in Equation \ref{eqn:error} that the error terms of the model are Gaussian.
-This means that each conditional distribution in \ref{eq:arma:factorized} is also Gaussian, and is completely characterized by its mean and variance.
-These two quantities are easily found via the Kalman filter:
+This means that each conditional distribution in \ref{eq:arma:factorized} is also Gaussian, and is completely characterized by its mean and variance:
 \begin{align}
+    \label{eq:mean:variance1}
     \text{mean} & \quad H\hat{\textbf{x}}_{t|t-1} + \mu \\
+    \label{eq:mean:variance2}
     \text{variance} & \quad HP_{t|t-1}H^T
 \end{align}
-where $\hat{\textbf{x}}_{t|t-1}$ and $P_{t|t-1}$ are found during the Predict step.
-Given that each conditional distribution is Gaussian, the likelihood can then be found as follows:
+where $\hat{\textbf{x}}_{t|t-1}$ and $P_{t|t-1}$ are easily found via the Kalman filter, during the Predict step.
+Given that each conditional distribution is Gaussian, the likelihood can then be found as
 \begin{align}
     \label{eq:arma:likelihood}
-    p(\{z_t\} | \Theta)& = \prod_{t=1}^{n} N(z_t\mid H\hat{\textbf{x}}_{t|t-1} + \mu,\;
-    HP_{t|t-1}H^T)
+    p(\{z_t\} | \Theta)& = \prod_{t=1}^{n} N(z_t\mid H\hat{\textbf{x}}_{t|t-1} + \mu, HP_{t|t-1}H^T).
 \end{align}
 
 \begin{problem}
 \label{prob:arma:likelihood}
 Write a function \li{arma_likelihood()} that returns the log-likelihood of an ARMA model, given a time series $\{z_t\}_{t=1}^T$.
 This function should accept \li{filename} which contains the observations, and it should accept as parameters each parameter in $\Theta$. 
-In this case, the time series should be the change in temperature of \li{weather.npy}, which is the first difference of the time series found in \li{weather.npy}, as was done in the first problem.
-Return the log-likelihood of the $\text{ARMA}(p,q)$ model as a \li{float}.
+In this case, the time series should be the change in temperature of \li{weather.npy}, which is the first difference of the time series found in \li{weather.npy}, as was done in Problem \ref{prob:arma:naive}.
+Adapt Equation \ref{eq:arma:likelihood} to calculate and return the log-likelihood of the $\text{ARMA}(p,q)$ model as a $\mathbf{float}$.
 
-Use the \li{state_space_rep()} function provided to generate $F,Q,$ and $H$.
-The function \li{kalman()} has also been provided to calculate the means and covariances of each observation.
+Use the provided \li{state_space_rep()} function to generate $F,Q$, and $H$.
+The function \li{kalman()} has also been provided to help calculate the means and covariances of each observation.
+Calling the function \li{kalman()} on a time series will return an array whose values are $\hat{\textbf{x}}_{t|t-1}$ and an array whose values are $P_{t\mid t-1}$ for each $t\leq n$.
 
-\noindent Hint: calling the function \li{kalman()} on a time series will return an array whose values are $x_{k\mid k-1}$ and an array whose values are $P_{k\mid k-1}$ for each $k\leq n$.
-Remember that the time series should have $\mu$ subtracted when using \li{kalman()}.
+\noindent Hint: remember to subtract off the mean $\mu$ from the inputted observation when using \li{kalman()}.
 
-When done correctly, your function should match the following output:
+When implemented correctly, your function should match the following output:
 \begin{lstlisting}
 >>> arma_likelihood(filename='weather.npy', phis=np.array([0.9]), 
                     thetas=np.array([0]), mu=17., std=0.4)
@@ -255,6 +253,7 @@ In this lab, we define the model with the "best" choice of parameters as the mod
 The benefit of minimizing the AIC is that it rewards goodness of fit while penalizing overfitting.
 The AIC is expressed by
 \begin{align}
+\label{eq:AIC:formula}
     2k\left(1 + \frac{k+1}{n-k}\right) - 2 \ell(\Theta)
 \end{align}
 where $n$ is the sample size, $k = p + q + 2$ is the number of parameters in
@@ -281,7 +280,7 @@ Use the following code to run this routine.
 \end{lstlisting}
 
 This routine will return a vector \li{sol} where the first $p$ values are $\{\phi_i\}_{i=1}^p$, the next $q$ values are $\{\theta_i\}_{i=1}^q$, and the last two values are $\mu$ and $\sigma$, respectively.
-Note the wrapper $f(x)$ returns the negative log-likelihood.
+Note the wrapper \li{f(x)} returns the $\mathbf{negative}$ log-likelihood.
 This is because \li{scipy.optimize.minimize} finds the \emph{minimizer} of $f(x)$ and we are solving for the \emph{maximum} likelihood.
 
 To minimize the AIC, we perform \emph{model identification}.
@@ -290,10 +289,13 @@ The order of the model which minimizes the AIC is then the optimal model.
 
 \begin{problem}
 \label{prob:model-identification}
-Write a function \li{model_identification()} that accepts \li{filename} containing the time series data and parameters $p_max$ and $q_max$ as integers. 
-Return each parameter in $\Theta$ that minimizes the AIC of an ARMA($i,j$) model, given that $1\leq i \leq \text{\li{p_max}}$ and $1\leq j \leq \text{\li{q_max}}$.
+Write a function \li{model_identification()} that accepts \li{filename} containing the time series data and parameters \li{p_max} and \li{q_max} as integers. 
+Determine which ARMA($i,j$) model has the minimum AIC for all $1\leq i \leq \text{\li{p_max}}$ and $1\leq j \leq \text{\li{q_max}}$.
+Then, return each parameter in $\Theta$ of that model.
 
-Your code should produce the following output (it may take awhile to run):
+\noindent Hint: when calculating the AIC using Equation \ref{eq:AIC:formula}, bear in mind that $-\ell(\Theta)=$ \li{f(sol)} where \li{sol} is found in the code above and explained in the following paragraph.
+
+Your code should replicate the following output up to at least 4 decimal places.
 \begin{lstlisting}
 >>> model_identification(filename='weather.npy', p_max=4, q_max=4)
 (array([ 0.7213538]), array([-0.26246426]), 0.359785001944352, 1.5568374351425505)
@@ -301,7 +303,7 @@ Your code should produce the following output (it may take awhile to run):
 \end{problem}
 
 \section*{Forecasting with Kalman Filter}
-We now have identified the optimal ARMA$(p,q)$ model.
+We have now identified the optimal ARMA$(p,q)$ model.
 We can use this model to predict future states.
 The Kalman filter provides a straightforward way to predict future states by giving the mean and variance of the conditional distribution of future observations.
 Observations can be found as follows
@@ -320,20 +322,28 @@ To evolve the Kalman filter, recall the predict and update rules of a Kalman fil
  & & P_{k|k} & = (I - K_{k}H)P_{k|k-1}
 \end{align*}
 
+\noindent With ARMA, we define observational noise covariance $R$ and drift term $\mathbf{u}$ to both be 0.
+
 \begin{warn}
 Recall that the values returned by \li{kalman()} are conditional on the previous observation.
-To compute the mean and variance of future observations, the values $x_{n|n}$ and $P_{n|n}$ MUST be computed using the update step.
-Once computed, only the predict step is needed to find the future means and covariances.
+To compute the mean and variance of future observations, the values $x_{n|n}$ and $P_{n|n}$ MUST be computed using the Update step.
+Once they are computed, only the Predict step is needed to find the future means and covariances.
 \end{warn}
 
 \begin{problem}
 \label{prob:arma:forecast}
 Write a function \li{arma_forecast()} that accepts \li{filename} containing a time series, the parameters for an ARMA model, and the number $n$ of observations to forecast.
-Calculate the mean and covariance of the future $n$ observations using a Kalman filter.
-Plot the original observations as well as the \li{mean} for each future observation.
+Calculate the mean and covariance of the future $n$ observations using the Kalman filter.
+
+To do this, use \li{state_space_rep()} to generate $F$, $Q$, and $H$.
+Then, use \li{kalman()} (with $\mu$ subtracted off from the covariance stationary time series $\mathbf{z}_k$) to calculate $\hat{\mathbf{x}}_{k|k-1}$ and $P_{k|k-1}$, respectively.
+Use the Update step on the last elements of $\mathbf{z}_k$ (with $\mu$ subtracted off), $\hat{\mathbf{x}}_{k|k-1}$, and $P_{k|k-1}$ to find $\hat{\mathbf{x}}_{k|k}$ and $P_{k|k}$.
+Then, iteratively use the Predict step to make future predictions of the mean and covariance.
+Remember that once you find a mean $\hat{\mathbf{x}}_{k|k-1}$ and covariance $P_{k|k-1}$, you must use equations \ref{eq:mean:variance1} and \ref{eq:mean:variance2} to transform them back into observation space.
+
+Plot the original observations as well as the mean of each future observation.
 Plot a 95\% confidence interval (2 standard deviations away from the mean) around the means of future observations.
-Return the means and standard deviations calculated.
-\noindent Hint: the standard deviation is the square root of the covariance calculated.
+Hint: the standard deviation is the square root of the covariance calculated.
 
 The following code should create a plot similar to Figure \ref{fig:forecasted}.
 
@@ -346,7 +356,7 @@ The following code should create a plot similar to Figure \ref{fig:forecasted}.
                     mu=mu, std=std, n=30)
 \end{lstlisting}
 
-\noindent How does this plot compare to the naive ARMA model made in Problem \ref{prob:arma:naive}?
+\noindent How does this graph compare to the naive ARMA graph from Problem \ref{prob:arma:naive}?
 \end{problem}
 
 \section*{Statsmodel ARMA}
@@ -362,7 +372,7 @@ The object can then be fitted based on the MLE using a Kalman Filter.
 \begin{lstlisting}
 from statsmodels.tsa.arima.model import ARIMA
 # Intialize the object with weather data and order (1,1)
-model = ARIMA(z,order=(p,0,q),trend='c').fit(method='innovations_mle')
+>>> model = ARIMA(z,order=(p,0,q),trend='c').fit(method='innovations_mle')
 
 # Access p and q
 >>> model.specification.k_ar
@@ -378,7 +388,7 @@ q
 \label{fig:forecasted}
 \end{figure}
 
-As in other problems, the data passed in should be the time series stationary.
+As in the other problems, the time series passed in should be covariance stationary.
 The AIC of an ARMA model object is saved as the attribute \li{aic}.
 Since the AIC is much faster to compute using \li{statsmodels}, model identification is much faster.
 Once a model is chosen, the method \li{predict} will forecast $n$ observations, where $n$ is the number of known observations.
@@ -386,16 +396,17 @@ It will return the mean of each future observation.
 
 \begin{lstlisting}
 # Predict from the beginning of the model to 30 observations in the future
-model.predict(start=0,end=len(data)+30)
+>>> model.predict(start=0,end=len(data)+30)
 \end{lstlisting}
 
 \begin{problem}
 Write a function \li{sm_arma()} that accepts \li{filename} containing a time series, integer values for \li{p_max} and \li{q_max}, and the number $n$ of values to predict.
-Use \li{statsmodels} to perform model identification as in Problem \ref{prob:model-identification}, where the order of ARMA($i,j$) satisfies $1\leq i \leq$ \li{p_max} and $1 \leq j \leq$ \li{q_max}.
-Ensure the model is fit using the MLE.
+
+As in Problem \ref{prob:model-identification}, perform model identification to find the ARMA($i,j$) model with the best AIC for $1\leq i \leq$ \li{p_max} and $1 \leq j \leq$ \li{q_max}, but this time use \li{statsmodels}.
+Make sure the model is fit using the MLE.
 
 Use the optimal model to predict $n$ future observations of the time series.
-Plot the original observations along with the mean of each future observations given by \li{statsmodels}.
+Plot the original observations along with the predicted observations from the beginning through $n$ observations in the future, as given by \li{statsmodels}.
 Return the AIC of the optimal model.
 
 For $\text{\li{p_max}}=3, \text{\li{q_max}}=3$, and $n=30$, your graph should look similar to Figure \ref{fig:sm}.
@@ -406,7 +417,7 @@ How does this graph compare to Problem \ref{prob:arma:naive}? Problem \ref{prob:
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{figures/sm.pdf}
-\caption{Statsmodel ARMA(3,3) forecast on \li{weather.npy}.}
+\caption{Statsmodel forecast on \li{weather.npy}.}
 \label{fig:sm}
 \end{figure}
 
@@ -423,13 +434,13 @@ The multivariate ARMA(1,1) model is as follows:
 	z_{t,2} = c_1 + \phi_{21} z_{t-1,1} +  \phi_{22} z_{t-1,2} +  \theta_{21} \epsilon_{t-1,1} +  \theta_{22} \epsilon_{t-1,2}
 \end{align}
 
-This can be written in matrix form as shown in equation \ref{eq:arma:def}.
-The module \li{statsmodels} contains a package that includes an VARMAX model class which can be used to create a multivariate ARMA model.
-This stands for Vector Autoregression Moving Average with Exogenous Regressors. 
+This can be written in matrix form as shown in Equation \ref{eq:arma:def}.
+The module \li{statsmodels} contains a package that includes a VARMAX model class which can be used to create a multivariate ARMA model.
+VARMAX stands for Vector Autoregression Moving Average with Exogenous Regressors. 
 An exogenous regressor is a time series that affects the model but is not affected by it.
 In the example below we have two time series corresponding to the price of copper and aluminum. 
 Since aluminum is a substitute for copper, it is reasonable to assume the price of aluminum may help us predict the price of copper and vice versa.
-Note that when fitting a VARMAX model setting the parameter \li{ic} to \li{aic} selects parameters based on AIC criterion. 
+Note that when fitting a VARMAX model, setting the parameter \li{ic='aic'} selects parameters based on AIC criterion. 
 
 \begin{lstlisting}
 >>>from statsmodels.tsa.api import VARMAX
@@ -443,7 +454,7 @@ Note that when fitting a VARMAX model setting the parameter \li{ic} to \li{aic} 
 
 >>> # Initialize and fit model
 >>> mod = VARMAX(data[['ALUMPRICE', 'COPPERPRICE']])
->>> mod = mod.fit(maxiter=1000, disp=False, ic = 'aic')
+>>> mod = mod.fit(maxiter=1000, disp=False, ic='aic')
 >>> # Predict until the price of aluminium and copper until 1985
 >>> pred = mod.predict('1951','1985')
 
@@ -472,10 +483,6 @@ Note that when fitting a VARMAX model setting the parameter \li{ic} to \li{aic} 
 
 Write a function \li{sm_varma()} that accepts start and end dates for forecasting.
 Use the statsmodels VARMAX class to forecast on macroeconomic data between the start and end dates.
-Use AIC as the criterion for model selection when fitting the model.
-Plot the prediction, original data and a 95\% confidence interval (2 standard deviations away from the mean) around the future observations.
-Return the AIC of the chosen model.
-The plot should be similar to Figure \ref{fig:econ}.
 
 The following code shows how to obtain the data.
 
@@ -490,6 +497,18 @@ The following code shows how to obtain the data.
 >>> # Select columns used in prediction
 >>> df = df[['realgdp','realcons','realinv']]
 \end{lstlisting}
+
+Initialize your VARMAX model with the \li{df} specified above, and include the parameter \li{freq="Q-DEC"}.
+Fit your model, using AIC as the criteria for model selection, and predict from the start date until the end date.
+Then, get the model forecast until the end date.
+Plot the original data, prediction, and a 95\% confidence interval (2 standard deviations away from the mean) around the future observations.
+Return the AIC of the chosen model.
+
+The plot should be similar to Figure \ref{fig:econ}.
+
+\noindent Hint: in the example above, \li{mod.predict('1951','1985')} returns a dataframe of 2 columns that contain the predicted values of \li{'ALUMPRICE'} and \li{'COPPERPRICE'}, respectively, from the years 1951 to 1985.
+Also, \li{all_CI} is a dataframe where each column indicates the corresponding dataset and whether it is a lower or upper bound of a confidence interval determined by the alpha value.
+Thus, the column \li{'lower ALUMPRICE'} with \li{alpha=0.05} contains the lower bounds of a 95\% confidence interval for the \li{'ALUMPRICE'} dataset.
 
 The dataset \li{'realgdp'} contains the real gross domestic product, \li{'realcons'} contains real personal consumption expenditures, and \li{'realinv'} contains real gross private domestic investment.
 Since personal consumption and domestic investment are components of gross domestic product, it is reasonable to assume these time series will be useful in predicting one another.

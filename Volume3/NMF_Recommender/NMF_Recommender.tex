@@ -1,0 +1,289 @@
+\lab{Non-negative Matrix Factorization Recommender}{Non-negative Matrix Factorization Recommender}
+
+\objective{Understand and implement the non-negative matrix factorization for recommendation systems.}
+
+\section*{Introduction}
+Collaborative filtering is the process of filtering data for patterns using collaboration techniques.
+More specifically, it refers to making prediction about a user's interests based on other users' interests.
+These predictions can be used to recommend items and are why collaborative filtering is one of the common methods of creating a recommendation system.
+
+Recommendation systems look at the similarity between users to predict what item a user is most likely to enjoy.
+Common recommendation systems include Netflix's Movies you Might Enjoy list, Spotify's Discover Weekly playlist, and Amazon's Products You Might Like.  
+
+
+\section*{Non-negative Matrix Factorization}
+Non-negative matrix factorization is one algorithm used in collaborative filtering.
+It can be applied to many other cases, including image processing, text mining, clustering, and community detection.
+The purpose of non-negative matrix factorization is to take a non-negative matrix $V$ and factor it into the product of two non-negative matrices. 
+
+For $V\in\mathbb{R}^{m\times n}, 0\preceq W$,
+
+
+\begin{align*}
+\text{minimize}\qquad & ||V-WH|| \\
+\text{subject to}\qquad &  0\preceq W, 0\preceq H\\
+\text{where}\qquad & W\in\mathbb{R}^{m\times k}, H\in\mathbb{R}^{k\times n}\\
+\end{align*}
+
+
+$k$ is the rank of the decomposition and can either be specified or found using the Root Mean Squared Error (the square root of the MSE), SVD, Non-negative Least Squares, or cross-validation techniques.
+
+For this lab, we will use the Frobenius norm, given by 
+\[
+||A||_{F} = \sqrt{\sum_{i=1}^{m}\sum_{j=1}^{n} |a|_{ij}^{2}}.
+\]
+
+It is equivalent to the square root of the sum of the diagonal of $A^{H}A$
+
+
+
+\begin{problem}
+Create the \texttt{NMFRecommender} class, which will be used to implement the NMF algorithm.
+Initialize the class with the following parameters: 
+\texttt{random\_state} defaulting to $15$,
+\texttt{tol} defaulting to $1e-3$, \texttt{maxiter} defaulting to $200$, and \texttt{rank} defaulting to $2$.
+
+
+Add a method called \texttt{\_initialize\_matrices} that takes in $m$ and $n$, the dimensions of $V$.
+Set the random seed so that initializing the matrices can be replicated.
+\begin{lstlisting}
+>>> np.random.seed(self.random_state) 
+\end{lstlisting}
+Then, using \li{np.random.random}, initialize $W$ and $H$ with randomly generated numbers between 0 and 1, where $W\in\mathbb{R}^{m\times k}$ and $H\in\mathbb{R}^{k\times n}$.
+Return $W$ and $H$.
+
+Finally, add a method called \texttt{\_compute\_loss()} that takes as parameters \texttt{V}, \texttt{W}, and \texttt{H} and returns the Frobenius norm of $V-WH$.
+\end{problem}
+
+%
+%To explain the idea behind non-negative matrix factorization, we will consider a marketing problem, where we will try to categorize a customer based on their previous choices and preferences.
+%This categorization will help us determine what the customer will want or chose in the future.
+%To start off, we have data in the form of labeled columns and rows.
+%For example, we could have the customers names as column names and food choices as the row labels.
+%The corresponding number is the amount of this type of food that the customer purchased.
+%See the following matrix for an example,
+%
+%\[
+%V = 
+%\begin{blockarray}{ccccccc}
+%  John & Alice & Mary & Greg & Peter & Jennifer \\
+%  \begin{block}{(cccccc)c}
+%     0 & 1 & 0 & 1 & 2 & 2 & Vegetables \\
+%     2 & 3 & 1 & 1 & 2 & 2 & Fruits \\
+%     1 & 1 & 1 & 0 & 1 & 1 & Sweets \\
+%     0 & 2 & 3 & 4 & 1 & 1 & Bread \\
+%     0 & 0 & 0 & 0 & 1 & 0 & Cofee \\
+%  \end{block}
+%  \end{blockarray}
+%\]
+%
+%In non-negative matrix factorization, given $V\in\mathbb{R}^{mxn}$ our goal is to find matrices $W\in\mathbb{R}^{mxk}$ and $H\in\mathbb{R}^{kxn}$ that minimize $V - W \cdot H$.
+%$k$ is a parameter that you give the algorithm corresponding to how many different categories you want to split the customers into.
+%For example, if we had $3$ segments, we could label them \emph{Fruit Followers}, \emph{Bread Eaters}, and \emph{Veggies}, depending on the computed matrix values.
+
+
+
+\subsection*{Multiplicative Update}
+After initializing $W$ and $H$, we iteratively update them using the multiplicative update step. 
+There are other methods for optimization and updating, but because of the simplicity and ease of this solution, it is widely used.
+As with any other iterative algorithm, we perform the step until the \texttt{tol} or \texttt{maxiter} is met.
+
+\begin{equation}
+H^{s+1}_{ij} = H^{s}_{ij} \frac{((W^s)^T V)_{ij}}{((W^{s})^{T}W^sH^s)_{ij}} 
+\label{eq:H}
+\end{equation}
+and
+\begin{equation}
+W^{s+1}_{ij} = W^{s}_{ij} \frac{(V(H^{s+1})^T)_{ij}}{(W^{s}H^{s+1}(H^{s+1})^{T})_{ij}}
+\label{eq:W}
+\end{equation}
+
+
+
+\begin{problem}
+Add a method to the \texttt{NMF} class called \texttt{\_update\_matrices} that takes as inputs matrices $V$, $W$, $H$ and returns $W_{s+1}$ and $H_{s+1}$ as described in Equations \ref{eq:H} and \ref{eq:W}.
+\end{problem}
+
+\begin{problem}
+Finish the \texttt{NMF} class by adding a method \texttt{fit} that finds an optimal $W$ and $H$. 
+
+It should accept \texttt{V} as a numpy array, perform the multiplicative update algorithm until the loss is less than \li{tol} or \li{maxiter} is reached, and return $W$ and $H$. 
+
+Call the function \texttt{\_initialize\_matrices()} in order to run \texttt{\_update\_matrices()} and \texttt{\_compute\_loss()}.
+
+Finally add a method called \texttt{reconstruct} that reconstructs and returns \texttt{V} by multiplying \texttt{W} and \texttt{H}.  
+\end{problem}
+
+\subsection*{Using NMF for Recommendations}
+
+Consider the following marketing problem where we have a list of five grocery store customers and their purchases.
+We want to create personalized food recommendations for their next visit. 
+We start by creating a matrix representing each person and the number of items they purchased in different grocery categories.
+So from the matrix, we can see that John bought two fruits and one sweet.
+%
+%, where we will try to categorize a customer based on their previous choices and preferences.
+%This categorization will help us determine what the customer will want or chose in the future.
+%To start off, we have data in the form of labeled columns and rows.
+%For example, we could have the customers names as column names and food choices as the row labels.
+%The corresponding number is the amount of this type of food that the customer purchased.
+%See the following matrix for an example,
+
+\[
+V = 
+\begin{blockarray}{ccccccc}
+  John & Alice & Mary & Greg & Peter & Jennifer \\
+  \begin{block}{(cccccc)c}
+     0 & 1 & 0 & 1 & 2 & 2 & Vegetables \\
+     2 & 3 & 1 & 1 & 2 & 2 & Fruits \\
+     1 & 1 & 1 & 0 & 1 & 1 & Sweets \\
+     0 & 2 & 3 & 4 & 1 & 1 & Bread \\
+     0 & 0 & 0 & 0 & 1 & 0 & Coffee \\
+  \end{block}
+  \end{blockarray}
+\]
+
+After performing NMF on $V$, we'll get the following $W$ and $H$.
+\[
+W = 
+\begin{blockarray}{cccc}
+   Component 1 & Component 2 & Component 3\\
+  \begin{block}{(ccc)c} 	
+	2.1 & 0.03 & 0. & Vegetables\\
+	1.17 & 0.19 & 1.76 & Fruits\\
+    0.43 & 0.03 & 0.89 & Sweets\\
+    0.26 & 2.05 & 0.02 & Bread\\
+    0.45 & 0.  & 0.  & Coffee\\
+   \end{block}
+   \end{blockarray}
+\]
+
+\[
+H = 
+\begin{blockarray}{ccccccc}
+  John & Alice & Mary & Greg & Peter & Jennifer\\
+  \begin{block}{(cccccc)c} 	
+   0.00  & 0.45 & 0.00 & 0.43 &  1.0   &   0.9 & Component 1\\
+   0.00  & 0.91 & 1.45 & 1.9 &  0.35   &   0.37 & Component 2\\
+   1.14  & 1.22 & 0.55 & 0.0 &  0.47   &   0.53 & Component 3\\
+   \end{block}
+   \end{blockarray}
+\]
+
+$W$ represents how much each grocery feature contributes to each component; a higher weight means it's more important to that component.
+For example, component $1$ is heavily determined by vegetables followed by fruit, then coffee, sweets and finally bread.
+Component $2$ is represented almost entirely by bread, while component $3$ is based on fruits and sweets, with a small amount of bread.
+$H$ is similar, except instead of showing how much each grocery category affects the component, it shows a much each person belongs to the component, again with a higher weight indicating that the person belongs more in that component.
+We can see the John belongs in component $3$, while Jennifer mostly belongs in component 1.
+
+To get our recommendations, we reconstruct $V$ by multiplying $W$ and $H$.
+
+\[
+WH = 
+\begin{blockarray}{ccccccc}
+  John&  Alice  &Mary & Greg & Peter & Jennifer\\
+  \begin{block}{(cccccc)c} 	
+  0.0000&  0.9723 & 0.0435 & 0.96 & 2.1105 &   1.9011 &Vegetables\\
+      2.0064 & 2.8466 & 1.2435 & 0.8641&  2.0637  &  2.0561 &Fruits\\
+      1.0146 & 1.3066 &  0.533&  0.2419&  0.8588  &  0.8698 &Sweets\\
+       0.0228 & 2.0069 & 2.9835 & 4.0068 & 0.9869 &   1.0031 &Bread\\
+     0.0000 & 0.2025 & 0.0000&  0.1935 & 0.45  &  0.405 &Coffee\\
+   \end{block}
+   \end{blockarray}
+\]
+
+Most of the zeros from the original $V$ have been filled in.
+This is the \li{collaborative filtering} portion of the algorithm.
+By sorting each column by weight, we can predict which items are more attractive to the customers.
+For instance, Mary has the highest weight for bread at $2.9835$, followed by fruit at $1.2435$ and then sweets at $.533$.
+So we would recommend bread to Mary.
+
+Another way to interpret $WH$ is to look at a feature and determine who is most likely to buy that item.
+So if we were having a sale on sweets but only had funds to let three people know, using the reconstructed matrix, we would want to target Alice, John, and Jennifer in that order.
+This gives us more information that $V$ alone, which says that everyone except Greg bought one sweet.
+
+\begin{problem}
+Use the \texttt{NMFRecommender}  class to run NMF on $V$, defined above, with $2$ components.
+Return $W$, $H$ as matrices, and the number of people who have higher weights in component $2$ than in component $1$ as a float.
+\end{problem}
+
+\section*{Sklearn NMF}
+Python has a few packages for recommendation algorithms: Surprise, CaseRecommender and of course SkLearn.
+They implement various algorithms used in recommendation models.
+We'll use SkLearn, which is similar to the NMFRecommender class, for the last problems.
+
+
+\begin{lstlisting}
+from sklearn.decomposition import NMF
+
+>>> model = NMF(n_components=2, init='random', random_state=0)
+>>> W = model.fit_transform(X)
+>>> H = model.components_
+\end{lstlisting}
+
+As mentioned earlier, many big companies use recommendation systems to encourage purchasing, ad clicks, or spending more time in their product.
+One famous example of a Recommendation system is Spotify's Discover Weekly.
+Every week, Spotify creates a playlist of songs that the user has not listened to on Spotify.
+This helps users find new music that they enjoy and keeps Spotify at the forefront of music trends.
+
+\begin{problem}
+Read the file \texttt{artist\_user.csv} as a pandas dataframe.
+The rows represent users, with the user id in the first column, and the columns represent artists.
+For each artist $j$ that a user $i$ has listened to, the $ij$ entry contains the number of times user $i$ has listened to artist $j$.
+
+Identify the rank, or number of components to use.
+Ideally, we want the smallest rank that minimizes the error.
+However, this rank may be too computationally expensive, as in this situation.
+We'll choose the rank by using the following method. 
+First, calculate the frobenius norm of the dataframe and multiply it by $.0001$.
+This will be our benchmark value.
+Next, iterate through \li{rank}$=10,11,12,13,\dots$.	
+For each iteration, run NMF using \texttt{n\_components}\li{=rank} and \texttt{random\_seed}\li{=0} and reconstruct the matrix $V$.
+Calculate the root mean square error (RMSE) by taking the square root of the MSE -- calculated by \texttt{sklearn.metrics.mean\_squared\_error} -- of the original dataframe and the reconstructed matrix $V$.
+If the RMSE is less than the benchmark value, stop. 
+Return the rank and the reconstructed matrix of this rank.
+
+\noindent Hint: the optimal rank can be found between 10 and 15, so you only actually need to iterate through \li{rank}$=10,\dots,15$.
+
+\label{prob:music_nmf}
+\end{problem}
+
+\begin{problem}
+Write a function \texttt{discover\_weekly} that takes in a user id and the reconstructed matrix from Problem \ref{prob:music_nmf}, and returns a list of $30$ artists to recommend as strings.
+
+This list of strings should be sorted so that the first artist is the recommendation with the highest weight and the last artist is the least, and it should not contain any artists that the user has already listed to.
+Use the file \texttt{artists.csv} to match the artist ID to their name.
+
+\noindent As a check, the Discover Weekly for user $2$ should return 
+
+['Britney Spears', 'Avril Lavigne', 'Rihanna', 'Paramore', 'Christina Aguilera', 
+
+'U2', 'The Devil Wears Prada', 'Muse', 'Hadouken!', 'Ke\$ha', 'Good Charlotte', 
+
+'Linkin Park', 'Enter Shikari', 'Katy Perry', 'Miley Cyrus', 'Taylor Swift', 
+
+'Beyoncé', 'Asking Alexandria', 'The Veronicas', 'Mariah Carey', 'Martin L. Gore', 
+
+'Dance Gavin Dance', 'Erasure', 'In Flames', '3OH!3', 'Blur', 'Kelly Clarkson', 
+
+'Justin Bieber', 'Alesana', 'Ashley Tisdale']
+
+% [['Britney Spears'],['Avril Lavigne'],['Rihanna'],
+
+% ['Paramore'],['Christina Aguilera'],['U2'],
+
+% ['The Devil Wears Prada'],['Muse'],['Hadouken!'],
+       
+% ['Ke\$ha'],['Good Charlotte'],['Linkin Park'],
+
+% ['Enter Shikari'],['Katy Perry'],['Miley Cyrus'],
+      
+% ['Taylor Swift'],['Beyoncé'],['Asking Alexandria'],
+       
+% ['The Veronicas'],['Mariah Carey'],['Martin L. Gore'],
+       
+% ['Dance Gavin Dance'],['Erasure'], ['In Flames'],
+      
+% ['3OH!3'],['Blur'],['Kelly Clarkson'],
+
+% ['Justin Bieber'],['Alesana'],['Ashley Tisdale']]
+\end{problem}

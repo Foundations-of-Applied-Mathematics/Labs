@@ -1,5 +1,6 @@
 \lab{Conservation Laws and Heat Flow}{Heat Flow}
 \label{lab:HeatFlow}
+\labdependencies{FiniteDifferenceMethod}
 
 Many physical phenomena have a conservation law associated with them.
 For instance, matter, energy, and momentum are all conserved quantities.
@@ -57,28 +58,28 @@ Consider the heat flow equation in one dimension together with an appropriate in
 	&{ } u(a,t) = 0,\quad u(b,t) = 0,\\
 	&{ } u(x,0) = f(x).
 \end{align*}
-We will create an approximation $U^j_i$ to $u(x_i,t_j)$ on the grid $x_i = a +  hi$, $t_j = kj$, where $h$ and $k$ are small changes in $x$ and $t$ respectively and $i$ and $j$ are indices; so, \(U_i^j\) denotes the approximate value of $u$ at the $i$-th grid point and the $j$-th time step.
-%Note that the index $i$ ranges over different spacial grid points and the index $j$ ranges over different time steps.
+We will create an approximation $U^m_j$ to $u(x_j,t_m)$ on the grid $x_j = a +  hj$, $t_m = km$, where $h$ and $k$ are small changes in $x$ and $t$ respectively and $j$ and $m$ are indices; so, \(U_j^m\) denotes the approximate value of $u$ at the $j$-th grid point and the $m$-th time step.
+%Note that the index $j$ ranges over different spacial grid points and the index $m$ ranges over different time steps.
 
 \begin{comment}
 A common method for modeling ordinary and partial differential equations is the finite difference method, so-named because equations containing derivatives are replaced with equations containing difference schemes.
 These difference schemes can often be found using Taylor's theorem.
 For example, the equation
 \begin{align*}
-	u(x,t_j + k) = u(x,t_j) + u_t(x,t_j)k + \mathcal{O}(k^2)
+	u(x,t_m + k) = u(x,t_m) + u_t(x,t_m)k + \mathcal{O}(k^2)
 \end{align*}
-yields a first-order forward difference approximation to $u_t(x,t_j)$, namely,
+yields a first-order forward difference approximation to $u_t(x,t_m)$, namely,
 \begin{align*}
-	u_t(x,t_j ) = \frac{u(x,t_j+k) - u(x,t_j)}{k} + \mathcal{O}(k).
+	u_t(x,t_m ) = \frac{u(x,t_m+k) - u(x,t_m)}{k} + \mathcal{O}(k).
 \end{align*}
 Similarly, by adding the equations
 \begin{align*}
-	u(x_i+h,t) &= u(x_i,t) + u_x(x_i,t)h + u_{xx}(x_i,t)\frac{h^2}{2} + u_{xxx}(x_i,t)h^3 + \mathcal{O}(h^4),\\
-	u(x_i-h,t) &= u(x_i,t) + u_x(x_i,t)(-h) + u_{xx}(x_i,t)\frac{(-h)^2}{2} + u_{xxx}(x_i,t)(-h)^3 + \mathcal{O}(h^4),
+	u(x_j+h,t) &= u(x_j,t) + u_x(x_j,t)h + u_{xx}(x_j,t)\frac{h^2}{2} + u_{xxx}(x_j,t)h^3 + \mathcal{O}(h^4),\\
+	u(x_j-h,t) &= u(x_j,t) + u_x(x_j,t)(-h) + u_{xx}(x_j,t)\frac{(-h)^2}{2} + u_{xxx}(x_j,t)(-h)^3 + \mathcal{O}(h^4),
 \end{align*}
-we obtain a second-order centered difference approximation to $u_{xx}(x_i,t)$:
+we obtain a second-order centered difference approximation to $u_{xx}(x_j,t)$:
 \begin{align*}
-	u_{xx}(x_i,t_j) &= \frac{u(x_i + h,t_j )-2 u(x_i,t_j)- u(x_i - h,t_j)}{h^2} + \mathcal{O}(h^2).
+	u_{xx}(x_j,t_m) &= \frac{u(x_j + h,t_m )-2 u(x_j,t_m)- u(x_j - h,t_m)}{h^2} + \mathcal{O}(h^2).
 \end{align*}
 \end{comment}
 
@@ -89,7 +90,7 @@ Recall that by using Taylor's theorem, we have the first-order forward differenc
 \end{align*}
 and the second-order centered difference approximation
 \begin{align*}
-	u_{xx}(x_i,t_j) &= \frac{u(x_i + h,t_j )-2 u(x_i,t_j)- u(x_i - h,t_j)}{h^2} + \mathcal{O}(h^2).
+	u_{xx}(x_j,t_m) &= \frac{u(x_j + h,t_m )-2 u(x_j,t_m)- u(x_j - h,t_m)}{h^2} + \mathcal{O}(h^2).
 \end{align*}
 
 \begin{figure}
@@ -103,16 +104,16 @@ and the second-order centered difference approximation
 Applying these difference approximations give us the $\mathcal{O}(h^2 + k)$ explicit method
 \begin{align}
 	\begin{split}
-	\frac{U_{i}^{j+1} - U_{i}^{j}}{k} &= \nu \frac{U_{i+1}^{j}- 2U_{i}^{j} + U_{i-1}^{j} }{h^2} ,\\
-	U_{i}^{j+1} &= U_{i}^{j} + \frac{\nu k}{h^2} (U_{i+1}^{j}- 2U_{i}^{j} + U_{i-1}^{j} ).
+	\frac{U_{j}^{m+1} - U_{j}^{m}}{k} &= \nu \frac{U_{j+1}^{m}- 2U_{j}^{m} + U_{j-1}^{m} }{h^2} ,\\
+	U_{j}^{m+1} &= U_{j}^{m} + \frac{\nu k}{h^2} (U_{j+1}^{m}- 2U_{j}^{m} + U_{j-1}^{m} ).
 	\end{split}\label{eqn:firstorder_explicit}
 \end{align}
 This method can be written in matrix form as
-\[U^{j+1} = A U^j,\]
-where $A$ is the tridiagonal matrix given by
+\[U^{m+1} = A U^m,\]
+where $A$ is the $(n-1) \times (n-1)$ tridiagonal matrix given by
 \[A = \left[\begin{array}{cccccc}1 & 0 & & & \\ \lambda & 1-2\lambda & \lambda & & \\ & \ddots & \ddots & \ddots & \\ & & \lambda & 1-2\lambda & \lambda \\  &  &  & 0 & 1\end{array}\right],\]
-$\lambda = \nu k/h^2$, and $U^j$ represents the approximation at time $t_j$.
-We can initialize this method using the initial condition given in our problem, which tells us that $U_{i}^{0} = f(x_i)$.
+where $\lambda = \nu k/h^2$, $n$ is the number of spatial subintervals, and $U^m$ represents the approximation at time $t_m$.
+We can initialize this method using the initial condition given in our problem, which tells us that $U_{j}^{0} = f(x_j)$.
 
 \begin{figure}
 \centering
@@ -221,25 +222,25 @@ Implicit methods often have better stability properties than explicit methods.
 The Crank-Nicolson method, for example, is unconditionally stable and has order $\mathcal{O}(h^2 + k^2)$.
 To derive the Crank-Nicolson method, we use the following approximations:
 \begin{align*}
-	u_t(x_i,t_{j+1/2}) &= \frac{u(x_i,t_{j+1}) - u(x_i,t_j)}{k} + \mathcal{O}(k^2), \\
-	u_{xx}(x_i,t_{j+1/2}) &= \frac{u_{xx}(x_i,t_{j+1}) + u_{xx}(x_i,t_j)}{2} + \mathcal{O}(k^2).
+	u_t(x_j,t_{m+1/2}) &= \frac{u(x_j,t_{m+1}) - u(x_j,t_m)}{k} + \mathcal{O}(k^2), \\
+	u_{xx}(x_j,t_{m+1/2}) &= \frac{u_{xx}(x_j,t_{m+1}) + u_{xx}(x_j,t_m)}{2} + \mathcal{O}(k^2).
 \end{align*}
 The first equation is a finite difference approximation for \(u_t\), and the second is a midpoint approximation applied to \(u_{xx}\). 
 These approximations give the relation
 \begin{align}
 	\begin{split}
-	\frac{U^{j+1}_i - U^j_i}{k} &= \frac{1}{2}\left( \frac{U^j_{i+1} - 2U^j_{i} + U^j_{i-1}}{h^2} + \frac{U^{j+1}_{i+1} - 2U^{j+1}_{i} + U^{j+1}_{i-1}}{h^2}  \right) ,\\
-	U^{j+1}_i  &= U^j_i + \frac{k}{2h^2} \left( U^j_{i+1} - 2U^j_{i} + U^j_{i-1} + U^{j+1}_{i+1} - 2U^{j+1}_{i} + U^{j+1}_{i-1}   \right).
+	\frac{U^{m+1}_j - U^m_j}{k} &= \frac{1}{2}\left( \frac{U^m_{j+1} - 2U^m_{j} + U^m_{j-1}}{h^2} + \frac{U^{m+1}_{j+1} - 2U^{m+1}_{j} + U^{m+1}_{j-1}}{h^2}  \right) ,\\
+	U^{m+1}_j  &= U^m_j + \frac{k}{2h^2} \left( U^m_{j+1} - 2U^m_{j} + U^m_{j-1} + U^{m+1}_{j+1} - 2U^{m+1}_{j} + U^{m+1}_{j-1}   \right).
 \end{split}
 \end{align}
 This method can be written in matrix form as
-\[BU^{j+1} = A U^j,\]
+\[BU^{m+1} = A U^m,\]
 where $A$ and $B$ are tridiagonal matrices given by
 \begin{align*}
 B &= \left[\begin{array}{cccccc}1 & 0 &  &  &  \\ -\lambda & 1+2\lambda &  -\lambda & &  \\ &  \ddots &   \ddots & \ddots \\ & &  -\lambda &  1+2\lambda & -\lambda \\ &  &  & 0 & 1\end{array}\right], \\
 A &= \left[\begin{array}{cccccc}1 & 0 &  &  &  \\ \lambda & 1-2\lambda &  \lambda & &  \\ &  \ddots &   \ddots & \ddots \\ & &  \lambda &  1-2\lambda & \lambda \\ &  &  & 0 & 1\end{array}\right],
 \end{align*}
-where $\lambda = \nu k/(2h^2)$, and $U^j$ represents the approximation at time $t_j$.
+where $\lambda = \nu k/(2h^2)$, and $U^m$ represents the approximation at time $t_m$.
 Note that here we have defined $\lambda$ differently than we did before!
 
 How do we know if a numerical approximation is reasonable?
@@ -247,11 +248,11 @@ One way to determine this is to compute solutions for various step sizes $h$ and
 To be more specific, suppose our finite difference method is $\mathcal{O}(h^p)$ accurate.
 This means that the error $E(h) \approx Ch^p$ for some constant $C$ as $h \to 0$ (that is, for $h>0$ small enough).
 
-So, we will compute the approximation $y_k$ for each stepsize $h_k$, $h_1 > h_2> \ldots>h_m.$
-We will think of $y_m$ as the true solution.
-Then the error of the approximation for stepsize $h_k, k < m,$ is
+So, we will compute the approximation $y_k$ for each stepsize $h_k$, $h_1 > h_2> \ldots>h_q.$
+We will think of $y_q$ as the true solution.
+Then the error of the approximation for stepsize $h_k, k < q,$ is
 \begin{align*}
-	E(h_k) &= \max( \abs{ y_k - y_m}) \approx C h_k^p ,\\
+	E(h_k) &= \max( \abs{ y_k - y_q}) \approx C h_k^p ,\\
 	\log(E(h_k)) &= \log(C) + p \log(h_k).
 \end{align*}
 Thus on a log-log plot of $E(h)$ vs. $h,$ these values should be on a straight line with slope $p$ when $h$ is small enough to start getting convergence.
@@ -273,10 +274,10 @@ Using the Crank Nicolson method, numerically approximate the solution $u(x,t)$ o
 	&{ } u(x,0) = \max\{1 - x^2,0\}.
 	\end{split}
 \end{align}
-Note that this is an implicit linear scheme; hence, the most efficient way to find \(U^{j+1}\) is to create the matrix \(B\) as a sparse matrix and use \li{scipy.sparse.linalg.spsolve}.
+Note that this is an implicit linear scheme; hence, the most efficient way to find \(U^{m+1}\) is to create the matrix \(B\) as a sparse matrix and use \li{scipy.sparse.linalg.spsolve}.
 
 Demonstrate that the numerical approximation at $t = 1$ converges.
-Do this by computing $U$ at $t=1$ using $20,40,80,160,320$, and $640$ steps.
+Do this by computing $U$ at $t=1$ using $20,40,80,160,320$, and $640$ intervals.
 Use the same number of steps in both time and space.
 Reproduce the loglog plot shown in Figure \ref{fig:heatexercise3}.
 The slope of the line there shows the order of convergence.

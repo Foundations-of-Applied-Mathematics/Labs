@@ -1,7 +1,7 @@
 \lab{Pandas 1: Introduction}{Pandas 1: Introduction}
 \objective{Though NumPy and SciPy are powerful tools for numerical computing, they lack some of the high-level functionality necessary for many data science applications.
 Python's \emph{pandas} library, built on NumPy, is designed specifically for data management and analysis.
-In this lab we introduce pandas data structures, syntax, and explore its capabilities for quickly analyzing and presenting data.
+In this lab we introduce pandas data structures and syntax, and we explore the capabilities of pandas for quickly analyzing and presenting data.
 }
 \label{lab:pandas1}
 
@@ -16,8 +16,8 @@ In this lab we focus on the use of Pandas to analyze and manipulate data in ways
 \subsubsection*{Series}
 
 The first pandas data structure is a \li{Series}.
-A \li{Series} is a one-dimensional array that can hold any datatype, similar to a \li{ndarray}.
-However, a \li{Series} has an \li{index} that gives a label to each entry.
+A \li{Series} is a one-dimensional array that can hold any datatype, similar to an \li{ndarray}.
+However, a \li{Series} has an explicitly defined \li{index} that gives a label to each entry.
 An \li{index} generally is used to label the data.
 
 Typically a \li{Series} contains information about one feature of the data.
@@ -26,7 +26,7 @@ To initialize a \li{Series}, the first parameter is the data and the second is t
 
 \begin{lstlisting}
 >>> import pandas as pd
->>>
+>>> import numpy as np
 # Initialize Series of student grades
 >>> math = pd.Series(np.random.randint(0,100,4), ['Mark', 'Barbara',
 ...		'Eleanor', 'David'])
@@ -67,7 +67,6 @@ The first column label goes with the first column of the array, the second with 
 The index works similarly.
 
 \begin{lstlisting}
->>> import numpy as np
 # Initialize DataFrame with NumPy array. This is identical to the grades DataFrame above.
 >>> data = np.array([[52.0, 73.0], [10.0, 39.0], [35.0, np.nan],
 ...		[np.nan, 26.0], [np.nan, 99.0], [81.0, 68.0]])
@@ -82,6 +81,8 @@ Index(['Math', 'English'], dtype='object')
 >>> grades.index
 Index(['Barbara', 'David', 'Eleanor', 'Greg', 'Lauren', 'Mark'], dtype='object')
 \end{lstlisting}
+
+\pagebreak
 
 A \li{DataFrame} can also be viewed as a NumPy array using the attribute \li{values}.
 
@@ -145,7 +146,6 @@ column names, specify them in a list.
 
 Another particularly useful function is \li{read_html()}, which is useful when scraping data.
 It takes in a url or html file and an optional argument \li{match}, a string or regex, and returns a list of the tables that match the \li{match} in a DataFrame.
-While the resulting data will probably need to be cleaned, it is frequently much faster than scraping a website.
 
 \section*{Data Manipulation}
 
@@ -471,46 +471,49 @@ This can be done by simply calling the \li{info()} method on the desired
 
 \begin{lstlisting}
 >>> mathInfo.info()
-<class 'pandas.core.frame.DataFrame'>
-Int64Index: 5 entries, 0 to 4
+<<<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 5 entries, 0 to 4
 Data columns (total 3 columns):
-Grade         5 non-null float64
-ID            5 non-null int64
-Math_Major    5 non-null object
+ #   Column      Non-Null Count  Dtype
+---  ------      --------------  -----
+ 0   ID          5 non-null      int64
+ 1   Grade       5 non-null      float64
+ 2   Math_Major  5 non-null      object
 dtypes: float64(1), int64(1), object(1)
+memory usage: 248.0+ bytes>>
 \end{lstlisting}
 
 \subsection*{Masks}
 Sometimes, we only want to access data from a single column.
 For example if we want to only access the \li{ID} of the students in the \li{studentInfo} \li{DataFrame}, then we would use the following syntax.
 \begin{lstlisting}
-   # Get the ID column from studentInfo
-   >>> studentInfo.ID # or studentInfo['ID']
-      ID
-   0   0
-   1   1
-   2   2
-   3   3
-   4   4
-   5   5
-   6   6
-   7   7
-   8   8
+# Get the ID column from studentInfo
+>>> studentInfo.ID
+0    0
+1    1
+2    2
+3    3
+4    4
+5    5
+6    6
+7    7
+8    8
+Name: ID, dtype: int64
 \end{lstlisting}
 If we want to access multiple columns at once we can use a list of column names.
 \begin{lstlisting}
-   # Get the ID and Age columns.
-   >>> studentInfo[['ID', 'Age']]
-      ID  Age
-   0   0   20
-   1   1   21
-   2   2   18
-   3   3   22
-   4   4   19
-   5   5   20
-   6   6   20
-   7   7   19
-   8   8   29
+# Get the ID and Age columns.
+>>> studentInfo[['ID', 'Age']]
+   ID  Age
+0   0   20
+1   1   21
+2   2   18
+3   3   22
+4   4   19
+5   5   20
+6   6   20
+7   7   19
+8   8   20
 \end{lstlisting}
 
 Now we can access the specific columns that we want.
@@ -519,14 +522,14 @@ In this case we can build a mask.
 Each mask that we build will return a pandas \li{Series} object with a \li{bool} value at each index indicating if the condition is satisfied.
 
 \begin{lstlisting}
-   # Create a mask for all student receiving financial aid.
-   >>> mask = otherInfo['Financial_Aid'] == 'y'
-   # Access other info where the mask is true and display the ID and GPA columns.
-   >>> otherInfo[mask][['ID', 'GPA']]
-      ID  GPA
-   0   0  3.8
-   3   3  3.9
-   7   7  3.4
+# Create a mask for all student receiving financial aid.
+>>> mask = otherInfo['Financial_Aid'] == 'y'
+# Access other info where the mask is true and display the ID and GPA columns.
+>>> otherInfo[mask][['ID', 'GPA']]
+   ID  GPA
+0   0  3.8
+3   3  3.9
+7   7  3.4
 \end{lstlisting}
 
 We can also create compound masks with multiple statements.
@@ -534,17 +537,17 @@ We do this using the same syntax you would use for a compound mask in a normal N
 Useful operators are \li{&}, the \li{AND} operator; \li{|}, the \li{OR} operator; and $\sim$, the \li{NOT} operator.
 
 \begin{lstlisting}
-   # Get all student names where Class = 'J' OR Class = 'Sp'.
-   >>>  mask = (studentInfo.Class == 'J') | (studentInfo.Class == 'Sp')
-   >>>  studentInfo[mask].Name
-   0        Mylan
-   4        Jason
-   5         Remi
-   6         Matt
-   7    Alexander
-   Name: Name, dtype: object
-   # This can also be acomplished with the following command:
-   # studentInfo[studentInfo['Class'].isin(['J','Sp'])]['Name']
+# Get all student names where Class = 'J' OR Class = 'Sp'.
+>>>  mask = (studentInfo.Class == 'J') | (studentInfo.Class == 'Sp')
+>>> studentInfo[mask].Name
+0        Mylan
+4        Jason
+5         Remi
+6         Matt
+7    Alexander
+Name: Name, dtype: <<object>>
+# This can also be acomplished with the following command:
+# studentInfo[studentInfo['Class'].isin(['J','Sp'])]['Name']
 \end{lstlisting}
 
 \begin{problem}\label{prob:rate}
@@ -560,6 +563,7 @@ Return the answers to all three questions as a tuple (i.e. \li{(answer_1,answer_
 	Of these three crimes, which two are very correlated?
 	Which of these two crimes has a greater maximum value?
 	Save the title of this column as a variable to return as the answer.
+	Hint: Consider using \li{idxmax()} to extract the title.
 	\item Examine the data from 2000 and later.
 	Sort this data (in ascending order) according to number of murders.
 	Find the years where aggravated assault is greater than 850,000.
@@ -567,7 +571,8 @@ Return the answers to all three questions as a tuple (i.e. \li{(answer_1,answer_
 	\item What year had the highest crime rate?
 	In this year, which crime was committed the most?
 	What percentage of the total crime that year was it?
-	Save this value as a float.
+	Return this percentage as the answer in decimal form (e.g. 50\% would be returned as 0.5).
+	Note that the crime rate is \#crimes/population. 
 \end{enumerate}
 \end{problem}
 
@@ -686,7 +691,7 @@ The function is analogous to \li{np.arange()} and has the following parameters:
 Exactly three of the parameters \li{start}, \li{end}, \li{periods}, and \li{freq} must be specified to generate a range of dates.
 The \li{freq} parameter accepts a variety of string representations, referred to as \emph{offset aliases}.
 See Table \ref{table:range_freqs} for a sampling of some of the options.
-For a complete list of the options, see \url{https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timeseries-offset-aliasesl}.
+For a complete list of the options, see \url{https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timeseries-offset-aliases}.
 
 \begin{table}[H]
 \begin{center}
@@ -806,7 +811,7 @@ Compute the following information about the DJIA dataset from Problem \ref{prob:
     \item The single day with the largest gain.
     \item The single day with the largest loss.
 \end{itemize}
-Return the DateTimeIndex of the day with the largest gain and the day with the largest loss.
+Return the DateTimeIndex of the day with the largest gain and the day with the largest loss as a tuple.
 
 (Hint: Call your function from Problem \ref{prob:timeseries-dowjones} to get the DataFrame already cleaned and with DatetimeIndex).
 \end{problem}
@@ -814,7 +819,7 @@ Return the DateTimeIndex of the day with the largest gain and the day with the l
 More information on how to use \li{datetime} with Pandas is in the additional material section.
 This includes working with \li{Periods} and more analysis with time series.
 
-\pagebreak
+\newpage
 
 \section*{Additional Material}
 \subsection*{SQL Operations in pandas} % =========================================
@@ -851,7 +856,7 @@ SQL SELECT statements can be done by column indexing.
 WHERE statements can be included by adding masks (just like in a NumPy array).
 The method \li{isin()} can also provide a useful WHERE statement.
 This method accepts a list, dictionary, or \li{Series} containing possible values of the \li{DataFrame} or \li{Series}.
-When called upon, it returns a \li{Series} of booleans, indicating whether an entry contained a value in the parameter pass into \li{isin()}.
+When called upon, it returns a \li{Series} of booleans, indicating whether an entry contained a value in the parameter passed into \li{isin()}.
 
 
 \begin{lstlisting}
@@ -866,7 +871,7 @@ When called upon, it returns a \li{Series} of booleans, indicating whether an en
 5   5   20
 6   6   20
 7   7   19
-8   8   29
+8   8   20
 
 # SELECT ID, GPA FROM otherInfo WHERE Financial_Aid = 'y'
 >>> mask = otherInfo['Financial_Aid'] == 'y'
@@ -893,14 +898,13 @@ the column on which to join, along with the type (left, right, inner, outer).
 
 \begin{lstlisting}
 # SELECT * FROM studentInfo INNER JOIN mathInfo ON studentInfo.ID = mathInfo.ID
->>> pd.merge(studentInfo, mathInfo, on='ID') # INNER JOIN is the default
-   Age Class  ID    Name Sex  Grade Math_Major
-0   20    Sp   0   Mylan   M    4.0          y
-1   21    Se   1   Regan   F    3.0          n
-2   22    Se   3    Jess   F    4.0          n
-3   20     J   5    Remi   F    3.5          y
-4   20     J   6    Matt   M    3.0          n
-[5 rows x 7 columns]
+>>> pd.merge(studentInfo, mathInfo, on='ID')
+   ID   Name Sex  Age Class  Grade Math_Major
+0   0  Mylan   M   20    Sp    4.0          y
+1   1  Regan   F   21    Se    3.0          n
+2   3   Jess   F   22    Se    4.0          n
+3   5   Remi   F   20     J    3.5          y
+4   6   Matt   M   20     J    3.0          n
 
 # SELECT GPA, Grade FROM otherInfo FULL OUTER JOIN mathInfo ON otherInfo.
 # ID = mathInfo.ID
@@ -915,7 +919,6 @@ the column on which to join, along with the type (left, right, inner, outer).
 6  3.8    3.0
 7  3.4    NaN
 8  3.7    NaN
-[9 rows x 2 columns]
 \end{lstlisting}
 
 \subsection*{More Datetime with Pandas}
@@ -963,18 +966,17 @@ After creating a \li{PeriodIndex}, the \li{freq} parameter can be changed via th
 >>> pd.period_range(start="2008", end="2010-12", freq="Q-DEC")
 <<PeriodIndex(['2008Q1', '2008Q2', '2008Q3', '2008Q4', '2009Q1', '2009Q2',
              '2009Q3', '2009Q4', '2010Q1', '2010Q2', '2010Q3', '2010Q4'],
-            dtype='period[Q-DEC]', freq='Q-DEC')>>
+            dtype='period[Q-DEC]')>>
 
 # Get every three months form March 2010 to the start of 2011.
 >>> p = pd.period_range("2010-03", "2011", freq="3M")
 >>> p
-<<PeriodIndex(['2010-03', '2010-06', '2010-09', '2010-12'],
-            dtype='period[3M]', freq='3M')>>
+<<PeriodIndex(['2010-03', '2010-06', '2010-09', '2010-12'], dtype='period[3M]')>>
 
 # Change frequency to be quarterly.
->>> p.asfreq("Q-DEC")
-<<PeriodIndex(['2010Q2', '2010Q3', '2010Q4', '2011Q1'],
-            dtype='period[Q-DEC]', freq='Q-DEC')>>
+>>> q = p.asfreq("Q-DEC")
+>>> q
+<<PeriodIndex(['2010Q2', '2010Q3', '2010Q4', '2011Q1'], dtype='period[Q-DEC]')>>
 \end{lstlisting}
 
 The bounds of a \li{PeriodIndex} object can be shifted by adding or subtracting an integer.
@@ -982,10 +984,9 @@ The bounds of a \li{PeriodIndex} object can be shifted by adding or subtracting 
 
 \begin{lstlisting}
 # Shift index by 1
->>> p -= 1
->>> p
-PeriodIndex(['2010Q1', '2010Q2', '2010Q3', '2010Q4'],
-            dtype='int64', freq='Q-DEC')
+>>> q -= 1
+>>> q
+PeriodIndex(['2010Q1', '2010Q2', '2010Q3', '2010Q4'], dtype='period[Q-DEC]')
 \end{lstlisting}
 
 If for any reason you need to switch from periods to timestamps, pandas provides a very simple method to do so.
@@ -994,12 +995,12 @@ Similarly, you can switch from timestamps to periods.
 
 \begin{lstlisting}
 # Convert to timestamp (last day of each quarter)
->>> p = p.to_timestamp(how='end')
->>> p
+>>> q = q.to_timestamp(how='end')
+>>> q
 DatetimeIndex(['2010-03-31', '2010-06-30', '2010-09-30', '2010-12-31'],
                 dtype='datetime64[ns]', freq='Q-DEC')
 
->>> p.to_period("Q-DEC")
+>>> q.to_period("Q-DEC")
 PeriodIndex(['2010Q1', '2010Q2', '2010Q3', '2010Q4'],
             dtype='int64', freq='Q-DEC')
 
@@ -1063,7 +1064,7 @@ The first parameter to \li{resample()} is an offset string from Table \ref{table
 
 # Get random data for every day from 2000 to 2010.
 >>> dates = pd.date_range(start="2000-1-1", end='2009-12-31', freq='D')
->>> df = pd.Series(np.random.random(len(days)), index=dates)
+>>> df = pd.Series(np.random.random(len(dates)), index=dates)
 >>> df
 2000-01-01    0.559
 2000-01-02    0.874
@@ -1126,6 +1127,8 @@ There are a few rolling functions that come standard with pandas.
 One of the most commonly used rolling functions is the \emph{rolling average}, which takes the average value over a window of data.
 
 \begin{lstlisting}
+import matplotlib.pyplot as plt
+
 # Generate a time series using random walk from a uniform distribution.
 N = 10000
 bias = 0.01

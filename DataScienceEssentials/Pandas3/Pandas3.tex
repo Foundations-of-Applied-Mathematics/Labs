@@ -96,7 +96,7 @@ Standard \li{DataFrame} methods like \li{describe()}, \li{mean()}, \li{std()}, \
 
 \begin{lstlisting}
 # Get averages of the numerical columns for each group.
->>> vores.mean()
+>>> vores.mean(numeric_only=True)
 <<         sleep_total  sleep_rem  sleep_cycle
 vore
 carni         10.379      2.290        0.373
@@ -328,7 +328,7 @@ Red   Blue        7    10
 \end{lstlisting}
 
 Listing the data in this way makes it easy to locate data and compare the female and male groups.
-For example, it is easy to see that brown hair is more common than red hair and that about twice as many females have blond hair and blue eyes than males.
+For example, it is easy to see that brown hair is more common than red hair and that about twice as many females have blond hair and blue eyes as males.
 
 Unlike \li{"HairEyeColor"}, many data sets have more than one entry in the data for each grouping.
 An example in the previous dataset would be if there were two or more rows in the original data for females with blond hair and blue eyes.
@@ -348,7 +348,7 @@ To begin, we examine the average survival rate grouped by sex and passenger clas
 \begin{lstlisting}
 >>> titanic = pd.read_csv("titanic.csv")
 >>> titanic = titanic[["Survived", "Pclass", "Sex", "Age", "Fare", "Embarked"]]
->>> titanic["Age"].fillna(titanic["Age"].mean(),)
+>>> titanic["Age"] = titanic["Age"].fillna(titanic["Age"].mean(),)
 
 >>> titanic.pivot_table(values="Survived", index="Sex", columns="Pclass")
 <<Pclass    1.0    2.0    3.0
@@ -389,7 +389,7 @@ male    179  171  493>>
 ...                     aggfunc="sum")
 <<Pclass    1.0   2.0    3.0
 Sex
-female  137.0  94.0  106.0
+female  139.0  94.0  106.0
 male     61.0  25.0   75.0>>
 \end{lstlisting}
 
@@ -403,9 +403,10 @@ Use pivot tables to answer the following questions:
 \item What race/sex combination has the highest average \li{Usual Hours Worked}?
 \end{enumerate}
 
-Return a tuple for each question (in order of the questions) where the first entry is the numerical code corresponding to the race and the second entry is corresponding to the sex.
+Return a tuple for each question (in order of the questions) where the first entry is the numerical code corresponding to the race and the second entry is corresponding to the sex. You may hard code each tuple as long as you also provide the working code that gave you the solutions.
 
-Some useful keys in understand the data are as follows:
+
+Some useful keys in understanding the data are as follows:
 \begin{enumerate}
 \item In column \li{Sex}, \{1: \li{male}, 2: \li{female}\}.
 \item In column \li{Race}, \{1: \li{White}, 2: \li{African-American}, 3: \li{Native American/Eskimo}, 4: \li{Asian}\}.
@@ -463,10 +464,10 @@ To further investigate, count the number of entries in each group.
 Sex    Age
 female (0, 12]     1   13   30
        (12, 18]   12    8   28
-       (18, 80]  129   85  158
+       (18, 80]  131   85  158
 male   (0, 12]     4   11   35
        (12, 18]    4   10   37
-       (18, 80]  171  150  420>>
+       (18, 80]  171  150  421>>
 \end{lstlisting}
 
 This table shows that there was only 1 female child in first class and only 10 male teenagers in second class, which sheds light on the previous table.
@@ -499,7 +500,7 @@ Pclass                       1.0 2.0  3.0               1.0 2.0 3.0
 Sex    Age
 female (0, 12]                 -   -    7                 1  13  23
        (12, 18]                -   4   23                12   4   5
-       (18, 80]                -  31  101               129  54  57
+       (18, 80]                -  31  101               131  54  57
 male   (0, 12]                 -   -    8                 4  11  27
        (12, 18]                -   5   26                 4   5  11
        (18, 80]                8  94  350               163  56  70>>
@@ -552,14 +553,19 @@ For the last question, save the answer as a string giving your explanation.
 Return a tuple containing your answers to the questions in order.
 
 \begin{enumerate}
-\item Is there a correlation between the percent of alumni that donate and the amount the school spends per student in BOTH private and public universities?
+\item Partition \li{perc.alumni} into evenly spaced intervals of 20\%.
+Is there a partition in which the number of both private and public universities does \emph{not} increase as the percentage of alumni that donates increases?
 
 \item Partition \li{Grad.Rate} into evenly spaced intervals of 20\%.
 Is the partition with the greatest number of schools the same for private and public universities?
 
-\item Does having a lower acceptance rate correlate with having more students from the top 10 percent of their high school class being admitted on average for BOTH private and public universities?
+\item Create a column that gives the acceptance rate of each university (using columns \li{accept} and \li{apps}).
+Partition this column into evenly spaced intervals of 25\%.
+Is it true that the partition that has the least number of students from the top 10 percent of their high school class that were admitted on average is the same for both private and public universities?
 
-\item Why is the average percentage of students admitted from the top 10 percent of their high school class so high in private universities with very low acceptance rates? Use only the data to explain why; do not extrapolate.
+\item The average percentage of students admitted from the top 10 percent of their high school class is very high in private universities with very low acceptance rates. 
+Why is this \emph{not} a good conclusion to draw solely from this dataset? 
+Use only the data to explain why; do not extrapolate.
 \end{enumerate}
 \end{problem}
 

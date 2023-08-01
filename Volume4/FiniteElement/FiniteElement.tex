@@ -1,7 +1,7 @@
 \lab{The Finite Element method}{The Finite Element method}
 \label{lab:finite_element}
 \objective{The finite element method is commonly used for numerically solving partial differential equations. We introduce the finite element method via a simple BVP describing the steady state distribution of heat in a pipe as fluid flows through.}
-
+\labdependencies{FiniteDifferenceMethod}
 
 \section*{Advection-Diffusion of Heat in a Fluid}
 
@@ -178,9 +178,15 @@ To satisfy the boundary conditions, we necessarily have that $k_0 = \alpha$, $k_
 These equations can be written together in matrix form as
 \begin{align} AK = \Phi,\label{eqn:FEM_linear_system}\end{align}
 where
-\[A = \left[\begin{array}{cccccc}1 & 0 & 0 & 0 & 0 & 0 \\a(\phi_0,\phi_1) & a(\phi_1,\phi_1) & a(\phi_2,\phi_1) & 0 & 0 & 0 \\0 & a(\phi_1,\phi_2) & a(\phi_2,\phi_2) & a(\phi_3,\phi_2) & 0 & 0 \\0 & 0 & a(\phi_2,\phi_3) & a(\phi_3,\phi_3) & a(\phi_4,\phi_3) & 0 \\0 & 0 & 0 & a(\phi_3,\phi_4) & a(\phi_4,\phi_4) & a(\phi_5,\phi_4) \\0 & 0 & 0 & 0 & 0 &1\end{array}\right]\]
+\begin{align}
+A = \left[\begin{array}{cccccc}1 & 0 & 0 & 0 & 0 & 0 \\a(\phi_0,\phi_1) & a(\phi_1,\phi_1) & a(\phi_2,\phi_1) & 0 & 0 & 0 \\0 & a(\phi_1,\phi_2) & a(\phi_2,\phi_2) & a(\phi_3,\phi_2) & 0 & 0 \\0 & 0 & a(\phi_2,\phi_3) & a(\phi_3,\phi_3) & a(\phi_4,\phi_3) & 0 \\0 & 0 & 0 & a(\phi_3,\phi_4) & a(\phi_4,\phi_4) & a(\phi_5,\phi_4) \\0 & 0 & 0 & 0 & 0 &1\end{array}\right]
+\label{eqn:FEM:A_matrix}
+\end{align}
 and
-\[K = \left[\begin{array}{c}k_0 \\k_1 \\k_2 \\k_3 \\k_4 \\k_5\end{array}\right] , \quad\Phi =  \left[\begin{array}{c}\alpha \\l(\phi_1) \\l(\phi_2) \\l(\phi_3) \\l(\phi_4) \\\beta\end{array}\right].\]
+\begin{align}
+K = \left[\begin{array}{c}k_0 \\k_1 \\k_2 \\k_3 \\k_4 \\k_5\end{array}\right] , \quad\Phi =  \left[\begin{array}{c}\alpha \\l(\phi_1) \\l(\phi_2) \\l(\phi_3) \\l(\phi_4) \\\beta\end{array}\right].
+\label{eqn:FEM:K_Phi_definition}
+\end{align}
 
 Note that since $a(\phi_i,\phi_j) = 0$ for most values of $i, j$ (in particular, when the hat functions do not have overlapping domains), the finite element method results in a sparse linear system.
 To compute the coefficients of \eqref{eqn:FEM_linear_system} we begin by evaluating some integrals.
@@ -212,17 +218,27 @@ we obtain
 \end{cases}
 \end{align*}
 which can be put together to obtain (for \(f(x)=1\))
-\begin{align*}
+\begin{align}
 a(\phi_i,\phi_j) &= \begin{cases}
 \epsilon/h_{i+1} + 1/2 \quad \quad \, \text{ if } j=i+1,\\
 -\epsilon/h_i -\epsilon/h_{i+1} \quad  \text{ if } j=i,\\
 \epsilon/h_i - 1/2 \quad \quad \quad \, \text{ if } j=i-1,\\
 0 \quad \quad \quad \quad \quad \quad \,\,\,\,\,\,\, \text{ otherwise},
-\end{cases}\\
+\end{cases}
+\label{eqn:FEM:a_definition}
+\\
 l(\phi_j) &= -\frac{1}{2}(h_j + h_{j+1}).
-\end{align*}
+\label{eqn:FEM:l_definition}
+\end{align}
 Equation \eqref{eqn:FEM_linear_system} may now be solved using any standard linear solver. 
 To handle the large number of elements required for Problem \ref{prob:FEM_accuracy_comparison}, you will want to use sparse matrices from \li{scipy.sparse}.
+
+If you have become completely lost in the math at this point, do not fear.
+To summarize, we need to solve \ref{eqn:FEM_linear_system} for $K$, where $A$ is defined by \ref{eqn:FEM:A_matrix} and $\Phi$ is defined in \ref{eqn:FEM:K_Phi_definition}.
+The elements of $A$ and $\Phi$ are defined in \ref{eqn:FEM:a_definition} and \ref{eqn:FEM:l_definition}.
+The vector $K$ is the approximated solution to the ODE given in \ref{eqn:FEM_exercise} and can be plotted very simply using \li{plt.plot(x, k)}, where \li{x} and \li{k} are arrays of the \(x_i\) and \(k_i\).
+Note that $h_i$ is indexed from 1 to $N+1$, and that $h_i=x_i-x_{i-1}$.
+You should now have everything you need to know to tackle the problems below.
 
 
 \begin{problem}
@@ -238,9 +254,7 @@ Use $N = 100$ finite elements ($101$ grid points).
 Compare your solution with the analytic solution
 \[y(x) = \alpha + x + (\beta - \alpha - 1 ) \frac{e^{x/\epsilon} -1}{e^{1/\epsilon} -1}.\]
 
-Hint: 
-One additional nice consequence of this setup is that the approximation \(\hat{y}\) is exactly the piecewise linear function that connects the points \((x_i, k_i)\).
-This means that the solution can be plotted very simply using \li{plt.plot(x, k)}, where \li{x} and \li{k} are arrays of the \(x_i\) and \(k_i\).
+Hint: Make sure that your code does not assume that the grid points are evenly spaced.
 \end{problem}
 
 \begin{problem}

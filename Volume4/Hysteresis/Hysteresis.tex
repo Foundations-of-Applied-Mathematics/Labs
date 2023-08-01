@@ -1,5 +1,6 @@
 \lab{Bifurcations and Hysteresis}{Bifurcations}
 \label{lab:Bifurcations}
+\labdependencies{IVPBVPIntro}
 
 Recall that any ordinary differential equation can be written as a first order system of ODEs,
 \begin{align}
@@ -33,7 +34,7 @@ The bifurcation diagram is shown in Figure \ref{bifurcation:sn}
 \newpage
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{SaddleNBifurcation.pdf}
+\includegraphics[width=\textwidth]{figures/SaddleNBifurcation.pdf}
 \caption{Bifurcation diagram for the equation $x' = \lambda + x^2$.}
 \label{bifurcation:sn}
 \end{figure}
@@ -77,7 +78,7 @@ Notice that this algorithm needs a good initial guess for $x_0$ to get started.
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{SaddleNPhasePortrait.pdf}
+\includegraphics[width=\textwidth]{figures/SaddleNPhasePortrait.pdf}
 \caption{Phase Portrait for the equation $x' = -2 + x^2$.}
 \label{phaseportrait:sn}
 \end{figure}
@@ -88,7 +89,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import newton
 
-def EmbeddingAlg(param_list, guess, F):
+def embedding_alg(param_list, guess, F):
     X = []
     for param in param_list:
         try:
@@ -108,9 +109,9 @@ def F(x, lmbda):
     return x**2 + lmbda
 
 # Top curve shown in the bifurcation diagram
-C1, X1 = EmbeddingAlg(np.linspace(-5, 0, 200), np.sqrt(5), F)
+C1, X1 = embedding_alg(np.linspace(-5, 0, 200), np.sqrt(5), F)
 # The bottom curve
-C2, X2 = EmbeddingAlg(np.linspace(-5, 0, 200), -np.sqrt(5), F)
+C2, X2 = embedding_alg(np.linspace(-5, 0, 200), -np.sqrt(5), F)
 \end{lstlisting}
 
 \begin{problem}
@@ -120,17 +121,37 @@ This type of bifurcation is called a pitchfork bifurcation (you should see a pit
 
 Hints: Essentially this amounts to running the same code as the example, but with different parameters and function calls so that you are tracing through the right curves for this problem.
 To make this first problem work, you will want to have your `linspace' run from \underline{high to low} instead of from \underline{low to high}.
-There will be three different lines in this image all of which must be produced using the EmbeddingAlg function. Any hard coding will result in an automatic 0.
+There will be three different lines in this image all of which must be produced using the \li{embedding_alg} function. Any hard coding will result in an automatic 0.
 See Figure \ref{prob1}.
 \end{problem}
 
-\begin{figure}
+\begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{prob1.pdf}
+\includegraphics[width=\textwidth]{figures/prob1.pdf}
 \caption{Bifurcation diagram for the equation $x' = \lambda x - x^3$.}
 \label{prob1}
 \end{figure}
 
+\begin{problem}
+Another useful tool for analyzing a bifurcation diagram can be to plot the trajectory of the solutions, given different parameters and initial conditions, such that the parameters chosen are from each partition of the bifurcation diagram. For example, the points
+\[(\lambda, x_0)\in \left\{\left(\frac{1}{2},\frac{1}{2}\right), \left(\frac{1}{2},\frac{-1}{2}\right), \left(\frac{-1}{2},\frac{1}{2}\right), \left(\frac{-1}{2},\frac{-1}{2}\right) \right\} \]
+all lie in different parts of the bifurcation diagram in Figure \ref{prob1}. We can pick a $\lambda$ and $x_0$ and find the trajectory of that points, given the ODE
+\[x' = \lambda x-x^3.\]
+and the initial condition $x(0)=x_0$. 
+Use the four parameter value and initial condition combinations above to solve the ODE 
+\[x' = \lambda x-x^3.\]
+Use \li{solve_ivp}. Plot on the time interval $0\leq t \leq 20$.
+See Figure \ref{fig:hysteresis:pitchfork_state_space}.
+\end{problem}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/pitchfork_state_space.pdf}
+\caption{Possible trajectories given different $x_0$'s and $\lambda$'s for the equation $x' = \lambda x - x^3$.}
+\label{fig:hysteresis:pitchfork_state_space}
+\end{figure}
+
+\begin{comment}
 \begin{problem}
 Create bifurcation diagrams for the differential equation
 \[x' = \eta + \lambda x-x^3,\]
@@ -142,10 +163,11 @@ See Figure \ref{prob2}.
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{prob2.pdf}
+\includegraphics[width=\textwidth]{figures/prob2.pdf}
 \caption{Bifurcation diagram for the equation $x' = \eta + \lambda x - x^3$ with $\eta=-1$.}
 \label{prob2}
 \end{figure}
+\end{comment}
 
 \section*{Hysteresis}
 
@@ -159,14 +181,14 @@ When this occurs the system cannot reach its previous equilibrium by simply rewi
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{HysteresisBifurcation.pdf}
+\includegraphics[width=\textwidth]{figures/HysteresisBifurcation.pdf}
 \caption{Bifurcation diagram for the ODE $x' = \lambda + x - x^3$. }
 \label{bifurcation:hysteresis}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{BudwormEquilibria.pdf}
+\includegraphics[width=\textwidth]{figures/BudwormEquilibria.pdf}
 \caption{Graphical demonstration of nonzero equilibrium solutions for the budworm population (here $r = .56,\ k=8$); equilibrium solutions occur where the curves cross.
 As $k$ increases, the line $y=r(1- x/k)$ gets more shallow and the number of solutions goes from one to three and then back to one. }
 \label{equilibria:budworm}
@@ -197,7 +219,7 @@ Fix $r = .56$, and consider Figure \eqref{equilibria:budworm} ($k=8$ in the figu
 \newpage
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{BudwormPopulation.pdf}
+\includegraphics[width=\textwidth]{figures/BudwormPopulation.pdf}
 \caption{Bifurcation diagram for the budworm population model.
 The parameter $r$ is fixed at $0.56.$
 The lower stable branch is known as the refuge level of the bundworm population, while the upper stable branch is known as the outbreak level.
@@ -207,7 +229,7 @@ Thus many of the balsam fir trees die before the budworm population returns to r
 \end{figure}
 
 \newpage
-\begin{problem}[Budworm Population]
+\begin{problem} %[Budworm Population]
 Reproduce the bifurcation diagram (\ref{bifurcation:hysteresis}) for the differential equation
 \begin{align*}
 	\frac{dx}{d \tau} &= rx(1-x/k) - \frac{x^2}{1+x^2},
@@ -216,5 +238,26 @@ where $r = 0.56$.
 
 Hint: Find a value for $k$ that you know is in the middle of the plot (i.e. where there are three possible solutions), then use the code from the previous problems to expand along each contour till you obtain the desired curve.
 Now find the proper initial guesses that give you the right bifurcation curve.
-The final plot will look like the one in Figure \ref{bifurcation:budworm}, but you will have to run the embedding algorithm 4-6 times to get every part of the plot. In order to make a black dashed line, add '--k' as the third argument in plt.plot() and use '-k' as the third argument in plt.plot() to get the solid black line.
+The final plot will look like the one in Figure \ref{bifurcation:budworm}, but you will have to run the embedding algorithm 4-6 times to get every part of the plot. In order to make a black dashed line, add \li{'--k'} as the third argument in plt.plot() and use \li{'-k'} as the third argument in plt.plot() to get the solid black line.
+\end{problem} 
+
+\begin{problem}
+Assume a time-dependent carrying capacity, defined by 
+\begin{align*}	
+k(t) = \begin{cases}
+  8  & t \in [0,60) \\
+  12  & t \in [60,150) \\
+  8 & t \in [150,220) \\
+  6 & t \in [220,300) \\
+\end{cases}
+\end{align*}
+ and assume $r=0.56$ and $x(0)=x_0=0.3$. Plot the state-space diagram for the differential equation
+
+\begin{align*}
+	\frac{dx}{d \tau} &= rx(1-x/k(t)) - \frac{x^2}{1+x^2},
+\end{align*}
+using \li{solve_ivp} to solve the differential equation. Also plot the carrying capacity as a function of time on the same axes.
+
+Notice that returning the parameter $k$ to $8$ does not make the budworm population decrease back to the value it approached before increasing $k$ to $12$.
+
 \end{problem} 
