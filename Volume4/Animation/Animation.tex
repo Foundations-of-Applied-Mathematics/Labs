@@ -77,9 +77,9 @@ The following steps describe the process of creating an animated plot using the 
 \noindent
 Let's work through an example of this.
 Consider the function
-\[
+\begin{equation*}
 f(x,t) = \frac{1}{1+t}e^{-x^2/(1+t)^2}
-\]
+\end{equation*}
 modeling the diffusion of heat through a rod.
 Suppose that we want to animate how the temperature changes in the segment of a rod for $x\in [-4,4]$ as time evolves from $t=0$ to $t=5$.
 In this case, it will be easiest to not precompute the data.
@@ -141,12 +141,12 @@ plt.show()
 The \li{interval} parameter specifies how many milliseconds should be between each frame (as an integer).
 Usually we want to choose it so that it takes the animation one second to go from $t=0$ to $t=1$.
 If time goes from $t_0$ to $t_f$ and we are using $n_t$ points in our linspace, the right number of milliseconds per frame is given by the following formula:
-\[
+\begin{equation*}
 \text{Interval} \;=
 \left\lceil
 \frac{1000(t_f-t_0)}{n_t-1}
 \right\rceil.
-\]
+\end{equation*}
 Some additional parameters to \li{FuncAnimation} are given in the table below.
 
 \begin{comment}
@@ -268,7 +268,7 @@ Unfortunately, Matplotlib does not come with a built-in video encoder.
 The \li{matplotlib.animation} module supports several third-party encoders. 
 FFmpeg is a lightweight solution that is relatively easy to install:
 \begin{itemize}
-\item On Linux, run \li{apt-get install ffmpeg} in the terminal, or the equivalent command for your package manager.
+\item On Linux, run \li{sudo apt-get install ffmpeg} in the terminal, or the equivalent command for your package manager.
 \item On Mac, run \li{brew install ffmpeg} in the terminal.
 \item On Windows:
 	\begin{itemize}
@@ -296,20 +296,21 @@ If Matplotlib does not recognize FFmpeg after it is installed, you may also need
 Now we proceed to actually saving the animation.
 %To prevent the animation from displaying while it is being rendered as video, first use \li{plt.ioff()}.
 %This turns off matplotlib's interactive mode until \li{plt.ion()} is called.
-After creating the animation object, simply use its \li{.save()} method with the desired filename to render and save the video. 
-The following example shows how to do this:
+Create the animation object as normal,
 \begin{lstlisting}
-plt.ioff()    # Turn off interactive mode to hide rendering animations
-
 # Code to create figure, axes, and update function goes here
 # ...
 ani = animation.FuncAnimation(fig, update, frames=frames, interval=interval)
+\end{lstlisting}
+then, in a seperate code cell, use its \li{.save()} method with the desired filename to render and save the video. 
+\begin{lstlisting}
 ani.save('my_animation.mp4')
 \end{lstlisting}
 Finally, to display the \li{.mp4} video in a Jupyter Notebook, place the following HTML code in a separate \textbf{markdown} cell (with the filename changed as appropriate):
 \begin{lstlisting}
 <video src="my_animation.mp4" controls>
 \end{lstlisting}
+The video will remain embedded in the Jupyter Notebook as long as the \li{.mp4} file is found in the same directory as it.
 
 \begin{info}
 In Jupyter Notebook, to insert a markdown cell, first insert a new cell, then in the dropdown menu at the top, change the type from Code to Markdown.
@@ -323,7 +324,7 @@ Remember to push the video files of your animation with the rest of your lab!
 
 \begin{problem}
 Use the FuncAnimation class to animate the function $y=\sin(x+3t)$ where $x \in [0,2\pi]$, and $t$ ranges from $0$ to $10$ seconds. 
-Save your animation to a file and embed that into the notebook.
+Embed your animation into the notebook.
 
 Hint: For the \li{frames} argument, use a linspace from 0 to 10.
 \end{problem}
@@ -350,8 +351,9 @@ The file contains four NumPy arrays: \li{mercury}, \li{venus}, \li{earth}, and \
 The first column of each array contains the x-coordinates, the second column contains the y-coordinates, and the third column contians the z-coordinates of each planet, all relative to the Sun, and expressed in AU (astronomical units, the average distance between Earth and the Sun, approximately 150 million kilometers).
 
 Use \li{np.load('orbits.npz')} to load the data for the four planets' orbits.
-The \li{.npz} filetype loads as (essentially) a dictionary of arrays; this one has four keys: \li{"mercury"}, \li{"venus"}, \li{"earth"}, and \li{"mars"}.
-Create a 3D plot of the orbits along with the starting positions of each planet, and compare your results with Figure \ref{lab0:3dplot}.
+The \li{.npz} filetype loads as (essentially) a dictionary of arrays; this file has four keys: \li{"mercury"}, \li{"venus"}, \li{"earth"}, and \li{"mars"}.
+Create a 3D plot of the planet orbits, the starting positions of each planet as a point, and the position of the sun as a point, and compare your results with Figure \ref{lab0:3dplot}.
+Make sure to include a legend.
 
 Hint: The $z$ range of the data is very narrow. 
 Set the $z$ range of the plot manually with \li{ax.set_zlim3d()}.
@@ -383,9 +385,9 @@ This is what calling \li{plt.plot()} attempts to do; instead, it is much better 
 Each row of the arrays in \li{orbits.npz} gives the position of the planets at evenly spaced time points. The arrays correspond to 1400 points in time over a 700 day period (beginning on 2018-5-30).
 
 Create a 3D animation of the planet orbits.
-Display lines for the trajectories of the orbits and points for the current positions of the planets at each point in time.
+Display lines for the trajectories of the orbits and points for the sun and current positions of the planets at each point in time.
 The lines displayed at each frame should only be the part the planet has traveled so far; see Figure \ref{animation:planets-midanimation} for an example of what this should look like.
-Embed your animated plot.
+Include a legend, and embed your animated plot.
 
 Hint: For the \li{frames} argument, use \li{range(1400)}.
 The parameter your \li{update()} function will receive will be the \emph{index} of time for the frame, rather than the actual value of time.
@@ -433,6 +435,8 @@ Use the data in \li{vibration.npz} to produce a surface animation of the solutio
 The file contains three NumPy arrays: \li{X}, \li{Y}, \li{Z}.
 \li{X} and \li{Y} are meshgrids of shape \li{(300,200)} corresponding to 300 points in the y-direction and 200 points in the x-direction, giving a 2x3 rectangle with one corner at the origin.
 \li{Z} is of shape \li{(150,300,200)}, giving the height of the vibrating membrane at each (x,y) point for 150 values of time. 
+Embed your animation into the notebook.
+
 In the language of partial differential equations, this is the solution to the following initial/boundary value problem:
 
 $$u_{tt} = 6^2(u_{xx}+u_{yy})$$

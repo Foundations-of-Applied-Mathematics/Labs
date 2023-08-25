@@ -1,0 +1,59 @@
+\lab{Using Google Colab}{Google Colab}
+
+\objective{Google Colab is an environment similar to Jupyter Notebooks that is run remotely on Google's servers.
+It has some advantages over other environments, including easy package management and installation and the ability to run on a machine that doesn't have python installed.
+This appendix details how Colab can be used for ACME labs, as well as some issues to be aware of and relevant workarounds.}
+
+\section*{Setup}
+Google Colab can be started by going to the Colab website \url{https://colab.research.google.com/} or by opening a \li{.ipynb} file from your Google Drive.
+When Colab starts, you can upload a \li{.ipynb} file by selecting the \texttt{Upload} tab and choosing the \li{.ipynb} file you wish to upload.
+Colab can also be used with \li{.py} files, but the process is somewhat more involved and is detailed below.
+
+Once your file is open in Colab, it can be run and edited like a normal Jupyter notebook.
+To submit your lab for grading, you will need to download the file by selecting \li{<<File > Download>>} and then either \li{Download .ipynb} or \li{Download .py}.
+You will then need to move your file into the repository clone on your machine in the correct lab folder, where you can then add, commit, and push it like normal.
+\begin{warn}
+    Remember to keep the name of the file \textbf{\emph{IDENTICAL}} to the original name of the lab spec!
+    Failure to do this will cause the test driver to skip over your file and give you an automatic zero for the lab!
+\end{warn}
+
+\subsection*{Using .py Files with Colab}
+Google Colab only works with \li{.ipynb} files, but many ACME labs use \li{.py} files.
+Since the former filetype has additional formatting, there isn't a way to directly import a \li{.py} file into Colab.
+The simplest way around this is to create a new file in Colab and copy-paste the lab file's contents into it.
+This way, it can be edited and used as a normal Jupyter notebook.
+Then, when you're finished, download the notebook as a \li{.py} file instead of a \li{.ipynb} file.
+
+However, under these circumstances some care must be taken in order for your work to be graded properly.
+In particular, before you download your file, make sure that the following are satisfied:
+\begin{itemize}
+\item All Colab-specific code to upload files is commented out; as the packages used do not exist outside of Google Colab, the test driver will raise an error when it attempts to import them.
+\item There are no calls to the lab's functions, for testing purposes or otherwise, outside of a typical \li{if __name__=="__main__"} statement; otherwise, they will be run when the file is imported by the test driver, which will certainly cause issues.
+\end{itemize}
+
+\section*{Using Data Files}
+To use a data file in Colab, you must first upload it by running the following in a code cell in Colab:
+\begin{lstlisting}
+from google.colab import files
+files.upload()
+\end{lstlisting}
+When run, this will create a prompt for you to upload your files.
+After doing so, the data files can be accessed from the notebook as normal.
+
+The best way to upload an entire folder is to first zip it, then upload the zipped folder to Colab, and then unzip it in the Colab notebook:
+\begin{lstlisting}
+# To upload a folder called 'data', first zip it, and then upload 'data.zip'
+files.upload()
+# Then, it can be unzipped
+!unzip data.zip
+\end{lstlisting}
+If the files do not need to be in the same folder, you can always simply upload multiple files at once with the usual \li{files.upload()} code.
+
+\section*{Installing Packages}
+One advantage of Google Colab is that a very large percentage of the python packages used in the ACME labs are already pre-installed.
+However, there are a few packages that are not installed, and must be installed each session.
+Packages can be installed by running \li{pip} in a code cell, which is done by putting an exclamation point before the usual command.
+For example, to install the GeoPandas package, you would run:
+\begin{lstlisting}
+!pip install geopandas
+\end{lstlisting}

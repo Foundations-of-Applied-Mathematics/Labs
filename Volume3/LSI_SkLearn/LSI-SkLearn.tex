@@ -1,4 +1,4 @@
-\lab{Finding Patterns in Data: LSI and more about Scikit-Learn}{LSI and SkLearn}
+\lab{PCA, LSI, and Scikit-Learn}{LSI and SkLearn}
 \objective{Understand the basics of principal component analysis and latent semantic indexing. Learn more about scikit-learn and implement a machine learning pipeline.}
 \label{lab:pca} 
 
@@ -32,23 +32,23 @@ Once we have decided how many principal components to keep (say the first $l$), 
 \end{equation*}
 
 \begin{problem}% Problem 1
+
 The breast cancer dataset from scikit-learn has 569 samples with 30 features each.
 Each sample is labeled as \li0 (malignant) or \li1 (benign).
 With 30 features, this data can't be directly visualized, so we will use PCA to graph the first two principal components, which account for nearly all of the variance in the data.
 
-You can load this data using the following code.
+Write a function that performs PCA on the breast cancer dataset using the SVD as described above.
+Graph the first two principal components, with the first along the $x$-axis.
+Your graph should resemble Figure \ref{fig:cancer} below.
+Include the proportion of the total variance that the first two principal components capture in the graph title, calculated with Equation \ref{equation:pc}.
+\label{problem:cancer}
 
+You can load this dataset using the following code:
 \begin{lstlisting}
 >>> cancer = sklearn.datasets.load_breast_cancer()
 >>> X = cancer.data
 >>> y = cancer.target # Class labels (0 or 1)
 \end{lstlisting}
-
-Write a function that performs PCA on the breast cancer dataset using the procedure descibed above.
-Graph the first two principal components, with the first along the $x$-axis.
-Your graph should resemble Figure \ref{fig:cancer} below.
-Include the amount of variance captured by the first two principal components, calculated with Equation \ref{equation:pc}, in the graph title.
-\label{problem:cancer}
 \end{problem}
 
 \begin{figure}[H]
@@ -99,7 +99,29 @@ To find the document most similar to document $i$, we simply compute
 \]
 
 \begin{problem} %Problem 2
-Create a function \li{similar} that takes in a sparse matrix \li{Xhat} and an index \li{i} and returns the indices of the most similar and the least similar documents.
+Create a function \li{similar} that takes in a numpy array \li{Xhat} and an index \li{i} and returns the indices of the most similar and the least similar documents.
+
+Hint: \li{np.argsort} may be useful for finding which are the most and least similar.
+Note that every document will have a similarity score of 1 with itself, so be careful not to return a document as its own closest document.
+
+To test your code, use the following matrix:
+\begin{lstlisting}
+X = np.array([
+    [0.78, 0.14, 0.12, 0.  ],
+    [0.64, 0.97, 0.  , 0.  ],
+    [0.  , 0.  , 0.63, 0.46],
+    [0.  , 0.84, 0.6 , 0.  ],
+    [0.29, 0.89, 0.51, 0.  ],
+    [0.77, 0.  , 0.27, 0.2 ],
+    [0.86, 0.47, 0.  , 0.06],
+    [0.89, 0.  , 0.  , 0.  ]
+]) 
+\end{lstlisting}
+With \li{i=4} your function should output the following:
+\begin{lstlisting}
+>>> print(similar(4, X))
+(7, 3)
+\end{lstlisting}
 \end{problem}
 
 \section*{Application: State of the Union} 
@@ -113,22 +135,22 @@ As we read in each document, we will remove punctuation and numerical characters
 The following code, found in the function \li{document_converter()}, will accomplish this task. 
 
 \begin{lstlisting}
-# Get list of file paths to each text file in the folder
->>> folder = "./Addresses/"
->>> paths = [folder+p for p in os.listdir(folder) if p.endswith(".txt")]
+# Get list of filepaths to each text file in the folder.
+folder = "./Addresses/"
+paths = sorted([folder+p for p in os.listdir(folder) if p.endswith(".txt")])
 
-# Helper function to get list of words in a string
->>> def extractWords(text):
-...    ignore = string.punctuation + string.digits
-...    cleaned = "".join([t for t in text.strip() if t not in ignore])
-...    return cleaned.lower().split()
+# Helper function to get list of words in a string.
+def extractWords(text):
+    ignore = string.punctuation + string.digits
+    cleaned = "".join([t for t in text.strip() if t not in ignore])
+    return cleaned.lower().split()
 
-# Initialize vocab set, then read each file and add to the vocab set
->>> vocab = set()
->>> for p in paths:
-...     with open(p, 'r') as infile:
-...         for line in infile:
-...             vocab.update(extractWords(line)) # Union sets together
+# Initialize vocab set, then read each file and add to the vocab set.
+vocab = set()
+for p in paths:
+    with open(p, 'r', encoding="utf8") as infile:
+        for line in infile:
+            vocab.update(extractWords(line)) # Union sets together
 \end{lstlisting}
 
 We now have a set containing all of the unique words in the corpus.
@@ -138,49 +160,53 @@ We remove the stop words from our vocabulary set as follows and then fix an orde
 with key-value pairs of the form (word, index).
 
 \begin{lstlisting}
-# Load stopwords.
->>> with open("stopwords.txt", 'r', encoding="utf8) as f:
-...     stops = set([w.strip().lower() for w in f.readlines()])
+# Load stopwords
+with open("stopwords.txt", 'r',  encoding="utf8") as f:
+    stops = set([w.strip().lower() for w in f.readlines()])
 
 # Remove stopwords from vocabulary, create ordering
->>> vocab = {w:i for i, w in enumerate(vocab.difference(stops))}
+vocab = {w:i for i, w in enumerate(vocab.difference(stops))}
 \end{lstlisting}
 
 We are now ready to create the word count vectors for each document, and we store these in a sparse matrix $X$.
 It is convenient to use the \li{Counter} object from the \li{collections} module, as this object automatically counts the occurrences of each distinct element in a list.
 
 \begin{lstlisting}
->>> from collections import Counter
->>> counts = []      # holds the entries of X
->>> doc_index = []   # holds the row index of X
->>> word_index = []  # holds the column index of X
+from collections import Counter
+
+counts = []      # holds the entries of X
+doc_index = []   # holds the row index of X
+word_index = []  # holds the column index of X
 
 # Iterate through the documents
->>> for doc, p in enumerate(paths):
-...     with open(p, 'r', encoding="utf8) as f:
-...         # Create the word counter
-...         ctr = Counter()
-...         for line in f:
-...             ctr.update(extractWords(line))
-...         # Iterate through the word counter, storing counts
-...         for word, count in ctr.items():
-...             if word in vocab:
-...                 word_index.append(vocab[word])
-...                 counts.append(count)
-...                 doc_index.append(doc)
+for doc, p in enumerate(paths):
+    with open(p, 'r', encoding="utf8") as f:
+        # Create the word counter.
+        ctr = Counter()
+        for line in f:
+            ctr.update(extractWords(line))
+        # Iterate through the word counter, storing counts.
+        for word, count in ctr.items():
+            if word in vocab:
+                word_index.append(vocab[word])
+                counts.append(count)
+                doc_index.append(doc)
 
 # Create sparse matrix holding these word counts.
->>> X = sparse.csr_matrix((counts, [doc_index, word_index]),
-...                          shape=(len(paths), len(vocab)), dtype=float)
+X = sparse.csr_array((counts, [doc_index, word_index]),
+                       shape=(len(paths), len(vocab)), dtype=float)
 \end{lstlisting}
 
 \begin{problem} %Problem 3
-Applying the techniques of LSI discussed above to the word count matrix $X$, and keeping the first 7 principal components, write a function that takes in the path to a single State of the Union address \li{speech} and returns a tuple of the addresses that are most and least similar to \li{speech}.
-For Ronald Reagan's 1984 speech, the input would be `./Addresses/1984-Reagan.txt', and your output should be (`1988-Reagan', `1946-Truman').
+Applying the techniques of LSI discussed above to the word count matrix $X$, created with the \li{document_converter()} function, and keeping the first 7 principal components, write a function that takes in the path to a single State of the Union address \li{speech} and returns a tuple of the addresses that are most and least similar to \li{speech}.
+
+For Ronald Reagan's 1984 speech, the input would be \li{'./Addresses/1984-Reagan.txt'}, and your output should be \li{('1985-Reagan', '1946-Truman')}.
 Be sure to format the strings properly. 
+Also run your algorithm on Clinton's 1993 speech, and display your output.
 
 Since $X$ is a sparse matrix, you will need to use the SVD method found in \li{scipy.sparse.linalg}.
 This method operates slightly differently than the SVD method found in \li{scipy.linalg}, so be sure to read the documentation.
+Also pass the argument \li{random_state=28} into this function for consistency.
 \label{prob:LSI1}
 \end{problem}
 
@@ -208,8 +234,10 @@ A_{i,j} = g_{j} \log (X_{i,j} + 1).
 We can now perform LSI on the matrix $A$, whose entries are both locally and globally weighted.
 
 \begin{problem} %Problem 4
-Use the equation above to edit the function \li{weighted_document_converter()} to calculate the sparse matrix $A$.
+Use the equation above to create the function \li{weighted_document_converter()} to calculate the sparse matrix $A$.
 Similar to the function \li{document_converter()}, this function should return $A$ and a list of file paths.
+
+Hint: the function \li{np.log1p}, which calculates $\log(1+x)$, can be applied to a sparse matrix without losing sparsity.
 \label{problem:global-weights}
 \end{problem}
 
@@ -245,17 +273,20 @@ Its \li{fit_transform()} method takes in an array of data and returns the decomp
 >>> Xhat = pca.fit_transform(X) # Fit the transformer and transform the data
 \end{lstlisting}
 
+For our particular application, however, ince our matrix is sparse and Scikit-learn's \li{PCA} class does not accept sparse matrices, we need to use their \li{TruncatedSVD} class instead.
+The syntax for this class is identical to the above.
+
 \begin{info}
 An interesting observation can be made by repeating Problem \ref{problem:cancer} using scikit-learn's PCA package.
 The resulting graph will have the $x$-axis flipped, because a matrix's singular value decomposition is unique up to multiplication by -1.
 \end{info}
 
 \begin{problem} %Problem 5
-Repeat Problem \ref{prob:LSI1} using your weighted document converter function and scikit-learn's built-in PCA decomposition.
-Do your answers seem more reasonable than before?
-For Bill Clinton's 1993 speech, your code should return (`1994-Clinton', `1951-Truman').
+Repeat Problem \ref{prob:LSI1} using your weighted document converter function and scikit-learn's \li{sklearn.decomposition.TruncatedSVD} class.
+For consistency, also pass the argument \li{random_state=74} in the constructor to this class.
 
-\emph{Hint:} Scikit-learn's PCA does not accept sparse matrices.
+For Bill Clinton's 1993 speech, your code should return \li{('1994-Clinton', '1946-Truman')}.
+Also run the algorithm on Reagan's 1984 speech, and display the results.
 \end{problem}
 
 \subsection*{Validation Tools} % ----------------------------------------------------

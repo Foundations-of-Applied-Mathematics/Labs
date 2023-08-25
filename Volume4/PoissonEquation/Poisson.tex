@@ -1,4 +1,4 @@
-\lab{Poisson's equation}{Poisson's equation}
+\lab{Poisson's Equation}{Poisson's Equation}
 \label{lab:poisson2d}
 \labdependencies{FiniteDifferenceMethod}
 
@@ -48,10 +48,11 @@ Recall that
  \frac{u(x,y+h) - 2u(x,y)+ u(x,y-h)}{h^2} + \mathcal{O}(h^2).
  \end{align*}
  We replace $\triangle $ with the finite difference operator $\triangle_h$, defined by
- \begin{align*}
+ \begin{align}
  \triangle_h U_{ij} &= \frac{U_{i+1,\,j} - 2U_{i,\,j} + U_{i-1,\,j}}{h^2} + \frac{U_{i,\,j+1} - 2U_{i,\,j}+ U_{i,\,j-1}}{h^2},\\
 &= \frac{1}{h^2}(U_{i-1,\,j} + U_{i+1,\,j} + U_{i,\,j-1} + U_{i,\,j+1}-4U_{i,\,j}).
- \end{align*}
+\label{eqn:finite_diff_op}
+ \end{align}
 
 These equations are linear, so we can expect to write them in matrix form. However, since our unknown variables are doubly-indexed (for $x_i$ and $y_j$), we first need to rewrite them as a 1-dimensional array. We can do this by "stacking" the columns of the 2-dimensional array. Let the vector of unknowns $U$ be:
 
@@ -345,4 +346,88 @@ Use the source function defined above, such that $\rho(x,y) = \text{source}(x,y)
 \begin{figure}
 \includegraphics[scale=0.7]{figures/potential.pdf}
 \caption{The electric potential of the 3 nested pipes.}
+\end{figure}
+
+\section*{Poisson's Equation and Image Editing}
+The Poisson equation is also very useful for things outside of physics. For example, it can be used for image editing. We will use it to photoshop one image $g$ onto another image $S$.
+
+Let $u_0:  S \rightarrow \mathbb{R}, S \subset \mathbb{R}^2$ be the original image, which is a 2D grid of values between 0 and 255. We want to insert a new image, $v: P\rightarrow \mathbb{R}$ into $P' \subset S$. Numerically, we will treat these as arrays where $v\in M_{m\times n}$, $u_0\in M_{m'\times n'}, m'>m, n'>n$, and $u \in M_{m\times n}$ is the smoothed image inside of $u_0$. A visual representation can be seen in Figure \ref{figure:photoshop_eqn}.
+
+\begin{warn}
+Note that $u_0$ is defined on $P'$ since $P' \subset S$.
+\end{warn}
+
+
+\begin{figure}[H]
+\begin{center}
+\begin{tikzpicture}
+\filldraw [fill=blue!10!, draw=blue] (0,0) rectangle (5,7);
+\filldraw [fill=red!30!, draw=red] (1,4) rectangle (3.5,5.5);
+\filldraw [fill=orange!30!, draw=orange] (-4,4) rectangle (-1.5,5.5);
+
+\draw[->, ultra thick, >=stealth'] (-2,5) arc (120:60:3.25);
+
+\node[draw=none] at (-2.5, 4.2){$g: P\rightarrow \mathbb{R}$};
+\node[draw=none] at (2.5, 4.2){$u: P'\rightarrow \mathbb{R}$};
+\node[draw=none] at (1, 0.5){$u_0: S\rightarrow \mathbb{R}$};
+
+\node[draw=none] at (-2.5, 5){$P$};
+\node[draw=none] at (2.5, 5){$P'\subset S$};
+\node[draw=none] at (1, 6){$S$};
+\end{tikzpicture}
+\end{center}
+  \caption{Photoshopping of $v$ into the space defined by $P'$ by solving for $u$.}
+  \label{figure:photoshop_eqn}
+\end{figure}
+
+We will use $v$ to create the source function $f$ in Equation \eqref{eqn:2d_poisson}.
+
+\begin{align}
+f(x,y) &= -\triangle v(x,y).
+\label{eqn:photoshop_step1}
+\end{align}
+
+We want to use the original picture $u_0$ to constrain the boundary of $P'$, so let $g$ from Equation \eqref{eqn:2d_poisson} be defined as
+
+\begin{align}
+g(x,y) = u_0(x,y), \quad (x,y)\in \partial P'
+\end{align}.
+
+Using these equations, we can blend and image $v$ in very well. There are, of course, ways to make this better (but also more complicated), such as adding some of the original texture from $u_0$ to the final image $u$, but we'll leave those aside for now.
+If you're interested, see \href{https://www.cs.jhu.edu/~misha/Fall07/Papers/Perez03.pdf}{this paper} for more information on using the Poisson equation for image editing.
+
+\begin{problem}
+Using the data file \li{dr_jarvis.jpg} as the source image $v$ and \li{mount_rushmore.jpg} as the destination image $u_0$, put Dr. Jarvis' face on Mount Rushmore. Use Equation \eqref{eqn:finite_diff_op} to calculate $f$ from $v$.
+
+Hints: You will only want to use part of the image from \li{dr_jarvis.jpg} to paste onto Mount Rushmore. The following code will help you import the image, select the appropriate part, and paste it in the correct place so that it looks like the image in Figure \ref{poisson:mt_rushmore}. Note that you will need to transpose the image again before displaying it.
+
+\begin{lstlisting}
+source = np.mean(imageio.v3.imread('dr_jarvis.jpg'), axis=2).transpose() / 255
+dest = np.mean(imageio.v3.imread('mount_rushmore.jpg'), axis=2).transpose() / 255
+
+w = 130 # width and height to crop out.
+x0s = 60 # position in source image
+y0s = 84
+x0 = 322 # position in destination image
+y0 = 215
+
+image = source[x0s-1:x0s+w+1,y0s-1:y0s+w+1]*0.58 # source image with a buffer of 1 pixel for the finite difference method. The buffer will need to be removed before inserting into the Mount Rushmore image. The '*0.58' will make it look better when displayed
+
+# code to calculate f, and then the solution u
+# ...
+
+new_image = dest.copy()
+new_image[x0:x0+w,y0:y0+w] = u.reshape(w,w)
+
+plt.imshow(new_image.transpose(), cmap='gray')
+plt.show()
+
+\end{lstlisting}
+\label{prob:poisson:rushmore}
+\end{problem}
+
+\begin{figure}[H]
+\includegraphics[scale=0.7]{figures/mt_rushmore.pdf}
+\caption{A Founding Father. Also the solution to Problem \ref{prob:poisson:rushmore}.}
+\label{poisson:mt_rushmore}
 \end{figure}

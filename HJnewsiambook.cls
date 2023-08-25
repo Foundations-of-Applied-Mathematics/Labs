@@ -1,10 +1,15 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%  Created 15 March 2017  (based on newsiambook.cls)
+%%  Created 17 April 2017  (based on newsiambook.cls)
+%%  Edited 26 Aug 2019 by TJJ
+%%      - shrink TT font size and 
+%%      - change to match 2019 Roboto version of the font calls
+%%  Edited 26 June 2020 by TJJ
+%%      - Again change font calls to match 2020 changes in Roboto package
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \NeedsTeXFormat{LaTeX2e}[1995/12/01]
 \ProvidesClass{HJnewsiambook}
-              [2017/03/04 v1.0
- Customized LaTeX document class]
+              [2017/04/17 v1.1 Customized LaTeX document class]
 \newcommand\@ptsize{}
 \newcommand\@numcolor{blue}
 \newif\if@restonecol
@@ -16,109 +21,70 @@
 \newif\if@onethmnum
 \@onethmnumfalse
 \newif\if@labsoption
-%_%_%_%_% remove theorem numbering from class???
+%_%_%_%_% remove theorem numbering from class?
 \newif\if@mytheorems
 \@mytheoremsfalse
 
-%%%%%%%  San serifs in Roboto, including the folios and secti
-%\usepackage[thin]{roboto}  %
+
+
+
+
+%%%%%%%  San serifs in Roboto, including the folios and sections
 \usepackage{roboto}  %
 \usepackage[T1]{fontenc}
 %%%%%%%%
 
-%%%%add formatted authors to chapter opener...
-\newenvironment{authorline}{\let\thanks\footnote\renewcommand{\thefootnote}{\fnsymbol{footnote}}%
-\Large\bfseries\itshape}{\vskip36pt\setcounter{footnote}{0}}
+%%%%%%%%% shrink size of tt font to match the others better %%%%%%%%%%%
+%\expandafter\let\csname T1/cmtt/m/n/10.95\endcsname\relax
+%\begingroup
+%\nfss@catcodes
+%\DeclareFontFamily{T1}{cmtt}{\hyphenchar \font\m@ne}
+%\DeclareFontShape{T1}{cmtt}{m}{n}{
+%        <-9>    s*[0.95] ectt0800
+%        <9-10>  s*[0.95] ectt0900
+%        <10-12> s*[0.95] ectt1000
+%        <12-17> s*[0.95] ectt1200
+%        <17->   s*[0.95] ectt1728
+%      }{}
+%\DeclareFontShape{T1}{cmtt}{m}{it}{
+%        <-9>    s*[0.95] ecit0800
+%        <9-10>  s*[0.95] ecit0900
+%        <10-12> s*[0.95] ecit1000
+%        <12-17> s*[0.95] ecit1200
+%        <17->   s*[0.95] ecit1728
+%      }{}
+%\DeclareFontShape{T1}{cmtt}{m}{sl}{
+%        <-9>    s*[0.95] ecst0800
+%        <9-10>  s*[0.95] ecst0900
+%        <10-12> s*[0.95] ecst1000
+%        <12-17> s*[0.95] ecst1200
+%        <17->   s*[0.95] ecst1728
+%      }{}
+%\DeclareFontShape{T1}{cmtt}{m}{sc}{
+%        <-9>    s*[0.95] ectc0800
+%        <9-10>  s*[0.95] ectc0900
+%        <10-12> s*[0.95] ectc1000
+%        <12-17> s*[0.95] ectc1200
+%        <17->   s*[0.95] ectc1728
+%      }{}
+%\DeclareFontShape{T1}{cmtt}{bx}{n}
+%       {<->sub  cmtt/m/n}{}
+%\DeclareFontShape{T1}{cmtt}{bx}{it}
+%       {<->sub  cmtt/m/it}{}
+%\DeclareFontShape{T1}{cmtt}{bx}{sl}
+%       {<->sub  cmtt/m/sl}{}
+%\DeclareFontShape{T1}{cmtt}{b}{n}
+%       {<->sub  cmtt/m/n}{}
+%\DeclareFontShape{T1}{cmtt}{b}{it}
+%       {<->sub  cmtt/m/it}{}
+%\DeclareFontShape{T1}{cmtt}{b}{sl}
+%       {<->sub  cmtt/m/sl}{}
+%\endgroup
+%%%%%  End TT font rescaling %%%%%%%%
 
-%%%%add author names to table of contents...
-\newcommand{\authortoc}[1]{\addtocontents{toc}{\hspace*{-.5em}{\bfseries\itshape #1}}}
 
-%_%_%_%default "plain" chapter opener...no graphic
-\DeclareOption{plain-opener}{%
-\def\@makechapterhead#1{%
-   {\parindent \z@ \raggedright \normalfont
-    \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter
-%
-\noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
-\put(0,22.5){\setlength{\fboxsep}{0pt}%\fbox
-{\parbox[b][99pt][c]{300pt}{\raggedright\sffamily\Large%\bfseries%
-\@chapapp\space {\color{\@numcolor} \fontseries{t}\selectfont\thechapter}
-        \vskip3pt\par\nobreak
-    \Huge \fontseries{l}\selectfont %\bfseries
-    #1\par}}}%%end of parbox and put
-\end{picture}}
- \fi
-    \fi
-    \interlinepenalty\@M}   \vskip 40\p@
-  }%
-\def\@part[#1]#2{%
-    \ifnum \c@secnumdepth >-2\relax
-      \refstepcounter{part}%
-      \addcontentsline{toc}{part}{\hbox to 20pt{\thepart}#1}%
-    \else
-      \addcontentsline{toc}{part}{#1}%
-    \fi
-    \markboth{}{}%
-    {\centering
-     \interlinepenalty \@M
-     \normalfont
-    %_%_%_%_%add part background graphic...
- \ifnum \c@secnumdepth >-2\relax
-       \sffamily\huge\fontseries{l}\selectfont%\bfseries
-       \partname~\thepart
-       \par
-       \vskip 20\p@
-     \fi
-     \sffamily\Huge\fontseries{l}\selectfont %\bfseries
-     #2\par}%
-    \@endpart}}
-\DeclareOption{opener-d}{%
-%_%_%_%_% new makechapterhead
-%_%_%_%_% type "D"
-%_%_%_%_%
-\def\@makechapterhead#1{%
-   {\parindent \z@ \raggedright \normalfont
-    \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter
-%
-\noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
-\put(0,11){\includegraphics[height=120pt]{macroa-1-gray}}
-\put(72,22.5){\setlength{\fboxsep}{0pt}%\fbox
-{\parbox[b][99pt][c]{300pt}{\raggedright\sffamily\Large%\bfseries%
-\@chapapp\space {\color{\@numcolor} \fontseries{t}\selectfont \thechapter}
-        \vskip3pt\par\nobreak
-    \Huge\fontseries{l}\selectfont %\bfseries
-    #1\par}}}%%end of parbox and put
-\end{picture}}
- \fi
-    \fi
-    \interlinepenalty\@M}   \vskip 40\p@
-  }%
-\def\@part[#1]#2{%
-    \ifnum \c@secnumdepth >-2\relax
-      \refstepcounter{part}%
-      \addcontentsline{toc}{part}{\hbox to 20pt{\thepart}#1}%
-    \else
-      \addcontentsline{toc}{part}{#1}%
-    \fi
-    \markboth{}{}%
-         \interlinepenalty \@M
-     \normalfont
-    %_%_%_%_%add part background graphic...
- \ifnum \c@secnumdepth >-2\relax
-\noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
-\put(0,11){\includegraphics[height=120pt]{macroa-1-gray}}
-\put(72,22.5){\setlength{\fboxsep}{0pt}%\fbox
-{\parbox[b][99pt][c]{300pt}{\parindent0pt\sffamily\Large\fontseries{l}\selectfont%\bfseries%
-\partname\space \fontseries{l}\selectfont \thepart
-        \vskip3pt\par\nobreak
-    \Huge\fontseries{l}\selectfont %\bfseries
-    #2\par}}}%%end of parbox and put
-\end{picture}}
-     \fi
-    \@endpart}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \DeclareOption{lab}{%
 
 %_%_%_%_% new makechapterhead
@@ -127,15 +93,15 @@
 \def\@makechapterhead#1{%
    {\parindent \z@ \raggedright \normalfont
     \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter
+      \if@mainmatter     
 \noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
 \put(0,0) {\vbox to 99pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
-    {\fontsize{100}{100}\selectfont {\color{\@numcolor} \fontseries{t}\selectfont \thechapter}} \par\vfill}}
+    {\fontsize{100}{100}\selectfont {\color{\@numcolor} \fontseries{el}\selectfont \thechapter}} \par\vfill}}
 %{\includegraphics[width=114pt]{footprint}}
 \put(115,0){\vbox to 99pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
 %\vfill\@chapapp\space \thechapter
 %        \vskip3pt\par\nobreak
-\fontseries{l}\selectfont    \Huge %\bfseries
+\fontseries{l}\selectfont    \Huge %\bfseries 
 #1\par\vfill}}%%end of parbox and put
 \end{picture}}
  \fi
@@ -163,9 +129,9 @@
 \end{picture}}
      \fi
     \@endpart}}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 \DeclareOption{opener-c}{%
 
 %_%_%_%_% new makechapterhead
@@ -174,19 +140,14 @@
 \def\@makechapterhead#1{%
    {\parindent \z@ \raggedright \normalfont
     \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter
-%% TJ edited 4 Mar 2017
+      \if@mainmatter     
 \noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
 \put(0,0) {\vbox to 99pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
-    {\fontsize{100}{100}\selectfont {\color{\@numcolor} \fontseries{t}\selectfont \thechapter}} \par\vfill}}
-%{\includegraphics[width=114pt]{footprint}}
+    {\fontsize{100}{100}\selectfont {\color{\@numcolor} \fontseries{el}\selectfont \thechapter}} \par\vfill}}
 \put(115,0){\vbox to 99pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
-%\vfill\@chapapp\space \thechapter
-%        \vskip3pt\par\nobreak
-\fontseries{l}\selectfont    \Huge %\bfseries
+\fontseries{l}\selectfont    \Huge %\bfseries 
 #1\par\vfill}}%%end of parbox and put
 \end{picture}}
-%%% end TJ edit
  \fi
     \fi
     \interlinepenalty\@M}   \vskip 40\p@
@@ -202,114 +163,18 @@
          \interlinepenalty \@M
      \normalfont
 
-%%% TJ edited 4 Mar 2017
-%%% removed ugly footprint
  \ifnum \c@secnumdepth >-2\relax
-\noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
-%\put(0,0){\includegraphics[width=114pt]{footprint}}
-\put(118,16){\vbox to 99pt{\hsize247pt\parindent0pt\sffamily\Large%
-\vfill\fontseries{l}\selectfont \partname\space \fontseries{l}\selectfont\thepart
+\noindent{\sffamily\Large\vfill\fontseries{l}\selectfont \partname\space \fontseries{l}\selectfont\thepart
         \vskip3pt\par\nobreak
-    \huge\fontseries{l}\selectfont  #2\par\vfill}}%%end of parbox and put
-\end{picture}}
-     \fi
-    \@endpart}}
-%%%% End TJ edit
-%
-\DeclareOption{opener-b}{%
-%_%_%_%_% new makechapterhead
-%_%_%_%_% type "B"
-%_%_%_%_%
-\def\@makechapterhead#1{%
-   {\parindent \z@ \raggedright \normalfont
-    \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter
-%
-\noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
-\put(0,0){\includegraphics[width=114pt]{macroa2-gray}}
-\put(118,16){\vbox to 99pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
-\@chapapp\space {\color{\@numcolor} \fontseries{t}\selectfont\thechapter}
-        \vskip3pt\par\vfill\nobreak
-    \Huge\fontseries{l}\selectfont %\bfseries
-    #1\par}}%%end of parbox and put
-\end{picture}}
- \fi
-    \fi
-    \interlinepenalty\@M}   \vskip 40\p@
-  }%
-\def\@part[#1]#2{%
-    \ifnum \c@secnumdepth >-2\relax
-      \refstepcounter{part}%
-      \addcontentsline{toc}{part}{\hbox to 20pt{\thepart}#1}%
-    \else
-      \addcontentsline{toc}{part}{#1}%
-    \fi
-    \markboth{}{}%
-         \interlinepenalty \@M
-     \normalfont
-    %_%_%_%_%add part background graphic...
- \ifnum \c@secnumdepth >-2\relax
-\noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
-\put(0,0){\includegraphics[width=114pt]{macroa2-gray}}
-\put(118,16){\vbox to 99pt{\parindent0pt\hsize247pt\sffamily\Large%\bfseries%
-\fontseries{l}\selectfont\partname\space\fontseries{l}\selectfont \thepart
-        \vskip3pt\par\vfill\nobreak
-    \huge\fontseries{l}\selectfont %\bfseries
-    #2\par}}%%end of parbox and put
-\end{picture}}
+    \huge\fontseries{l}\selectfont  #2\par\vfill}    
      \fi
     \@endpart}}
 
-\DeclareOption{opener-a}{%
-%_%_%_%_% new makechapterhead...
-%_%_%_%_% type "A"
-%_%_%_%_%
-\def\@makechapterhead#1{%
-   {\parindent \z@ \raggedright \normalfont
-    \ifnum \c@secnumdepth >\m@ne
-      \if@mainmatter
-%
-\noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
-\put(0,-1){\includegraphics[height=102pt]{macroa-gray}}
-\put(118,0){\vbox to 100pt{\hsize247pt\raggedright\sffamily\Large%\bfseries%
-\@chapapp\space {\color{\@numcolor} \fontseries{t}\selectfont\thechapter}
-        \vfill\par\nobreak
-    \Huge \fontseries{l}\selectfont %\bfseries
-    #1\par}}%%end of parbox and put
-\end{picture}}
- \fi
-    \fi
-    \interlinepenalty\@M}   \vskip 40\p@
-  }%
-\def\@part[#1]#2{%
-    \ifnum \c@secnumdepth >-2\relax
-      \refstepcounter{part}%
-      \addcontentsline{toc}{part}{\thepart\hspace{10em}#1}%
-    \else
-      \addcontentsline{toc}{part}{#1}%
-    \fi
-    \markboth{}{}%
-         \interlinepenalty \@M
-     \normalfont
-    %_%_%_%_%add part background graphic...
- \ifnum \c@secnumdepth >-2\relax
-\noindent{\setlength{\unitlength}{1pt}\begin{picture}(360,144)
-\put(0,-1){\includegraphics[height=102pt]{macroa-gray}}
-\put(118,0){\vbox to 100pt{\parindent0pt\hsize247pt\sffamily\Large%\bfseries%
-\partname\space\fontseries{l}\selectfont \thepart
-        \vfill\par\nobreak
-    \huge\fontseries{l}\selectfont %\bfseries
-    #2\par}}%%end of parbox and put
-\end{picture}}
-     \fi
-    \@endpart}}
-
+    
 \DeclareOption{blue}{\renewcommand{\@numcolor}{blue}}
 \DeclareOption{red}{\renewcommand{\@numcolor}{red}}
 \DeclareOption{yellow}{\renewcommand{\@numcolor}{yellow}}
 \DeclareOption{green}{\renewcommand{\@numcolor}{green}}
-\DeclareOption{black}{\renewcommand{\@numcolor}{black}}
-\DeclareOption{grey}{\renewcommand{\@numcolor}{gray!90}}
 
 \DeclareOption{a4paper}
    {\setlength\paperheight {297mm}%
@@ -349,7 +214,7 @@
 \if@compatibility\else
 \DeclareOption{final}{\setlength\overfullrule{0pt}}
 \fi
-%%TJ
+%%
 \DeclareOption{labs}{\@labsoptiontrue}
 %%
 \DeclareOption{titlepage}{\@titlepagetrue}
@@ -387,7 +252,7 @@
 
 \DeclareOption{nociteref}{\@citereffalse}
 %
-\ExecuteOptions{plain-opener,letterpaper,10pt,twoside,onecolumn,final,openright}
+\ExecuteOptions{opener-c,letterpaper,10pt,twoside,onecolumn,final,openright}
 \ProcessOptions
 \input{newsiambk1\@ptsize.clo}
 \setlength\lineskip{1\p@}
@@ -411,9 +276,9 @@
   \def\ps@headings{%
       \let\@oddfoot\@empty\let\@evenfoot\@empty
       \def\@evenhead{%{\rule[-5pt]{\textwidth}{1pt}}\hspace*{-\textwidth}
-      \sffamily\fontseries{l}\selectfont \thepage\hfil \fontseries{l}\selectfont\leftmark}%
+      \sffamily\fontseries{l}\fontsize{8pt}{9.6}\selectfont \thepage\hfil \fontseries{l}\selectfont\leftmark}%
       \def\@oddhead{%{\rule[-5pt]{\textwidth}{1pt}}\hspace*{-\textwidth}
-      \sffamily\fontseries{l}\selectfont{\rightmark}\hfil\thepage}%
+      \sffamily\fontseries{l}\fontsize{8pt}{9.6}\selectfont{\rightmark}\hfil\thepage}%
       \let\@mkboth\markboth
     \def\chaptermark##1{%
       \markboth {{%%%%%was \MakeUppercase
@@ -432,7 +297,7 @@
 \else
   \def\ps@headings{%
     \let\@oddfoot\@empty
-    \def\@oddhead{{\sffamily\fontseries{l}\selectfont \rightmark}\hfil \fontseries{l}\selectfont \thepage}%
+    \def\@oddhead{{\sffamily\fontseries{l}\fontsize{8pt}{9.6}\selectfont \rightmark}\hfil \fontseries{l}\fontsize{8pt}{9.6}\selectfont \thepage}%
     \let\@mkboth\markboth
     \def\chaptermark##1{%
       \markright {\MakeUppercase{%
@@ -445,8 +310,8 @@
 \fi
 \def\ps@myheadings{%
     \let\@oddfoot\@empty\let\@evenfoot\@empty
-    \def\@evenhead{\sffamily\fontseries{l}\selectfont \thepage\hfil\sffamily\fontseries{l}\selectfont\leftmark}%
-    \def\@oddhead{{\sffamily\fontseries{l}\selectfont\rightmark}\hfil\sffamily\fontseries{l}\selectfont\thepage}%
+    \def\@evenhead{\sffamily\fontseries{l}\fontsize{8pt}{9.6}\selectfont \thepage\hfil\sffamily\fontseries{l}\fontsize{8pt}{9.6}\selectfont\leftmark}%
+    \def\@oddhead{{\sffamily\fontseries{l}\fontsize{8pt}{9.6}\selectfont\rightmark}\hfil\sffamily\fontseries{l}\fontsize{8pt}{9.6}\selectfont\thepage}%
     \let\@mkboth\@gobbletwo
     \let\chaptermark\@gobble
     \let\sectionmark\@gobble
@@ -464,15 +329,15 @@
   \vskip 60\p@
   \begin{center}%
   \sffamily
-    {{\fontsize{35}{35} \fontseries{t}\selectfont Labs for\\
+    {{\fontsize{35}{35} \fontseries{el}\selectfont Labs for\\
      Foundations of Applied Mathematics}}\\
      \vskip 1.5em
-    {\fontsize{24}{24} \fontseries{t}\selectfont  \@title \par}%
+    {\fontsize{24}{24} \fontseries{el}\selectfont  \@title \par}%
     \vskip 3em%
     {\large
      \lineskip .75em%
       \begin{tabular}[t]{c}%
-       \fontsize{15}{15} \fontseries{t}\selectfont  \@author
+       \fontsize{15}{15} \fontseries{el}\selectfont  \@author
       \end{tabular}\par}%
       %\vskip 1.5em%
       \includegraphics[scale=.35]{Cover.pdf}
@@ -493,27 +358,33 @@
   \global\let\and\relax
   }
 %%end \if@labsoption
- \else
+ \else  
   \newcommand\maketitle{\begin{titlepage}%
   \let\footnotesize\small
   \let\footnoterule\relax
   \let \footnote \thanks
   \null\vfil
   \vskip 60\p@
-  \begin{center}%
+  \begin{flushright}%
   \sffamily
-    {{\fontsize{35}{35} \fontseries{t}\selectfont Foundations of Applied Mathematics}}\\
-     \vskip 1.5em
-    {\fontsize{24}{24} \fontseries{t}\selectfont  \@title \par}%
-    \vskip 3em%
-    {\large
-     \lineskip .75em%
-      \begin{tabular}[t]{c}%
-       \fontsize{15}{15} \fontseries{t}\selectfont  \@author
-      \end{tabular}\par}%
-      \vskip 1.5em%
-%    {\large \@date \par}%       % Set date in \large size.
-  \end{center}\par
+    {{\fontsize{12}{14} \fontseries{el}\selectfont Foundations of Applied Mathematics}}\\
+%     \vskip 3ex
+    {\fontsize{12}{14} \fontseries{el}\selectfont  Volume \volumenumber \par}%
+     \vskip 5ex%
+    {\fontsize{12}{14} \fontseries{m}\selectfont  \@title \par}%
+    \vskip 27ex%
+    {%\begin{tabular}[t]{c}%
+       \fontsize{8}{10} \fontseries{l}\selectfont  \textsc{\@author}
+      %\end{tabular}
+      \par}%
+      \vskip 1ex%
+      \fontsize{8}{10} \fontseries{l}\selectfont  \textsc{\institution}\par%
+	  \vskip 3ex
+	  %\textsc{society for industrial\\
+      %and applied mathematics\\
+      %\vskip 1ex
+      %philadelphia}      
+  \end{flushright}\par
 %  \@thanks
   \vfil\null
   \end{titlepage}%
@@ -638,7 +509,7 @@
     {\centering
      \interlinepenalty \@M
      \normalfont
-     \sffamily\Huge\fontseries{l}\selectfont %\bfseries
+     \sffamily\Huge\fontseries{l}\selectfont %\bfseries 
      #1\par}%
     \@endpart}
 \def\@endpart{\vfil\newpage
@@ -695,37 +566,37 @@
   {\parindent \z@ \raggedright
     \normalfont
     \interlinepenalty\@M\centering
-    \Huge \sffamily\fontseries{l}\selectfont%\bfseries
+    \Huge \sffamily\fontseries{l}\selectfont%\bfseries 
     #1\par\nobreak
     \vskip 40\p@
   }}
 \newcommand\section{\@startsection {section}{1}{\z@}%
                                    {-3.5ex \@plus -1ex \@minus -.2ex}%
                                    {1.5ex \@plus.0ex}%
-                                   {\raggedright\normalfont\fontsize{14}{16pt}\selectfont\sffamily\fontseries{r}\selectfont%\bfseries
+                                   {\raggedright\normalfont\fontsize{14}{16pt}\selectfont\sffamily\fontseries{m}\selectfont%\bfseries
 }}
 \newcommand\subsection{\@startsection{subsection}{2}{\z@}%
                                      {-3.25ex\@plus -1ex \@minus -.2ex}%
                                      {1.5ex \@plus .2ex}%
-                        {\raggedright\normalfont\large\sffamily\fontseries{r}\selectfont
+                        {\raggedright\normalfont\large\sffamily\fontseries{m}\selectfont
                                      %\bfseries
 }}
 \newcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
                                      {-3.25ex\@plus -1ex \@minus -.2ex}%
                                      {1.5ex \@plus .2ex}%
-                                     {\normalfont\normalsize\sffamily\fontseries{r}\selectfont
+                                     {\normalfont\normalsize\sffamily\fontseries{m}\selectfont
                                      %\bfseries
 }}
 \newcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
                                     {3.25ex \@plus1ex \@minus.2ex}%
                                     {-1em}%
-                                    {\normalfont\normalsize\sffamily\fontseries{r}\selectfont
+                                    {\normalfont\normalsize\sffamily\fontseries{m}\selectfont
                                     %\bfseries
 }}
 \newcommand\subparagraph{\@startsection{subparagraph}{5}{\parindent}%
                                        {3.25ex \@plus1ex \@minus .2ex}%
                                        {-1em}%
-                                      {\normalfont\normalsize\sffamily\fontseries{r}\selectfont%\bfseries
+                                      {\normalfont\normalsize\sffamily\fontseries{m}\selectfont%\bfseries
 }}
 \if@twocolumn
   \setlength\leftmargini  {2em}
@@ -973,18 +844,25 @@
 %    \if@restonecol\twocolumn\fi
 %    }
 
-\newcounter{algorithm}[chapter]
-\renewcommand{\thealgorithm}{\arabic{chapter}.\arabic{algorithm}}
-\newenvironment{algorithm}[1][\relax]{\refstepcounter{algorithm}%
-\addcontentsline{loa}{algorithm}%
-    {\protect\numberline{Algorithm~\thealgorithm}{\ignorespaces#1}}%
-\par\vspace{1\baselineskip}%
-\expandafter\ifx#1\relax
-\parindent0pt {\scshape\bfseries Algorithm~\thealgorithm.}\\%%%
-\else
-\parindent0pt {\scshape\bfseries Algorithm~\thealgorithm.}\enspace{\bfseries#1.}\\%%%
-\fi}
+\newcounter{algorithm}[chapter] %% Weirdly enough, this counter is
+                                %% needed by the figure environment.
+                                %% Don't delete. 
+%
+%\renewcommand{\thealgorithm}{\arabic{chapter}.\arabic{algorithm}}
+%\newenvironment{algorithm}[1][\relax]{\refstepcounter{algorithm}%
+%\addcontentsline{loa}{algorithm}%
+%    {\protect\numberline{Algorithm~\thealgorithm}{\ignorespaces#1}}%
+%\par\vspace{1\baselineskip}%
+%\expandafter\ifx#1\relax
+%\parindent0pt {\scshape\bfseries Algorithm~\thealgorithm.}\\%%%
+%\else
+%\parindent0pt {\scshape\bfseries Algorithm~\thealgorithm.}\enspace{\bfseries#1.}\\%%%
+%\fi
+%}
+%
+%
 {\vspace{1\baselineskip}\par}
+%
 %_%_%_%_%
 %_%_%_%_%
 %_%_%_%_%
@@ -1135,9 +1013,9 @@
 \def\@thmcounterup#1{\noexpand\arabic{#1}}
 \def\@thmcountersep{.}
 \def\@begintheoremup#1#2{\trivlist
-   \item[\hskip \labelsep{\bfseries #1\ #2.}]\upshape} %TJ 2016/5/5 added . to match \newtheorem
+   \item[\hskip \labelsep{\bfseries #1\ #2.}]\upshape} %TJ 2016/5/5 added . to match \newtheorem 
 \def\@opargbegintheoremup#1#2#3{\trivlist
-      \item[\hskip \labelsep{\bfseries #1\ #2\ (#3).}]\upshape}%TJ 2016/5/5 added .
+      \item[\hskip \labelsep{\bfseries #1\ #2\ (#3).}]\upshape}%TJ 2016/5/5 added . 
 \def\@endtheoremup{\endtrivlist}
 
 
@@ -1255,19 +1133,15 @@
 }
 \else    \typeout{Warning: Unable to fix unknown version of \string\eqnarray.}
 \fi
-
+ 
 \def\@tempb{}
-
-
 %_%_%_%_%
 %_%_%_%_% for crops and other stuff...
 %_%_%_%_%
 \setlength{\paperheight}{10in}
 \setlength{\paperwidth}{7in}
-
 \setlength{\oddsidemargin}{.75in}
 \setlength{\evensidemargin}{.766in}
-
 %_%_%_%_%
 %_%_%_%_% Problems/exercises
 %_%_%_%_%
@@ -1281,14 +1155,12 @@
                 \setlength{\leftmargin}{24pt}\labelwidth24pt\labelsep.5em%
 		\itemsep2pt\parsep0pt
                 \setlength{\itemindent}{0pt}}}{\end{list}}
-
 \newenvironment{exercises}
                {%
 \section*{\rule[6pt]{\textwidth}{1pt}\newline\nobreak Exercises}%
 \addcontentsline{toc}{section}{Exercises}%
 \markright{Exercises}
 \input{HW-Blurb}
-
 \begin{list}{{\hfill\upshape \arabic{chapter}.\arabic{prob}.}}{\usecounter{prob}
                 \setlength{\leftmargin}{28pt}\labelwidth28pt\labelsep.5em%
 		\itemsep2pt\parsep0pt
@@ -1296,7 +1168,6 @@
                 \section*{\rule[6pt]{\textwidth}{1pt}\newline\nobreak Notes}%
 		%\addcontentsline{toc}{section}{Notes}
 		}
-
 %_%_%_%_%
 %_%_%_%_% front matter, etc.
 %_%_%_%_%
@@ -1307,7 +1178,6 @@
                         {Preface}%
                 \thispagestyle{plain}}
                {\clearpage}
-
 \newenvironment{thepreface2}{\if@openright\cleardoublepage\else\clearpage\fi
 \@makeschapterhead{Series Preface}%
 \addcontentsline{toc}{chapter}{Series Preface}%
@@ -1315,14 +1185,11 @@
                         {Preface}%
                 \thispagestyle{plain}}
                {\clearpage}
-
 %_%_%_%_%
 %_%_%_%_%
 %_%_%_%_%
-
 %_%_%_%_% #1 is the contributor's name, #2 is the affiliation
 \newcommand{\contributor}[2]{\noindent\vtop{\hsize14pc#1\\\itshape#2}\par}
-
 \newenvironment{contributors}{\if@openright\cleardoublepage\else\clearpage\fi
 \@makeschapterhead{List of Contributors}%
 %\addcontentsline{toc}{chapter}{List of Contributors}%
@@ -1331,16 +1198,10 @@
                 \thispagestyle{plain}\begin{multicols}{2}\parindent0pt%
 \parskip6pt plus2pt minus1pt%
 \widowpenalty10000\clubpenalty10000}
-               {\end{multicols}   
-               This project is funded in part by the National Science Foundation, grant no. TUES Phase II DUE-1323785.            
-               \clearpage}
-
+               {\end{multicols}\clearpage}
 \setlength{\parskip}{1\parskip}
-
-
 \parskip1\parskip
 \hfuzz362pt
-
 \if@citeref
 \usepackage{citeref}
 \else

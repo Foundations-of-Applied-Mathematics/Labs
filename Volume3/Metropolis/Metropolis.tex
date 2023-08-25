@@ -3,27 +3,33 @@
 Ising Model.}
 
 \section*{The Metropolis Algorithm}
-Sampling from a given probability distribution is an important task in many different applications found throughout the sciences.
-When these distributions are complicated, as is often the case when modeling real-world problems, direct sampling methods
-can become difficult, as they might involve computing high-dimensional integrals.
-The Metropolis algorithm is an effective method to sample from many distributions, requiring only that we
-be able to evaluate the probability density function up to a constant of proportionality. In particular,
-the Metropolis algorithm does not require us to compute difficult high-dimensional integrals, such as those that are found
+Sampling from a given probability distribution is an important part of many tasks throughout the sciences.
+When modeling real-world problems, these distributions are often very complicated, and direct sampling methods require computing high-dimensional integrals and are thus impractical.
+The Metropolis algorithm is an effective method to sample from many of these distributions.
+This algorithm only requires evaluating the probability density function up to a constant of proportionality. 
+In particular, the Metropolis algorithm does not require us to compute any difficult high-dimensional integrals, such as those that are found
 in the denominator of Bayesian posterior distributions.
 
-The Metropolis algorithm is an MCMC sampling method which generates a sequence of random variables, similar to Gibbs sampling.
-These random variables form a Markov Chain whose invariant distribution is equal to the distribution from which we wish
-to sample. Suppose that $h : \mathbb{R}^n \rightarrow \mathbb{R}$ is the probability density function of distribution,
-and suppose that $f(\boldsymbol{\theta}) = c \cdot h(\boldsymbol{\theta})$ for some nonzero constant $c$ (in practice, we assume that $f$ is an easy
-function to evaluate, while $h$ is difficult). Let $Q : \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}$ be
-a symmetric \emph{proposal function}
-(so that $Q(\cdot, \y)$ is a probability density function for all $\y \in \mathbb{R}^n$,
- and $Q(\x,\y) = Q(\y,\x)$ for all $\x,\y \in \mathbb{R}^n$) and let
- $A : \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}$ be an \emph{acceptance function} defined by
+Suppose that $h : \mathbb{R}^n \rightarrow \mathbb{R}$ is the probability density function of a distribution that is difficult to evaluate (for example, a Bayesian posterior distribution), while some function $f(\boldsymbol{\theta}) = c \cdot h(\boldsymbol{\theta})$ is easy to evaluate.
+The Metropolis algorithm is an MCMC sampling method which constructs a Markov chain $Y$ whose invariant distribution is exactly the distribution associated with $h$.
+We can then use these samples as a sample from this distribution.
+
+For the Metropolis algorithm, we need two ingredients: a \emph{proposal function}, and an \emph{acceptance function}.
+The proposal function is used to choose a potential next state.
+We denote this function as $Q(\x,\y): \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}$.
+For each $\y\in \mathbb{R}^n$, $Q(\cdot, \y)$ is the probability density function for the proposed state.
+This distribution needs to be easy to sample from; typical choices are uniform or normal distributions.
+For simplicity we also require this function to be \emph{symmetric}, so $Q(\x,\y)=Q(\y,\x)$.
+In words, the probability density of moving from $\x$ to $\y$ is the same as moving from $\y$ to $\x$ for all $\x$ and $\y$.
+
+The acceptance function $A : \mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}$ gives the probability that we actually transition from the current state $\y$ to the proposed state $\x$.\footnote{In the Volume 3 textbook, the proposal function for continuous distributions and the acceptance function are denoted $f_{X_{t+1}|X_t=\y}(\x)$ and $a_{\x,\y}$ respectively. In this lab we instead write them as $Q(\x,\y)$ and $A(\x,\y)$ to make it clearer that they are functions of $\x$ and $\y$.}
+This function is defined by
 \[
 A(\x,\y) = \min\left(1, \frac{f(\x)}{f(\y)}\right).
 \]
-We can combine these functions in such a way so as to sample from the aforementioned Markov Chain by following Algorithm \ref{alg:metropolis}.
+Following the proposals from $Q$ causes us to wander around the space of allowed states.
+The acceptance function from $A$ modifies this wandering so that we spend more time in more likely regions.
+
 \begin{algorithm}
 \begin{algorithmic}[1]
 \Procedure{Metropolis Algorithm}{}
@@ -43,54 +49,87 @@ We can combine these functions in such a way so as to sample from the aforementi
 \caption{Metropolis Algorithm}
 \label{alg:metropolis}
 \end{algorithm}
-The Metropolis algorithm can be interpreted as follows:
-given our current state $\y$, we propose a new state according to the distribution $Q(\cdot, \y)$. We then accept or reject it according to $A$.  We continue by repeating the process. So long as $Q$ defines an irreducible, aperiodic, and non-null recurrent Markov chain, we will have a Markov chain whose unique invariant distribution will have density $h$. Furthermore, given any initial state, the chain will converge to this invariant distribution.
-Note that for numerical reasons, it is often wise to make calculations of the acceptance functions in log space:
+These functions form the basis for the Metropolis algorithm.
+At each step, given our current state $\y_t$, we propose a new state according to the distribution $\x\sim Q(\cdot, \y_t)$. 
+We then accept the proposed state with probability $A(\x, \y_t)$.
+If we accept the proposal, we set $\y_{t+1}=\x$; otherwise, we set $\y_{t+1}=\y_t$.
+Refer to Algorithm \ref{alg:metropolis} for a write-up of this algorithm.
+Under certain conditions on $Q$, the Markov chain the samples $\y_1,\y_2,\y_3\ldots$ are from will have a unique invariant distribution with density $h$, and any initial state will converge to this distribution.
+
+We can consider each of the samples $\y_i$ as draws from the distribution of $h$.
+Most of the time we don't just want samples from the distribution, but \emph{independent} samples.
+However, the samples $\y_t$ and $\y_{t+1}$ are clearly not independent.
+We can get around this issue by only keeping some of the samples, for example every 10th or 100th sample.
+While $\y_t$ and $\y_{t+1}$ aren't independent, $\y_t$ and $\y_{t+100}$ will be closer to being independent.
+
+Finally, for numerical reasons, it is often wise to make calculations of the acceptance functions in log space:
 \[
 \log A(\x,\y) = \min(0, \log f(\x) - \log f(\y)).
 \]
 
 
-Let's apply the Metropolis algorithm to a simple example of Bayesian analysis.
-Consider the problem of computing the posterior distribution over the mean $\mu$ and variance $\sigma^2$ of a normal distribution for which we have $n$ data points $y_1,\ldots,y_n$.
-For concreteness, we use the data in \texttt{examscores.csv} and we assume
-the prior distributions
+Let's apply the Metropolis algorithm to an example of Bayesian analysis.
+Consider the exam scores in \texttt{examscores.csv}, and suppose that these scores are distributed normally with (unknown) mean $\mu$ and variance $\sigma^2$.
+We wish to compute the posterior distribution for $\mu$ and $\sigma^2$.
+Denote the data as $d_1,\ldots,d_N$ and assume the prior distributions
 \begin{align*}
 \mu &\sim \mathcal{N}(m=80,\ s^2=16)\\
 \sigma^2 &\sim IG(\alpha=3,\beta=50).
 \end{align*}
+Note that $IG$ is the inverse gamma distribution.
 In this situation, we wish to sample from the posterior distribution
 \[
-p(\mu,\sigma^2 \,|\,y_1,\ldots,y_N) = \frac{p(\mu)p(\sigma^2)\prod_{i=1}^n \mathcal{N}(y_i \, | \, \mu, \sigma^2)}
-{\int_{-\infty}^\infty\int_{0}^\infty p(\mu)p(\sigma^2)\prod_{i=1}^n \mathcal{N}(y_i \, | \, \mu, \sigma^2)\,d\sigma^2d\mu}.
+p(\mu,\sigma^2 \,|\,d_1,\ldots,d_N) 
+= \frac{
+p(\mu)p(\sigma^2)\prod_{i=1}^N \mathcal{N}(d_i \, | \, \mu, \sigma^2)
+}
+{
+\int_{-\infty}^\infty
+\int_{0}^\infty 
+p(\mu')p({\sigma^2}')
+\prod_{i=1}^N
+\mathcal{N}(d_i \, | \, \mu', {\sigma^2}')
+\,d{\sigma^2}' d\mu'
+}.
 \]
 However, we can conveniently calculate only the numerator of this expression.
 Since the denominator is simply a constant with respect to $\mu$ and $\sigma^2$, the numerator can serve as the function $f$ in the Metropolis algorithm, and the denominator can serve as the constant $c$.
 
 We choose our proposal function to be based on a bivariate Normal distribution:
 \[
-Q(x,y) = \mathcal{N}(x\, | \, y, sI),
+Q(\x,\y) = \mathcal{N}(\x\, | \, \y, uI),
 \]
-where $I$ is the $2\times 2$ identity matrix and $s$ is some positive scalar.
+i.e. normally distributed with mean $\y$ and variance $uI$
+where $I$ is the $2\times 2$ identity matrix and $u>0$.
 \begin{lstlisting}
->>> def proposal(y, s):
-...     """The proposal function Q(x,y) = N(x|y,sI)."""
-...     return stats.multivariate_normal.rvs(mean=y, cov=s*np.eye(len(y)))
-...
->>> def propLogDensity(x):
-...     """Calculate the log of the proportional density."""
-...     logprob = muprior.logpdf(x[0]) + sig2prior.logpdf(x[1])
-...     logprob += stats.norm.logpdf(scores, loc=x[0], scale=sqrt(x[1])).<<sum>>()
-...     return logprob    # ^this is where the scores are used.
-...
->>> def acceptance(x, y):
-...     return min(0, propLogDensity(x) - propLogDensity(y))
+def proposal(y, u):
+    """Returns the proposal, i.e. a draw from Q(x,y) = N(x|y,uI)."""
+    return stats.multivariate_normal.rvs(mean=y, cov=u*np.eye(len(x)))
+    
+def propLogDensity(x, muprior, sig2prior, scores):
+    """Calculate the log of the proportional density funciton f."""
+    if x[1] <= 0:
+        return -np.inf
+    logprob = muprior.logpdf(x[0]) + sig2prior.logpdf(x[1])
+    logprob += stats.norm.logpdf(scores, loc=x[0], scale=np.sqrt(x[1])).sum()
+    return logprob
+    
+def acceptance(x, y, muprior, sig2prior, scores):
+    """
+    Returns the acceptance probability of moving from y to x.
+    """
+    return np.exp(min(0, 
+                  propLogDensity(x, muprior, sig2prior, scores) 
+                - propLogDensity(y, muprior, sig2prior, scores)
+    ))
 \end{lstlisting}
 
 We are now ready to code up the Metropolis algorithm using these functions.
-We will keep track of the samples generated by the algorithm, along with the proportional log densities of the samples and the proportion of proposed samples that were accepted.
+We will keep track of the samples generated by the algorithm, along with the proportional log probabilities $\log f(\y_t)$ and the proportion of proposed samples that were accepted.
 
-We can evaluate the quality of our results by plotting the log probabilities, the $\mu$ samples, the $\sigma^2$ samples, and kernel density estimators for the marginal posterior distributions of $\mu$ and $\sigma^2$. The kernel density estimator is the posterior distribution for a parameter. It measures the frequency of each draw. In this example, the kernel density estimator for $\mu$ should be approximately normal, and the kernel density estimator for $\sigma^2$ should be approximately an inverse gamma.
+We will evaluate the quality of our results by plotting the log probabilities, the $\mu$ samples, the $\sigma^2$ samples, and kernel density estimators for the marginal posterior distributions of $\mu$ and $\sigma^2$. 
+The kernel density estimators approximate the continuous distribution of the marginal distributions. 
+The kernel density estimator for $\mu$ should be approximately normal, and the kernel density estimator for $\sigma^2$ should be approximately an inverse gamma.
 \begin{figure}[H]
     \centering
     \includegraphics[width=.7\textwidth]{figures/logprobs.pdf}
@@ -189,27 +228,33 @@ Using $\mu$ and $\Sigma$ as defined previously and using an initial state $\math
 \end{comment}
 
 \begin{problem}
-Write a function that uses the Metropolis Hastings algorithm to draw from the posterior distribution over the mean $\mu$ and variance $\sigma^2$. Use the given functions and algorithm \ref{alg:metropolis} to complete the problem.
+Write a function that uses the Metropolis Hastings algorithm to draw from the posterior distribution over the mean $\mu$ and variance $\sigma^2$. Use the given functions and Algorithm \ref{alg:metropolis} to complete the problem.
 
-	Your function should return an array of draws, an array of the log probabilities, and an acceptance rate. Use the following code to check your work. Using the seaborn.kdeplot function, plot the first 500 log probabilities, the $\mu$ samples and posterior distribution, and the $\sigma^2$ samples and posterior distribution. Make sure to take 10,000 samples for both $\mu$ and $\sigma^2$. The results should be \textit{similar} to Figures \ref{fig:logprobs} and \ref{fig:metropolis_results}.
+Your function should return an array of draws, an array of the log probabilities, and an acceptance rate. 
+Create plots resembling Figures \ref{fig:logprobs} and \ref{fig:metropolis_results}:
+\begin{itemize}
+\item Plot the log probabilities of the first 500 samples.
+\item Plot the samples for $\mu$ in the order they were drawn, and likewise for $\sigma^2$.
+\item Using \li{seaborn.kdeplot} plot the distribution of all samples for $\mu$, and likewise for $\sigma^2$.
+\end{itemize}
 
-When comparing \texttt{a} to the acceptance, remember to use \texttt{log(a)} as we are in log space.
+Use $u=20$ for the parameter of the proposal function.
+Use the initial state $\y_0=(\mu_0,\sigma^2_0)=(40,10)$.
+Take 10,000 samples for both $\mu$ and $\sigma^2$. 
 
-
+Use the following code to load the data and initialize the priors:
 \begin{lstlisting}
-# Load in the data and initialize hyperparameters.
+# Load in the data and initialize priors
 >>> scores = np.load("examscores.npy")
 
 # Prior sigma^2 ~ IG(alpha, beta)
 >>> alpha = 3
 >>> beta = 50
+>>> muprior = stats.norm(loc=m, scale=sqrt(s**2))
 
 #Prior mu ~ N(m, s)
 >>> m = 80
 >>> s = 4
-
-# Initialize the prior distributions.
->>> muprior = stats.norm(loc=m, scale=sqrt(s**2))
 >>> sig2prior = stats.invgamma(alpha, scale=beta)
 \end{lstlisting}
 

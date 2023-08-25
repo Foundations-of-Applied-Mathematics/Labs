@@ -274,11 +274,21 @@ Selenium requires an executable \emph{driver} file for each kind of browser.
 The following examples use Google Chrome, but Selenium supports Firefox, Internet Explorer, Safari, Opera, and PhantomJS (a special browser without a user interface).
 See \url{https://seleniumhq.github.io/selenium/docs/api/py} or \url{http://selenium-python.readthedocs.io/installation.html} for installation instructions and driver download instructions.
 
+If you are using WSL and Windows, type these this into your Ubuntu terminal:
+\begin{lstlisting}
+wget dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo apt install -y ./google-chrome-stable_current_amd64.deb
+\end{lstlisting}
+
 If your program still can't find the driver after you've downloaded it, add the argument \li{executable_path  = "path/to/driver/file"} when you call \li{webdriver}.
 If this doesn't work, you may need to add the location to your system PATH.
+
 On a Mac, open the file \li{/etc/path} and add the new location.
+
 On Linux, add \li{export PATH="path/to/driver/file:\$PATH"} to the file \li{/.bashrc} .
-For Windows, follow a tutorial such as this one: \url{https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/}.
+
+On non-WSL Windows, follow a tutorial such as this one: \url{https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/}.
+
 \end{info}
 
 To use Selenium, start up a browser using one of the drivers in \li{selenium.webdriver}.
@@ -317,23 +327,25 @@ Selenium can deliver the HTML page source to BeautifulSoup, but it also has its 
     Method & Returns \\ \hline
     % \li{get()} & Go to a specified web page. \\
     % \li{close()} & Close the browser. \\
-    \li{find_element_by_tag_name()} & The first tag with the given name \\
-    \li{find_element_by_name()} & The first tag with the specified \li{<<name>>} attribute \\
-    \li{find_element_by_class_name()} & The first tag with the given \li{<<class>>} attribute \\
-    \li{find_element_by_id()} & The first tag with the given \li{<<id>>} attribute \\
-    \li{find_element_by_link_text()} & The first tag with a matching \li{<<href>>} attribute \\
-    \li{find_element_by_partial_link_text()} & The first tag with a partially matching \li{<<href>>} attribute \\
+    \li{find_element('css', 'tag\_name\_here')} & The first tag with the given name \\
+    \li{find_element('name', 'tag\_name\_here')} & The first tag with the specified \li{<<name>>} attribute \\
+    \li{find_element('class name', 'tag\_name\_here')} & The first tag with the given \li{<<class>>} attribute \\
+    \li{find_element('id', 'tag\_name\_here')} & The first tag with the given \li{<<id>>} attribute \\
+    \li{find_element('link text', 'tag\_name\_here')} & The first tag with a matching \li{<<href>>} attribute \\
+    \li{find_element('partial link text',  'tag\_name\_here')} & The first tag with a partially matching \li{<<href>>} attribute \\
 \end{tabular}
-\caption{Methods of the \li{selenium.webdriver.Chrome} class.}
+\caption{The method of the \li{selenium.webdriver.Chrome} class.}
 \label{table:selenium-chrome-driver}
 \end{table}
+Note other documentation uses a format like \li{find_element(By.TAG_NAME, 'tag\_name\_here')}. To use that format, make sure to use an import statement like  \li{from selenium.webdriver.common.by import By}.
 
-Each of the \li{find_element_by_*()} methods returns a single object representing a \emph{web element} (of type \li{selenium.webdriver.remote.webelement.WebElement}), much like a BeautifulSoup tag (of type \li{bs4.element.Tag}).
+The \li{find_element()} method returns a single object representing a \emph{web element} (of type \li{selenium.webdriver.remote.webelement.WebElement}), much like a BeautifulSoup tag (of type \li{bs4.element.Tag}).
 If no such element can be found, a Selenium \li{NoSuchElementException} is raised.
-If you want to find more than just the first matching object, each webdriver also has several \li{find_elements_by_*()} methods (element\textbf{s}, plural) that return a list of all matching elements, or an empty list if there are no matches.
+If you want to find \emph{all} the matching object, each webdriver also has a \li{find_elements()} method (element\textbf{s}, plural) that return a list of all matching elements, or an empty list if there are no matches.
 
 Web element objects have methods that allow the program to interact with them: \li{click()} sends a click, \li{send_keys()} enters in text, and \li{clear()} deletes existing text.
 This functionality makes it possible for Selenium to interact with a website in the same way that a human would.
+
 For example, the following code opens up \li{https://www.google.com}, types ``Python Selenium Docs'' into the search bar, and hits enter.
 
 \begin{lstlisting}
@@ -345,7 +357,7 @@ For example, the following code opens up \li{https://www.google.com}, types ``Py
 ...     browser.get("https://www.google.com")
 ...     try:
 ...         # Get the search bar, type in some text, and press Enter.
-...         search_bar = browser.find_element_by_name('q')
+...         search_bar = browser.find_element('name', 'q')
 ...         search_bar.clear()                  # Clear any pre-set text.
 ...         search_bar.send_keys("Python Selenium Docs")
 ...         search_bar.send_keys(Keys.RETURN)   # Press Enter.
@@ -375,16 +387,16 @@ Notice that there is now a tag containing \li{"Chicago"}.
 
 \begin{problem} %Problem 3
 
-The website IMDB contains a variety of information on movies.
-Specifically, information on the top 10 box office movies of the week can be found at \url{https://www.imdb.com/chart/boxoffice}.
+The Internet Archive Wayback Machine archives sites so users can find the history of websites they visit and IMDB contains a variety of information on movies. Information on the top 10 box office movies of the weekend of February 21 - 23, 2020 can be found at \url{https://web.archive.org/web/20200226124504/https://www.imdb.com/chart/boxoffice/?ref_=nv_ch_cht}.
+
 Using BeaufiulSoup, Selenium, or both, return a list, with each title on a new row, of the top 10 movies of the week and order the list according to the total grossing of the movies, from most money to the least. Break ties using the weekend gross, from most money to the least.
 \end{problem}
 
 
 \section*{Using CSS Selectors}%=====================
 
-In addition to the methods listed in Table \ref{table:selenium-chrome-driver}, you can also use CSS or XPath selectors to interact more precisely with the page source.
-Refer to Table $3$ from the WebScraping lab for a review of CSS syntax.
+In addition to the methods listed in Table \ref{table:selenium-chrome-driver}, you can also use CSS or XPath selectors to interact more precisely with the page source. Refer to the CSS symbols for use with Selenium Table from the WebScraping lab or \url{https://www.w3schools.com/cssref/css_selectors.php} for a review of CSS syntax.
+
 The following code searches Google for ``Python Selenium Docs'' and then clicks on the second result.
 
 \begin{lstlisting}
@@ -393,13 +405,14 @@ The following code searches Google for ``Python Selenium Docs'' and then clicks 
 
 >>> from selenium.webdriver.common.keys import Keys
 >>> from selenium.common.exceptions import NoSuchElementException
+>>> from selenium.webdriver.common.by import By
 
 >>> browser = webdriver.Chrome()
 >>> try:
 ...		browser.get("https://google.com")
 ...		try:
-...			search_bar = browser.find_element_by_css_selector(
-							"input[name='q']")
+...			search_bar = browser.find_element(By.CSS_SELECTOR,
+...					 "input[name='q']")
 ...			search_bar.clear()
 ...			search_bar.send_keys("Python Selenium Docs")
 ...			search_bar.send_keys(Keys.RETURN)
@@ -407,15 +420,14 @@ The following code searches Google for ``Python Selenium Docs'' and then clicks 
 ...				# Wait a second, then get the second search result
 ...				time.sleep(1)
 ...				# "+ div" returns the element's  next sibling with a "div" tag
-...				second_result = browser.find_element_by_css_selector(
-								"div[class='g'] + div")
+...				second_result = browser.find_element(By.CSS_SELECTOR,
+...						 "div[class='g'] + div")
 ...				try:
 ...					# Get the link, which is a child of second_result
-...					link = second_result.find_element_by_css_selector(
-							"div[class='r']")
+...					link = second_result.find_element(By.CSS_SELECTOR, 
+...						"div[class='r']")
 ...					link.click()
 ...					time.sleep(1)
-
 ...				#Remember to handle exceptions
 ...				except NoSuchElementException:
 ...					print("Could not find link")
@@ -424,11 +436,11 @@ The following code searches Google for ``Python Selenium Docs'' and then clicks 
 ...		except NoSuchElementException:
 ...			print("Could not find the search bar")
 ...	finally:
-...		browser.close()
+...		browser.close() #browser.quit() would also work
 
 \end{lstlisting}
 
-In the above example, we could have used \li{find_element_by_class_name()}, but when you need more precision than that, CSS selectors can be very useful.
+In the above code, we could have used \li{find_element("class name", "div[class='r']")}, but when you need more precision than that, CSS selectors can be very useful.
 Remember that to view specific HTML associated with an object in Chrome or Firefox, you can right click on the object and click ``Inspect.''
 For Safari, you need to first enable ``Show Develop menu'' in ``Preferences'' under ``Advanced.''
 Keep in mind that you can also search through the source code (ctrl+f or cmd+f) to make sure you're using a unique identifier.
@@ -464,22 +476,77 @@ If the websites do not load properly, consider a \li{try-except} clause like the
 \end{problem}
 \end{comment}
 
-\begin{problem}
+\begin{problem} %Problem 4
 \emph{Project Euler} (\url{https://projecteuler.net}) is a collection of mathematical computing problems.
 Each problem is listed with an ID, a description/title, and the number of users that have solved the problem.
 
-Using Selenium, BeautifulSoup, or both, record the number of people who have solved each of the 700+ problems in the archive at https://projecteuler.net/archives.
+Using Selenium, BeautifulSoup, or both, record the number of people who have solved each of the 700+ problems in the archive at \url{https://projecteuler.net/archives}.
 Plot the number of people who have solved each problem against the problem IDs, using a log scale for the y-axis.
 Display the scatter plot, then state the IDs of which problems have been solved most and least number of times.
 %\\(Hint: start by identifying the URLs to each archive page.)
 \end{problem}
 
 
+
 \begin{problem} %Dynamic scraping problem
-The website \url{http://example.webscraping.com} contains a list of countries of the world.
-Using Selenium, go to the search page, enter the letters \li{"ca"}, and hit \li{enter}.
-Remember to use the crawl delay time you found in Problem \ref{problem:robots-file} so you don't send your requests too fast.
-Gather the \li{href} links associated with the \li{<a>} tags of all 10 displayed results.
-Print each link on a different line.
+The website \url{http://watir.com/examples/simple_form.html} contains an example form you can fill out.
+Using Selenium fill out the form for this example person:
+\begin{lstlisting}
+First name: Elizabeth
+Last name: Bennet
+Email: elizabeth.bennet@pemberleymail.com
+Interests: Dancing, Books
+Want to recieve newsletter: Yes
+\end{lstlisting}
+Remember to use a crawl delay of at least 5 seconds so you don't send your requests too fast.
+Print out the Response text that filling out the form provides.
 \end{problem}
 
+%todo this problem works only because the site is an example site. Real sites use shadow DOMs. A shadow DOM provides a way to scope CSS styles to a specific DOM subtree and isolate that subtree from the rest of the document, and makes web crawling hard. archive.org is a great web crawling website, but it's hard to crawl.
+
+%here is some example code from an example website. 
+\begin{comment}
+#Example code to put in the pdf from https://www.youtube.com/watch?v=OhGY_ZNBsu0
+def get_text_from_shadow_root():
+    url = 'http://watir.com/examples/shadow_dom.html'
+    browser = webdriver.Chrome()
+    try:
+        #open website
+        browser.get(url)
+        time.sleep(10)
+
+        #create locator for where the shadow root starts
+        root_of_shadow = browser.find_element(By.CSS_SELECTOR, '[id="shadow_host"]').shadow_root
+
+        #find an element under the shadow root
+        shadow_text = root_of_shadow.find_element(By.CSS_SELECTOR, '[id="shadow_content"]').text
+         
+    finally:
+        browser.close()
+        
+    return shadow_text
+
+print(get_text_from_shadow_root())
+
+def get_text_from_nested_shadow_root():
+    url = 'http://watir.com/examples/shadow_dom.html'
+    driver = webdriver.Chrome()
+    try:
+        #open website
+        driver.get(url)
+
+        #wait time
+        time.sleep(10)
+
+        #create locator for where the shadow root starts
+        shadow_root_1 = driver.find_element(By.CSS_SELECTOR, '[id="shadow_host"]').shadow_root
+        shadow_root_2 = shadow_root_1.find_element(By.CSS_SELECTOR, '[id="nested_shadow_host"]').shadow_root
+        nested_shadow_text = shadow_root_2.find_element(By.CSS_SELECTOR, '[id="nested_shadow_content"]').text
+    
+    finally:
+        driver.close()
+    return nested_shadow_text
+
+print(get_text_from_nested_shadow_root())
+
+\end{comment}

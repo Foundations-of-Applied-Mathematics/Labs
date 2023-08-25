@@ -47,15 +47,15 @@ For example, differentiation and integration are inverse problems.
 The easier problem (in this case integration) is often called the direct problem.
 Historically, the direct problem is usually studied first.
 
-Given a physical system, together with initial data (the ``cause"), the direct problem will usually predict the future state of the physical system (the ``effect"); see Figure \ref{fig:cause_and_effect}.
-Inverse problems often turn this on its head - given the current state of a physical system at time $T$, what was the physical state at time $t = 0$?  
+Given a physical system, together with initial data (the ``cause''), the direct problem will usually predict the future state of the physical system (the ``effect''); see Figure \ref{fig:cause_and_effect}.
+Inverse problems often turn this on its head--given the current state of a physical system at time $T$, what was the physical state at time $t = 0$?  
 
 Alternatively, suppose we measure the current state of the system, and we then measure the state at some future time.
 An important inverse problem is to determine an appropriate mathematical model that can describe the evolution of the system.
 
 \begin{figure}
 \centering
-\includegraphics[width=\textwidth]{cause_and_effect.pdf}
+\includegraphics[width=\textwidth]{figures/cause_and_effect.pdf}
 \caption{Cause and effect within a given physical system.}
 \label{fig:cause_and_effect}
 \end{figure}
@@ -70,14 +70,14 @@ Consider the following ordinary differential equation, together with natural bou
 \end{align}
 This BVP can, for example, be used to describe the flow of heat through a rod.
 The boundary conditions would correspond to specifying the heat flux through the ends of the rod.
-The function $f(x)$ would then represent external heat sources along the rod, and $a(x)$ the density of the rod at each point. 
+The function $f(x)$ would then represent external heat sources along the rod, and $a(x)$ the thermal conductivity of the rod at each point. 
 
-Typically, the density $a(x)$ would be specified, along with any heat sources $f(x)$, and the (direct) problem is to solve for the steady-state heat distribution $u(x)$.
+Typically, the thermal conductivity $a(x)$ would be specified, along with any heat sources $f(x)$, and the (direct) problem is to solve for the steady-state heat distribution $u(x)$.
 Here we shake things up a bit: suppose the heat sources $f$ are given, and we can measure the heat distribution $u(x)$.
-Can we find the density of the rod?
+Can we find the thermal conductivity of the rod?
 This is an example of a \textit{parameter estimation problem}.
 
-Let us consider a numerical method for solving \eqref{inverse_problems:heat_flow} for the density $a(x)$.
+Let us consider a numerical method for solving \eqref{inverse_problems:heat_flow} for the thermal conductivity $a(x)$.
 Subdivide $[0,1]$ into $N$ equal subintervals, and let $x_j = jh$, $j = 0, \ldots,N$, where $h = 1/N$.
 Let $\phi_j(x)$ be the tent functions (used earlier in the finite element lab), given by 
 \begin{align*}
@@ -107,65 +107,24 @@ Thus for each $x_j$
 	u'(x_j) &= \frac{c_0 - \int_0^{x_j} f(s)\, ds}{a(x_j)},\\
 	&= \frac{c_0 - \int_0^{x_j} f(s)\, ds}{\alpha_j}.
 \end{align*}
-The coefficients $\alpha_j$ in \eqref{inverse_problems:approximate} can now be approximated by minimizing 
-\begin{align*}
-	\left( \frac{c_0 - \int_0^{x_j} f(s)\, ds}{\alpha_j} - u'(x_j)  \right)^2.
-\end{align*}
-%For $c_0 = 3/8,$ $c_1 = 5/4$, $u(x) = x^2 + x/2 + 5/16$, and 
-%\begin{align*}
-%	f &= \begin{cases}
-%		-6x^2 + 3x - 1 & x \leq 1/2,\\
-%		-1 & 1/2 < x \leq 1,
-%	\end{cases}
-%\end{align*}
-%we partially implement this method with the following code:
-%
-%\begin{lstlisting}
-%import numpy as np
-%from scipy.optimize import minimize
-%import matplotlib.pyplot as plt
-%
-%def f(x):
-%	out = -np.ones(x.shape)
-%	m = np.where(x<.5)
-%	out[m] = -6*x[m]**2. + 3.*x[m] - 1.
-%	return out
-%
-%def u(x):
-%	return (x+1./4)**2. + 1./4
-%
-%def integral_of_f(x):
-%	# out =  \int_0^x f(s) ds
-%	return out
-%
-%def derivative_of_u(x):
-%	# out = u'(x)
-%	return out
-%
-%x = np.linspace(0,1,11)
-%F, u_p = integral_of_f(x), derivative_of_u(x)
-%
-%def sum_of_squares(alpha):
-%	pass
-%
-%guess = (1./4)*(3-x)
-%sol = minimize(sum_of_squares,guess)
-%
-%plt.plot(x,sol.x,'-ob',linewidth=2)
-%plt.show()
-%\end{lstlisting}
+The coefficients $\alpha_j$ in \eqref{inverse_problems:approximate} can now be approximated as $\alpha^*_j$ by minimizing 
+\begin{align}
+	\alpha^*_j = \arg\min_{\alpha_j}\left\{\left( \frac{c_0 - \int_0^{x_j} f(s)\, ds}{\alpha_j} - u'(x_j)  \right)^2\right\}.
+\label{eqn:inverse:min_alpha}
+\end{align}
 
-\begin{figure}
+
+\begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{density_a.pdf}
+\includegraphics[width=\textwidth]{figures/density_a.pdf}
 \caption{The solution $a(x)$ to Problem \ref{prob:inverse}}
 \label{fig:inverse_problems:num1}
 \end{figure}
 
 \begin{problem}
-Solve \eqref{inverse_problems:heat_flow} for $a(x)$ using the following conditions:
+Use \eqref{eqn:inverse:min_alpha} to solve \eqref{inverse_problems:heat_flow} for $a(x)$ using the following conditions:
 
-\noindent $c_0 = 3/8,$ $c_1 = 5/4$, $u(x) = x^2 + x/2 + 5/16$, $x_j=.1j$ for $j=0,1,\dots,10$, and 
+\noindent $c_0 = 3/8,$ $c_1 = 5/4$, $u(x) = x^2 + x/2 + 5/16$, $x_j=0.1j$ for $j=0,1,\dots,10$, and 
 \begin{align*}
 	f &= \begin{cases}
 		-6x^2 + 3x - 1 & x \leq 1/2,\\
@@ -175,11 +134,12 @@ Solve \eqref{inverse_problems:heat_flow} for $a(x)$ using the following conditio
 Produce the plot shown in Figure \ref{fig:inverse_problems:num1}.
 
 Hint: use the \li{minimize} function in \li{scipy.optimize} and some initial guess to find the $a_j$.
+ Alternatively, notice that \ref{inverse_problems:heat_flow} is simple enough that it can be solved explicitly for $a$.
 \label{prob:inverse}
 \end{problem}
 
 \begin{problem}
-	Find the density function $a(x)$ satisfying 
+	Find the thermal conductivity function $a(x)$ satisfying 
 	\begin{align}
 	\begin{cases}
 		-(au')' = -1, & x \in (0,1),\\
@@ -187,12 +147,104 @@ Hint: use the \li{minimize} function in \li{scipy.optimize} and some initial gue
 	\end{cases} \label{inverse_problems:ill_posed}
 	\end{align}
 	where $u(x) = x + 1 + \epsilon \sin(\epsilon^{-2}x)$. 
-Using several values of $\epsilon  > 0.66049142$, plot the corresponding density $a(x)$ for $x$ in \li{np.linspace(0,1,11)} to demonstrate that the problem is ill-posed.
+Using several values of $\epsilon  > 0.66049142$, plot the corresponding thermal conductivity $a(x)$ for $x$ in \li{np.linspace(0,1,11)} to demonstrate that the problem is ill-posed, as in Figure \ref{fig:inverse_problems:exercise1}.
+Be sure to add a legend to your plot.
 \end{problem}
 
-\begin{figure}
+\begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{ill_posed_density_a.pdf}
-\caption{The density function $a(x)$ satisfying \eqref{inverse_problems:ill_posed} for $\epsilon = .8$.}
+\includegraphics[width=\textwidth]{figures/ill_posed_density_a.pdf}
+\caption{The thermal conductivity function $a(x)$ satisfying \eqref{inverse_problems:ill_posed} for $\epsilon = 0.8$.}
 \label{fig:inverse_problems:exercise1}
+\end{figure}
+
+\section*{Time-Dependent Inverse Problems}
+We can also expand our use of inverse problems from time-independent PDE's to time-dependent variables. In this section of the lab, we will do it with the nonlinear time-independent diffusion equation. We will also introduce noise to the measurements, making this much more realistic.
+
+\subsection*{Time-Dependent Heat Diffusion Update}
+The nonlinear time-dependent diffusion equation is
+\begin{align}
+\begin{split}
+\frac{\partial}{\partial t}u(x,t) &= \frac{\partial}{\partial x}\left(\nu(x)\frac{\partial u(x,t)}{\partial x}\right)\\
+&= \left(\frac{\partial\nu(x)}{\partial x}\right)\left(\frac{\partial u(x,t)}{\partial x}\right)+\nu(x)\left(\frac{\partial^2 u(x,t)}{\partial x^2}\right).
+\end{split}
+\label{eqn:inverse:nonlinear_diffusion}
+\end{align}
+
+Note that this form of the diffusion equation is slightly more general than the one in the heat diffusion lab, since the diffusion coefficient $\nu$ is not a constant. 
+
+If our spatial grid is indexed by $j\in\{0,...,J+1\}$ with step $h$, and our time grid is indexed by $m\in\{0,...,M+1\}$ with step $k$, then the time derivative can be approximated as
+\begin{align*}
+	u_t(x,t) = \frac{u(x,t+k) - u(x,t)}{k} + \mathcal{O}(k).
+\end{align*}
+and the second-order centered difference approximation for the second spatial derivative is
+\begin{align*}
+	u_{xx}(x_j,t_m) &= \frac{u(x_j + h,t_m )-2 u(x_j,t_m)- u(x_j - h,t_m)}{h^2} + \mathcal{O}(h^2).
+\end{align*}
+Use a second-order centered difference approximation for the first spatial derivatives (of $U$ and $\nu$) are
+\begin{align*}
+	u_x(x,t) = \frac{u(x_j+h,t) - u(x_j-h,t)}{2h} + \mathcal{O}(k)\\
+	\nu_x(x,t) = \frac{\nu(x_j+h,t) - \nu(x_j-h,t)}{2h} + \mathcal{O}(k)
+\end{align*}
+The update iteration scheme then becomes
+
+\begin{align}
+U_{j}^{m+1} &= U_{j}^{m} + \frac{ k}{h^2} \left[ \nu_j^m(U_{j+1}^{m}- 2U_{j}^{m} + U_{j-1}^{m} ) + \left(\frac{(\nu^m_{j+1}-\nu^m_{j-1})(u^m_{j+1}-u^m_{j-1})}{4}\right)\right].
+\label{eqn:inverse:diffusion_update}
+\end{align}
+Note that this update equation is the same as the one in the Heat Diffusion Lab, but with an added last term.
+
+\subsection*{Inverse Problems with Noise}
+
+Define a $\vec{\nu^*}^{\,}$ as
+
+\begin{align}
+\vec{\nu^*}^{\,} = \arg\min_{\vec{\nu}^{\,}}\sum_{j=0}^{J}\sum_{m=0}^{M}[u(x_j,t_m,\vec{\nu}^{\,}) - \hat u(x_j,t_m)]^2
+\label{eqn:inverse:J_min}
+\end{align}
+where $\vec{\nu}^{\,}$ is a vector of $\nu_j$ (the heat diffusion coefficient) for each grid point.
+The variable $\hat u$ is the measured heat at a location $x_j$ and time $t_m$. Note that since $\hat u(x,t)$ is a measurement of a true heat distribution $u^*(x,t)$, it is subject to noise.
+We seek to choose a set of parameters $\vec{\nu}^{\,}$ such that the right-hand side of Equation \eqref{eqn:inverse:J_min} is minimized.
+Note that this is a least squares problem (like Problem \ref{prob:inverse}), but the solution is not trivial since each $\nu_j$ is constant in time, and multiple noisy measurements are taken at the same point $x_j$ at different times $t_m$.
+
+To solve this problem, we will choose a guess for our initial heat diffusion coefficient, solve for the heat flow using our guess, and then using a minimization method (such as BFGS), we will update our vector of parameters, $\vec{\nu}^{\,}$. Here is some code to help get you started
+
+\begin{lstlisting}
+U_measured = np.load('measured_heat.npy') # This is a JxM matrix of measured data with noise
+
+def J_min(nu, U_measured):
+
+    # loop forward in time to solve for U with the specified nu vector using equation 8
+
+    return # result of equation 9
+
+# This is a good guess. There are other ones that will work fine too.
+guess = np.ones(len(U_measured[0]))*2
+
+sol = minimize(J_min,guess, args=(U_measured), method='BFGS')
+nu = sol.x
+
+\end{lstlisting}
+
+\begin{problem}
+The file \li{measured_heat.npy} contains measurements of the temperature along an insulated rod over time, with the first row corresponding to the initial state of the heat distribution in the rod. Use this first row as the initial state of the heat distribution when solving for $U$ with a given vector $\nu$. 
+The rod has a varying diffusion coefficient $\nu(x)$. Use Equations \eqref{eqn:inverse:diffusion_update} and \eqref{eqn:inverse:J_min}, along with the code provided above, to find a good estimate of $\nu$.
+Plot your estimated $\nu$ along with the true $\nu$, which is given by
+\begin{align*}
+\nu(x) = \frac{5}{1+e^{-x}}+\frac{1}{2}.
+\end{align*}
+Compare with Figure \ref{fig:inverse_problems:find_nu}.
+Be sure to add a legend to your plot.
+Notice that the model does worse at the endpoints.
+This is partially because the endpoints in the PDE are fixed at zero with Dirichlet conditions, so the value of $\nu$ at the endpoints has little little effect on the evolution of the PDE.
+
+Hint: use array broadcasting when possible.
+\label{inverse_problems:varying_nu}
+\end{problem}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/spatially_dependent_nu.pdf}
+\caption{Solution to Problem \ref{inverse_problems:varying_nu}}
+\label{fig:inverse_problems:find_nu}
 \end{figure}

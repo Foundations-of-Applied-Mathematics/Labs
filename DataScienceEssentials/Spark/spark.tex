@@ -14,35 +14,40 @@ On top of the main computing framework, Spark provides machine learning, SQL, gr
 
 Spark's Python API can be accessed through the PySpark package.
 You must install Spark, along with the supporting tools like Java, on your local machine for PySpark to work. 
-This will include ensuring that both Java and Spark are included in the environment variable \li{PATH}.
-\footnote{See \href{https://spark.apache.org/docs/latest/}{the Apache Spark configuration instructions} for detailed installation instructions}
-Installation of PySpark for local execution or remote connection to an existing cluster can be done with \li{conda} or \li{pip} commands.\footnote{You may also use the script provided with the spec file that will completely install Spark and its requirements. Note however that this script is provided AS IS and is not the recommended method.}
-
-% TODO: Add JAVA JDK dependency
+This will include ensuring that both Java and Spark are included in the environment variable \li{PATH}.\footnote{See \href{https://spark.apache.org/docs/latest/}{the Apache Spark configuration instructions} for detailed installation instructions}
+Installation of PySpark for local execution or remote connection to an existing cluster can be accomplished by running
 \begin{lstlisting}
-# install Java
-$ sudo apt-get install openjdk-8-jdk
-# check the version, it may not be exactly the same
-$ java -version
-openjdk version "1.8.0_242"
-OpenJDK Runtime Environment (build 1.8.0_242-b09)
-OpenJDK 64-Bit Server VM (build 25.242-b09, mixed mode)
-
-# Install Spark by following instructions in the footnote
-# Following these steps, you must configure your PATH environment variable
-
-# CHOOSE ONE
-# PySpark installation with conda
-$ conda install -c conda-forge pyspark
-
-# PySpark installation with pip
-$ pip install pyspark
+$ pip install pyspark <= 3.4.1
 \end{lstlisting}
 
+To install Java on WSL or another Linux system, run the following commands in the terminal:
+\begin{lstlisting}
+$ sudo apt-get install openjdk-8-jdk 
+\end{lstlisting}
 
-If you use \li{python3} in your terminal, you will need to set the \li{PYSPARK\_PYTHON} environment variable to \li{python3}.
-When using an IDE, you must call it from the terminal or set the variables inside the editor so that PySpark can be found.
+For Mac M1 users, installing Java will be a little trickier.\footnote{Full instructions can be found at \href{https://dev.to/shane/configure-m1-mac-to-use-jdk8-with-maven-4b4g}{https://dev.to/shane/configure-m1-mac-to-use-jdk8-with-maven-4b4g}}
+With Homebrew installed, you'll need to install Maven by running 
+\begin{lstlisting}
+$ brew install maven 
+\end{lstlisting}
+You will then navigate to \textcolor{red}{\href{https://www.azul.com/downloads/?version=java-8-lts&os=macos&architecture=arm-64-bit&package=jdk}{this link}} to download the JDK 8 .dmg file.
+Enter the following details if the link doesn't automatically populate them for you:
+\begin{lstlisting}
+Java Version - Java 8 (LTS)
+Operating System - macOS
+Architecture - ARM 64-bit
+Java Package - JDK
+\end{lstlisting}
+Then install the .dmg file.
+Now, add the \li{JAVA\_Home} environment variable to the \li{\~/.zshrc} file (with vim or some other file editor) by adding the following line to the file:
+\begin{lstlisting}
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home/jre
+\end{lstlisting}
+Restart your terminal, and you should be all set.
+If this process takes longer than a few minutes, you should stop and finish this lab on one of the lab machines.
 
+% If you use \li{python3} in your terminal, you will need to set the \li{PYSPARK\_PYTHON} environment variable to \li{python3}.
+% When using an IDE, you must call it from the terminal or set the variables inside the editor so that PySpark can be found.
 
 \section*{PySpark} % ==========================================================
 One major benefit of using PySpark is the ability to run it in an interactive environment. 
@@ -258,7 +263,10 @@ Note that you must use \li{.collect()} to extract data from an RDD. Using \li{.c
 \begin{problem}
 Write a function that accepts the name of a text file with default \li{filename=huck\_finn.txt}.\footnote{https://www.gutenberg.org/files/76/76-0.txt}
 Load the file as a PySpark RDD, and count the number of occurrences of each word.
-Sort the words by count, in descending order, and return a list of the \li{(word, count)} pairs for the 20 most used words. The data does not need to be cleaned.
+Sort the words by count, in descending order, and return a list of the \li{(word, count)} pairs for the 20 most used words. 
+The data does not need to be cleaned.
+
+\noindent Hint: to ensure that your function doesn't consider an empty string \li{""} to be a word, make sure to split each line with \li{.split()} instead of on a space with \li{.split(' ')}.
 \label{prob:spark-rdd-hello-world}
 \end{problem}
 

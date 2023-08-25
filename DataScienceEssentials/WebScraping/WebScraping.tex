@@ -1,7 +1,8 @@
 \lab{Web Scraping}{Web Scraping}
 \objective{Web Scraping is the process of gathering data from websites on the internet.
 Since almost everything rendered by an internet browser as a web page uses HTML, the first step in web scraping is being able to extract information from HTML.
-In this lab, we introduce the requests library for scraping web pages, and BeautifulSoup, Python's canonical tool for efficiently and cleanly navigating and parsing HTML.}
+In this lab, we introduce the requests library for scraping web pages, BeautifulSoup: Python's canonical tool for efficiently and cleanly navigating and parsing HTML, 
+and how to use Pandas to extract data from HTML tables.}
 
 \section*{HTTP and Requests} % =============================================================
 
@@ -36,6 +37,22 @@ If the response code is good, typically \li{200}\footnote{See \url{https://en.wi
 # ...
 \end{lstlisting}
 
+\begin{table}[H]
+\centering
+\begin{tabular}{c|l}
+Attribute & Description \\ \hline
+\li{text} & Content of the response, in unicode \\
+\li{content} & Content of the response, in bytes \\
+\li{encoding} & Encoding used to decode response.content \\
+\li{raw} & Raw socket response, which allows applications to send and obtain packets of information  \\
+\li{status\_code} & Numeric code that shows how the action was successful \\
+\li{ok} &Boolean that is \li{True} if the  \li{status\_code} is less than 400, or \li{False} if not \\
+\li{reason} &Text corresponding to the status code \\
+\end{tabular}
+\caption{Different content attributes of the request class.}
+\label{table:request-class-attributes}
+\end{table}
+
 Note that some websites aren't built to handle large amounts of traffic or many repeated requests.
 Most are built to identify web scrapers or crawlers that initiate many consecutive GET requests without pauses, and retaliate or block them.
 When web scraping, always make sure to store the data that you receive in a file and include error checks to prevent retrieving the same data unnecessarily.
@@ -43,9 +60,12 @@ We won't spend much time on that in this lab, but it's especially important in l
 
 \begin{problem}
 Use the \li{requests} library to get the HTML source for the website \url{http://www.example.com}.
-Save the source as a file called example.html.
+Save the source as a file called \li{"example.html"}. 
 If the file already exists, make sure not to scrape the website or overwrite the file.
 You will use this file later in the lab.
+
+Hint: When writing responses to file you need to use the use the \li{open()} function with the appropriate file write mode ((either \li{mode="w"} for plain write mode, or \li{mode="wb"} for binary write mode). Python interpreters will write the example file the same way whether you use \li{response.text} or \li{response.content}.
+
 \label{prob:get-example.com}
 \end{problem}
 
@@ -127,7 +147,7 @@ If you are using Safari, you may first need to enable ``Show Develop menu'' in `
 \section*{BeautifulSoup} % ====================================================
 
 BeautifulSoup (\li{bs4}) is a package%
-\footnote{BeautifulSoup is not part of the standard library; install it with \li{conda install beautifulsoup4} or with \li{pip install beautifulsoup4}.} that makes it simple to navigate and extract data from HTML documents.
+\footnote{BeautifulSoup is not part of the standard library; install it with \li{pip install beautifulsoup4}.} that makes it simple to navigate and extract data from HTML documents.
 See \url{http://www.crummy.com/software/BeautifulSoup/bs4/doc/index.html} for the full documentation.
 
 The \li{bs4.BeautifulSoup} class accepts two parameters to its constructor: a string of HTML code and an HTML parser to use under the hood.
@@ -361,7 +381,7 @@ The three pigs had an odd fascination with experimental construction.
 \end{lstlisting}
 
 \begin{problem} %Problem 3
-Write a function that reads a file of the same format as the output from Problem \ref{prob:get-example.com} and loads it into BeautifulSoup.
+Write a function that reads a file of the same format as the file generated from Problem \ref{prob:get-example.com} and load it into BeautifulSoup.
 Find the first \li{<a>} tag, and return its text along with a boolean value indicating whether or not it has a hyperlink (\li{href} attribute).
 \end{problem}
 
@@ -417,8 +437,12 @@ Write a function that reads the file and loads it into BeautifulSoup.
 Return a list of the following tags:
 \begin{enumerate}
 \item The tag containing the date ``Thursday, January 1, 2015''.
-\item The tags which contain the \textbf{links} ``Previous Day'' and ``Next Day.''
-\item The tag which contains the number associated with the Actual Max Temperature.
+\item The tags which contain the \textbf{links} ``Previous Day'' and ``Next Day''. 
+
+Hint: the tags that contain the links do not explicitly have ``Previous Day" or ``Next Day," so you cannot find the tags based on a string. Instead, open the HTML file manually and look at the attributes of the tags that contain the links. Then inspect them to see if there is a better attribute with which to conduct a search.
+\item The tag which contains the number associated with the Max Actual Temperature.
+
+Hint: Manually inspect the HTML document in both a browser and in a text editor. Look for a good attribute shared by the Actual Temperatures with which you can conduct a search. Note that the Max Actual Temperature tag will not be the first tag found. Make sure you return the correct tag.
 \end{enumerate}
 \end{problem}
 
@@ -464,6 +488,7 @@ Finally, to find a tag that has a particular attribute, regardless of the actual
 >>> [tag.name for tag in pig_soup.find_all(<<id>>=False)]
 <<['html', 'head', 'title', 'body', 'p', 'b', 'p', 'p', 'p']>>
 \end{lstlisting}
+It is important to note that using Regular Expressions to locate tags  will only find tags whose name, attributes, and/or string match exactly. If searching through an HTML file with a Regular expression to find all the tags with an  \li{ 'id'} attribute with labels that you specify, it will only return the tags found with those labels, not all instances of the labels. Sometimes that is very useful in simplifying Regular Expression searches.
 
 \subsection*{Advanced Search Techniques: CSS Selectors} % ------------------------------------
 
@@ -471,7 +496,7 @@ Finally, to find a tag that has a particular attribute, regardless of the actual
 CSS (Cascading Style Sheet) describes the style and layout of a webpage, and CSS selectors provide a useful way to navigate HTML code.
 Use the method \li{soup.select()} to find all elements matching an argument.
 The general format for an argument is \li{<<tag-name[attribute-name = 'attribute value']>>}.
-The table below lists symbols you can use to more precisely locate various elements.
+The table below lists symbols you can use to more precisely locate various elements. 
 
 \begin{table}[H]
 \centering
@@ -520,17 +545,43 @@ The code below gives an example using arguments described above.
 \begin{problem} % Bank Data Index.
 The file \texttt{large\_banks\_index.html} is an index of data about large banks, as recorded by the Federal Reserve.\footnote{See \url{https://www.federalreserve.gov/releases/lbr/}.}
 Write a function that reads the file and loads the source into BeautifulSoup.
-Return a list of the tags containing the links to bank data from September 30, 2003 to December 31, 2014, where the dates are in reverse chronological order.
+Return a list of the tags containing the links to bank data from September 30, 2003 to December 31, 2014, where the dates are in reverse chronological order. 
 \label{prob:bs-bank-index}
 \end{problem}
+\subsection*{Incorporating Pandas with HTML Tables} % ------------------------------------
+The Pandas \texttt{pd.read\_html} method is a neat way to automatically read tables into DataFrames. It works similarly to \li{BeautifulSoup}, but is streamlined to only scrape all the tables from HTML pages.
+\begin{lstlisting}
+>>> import pandas as pd
+#Read in "file.html"
+>>> tables = pd.read_html('file.html')
+# Choose the correct table that pd.read_html found as a DataFrame
+>>> df = tables[0]  
+# The DataFrame is now like any other Pandas DataFrame that needs a bit of data cleaning
+>>> df["column_1"] 
+0       0
+1       2
+2       .
+3       6
+4       8
+       .. 
+15     30
+16     32
+17     .
+18     .
+19     38
+
+\end{lstlisting}
+Like any other DataFrame table, if there are non-numerical values in a column, the column type will default to strings, so make sure when sorting values by number, set the column data type to numeric with \texttt{pd.to\_numeric}. 
+
+For more help with \texttt{pd.read\_html} see \url{https://pandas.pydata.org/docs/reference/api/pandas.read_html.html}.
 
 \begin{problem} % Actual Bank Data.
 The file \texttt{large\_banks\_data.html} is one of the pages from the index in Problem \ref{prob:bs-bank-index}.\footnote{See \url{http://www.federalreserve.gov/releases/lbr/20030930/default.htm}.}
-Write a function that reads the file and loads the source into BeautifulSoup.
+Read the specified file and load it into Pandas.
+
 Create a single figure with two subplots:
 \begin{enumerate}
     \item A sorted bar chart of the seven banks with the most domestic branches.
     \item A sorted bar chart of the seven banks with the most foreign branches.
 \end{enumerate}
-In the case of a tie, sort the banks alphabetically by name.
 \end{problem}

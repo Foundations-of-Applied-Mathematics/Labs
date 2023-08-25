@@ -21,7 +21,7 @@ if [ "$#" -ne 0 ]; then
 fi
 
 # Check that latexmk is installed.
-command -v latexmk &> /dev/null || { echo "'latexmk' not found!"; exit 1; }
+# command -v latexmk &> /dev/null || { echo "'latexmk' not found!"; exit 1; }
 
 # Create a directory to deposit the labs in.
 if [ ! -e "${OUTDIR}" ]; then

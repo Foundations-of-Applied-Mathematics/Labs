@@ -115,17 +115,17 @@ Thus, a naive choice for our model is an ARMA($2,1)$ model.
 
 \begin{problem}
 Write a function \li{arma_forecast_naive()} that builds an ARMA(p,q) model. 
-Your function should accept as parameters $p$, $q$, and $n$, where $p$ is the order of the autoregressive model, $q$ is the order of the moving average model, and $n$ is the number of observations to predict.
+Your function should accept as parameters \li{p}, \li{q}, and \li{n}, where \li{p} is the order of the autoregressive model, \li{q} is the order of the moving average model, and \li{n} is the number of observations to predict.
 Assume \li{c}$ = 0$, and let $\phi_i=.5$, $\theta_i=.1$, and $\epsilon_i\sim\mathscr{N}(0,1)$ for all $i$.
 
-Use your function to predict the next $n$ values of the time series found in \li{weather.npy}.
+Use your function to predict the next \li{n} values of the time series found in \li{weather.npy}.
 This file contains data on the temperature in Provo, Utah from 7:56 PM May 13, 2019 to 6:56 PM May 16, 2019, taken every hour.
 This time series is NOT covariance stationary, so to make it covariance stationary, take its first difference (Hint: you might find \li{np.diff()} helpful).
 We denote the new covariance stationary time series as $\{z_t\}_{t=1}^T$.
-Predict the next $n$ observations by iterating through equation \ref{eq:arima:def}.
+Predict the next \li{n} observations by iterating through Equation \ref{eq:arima:def}.
 
 Run your code on \li{weather.npy}, and plot the observed differences $\{z_t\}_{t=1}^T$ followed by your predicted observations of $z_t$.
-For $p=2$, $q=1$, and $n=20$, your plot should look similar to Figure \ref{fig:ARMA:naive}, however, due to the variance of the error $\epsilon_t$, the plot will not look exactly like Figure \ref{fig:ARMA:naive}.
+For \li{p=2}, \li{q=1}, and \li{n=20}, your plot should look similar to Figure \ref{fig:ARMA:naive}, however, due to the variance of the error $\epsilon_t$, the plot will not look exactly like Figure \ref{fig:ARMA:naive}.
 The predictions may be higher or lower on the $y$-axis.
 \label{prob:arma:naive}
 \end{problem}
@@ -137,7 +137,7 @@ Our goal is to find the $p,q$, and $\Theta$ that maximize the likelihood of the 
 Using the chain rule, we can factorize the likelihood of the model given this data as
 \begin{align}
     \label{eq:arma:factorized}
-    p(\{z_t\} | \Theta) = \prod_{t=1}^{n} p(z_t | z_{t-1}, \ldots, z_{1},
+    p(\{z_t\} \mid \Theta) = \prod_{t=1}^{n} p(z_t \mid z_{t-1}, \ldots, z_{1},
     \Theta)
 \end{align}
 
@@ -222,7 +222,7 @@ where $\hat{\textbf{x}}_{t|t-1}$ and $P_{t|t-1}$ are easily found via the Kalman
 Given that each conditional distribution is Gaussian, the likelihood can then be found as
 \begin{align}
     \label{eq:arma:likelihood}
-    p(\{z_t\} | \Theta)& = \prod_{t=1}^{n} N(z_t\mid H\hat{\textbf{x}}_{t|t-1} + \mu, HP_{t|t-1}H^T).
+    p(\{z_t\} \mid \Theta)& = \prod_{t=1}^{n} \mathscr{N}(z_t\mid H\hat{\textbf{x}}_{t|t-1} + \mu, HP_{t|t-1}H^T).
 \end{align}
 
 \begin{problem}
@@ -238,6 +238,7 @@ Calling the function \li{kalman()} on a time series will return an array whose v
 
 \noindent Hint: remember to subtract off the mean $\mu$ from the inputted observation when using \li{kalman()}.
 
+Also, when implementing Equation \ref{eq:arma:likelihood}, you may find it best to use \li{scipy.stats.distributions.norm.pdf}, but keep in mind that this method accepts standard deviations, not variances.
 When implemented correctly, your function should match the following output:
 \begin{lstlisting}
 >>> arma_likelihood(filename='weather.npy', phis=np.array([0.9]), 
@@ -265,18 +266,18 @@ by using an optimization routine such as \li{scipy.optimize.minimize} on the fun
 Use the following code to run this routine.
 
 \begin{lstlisting}
->>> from scipy.optimize import minimize
+from scipy.optimize import minimize
 
->>> # assume p, q, and time_series are defined
->>> def f(x): # x contains the phis, thetas, mu, and std
->>>     return -1*arma_likelihood(filename, phis=x[:p], thetas=x[p:p+q], 
+# assume p, q, and time_series are defined
+def f(x): # x contains the phis, thetas, mu, and std
+    return -1*arma_likelihood(filename, phis=x[:p], thetas=x[p:p+q], 
                                     mu=x[-2], std=x[-1])
->>> # create initial point
->>> x0 = np.zeros(p + q + 2)
->>> x0[-2] = time_series.mean()
->>> x0[-1] = time_series.std()
->>> sol = minimize(f,  x0, method = "SLSQP")
->>> sol = sol['x']
+# create initial point
+x0 = np.zeros(p + q + 2)
+x0[-2] = time_series.mean()
+x0[-1] = time_series.std()
+sol = minimize(f,  x0, method = "SLSQP")
+sol = sol['x']
 \end{lstlisting}
 
 This routine will return a vector \li{sol} where the first $p$ values are $\{\phi_i\}_{i=1}^p$, the next $q$ values are $\{\theta_i\}_{i=1}^q$, and the last two values are $\mu$ and $\sigma$, respectively.
@@ -290,7 +291,7 @@ The order of the model which minimizes the AIC is then the optimal model.
 \begin{problem}
 \label{prob:model-identification}
 Write a function \li{model_identification()} that accepts \li{filename} containing the time series data and parameters \li{p_max} and \li{q_max} as integers. 
-Determine which ARMA($i,j$) model has the minimum AIC for all $1\leq i \leq \text{\li{p_max}}$ and $1\leq j \leq \text{\li{q_max}}$.
+Determine which ARMA($p,q$) model has the minimum AIC for all $1\leq p \leq \text{\li{p_max}}$ and $1\leq q \leq \text{\li{q_max}}$.
 Then, return each parameter in $\Theta$ of that model.
 
 \noindent Hint: when calculating the AIC using Equation \ref{eq:AIC:formula}, bear in mind that $-\ell(\Theta)=$ \li{f(sol)} where \li{sol} is found in the code above and explained in the following paragraph.
@@ -308,7 +309,7 @@ We can use this model to predict future states.
 The Kalman filter provides a straightforward way to predict future states by giving the mean and variance of the conditional distribution of future observations.
 Observations can be found as follows
 \begin{align}
-    z_{t + k} | z_{1}, \cdots, z_{t} \sim N(z_{t+k};\; H\hat{x}_{t+k|t} + \mu,\;
+    z_{t + k} \mid z_{1}, \cdots, z_{t} \sim \mathscr{N}(z_{t+k} \mid H\hat{x}_{t+k|t} + \mu,\;
     HP_{t+k|t}H^T)
 \end{align}
 To evolve the Kalman filter, recall the predict and update rules of a Kalman filter.
@@ -332,14 +333,15 @@ Once they are computed, only the Predict step is needed to find the future means
 
 \begin{problem}
 \label{prob:arma:forecast}
-Write a function \li{arma_forecast()} that accepts \li{filename} containing a time series, the parameters for an ARMA model, and the number $n$ of observations to forecast.
-Calculate the mean and covariance of the future $n$ observations using the Kalman filter.
+Write a function \li{arma_forecast()} that accepts \li{filename} containing a time series, the parameters for an ARMA model, and the number \li{n} of observations to forecast.
+Calculate the mean and covariance of the future \li{n} observations using the Kalman filter.
 
 To do this, use \li{state_space_rep()} to generate $F$, $Q$, and $H$.
 Then, use \li{kalman()} (with $\mu$ subtracted off from the covariance stationary time series $\mathbf{z}_k$) to calculate $\hat{\mathbf{x}}_{k|k-1}$ and $P_{k|k-1}$, respectively.
 Use the Update step on the last elements of $\mathbf{z}_k$ (with $\mu$ subtracted off), $\hat{\mathbf{x}}_{k|k-1}$, and $P_{k|k-1}$ to find $\hat{\mathbf{x}}_{k|k}$ and $P_{k|k}$.
 Then, iteratively use the Predict step to make future predictions of the mean and covariance.
-Remember that once you find a mean $\hat{\mathbf{x}}_{k|k-1}$ and covariance $P_{k|k-1}$, you must use equations \ref{eq:mean:variance1} and \ref{eq:mean:variance2} to transform them back into observation space.
+Recall that $R$ and $\mathbf{u}$ are both defined to be 0!
+Also, remember that once you find a mean $\hat{\mathbf{x}}_{k|k-1}$ and covariance $P_{k|k-1}$, you must use Equations \ref{eq:mean:variance1} and \ref{eq:mean:variance2} to transform them back into observation space.
 
 Plot the original observations as well as the mean of each future observation.
 Plot a 95\% confidence interval (2 standard deviations away from the mean) around the means of future observations.
@@ -348,11 +350,11 @@ Hint: the standard deviation is the square root of the covariance calculated.
 The following code should create a plot similar to Figure \ref{fig:forecasted}.
 
 \begin{lstlisting}
->>> # Get optimal model as found in the previous problem
->>> phis, thetas, mu, std = np.array([0.72135856]), np.array([-0.26246788]), 0.35980339870105321, 1.5568331253098422
+# Get optimal model as found in the previous problem
+phis, thetas, mu, std = np.array([0.72135856]), np.array([-0.26246788]), 0.35980339870105321, 1.5568331253098422
 
->>> # Forecast optimal mode
->>> arma_forecast(filename='weather.npy', phis=phis, thetas=thetas, 
+# Forecast optimal mode
+arma_forecast(filename='weather.npy', phis=phis, thetas=thetas, 
                     mu=mu, std=std, n=30)
 \end{lstlisting}
 
@@ -396,20 +398,20 @@ It will return the mean of each future observation.
 
 \begin{lstlisting}
 # Predict from the beginning of the model to 30 observations in the future
->>> model.predict(start=0,end=len(data)+30)
+model.predict(start=0,end=len(data)+30)
 \end{lstlisting}
 
 \begin{problem}
-Write a function \li{sm_arma()} that accepts \li{filename} containing a time series, integer values for \li{p_max} and \li{q_max}, and the number $n$ of values to predict.
+Write a function \li{sm_arma()} that accepts \li{filename} containing a time series, integer values for \li{p\_max} and \li{q\_max}, and the number \li{n} of values to predict.
 
-As in Problem \ref{prob:model-identification}, perform model identification to find the ARMA($i,j$) model with the best AIC for $1\leq i \leq$ \li{p_max} and $1 \leq j \leq$ \li{q_max}, but this time use \li{statsmodels}.
+As in Problem \ref{prob:model-identification}, perform model identification to find the ARMA($p,q$) model with the best AIC for $1\leq p \leq$ \li{p_max} and $1 \leq q \leq$ \li{q_max}, but this time use \li{statsmodels}.
 Make sure the model is fit using the MLE.
 
-Use the optimal model to predict $n$ future observations of the time series.
-Plot the original observations along with the predicted observations from the beginning through $n$ observations in the future, as given by \li{statsmodels}.
-Return the AIC of the optimal model.
+Use the optimal model to predict \li{n} future observations of the time series.
+Plot the original observations along with the predicted observations from the beginning through \li{n} observations in the future, as given by \li{statsmodels}.
+\textbf{Return the AIC} of the optimal model.
 
-For $\text{\li{p_max}}=3, \text{\li{q_max}}=3$, and $n=30$, your graph should look similar to Figure \ref{fig:sm}.
+For \li{p\_max=3}, \li{q\_max=3}, and \li{n=30}, your graph should look similar to Figure \ref{fig:sm}.
 How does this graph compare to Problem \ref{prob:arma:naive}? Problem \ref{prob:arma:forecast}?
 \label{prob:statsmodels}
 \end{problem}
@@ -440,40 +442,37 @@ VARMAX stands for Vector Autoregression Moving Average with Exogenous Regressors
 An exogenous regressor is a time series that affects the model but is not affected by it.
 In the example below we have two time series corresponding to the price of copper and aluminum. 
 Since aluminum is a substitute for copper, it is reasonable to assume the price of aluminum may help us predict the price of copper and vice versa.
-Note that when fitting a VARMAX model, setting the parameter \li{ic='aic'} selects parameters based on AIC criterion. 
 
 \begin{lstlisting}
->>>from statsmodels.tsa.api import VARMAX
->>>import statsmodels.api as sm
+from statsmodels.tsa.api import VARMAX
+import statsmodels.api as sm
 
->>> # Load in world copper data
->>> data = sm.datasets.copper.load_pandas().data
->>> # Create index compatible with VARMAX model
->>> idx = pd.period_range(start='1951', end='1975',freq = 'Y')
->>> data.index = idx
+# Load in world copper data
+data = sm.datasets.copper.load_pandas().data
+# Create index compatible with VARMAX model
+data.index = pd.period_range(start='1951', end='1975', freq='Y')
 
->>> # Initialize and fit model
->>> mod = VARMAX(data[['ALUMPRICE', 'COPPERPRICE']])
->>> mod = mod.fit(maxiter=1000, disp=False, ic='aic')
->>> # Predict until the price of aluminium and copper until 1985
->>> pred = mod.predict('1951','1985')
+# Initialize and fit model
+mod = VARMAX(data[['ALUMPRICE', 'COPPERPRICE']])
+mod = mod.fit(maxiter=1000, disp=False)
+# Predict the price of aluminium and copper until 1985
+pred = mod.predict('1951','1985')
 
->>> # Get confidence intervals
->>> forecast_obj = mod.get_forecast('1981')
->>> all_CI = forecast_obj.conf_int(alpha=0.05)
->>> all_CI
+# Get confidence intervals
+forecast_obj = mod.get_forecast('1981')
+all_CI = forecast_obj.conf_int(alpha=0.05)
 
->>> # Plot predictions against true price
->>> pred.plot()
->>> plt.plot(data['ALUMPRICE'],'r--', label = 'ALUMPRICE prediction')
->>> plt.plot(data['COPPERPRICE'],'r--',label = 'COPPERPRICE prediction')
->>> plt.legend()
->>> plt.title('VARMA Predictions for World Copper Market Dataset')
+# Plot predictions against true price
+pred.plot(figsize=(10,4))
+plt.plot(data['ALUMPRICE'], label='Actual ALUMPRICE')
+plt.plot(data['COPPERPRICE'], label='Actual COPPERPRICE')
+plt.legend()
+plt.title('VARMA Predictions for World Copper Market Dataset')
 \end{lstlisting}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{figures/copper2.pdf}
+\includegraphics[width=\textwidth]{figures/copper.pdf}
 \caption{Statsmodel VAR(1) forecast.}
 \label{fig:varma}
 \end{figure}
@@ -483,27 +482,25 @@ Note that when fitting a VARMAX model, setting the parameter \li{ic='aic'} selec
 
 Write a function \li{sm_varma()} that accepts start and end dates for forecasting.
 Use the statsmodels VARMAX class to forecast on macroeconomic data between the start and end dates.
-
 The following code shows how to obtain the data.
 
 \begin{lstlisting}
->>> # Load in data
->>> df = sm.datasets.macrodata.load_pandas().data
->>> # Create DatetimeIndex
->>> dates = df[['year', 'quarter']].astype(int).astype(str)
->>> dates = dates["year"] + "Q" + dates["quarter"]
->>> dates = dates_from_str(dates)
->>> df.index = pd.DatetimeIndex(dates)
->>> # Select columns used in prediction
->>> df = df[['realgdp','realcons','realinv']]
+# Load in data
+df = sm.datasets.macrodata.load_pandas().data
+# Create DatetimeIndex
+dates = df[['year', 'quarter']].astype(int).astype(str)
+dates = dates["year"] + "Q" + dates["quarter"]
+dates = dates_from_str(dates)
+df.index = pd.DatetimeIndex(dates)
+# Select columns used in prediction
+df = df[['realgdp','realcons','realinv']]
 \end{lstlisting}
 
 Initialize your VARMAX model with the \li{df} specified above, and include the parameter \li{freq="Q-DEC"}.
-Fit your model, using AIC as the criteria for model selection, and predict from the start date until the end date.
+Fit your model, and predict from the start date until the end date.
 Then, get the model forecast until the end date.
 Plot the original data, prediction, and a 95\% confidence interval (2 standard deviations away from the mean) around the future observations.
-Return the AIC of the chosen model.
-
+\textbf{Return the AIC} of the chosen model.
 The plot should be similar to Figure \ref{fig:econ}.
 
 \noindent Hint: in the example above, \li{mod.predict('1951','1985')} returns a dataframe of 2 columns that contain the predicted values of \li{'ALUMPRICE'} and \li{'COPPERPRICE'}, respectively, from the years 1951 to 1985.
@@ -594,13 +591,13 @@ For the range \li{'1983-01-31'} to \li{'1995-01-31'}, your plot should look like
 
 To get the \li{manaus} dataset and set it with a DateTimeIndex, use the following code:
 \begin{lstlisting}
->>> # Get dataset
->>> raw = pydata('manaus')
->>> # Convert to DateTimeIndex
->>> manaus = pd.DataFrame(raw.values,index=pd.date_range('1903-01','1993-01',freq='M'))
->>> manaus = manaus.drop(0,axis=1)
->>> # Set new column title
->>> manaus.columns = ['Water Level']
+# Get dataset
+raw = pydata('manaus')
+# Convert to DateTimeIndex
+manaus = pd.DataFrame(raw.values,index=pd.date_range('1903-01','1993-01',freq='M'))
+manaus = manaus.drop(0,axis=1)
+# Set new column title
+manaus.columns = ['Water Level']
 \end{lstlisting}
 \label{prob:manaus}
 \end{problem}

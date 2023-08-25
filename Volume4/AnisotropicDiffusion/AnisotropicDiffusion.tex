@@ -69,7 +69,7 @@ from matplotlib import cm, pyplot as plt
 from imageio import imread
 
 # To read in an image, convert it to grayscale, and rescale it.
-picture = imread('balloon.jpg', as_gray=True) * 1./255
+picture = imread('coke_balloon.jpg', as_gray=True) * 1./255
 
 # To display the picture as grayscale
 plt.imshow(picture, cmap=cm.gray)
@@ -97,7 +97,7 @@ To help facilitate this we can create a larger "padded" matrix that will make th
 This padded matrix will have an extra row on the top and bottom, and an extra column on either side of the original matrix.
 These extra rows and columns will duplicate the outer edge of the original matrix.
 
-So if our original array \li{X} has shape \li{m,n}, then our padded array \li{Y} has shape \li{m+2,n+2}.
+So if our original array \li{X} has shape \li{l,m}, then our padded array \li{Y} has shape \li{l+2,m+2}.
 The top edge of \li{Y} will be defined so that \li{Y[0,1:-1] == X[0,:]} is true, and the rest of the edges of \li{Y} follow the same pattern.
 
 Notice that this allows us to simply implement the algorithm found in \ref{eq:anisotropic} without having to make special cases for the edges and corners, since those previously undefined terms become zero when using the padded matrix.
@@ -120,8 +120,10 @@ def anisdiff_bw(U, N, lambda_, g):
     Operate on U inplace to optimize performance. """
     pass
 \end{lstlisting}
-Run the function on \li{balloon.jpg}.
+Run the function on \li{coke_balloon.jpg}.
 Show the original image and the diffused image for $\sigma = .1$, $\lambda = .25$, $N = 5, 20, 100$.
+
+Hint: Use the \li{np.pad} function to implement the padded array technique.
 \end{problem}
 
 \newpage
@@ -129,24 +131,24 @@ Show the original image and the diffused image for $\sigma = .1$, $\lambda = .25
 \begin{figure}[ht]
 \begin{minipage}[b]{0.45\linewidth}
 \centering
-\includegraphics[width=\textwidth]{figures/balloon_grayscale.jpg}
+\includegraphics[width=\textwidth]{figures/coke_balloon_0iters.pdf}
 \caption*{original image}
 \end{minipage}
 \hspace{0.5cm}
 \begin{minipage}[b]{0.45\linewidth}
 \centering
-\includegraphics[width=\textwidth]{figures/balloon_grayscale_5.jpg}
+\includegraphics[width=\textwidth]{figures/coke_balloon_5iters.pdf}
 \caption*{5 iterations with $\sigma = .1$ and $\lambda = .25$}
 \end{minipage}
 \begin{minipage}[b]{0.45\linewidth}
 \centering
-\includegraphics[width=\textwidth]{figures/balloon_grayscale_20.jpg}
+\includegraphics[width=\textwidth]{figures/coke_balloon_20iters.pdf}
 \caption*{20 iterations}
 \end{minipage}
 \hspace{0.5cm}
 \begin{minipage}[b]{0.45\linewidth}
 \centering
-\includegraphics[width=\textwidth]{figures/balloon_grayscale_100.jpg}
+\includegraphics[width=\textwidth]{figures/coke_balloon_100iters.pdf}
 \caption*{100 iterations}
 \end{minipage}
 \end{figure}
@@ -160,17 +162,25 @@ Instead of being represented as a two-dimensional array, colored images are repr
 The third dimension is used to store the intensities of each of the standard 3 colors.
 This diffusion process can be carried out in the exact same way, on each of the arrays of intensities for each color, but instead of detecting edges just in one color, we need to detect edges in any color, so instead of using something of the form $g(|U_{l+1,m}^n - U_{l,m}^n|)$ as before, we will now use something of the form $g(||U_{l+1,m}^n - U_{l,m}^n||)$, where $U_{l+1,m}^n$ and $U_{l,m}^n$ are vectors now instead of scalars.
 The difference scheme can be treated as an equation on vectors in 3-space and now reads:
-\begin{align*}
+\begin{align}
+\begin{split}
 U_{l,m}^{n+1} = U_{l,m}^n + & \lambda (g(||U_{l-1,m}^n - U_{l,m}^n||)(U_{l-1,m}^n - U_{l,m}^n) \\
 					& + g(||U_{l+1,m}^n - U_{l,m}^n||)(U_{l+1,m}^n - U_{l,m}^n) \\
 					& + g(||U_{l,m-1}^n - U_{l,m}^n||)(U_{l,m-1}^n - U_{l,m}^n) \\
 					& + g(||U_{l,m+1}^n - U_{l,m}^n||)(U_{l,m+1}^n - U_{l,m}^n))
-\end{align*}
+\end{split}
+\label{eqn:anisotropic:diffuse_image}
+\end{align}
 
-When implementing this scheme for colored images, use the $2$-norm on 3-space, i.e $||x||=\sqrt{x_1^2+x_2^2+x_3^2}$ where $x_1$, $x_2$, and $x_3$ are the different coordinates of $x$.
+When implementing this scheme for colored images, use the $2$-norm on 3-space, i.e 
+\begin{align}
+||x||=\sqrt{x_1^2+x_2^2+x_3^2}
+\label{eqn:anisotropic:2norm_3space}
+\end{align}
+ where $x_1$, $x_2$, and $x_3$ are the different coordinates of $x$.
 
 \begin{problem}
-Complete the following function to process a colored image.
+Complete the following function to process a colored image using Equation \eqref{eqn:anisotropic:diffuse_image}.
 You may modify your code from the previous problem.
 Measure the difference between pixels using the $2$-norm.
 Use the corresponding vector versions of the boundary conditions given in Problem \ref{prob:anisdiff_bw}.
@@ -229,78 +239,90 @@ An example of this limitation can be seen in Figure \ref{fig:anisdif_smearing}
 \begin{figure}
 \begin{minipage}[b]{.45\linewidth}
 \centering
-\includegraphics[width=\textwidth]{figures/original_color_img_prob2.jpg}
+\includegraphics[width=\textwidth]{figures/balloons_colors.pdf}
 \caption*{original image}
 \end{minipage}
 \hspace{0.5cm}
 \begin{minipage}[b]{0.45\linewidth}
 \centering
-\includegraphics[width=\textwidth]{figures/50_iterations_color_prob2.jpg}
-\caption*{after 50 iterations}
+\includegraphics[width=\textwidth]{figures/balloons_color_50iters.pdf}
+\caption*{After 50 iterations}
 \end{minipage}
 \caption{Smearing of similar colors when using an anisotropic diffusion filter.}
 \label{fig:anisdif_smearing}
 \end{figure}
 
-As we can see, after 100 iterations, some of the boundaries between similar shades of grey have smeared unevenly. You may still have to look closely to see it.
+As we can see, after 100 iterations, some of the boundaries between similar shades of grey have smeared unevenly.
 This can be counteracted somewhat by further decreasing the $\sigma$ value, but if we have random noise throughout the image, this will not remove it.
+
 If we have random static in the image, we can remove this using a modified version of the filter.
 Instead of measuring the rate of change in the picture in each direction, we change each point according to whether or not any of its adjacent points have roughly the same value it has.
 This is called a minimum-biased filter.
 This sort of trick is especially good for removing isolated pixels that are different from those around them.
-A very simple way to do this is by taking the average of the two smallest differences between each pixel and its eight neighbors and using that in place of $g$ in the difference scheme above.
-Along the boundaries, we do not have 8 neighbors for each pixel, but we can get by by just using the pixels we have and eliminating the other terms in the difference scheme, just as we did before.
-This will make it so that points that neighbor points of similar value will not be changed, while points that do not match their surroundings will be faded to become more like the points surrounding them.
-This does not have the same symmetrical diffusion as the other scheme, i.e. if one pixel changes, it does not necessarily change its neighboring pixels by the same amount.
-As long as you leave $\lambda \leq \frac{1}{4}$ and you have scaled the pixels to have floating point values between 0 and 1, the scheme will still remain within its minimum and maximum bounds, since the tendency is always to move points closer to the values of their neighbors.
-To demonstrate the action of such a filter, we make changes to random pixels in the color version of the same photo and use both filters to remove the noise we have added.
-Below, we include an example where we have added noise to the color version of that same picture, then used a minimum-biased filter to diminish the noise and the original filter to smooth what remains.
+
+To do this, we will define an iterative scheme similar to \eqref{eqn:anisotropic:diffuse_image}, but with $g$ being a constant array.
+Using the 2-norm defined in Equation \eqref{eqn:anisotropic:2norm_3space}, find
+
+\begin{align}
+g' = \min_2\left \{ \|U^n_{l-1,m}\|, \|U^n_{l+1,m}\|, \|U^n_{l,m-1}\|, \|U^n_{l,m+1}\| \right\},
+\label{eqn:anisotropic:gp}
+\end{align}
+
+where $\min_2$ denotes finding the smallest two elements (out of four) along the new 0-th dimension of the array. In other words, if $ \|U^n_{l-1,m}\|$ has dimension $(l,m)$, then $\{ \|U^n_{l-1,m}\|, \|U^n_{l+1,m}\|, \|U^n_{l,m-1}\|, \|U^n_{l,m+1}\| \}$ will have dimension $(4,l,m)$ and $g'$ in Equation \eqref{eqn:anisotropic:gp} will have dimension $(2,l,m)$. We then take the mean along the first axis, resulting in an array of dimension $(l,m)$. This is array is $g$. The update process then becomes
+\begin{align}
+\begin{split}
+U_{l,m}^{n+1} = U_{l,m}^n + & \lambda (g(U_{l-1,m}^n - U_{l,m}^n) \\
+					& + g(U_{l+1,m}^n - U_{l,m}^n) \\
+					& + g(U_{l,m-1}^n - U_{l,m}^n) \\
+					& + g(U_{l,m+1}^n - U_{l,m}^n))\\
+=U_{l,m}^n + &\lambda g(U_{l-1,m}^n + U_{l+1,m}^n  + U_{l,m-1}^n + U_{l,m+1}^n - 4U_{l,m}^n)
+\label{eqn:anisotropic:min_bias}
+\end{split}
+\end{align}
+
+As long as $\lambda \leq \frac{1}{4}$ and the scaled the pixels to have floating point values between 0 and 1, the scheme will still remain within its minimum and maximum bounds, since the tendency is always to move points closer to the values of their neighbors.
+Below, we include an example where we have added noise to the color version of that same picture, then used a minimum-biased filter to diminish the noise.
 
 \begin{problem}
 
 Implement the minimum-biased finite difference scheme described above.
 Add noise to \li{balloons_color.jpg} using the provided code below, and clean it using your implementation.
-Show the original image, the noised image, and the cleaned image.
+Show the original image, the noised image, and the cleaned image. 
 
 \begin{lstlisting}
-image = imread('balloons_color.jpg')
+image = imread('balloons_color.jpg') * 1./255
 x,y,z = image.shape
 for dim in range(z):
-    for i in range(x*y//100):
+    for i in range(x*y//30):
         # Assign a random value to a random place
-        image[randint(x),randint(y),dim] = 127 + randint(127)
+        image[randint(x),randint(y),dim] = (127 + randint(127)) /255.
 \end{lstlisting}
-Hint: Don't forget to rescale.
+Hint: You may need to reshape the array $g$ so that it has dimension (l,m,1). That way you can array broadcast it into $U$, which is (l,m,3).
 
 \end{problem}
 
 \newpage
 \vfill
 \begin{figure}[ht]
-\begin{minipage}[b]{0.45\linewidth}
-\centering
-\includegraphics[width=\textwidth]{figures/baloons_resized_color.jpg}
-\caption*{original image}
-\end{minipage}
-\hspace{0.5cm}
-\begin{minipage}[b]{0.45\linewidth}
-\centering
-\includegraphics[width=\textwidth]{figures/baloons_resized_noisy.png}
-\caption*{randomly changed 100000 color values}
-\end{minipage}
-\begin{minipage}[b]{0.45\linewidth}
-\centering
-\includegraphics[width=\textwidth]{figures/baloons_resized_minbias.jpg}
-\caption*{300 iterations of a min-biased scheme}
-\end{minipage}
-\hspace{0.5cm}
-\begin{minipage}[b]{0.45\linewidth}
-\centering
-\includegraphics[width=\textwidth]{figures/baloons_resized_both.jpg}
-\caption*{after 8 additional iterations of the first filter with $\lambda=.25$ and $\sigma=.04$.}
-\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+	\centering
+	\includegraphics[width=\textwidth]{figures/balloons_colors.pdf}
+	\caption*{Original image}
+	\end{minipage}
+	\hspace{0.5cm}
+	\begin{minipage}[b]{0.45\linewidth}
+	\centering
+	\includegraphics[width=\textwidth]{figures/noisy_balloons.pdf}
+	\caption*{Randomly changed 48,000 color values}
+	\end{minipage}
+	\begin{minipage}[b]{0.45\linewidth}
+	\centering
+	\includegraphics[width=\textwidth]{figures/cleaned_balloons.pdf}
+	\caption*{50 iterations of a min-biased scheme}
+	\end{minipage}
+	\label{fig:minbias_color}
 \end{figure}
-\vfill
-\clearpage
+%\vfill
+%\clearpage
 
-\nocite{Perona1988,Kim2009}
+%\nocite{Perona1988,Kim2009}

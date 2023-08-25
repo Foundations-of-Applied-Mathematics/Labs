@@ -1,296 +1,292 @@
-% \newcommand{\given}{\!\mathrel{\big|}\!}
+
 
 \lab{Naive Bayes}{Naive Bayes}
-\objective{Create a Naïve Bayes Classifier. Use this classifier, and Sklearn's premade classifier to make an SMS spam filter.}
+\objective{In this lab, we will create a Naïve Bayes Classifier and use it to make an SMS spam filter.}
 
-\section*{About Naïve Bayes}
+\section*{Naïve Bayes Classifiers}
 Naïve Bayes classifiers are a family of machine learning classification methods that use Bayes' theorem to probabilistically categorize data.
 They are called naïve because they assume independence between the features.
 The main idea is to use Bayes' theorem to determine the probability that a certain data point belongs in a certain class, given the features of that data.
-Despite what the name may suggest, the naïve Bayes classifier is not a Bayesian method.
-This is because naïve Bayes is based on likelihood rather than Bayesian inference.
+Despite what the name may suggest, the naïve Bayes classifier is not a Bayesian method, as it is based on likelihood rather than Bayesian inference.
 
 While naïve Bayes classifiers are most easily seen as applicable in cases where the features have, ostensibly, well defined probability distributions (such as classifying sex given physical characteristics), they are applicable in many other cases.
-While it is generally a bad idea to assume independence naïve Bayes classifiers are still very effective, even when we can be confident there is nonzero covariance between features.
-
-
-
-\section*{The Classifier}
-You are likely already familiar with Bayes' Theorem, but we will review how we can use Bayes' Theorem to construct a robust machine learning model.
+In this lab, we will apply them to the problem of spam filtering.
+While it is generally a bad idea to assume independence, naïve Bayes classifiers can still be very effective, even when we can be confident that features are not independent.
 
 Given the feature vector of a piece of data we want to classify, we want to know which of all the classes is most likely. Essentially, we want to answer the following question
 \begin{equation}\label{eq:orig_problem}
-    \argmax_{k\in K} P(C=k \given \x),
+    \argmax_{k\in K} P(C=k | \x),
 \end{equation}
 where $C$ is the random variable representing the class of the data.
-Using Bayes' Theorem, we can reformulate this problem into something that is actually computable. We find that for any $k\in K$ we have
+Using Bayes' Theorem, we can reformulate this problem into something that is actually computable. For any $k\in K$,
 \begin{align*}
-    P(C=k \given \x) = \frac{P(C=k)P(\x \given C=k)}{P(\x)}.
+    P(C=k | \x) = \frac{P(C=k)P(\x | C=k)}{P(\x)}.
 \end{align*}
-Now we will examine each feature individually and use the chain rule to expand the following expression
+Now we will examine each feature individually and use the chain rule to expand the new conditional probability:
 \begin{align*}
-    P(C=k)P(\x \given C=k) &= P(x_1,\dots,x_n,C=k) \\
-    &= P(x_1 \given x_2,\dots,x_n,C=k)P(x_2,\dots,x_n,C=k) \\
+    P(\x | C=k) &= P(x_1,\dots,x_n|C=k) \\
+    &= P(x_1 | x_2,\dots,x_n,C=k)P(x_2,\dots,x_n|C=k) \\
     &= \dots \\
-    &= P(x_1 \given x_2,\dots,x_n,C=k)P(x_2 \given x_3, \dots, x_n,C=k)\cdots P(x_n \given C=k)P(C=k),
+    &= P(x_1 | x_2,\dots,x_n,C=k)P(x_2 | x_3, \dots, x_n,C=k)\cdots P(x_n | C=k).
 \end{align*}
-and applying the assumption that each feature is independent we can drastically simplify this expression to the following
+By applying the assumption that each feature is independent we can drastically simplify this expression to the following:
 \begin{align*}
-    P(x_1 \given x_2,\dots,x_n,C=k)\cdots P(x_n \given C=k) &= \prod_{i=1}^{n}P(x_i \given C=k).
+    P(x_1 | x_2,\dots,x_n,C=k)\cdots P(x_n | C=k) &= \prod_{i=1}^{n}P(x_i | C=k).
 \end{align*}
 Therefore we have that 
 \begin{align*}
-    P(C=k \given \x) = \frac{P(C=k)}{P(\x)} \prod_{i=1}^{n}P(x_i \given C=k),
+    P(C=k | \x) = \frac{P(C=k)}{P(\x)} \prod_{i=1}^{n}P(x_i | C=k),
 \end{align*}
 which reforms Equation \ref{eq:orig_problem} as
-\begin{equation}\label{eq:simp_problem}
-    \argmax_{k\in K} P(C=k \given \x) = \argmax_{k\in K} P(C=k)\prod_{i=1}^{n}P(x_i \given C=k).
+\begin{equation}\label{eq:simple_problem}
+    \argmax_{k\in K} P(C=k | \x) = \argmax_{k\in K} P(C=k)\prod_{i=1}^{n}P(x_i | C=k).
 \end{equation}
-We drop the $P(\x)$ in the denominator since it is not dependent on $k$.
-
-This problem is approximately computable, since we can use training data to attempt to find the parameters which describe $P(x_i \given C=k)$ for each $i,k$ combination, and $P(C=k)$ for each $k$.
-In reality, a naïve Bayes classifier won't often find the actual correct parameters for each distribution, but in practice the model does well enough to be robust.
-Something to note here is that we are actually computing $P(C=k \given \x)$ by finding $P(C=k,\x)$.
+We can drop the $P(\x)$ in the denominator since it does not depend on $k$.
+In this form, the problem is computationally tractable,
+since we can use the training data to find approximations of $P(C=k)$ and $P(x_i|C=k)$ for each $i$ and $k$.
+Something to note here is that we are actually maximizing $P(C=k | \x)$ by computing and maximizing $P(C=k,\x)$.
 This means that naïve Bayes is a generative classifier, and not a discriminative classifier.
 
-\subsection*{Spam Filters}
-A spam filter is just a special case of a classifier with two classes: spam and not spam (or ham). 
-We can now describe in more detail how we are to calculate Equation \ref{eq:simp_problem} given that we know what the features are.
-We can use a labeled training set to determine $P(C=\text{spam})$ the probability of spam and $P(C=\text{ham})$ the probability of ham.
-To do this we will assume that the training set is a representative sample and define
-\begin{equation}\label{eq:prob_spam}
-    P(C=\text{spam}) = \frac{N_{\text{spam}}}{N_{\text{samples}}},
-\end{equation}
-and 
-\begin{equation}\label{eq:prob_ham}
-    P(C=\text{ham}) = \frac{N_{\text{ham}}}{N_{\text{samples}}}.
-\end{equation}
-Using a bag of words model, we can create a simple representation of $P(x_i \given C=k)$ where $x_i$ is the $i^{\text{th}}$ word in a message, and therefore $\x$ is the entire message. This results in the simple definition of 
-\begin{equation}\label{eq:prob_word}
-    P(x_i \given C=k) = \frac{N_{\text{occurrences of $x_i$ in class $k$}}}{N_{\text{words in class $k$}}}.
-\end{equation}
-Note that the denominator in Equation \ref{eq:prob_word} is not the number of unique words in class $k$, but the total number of occurrences of any word in class $k$.
-In the case we have some word $x_u$ that is not found in the training set, we can may choose $P(x_u \given C=k)$ so that the computation is not effected, i.e. letting $P(x_u \given C=k) = 1$ for unique words.
-
-% \section*{Preparing Data}
-% Before we can begin with classifying data, we need to clean it.
-% The cleaning we will do here is minimal, but it will standardize the data.
-
-% \begin{problem}\label{NB:prob_1}
-% Write a function called \li{clean_data} which takes as an argument the name of a file containing message data and labels.
-% Clean the messages by removing all punctuation, replacing all whitespace with a single whitespace character, and converting all characters to lowercase.
-% Return a Pandas \li{DataFrame} that has columns \li{Label} and \li{Message}.
-
-% HINT: You may find \li{pandas.Series.str.replace()} to be useful.
-% \end{problem}
-
-\section*{A First Model}
-When building a naïve Bayes classifier we need to choose what probability distribution we believe our features to have.
-For this first model, we will assume that the words are a categorically distributed random variable.
-This means the random variable may take on say $N$ different values, each value has a certain probability of occurring.
-This distribution can be thought of as a Bernoulli trial with $N$ outcomes instead of 2.
-
-In our situation we may have $N$ different words which we expect may occur in a spam or ham message, so we need to use the training data to find each word and its associated probability.
-In order to do this we will make a DataFrame that will allow us to calculate the probability of the occurrence of a certain word $x_i$ based on what percentage of words in the training set were that word $x_i$.
-This DataFrame that will allow us to more easily compute Equation \ref{eq:prob_word}, assuming the words are categorically distributed.
-While we are creating this DataFrame, it will also be a good opportunity to compute Equations \ref{eq:prob_spam} and \ref{eq:prob_ham}.
-
-Throughout the lab we will use an SMS spam dataset contained in \li{sms_spam_collection.csv}.
-The following code makes full test and train sets, but we will also provide you with code to check against specific subsets.
-
+\section*{Spam Filters}
+A spam filter is just a special case of a classifier with two classes: spam and not spam (often called ham). 
+Spam filtering is a situation where naive Bayes classifiers perform relatively well.
+Throughout the lab, we will use the SMS spam dataset contained in \li{sms_spam_collection.csv}.
+The messages in this dataset have already been cleaned by converting to lowercase and removing all punctuation.
+To load the dataset, use the following code:
 \begin{lstlisting}
->>> import pandas as pd
->>> from sklearn.model_selection import train_test_split
+import pandas as pd
+df = pd.read_csv('sms_spam_collection.csv')
 
->>> # load in the sms dataset
->>> df = pd.read_csv('sms_spam_collection.csv')
-
->>> # separate the data into the messages and labels
->>> X = df.Message
->>> y = df.Label
-
->>> # split the data into test and train sets
->>> X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.7)
+# separate the data into the messages and labels
+X = df.Message
+y = df.Label
 \end{lstlisting}
 
+Before we can construct a naive Bayes classifier, we need to choose a probability distribution for the $x_i$.
+Two common choices are categorical distributions and Poisson distributions.
+We will first create a classifier using a categorical distribution.
+In this case, each feature $x_i$ represents the $i$-th word of a message.
+The probability $P(x_i|C=k)$ then represents the probability that a specific word in the message is the word that we observed, given that the category is $k$.
+For simplicity, we assume that these values do not change with respect to $i$, so the probability of observing a specific word is the same for every position in a message.
 
-\subsection*{Training The Model}
-\begin{problem}\label{NB:prob_train}
-Create a class \li{NaiveBayesFilter}, with an \li{__init__()} method that is empty.
-Add a \li{fit()} method which takes as arguments \li{X}, the training data, and \li{y} the training labels.
-In this case \li{X} is a \li{pandas.Series} containing strings that are SMS messages.
-Create a new \li{DataFrame} with two rows and a column for each vocabulary word 
-with \li{'spam'} and \li{'ham'} being the index. 
-Each entry will be the number of times a word appears in spam or ham messages. 
+Suppose we have a labeled training dataset.
+To train the model, we need to just find values for $P(C=k)$ and $P(x_i|C=k)$.
+In this case, a reasonably good choice is the maximum likelihood estimator, which in this case is just
+\begin{align*}
+P(C=k) &=\frac{N_{\text{samples in $k$}}}{N_{\text{samples}}}
+\\
+P(x_i | C=k) &= \frac{N_{\text{occurrences of $x_i$ in class $k$}}}{N_{\text{words in class $k$}}}
+\end{align*}
+However, this choice leads to some issues.
+For example, if a certain word $x_j$ occurs only in spam messages and never in ham messages in our training dataset, then our classifier will predict $P(x_i | C=\text{ham})=0$ for any message that contains $x_j$.
+This is not desirable, but to make matters worse, the same situation could happen for both classes within a single message, leading our model to predict
+$P(x_i|C=k)=0$ for all classes.
+This makes our classifier unable to classify such samples.
+To circumvent this issue, we will use \emph{Laplace add-one smoothing}, which consists of adding $1$ to the numerator of $P(x_i | C=k)$ and $2$ to its denominator.
+So, the probabilities we will use are the following:
+\begin{align}
+\label{eq:prob_spam}
+    P(C=\text{spam}) &= \frac{N_{\text{messages in spam}}}{N_{\text{samples}}},
+    \\
+    P(C=\text{ham}) &= \frac{N_{\text{messages ham}}}{N_{\text{samples}}},
+    \label{eq:prob_ham}
+\\
+    P(x_i | C=k) &= \frac{N_{\text{occurrences of $x_i$ in class $k$}}+1}{N_{\text{total words in class $k$}}+2}.
+\label{eq:prob_word}
+\end{align}
+The result of Laplace add-one smoothing is equivalent to the maximum likelihood estimators if a certain Bayesian prior is used for the probabilities.
+We don't use this for the $P(C=k)$, since it is not really needed for those probabilities and does not lead to any particular benefit.
+Lastly, note that the denominator in Equation \ref{eq:prob_word} is not the number of unique words in class $k$, but the total number of occurrences of any word in class $k$.
 
-For example, \li{self.data.loc['ham','in']} is the number of times the word "in" appears in ham messages.
-Save this DataFrame as \li{self.data}.
+\begin{problem}\label{prob:naivebayes:categorical-train}
+Create a class \li{NaiveBayesFilter}.
+Implement a method \li{fit()} that accepts the training data \li{X} and the training labels \li{y}.
+In this method, compute the probabilities $P(C=\text{spam})$ and $P(C=\text{ham})$ as in Equations \eqref{eq:prob_spam} and \eqref{eq:prob_ham}.
+Also compute the probabilities $P(x_i|C=k)$ for each word in both the spam and ham classes, thereby training the model.
+Store these computed probabilities in dictionaries called \li{self.spam_probs} and \li{self.ham_probs}, where the key is the word and the value is the associated probability.
 
-Hint: be sure you count the number of occurrences of a word and not a string. For example, when searching the string \li{'find it in there'} for the word \li{'in'}, make sure you get $1$ and not $2$ (because of the \li{'in'} in \li{'find'}).
+For example, \li{self.ham_probs['out']} will give the computed value for $P(x_i=\text{``out''},C=\text{ham})$ value:
+\begin{lstlisting}
+# Example model trained on the first 300 data points
+>>> nb = NaiveBayesFilter()
+>>> nb.fit(X[:300], y[:300])
+
+# Check spam and ham probabilities of 'out'
+>>> nb.ham_probs['out']
+0.003147128245476003
+>>> nb.spam_probs['out']
+0.004166666666666667
+\end{lstlisting}
+
+Hint: be sure you count the number of occurrences of a word, and not simply of a string. For example, when searching the string \li{'find it in there'} for the word \li{'in'}, make sure you get $1$ and not $2$ (because of the \li{'in'} in \li{'find'}).
 The methods \li{pd.Series.str.split()} and \li{count()} may be helpful.
-
-\begin{lstlisting}
->>> # checkout what the DataFrame looks like
->>> NB = NaiveBayesFilter()
->>> NB.fit(X[:300], y[:300])
->>> NB.data.loc['ham','in']
-47
->>> NB.data.loc['spam','in']
-4
-\end{lstlisting}
+When using \li{split()}, call it without any arguments, as otherwise you may accidentally add empty strings to your data.
 \end{problem}
 
 \subsection*{Predictions}
-Now that we have implemented the \li{fit()} method, we can begin to classify new data.
-We will do this with two methods, the first will be a method that calculates $P(S \given \x)$ and $P(H \given \x)$, and the other will determine the more likely of the two and assign a label.
-While it may seem like we should have $P(C=S \given \x) = 1- P(C=H \given \x)$, we do not.
-This would only be true if we assume the $S$ and $H$ are independent of $\x$.
-It is clear that we shouldn't make this assumption, because we are trying to determine the likelihood of $S$ and $H$ based on what $\x$ tells us.
-Therefore we must compute both $P(C=S \given \x)$ and $P(C=H \given \x)$.
+Now that we have trained our model, we can predict the class of a message by calculating
+\[
+P(C=k)\prod_{i=1}^n P(x_i|C=k)
+\]
+for each class $k$, then choosing the class that maximizes this probability.
+As discussed above, this is equivalent to maximizing the probability $P(C=k|\x)$; however, be aware that we are not actually computing those.
+The probabilities we compute here will not sum to 1, since they are actually the values $P(C=k,\x)$.
+
+However, directly computing this probability as a product can lead to an issue: underflow.
+If $\x$ is a particularly long message, then, since we are multiplying lots of numbers between 0 and 1, it is possible for the computed probability to \emph{underflow}, or become too small to be machine representable with ordinary floating-point numbers.
+In this case the computed probability becomes 0.
+This is particularly problematic because if underflow happens for a sample for one class, it will likely also happen for all of the other classes, making such samples impossible to classify.
+To avoid this issue, we will work with the logarithm of the probability:
+\begin{equation}\label{eq:log_problem}
+    \ln P(\x,C=k)=\ln\left(P(C=k)\right) + \sum_{i=1}^{n}\ln\left(P(x_i | C=k)\right).
+\end{equation}
+This has the same maximizer as before, so our predictions are unaffected, while also avoiding any issues with underflow.
 
 \begin{problem}\label{NB:prob_predict_proba}
 Implement the \li{predict_proba()} method in your naïve Bayes classifier. 
-It should take as an argument \li{X}, the data that needs to be classified, and it will compute the product portion of equation \ref{eq:simp_problem}.
+It should take as an argument \li{X}, the data that needs to be classified, and it will compute the log probabilities as given in Equation \ref{eq:log_problem} for each message in \li{X}.
+In the case we have some word $x_u$ that is not found in the training set, use the value $P(x_u|C=k)=\frac{1}{2}$ for both classes.
 
-Notice that $P(x_i \given C)$ is the same for every repeated instance of word $x_i$ in message \li{x}.
-To save time, we only want to calculate this probability once.
-To do this, find 
-\begin{align*}
-    \prod_{i=1}^{l}P(x_i \given C)^{n_i}
-\end{align*}
-for each message \li{x} in \li{X} where $l$ is the number of unique words in the message and $n_i$ is the number of times the $i^{\text{th}}$ unique word ($x_i$) occurs. 
+The method should return an \li{(N, 2)} array, where \li{N} is the length of \li{X}, whose entries are the log probabilities of each message \li{x} in \li{X} belonging to each category.
+The first column corresponds to $\ln P(\x, C=\text{ham})$, and the second to $\ln P(\x, C=\text{spam})$.
 
-The method should return an \li{(N, 2)} array, where \li{N} is the length of \li{X}, whose entries are the probabilities of each message \li{x} in \li{X} belonging to each category.
-The first column corresponds to $P(C=H \given \x)$, and the second to $P(C=S \given \x)$.
-\end{problem}
-
-\begin{problem}\label{NB:prob_predict}
-Implement the \li{predict()} method in your naïve Bayes classifier. 
-This should take as an argument \li{X}, the data that needs to be classified. 
-Using \li{predict_proba()}, finish implementing equation \ref{eq:simp_problem} and return an array that classifies each message \li{x} in \li{X}.
-
+Your code should produce the following output with the example from Problem \ref{prob:naivebayes:categorical-train}:
 \begin{lstlisting}
->>> # create the filter
->>> NB = NaiveBayesFilter()
-
->>> # fit the filter to the first 300 data points
->>> NB.fit(X[:300], y[:300])
-
->>> # test the predict function
->>> NB.predict(X[530:535])
-array(['ham', 'spam', 'ham', 'ham', 'ham'], dtype=object)
-
+>>> nb.predict_proba(X[800:805])
+array([[ -30.8951931 ,  -35.42406687],
+       [-108.85464069,  -91.70332157],
+       [ -74.65014875,  -88.71184709],
+       [-164.94297917, -133.8497405 ],
+       [-127.17743715, -101.32098062]])
 \end{lstlisting}
 
+Hint: The dataframe \li{X}'s index might not be in order or consecutive integers, so accessing its rows as \li{X[i]} may lead to errors later. Using \li{for row in X} or similar to iterate will work better.
 \end{problem}
-
-\subsection*{Underflow}
-There are some issues that we encounter given this implementation.
-Notice that in the following example, the likelihoods for both spam and ham are 0 for each message. 
-\begin{lstlisting}
->>> # find the likelihoods for messages 1085 and 2010
->>> NB.predict_proba(X[[1085,2010]])
-array([[0., 0.],
-       [0., 0.]])
-\end{lstlisting}
-This is because the messages are long, and thus involve the product of many numbers that are between 0 and 1.
-Because of this, we have encountered what is called underflow, where a number becomes so small it is not machine representable.
-Therefore, we should work in logspace, as to avoid inevitable underflow caused by long messages.
-If we take the log of equation \ref{eq:simp_problem} have
-\begin{equation}\label{eq:log_problem}
-    \argmax_{k\in K} \ln\left(P(C=k)\right) + \sum_{i=1}^{n}\ln\left(P(x_i \given C=k)\right),
-\end{equation}
-and this problem is still valid since logarithms are monotonically increasing.
-However, if any of the $P(x_i \given C=k)$ are close to $0$, we risk getting an overall value of $-\infty$.
-To prevent this from happening, we can perform \emph{Laplace add-one smoothing} by adding $1$ to the numerator of $P(x_i \given C=k)$ and $2$ to its denominator.
-This method is equivalent to using a Bayesian method for training.
-Thus, equation \ref{eq:prob_word} becomes
-\begin{equation}\label{eq:laplace_prob_word}
-    P(x_i \given C=k) = \frac{N_{\text{occurrences of $x_i$ in class $k$}} + 1}{N_{\text{words in class $k$}} + 2}.
-\end{equation}
 
 \begin{problem}\label{NB:prob_log}
-Implement \li{predict_log_proba()} and \li{predict_log()} using equations \ref{eq:log_problem} and \ref{eq:laplace_prob_word}.
-These methods will take the same arguments and return the same object types as the methods \li{predict_proba()} and \li{predict()}, respectively.
+Implement the method \li{predict()}.
+Accept as an argument \li{X}, the data to be classified, and return an array with the same shape holding the predicted class for each sample in \li{X}.
+The entries of this array should be strings \li{'spam'} and \li{'ham'}.
+Use your method \li{predict_proba()} to compute the log probabilites of each class.
+In case of a tie, predict \li{'ham'}.
 
-\noindent Notice how  \li{X[[1085,2010]]} is now classifiable.
+Your code should produce the following output with the example from Problem \ref{prob:naivebayes:categorical-train}:
+\begin{lstlisting}
+>>> nb.predict(X[800:805])
+array(['ham', 'spam', 'ham', 'spam', 'spam'], dtype=object)
+\end{lstlisting}
+\end{problem}
+
+\begin{problem}
+We now test our spam filter.
+Use the \li{sklearn}'s \li{train_test_split} function with the default parameters to split the data into training and test sets.
+Train a \li{NaiveBayesFilter} on the train set, and have it predict the labels of each message in the test set.
+Compute the answer to the following questions:
+\begin{itemize}
+\item What proportion of the spam messages in the test set were correctly identified by the classifier?
+\item What proportion of the ham messages were incorrectly identified?
+\end{itemize}
+Return the answers to these questions as a tuple.
 \end{problem}
 
 \section*{The Poisson Model}
 Now that we've examine one way to constructing a naïve Bayes classifier, let us look at one more method.
-In the Poisson model we assume that each word is Poisson random variable, occurring with potentially different frequencies among spam and ham messages.
+In the Poisson model we assume that each word in the vocabulary is Poisson random variable, occurring with potentially different frequencies among spam and ham messages.
 Because each of the messages is a different length, we can reparameterize the Poisson PMF to the following
 \begin{equation}\label{eq:poisson}
     P(n_i = x) = \frac{(rn)^xe^{-rn}}{x!}
 \end{equation}
 where $n_i$ is the number of times word $i$ occurs in a message, $n$ is the length of the message, and $\lambda = rn$ is the classical Poisson rate.
 In this case $r$ represents the number of events per unit time/space/etc.
-
-We could easily refactor this model to use Bayesian inference to determine $r$, which would allow greater control over the model.
-This would also create a condition where the training data doesn't completely determine the model's viability.
-However, in this lab we will use maximum likelihood estimation to determine $r$.
-% I encourage you to do this refactor once you cover Bayesian inference and see how much better your results can be. (Try a beta prior with $a=2, b=5$)
+We will again use maximum likelihood estimation to find the values of $r$ for each word and class.
 
 
 \subsection*{Training the Model}
-Similar to the other classifier that we made, training the model amounts to using the training data to determine how $P(x_i \given C=k)$ is computed, as well as compting $P(C=k)$.
-As stated earlier, we will attempt to find the most likely value of $r$ for each word that appears in the training set.
+Similar to the other classifier that we made, training the model amounts to using the training data to determine how $P(x_i | C=k)$ is computed, as well as compting $P(C=k)$.
+For the Poisson model we must find a value for $r$ for each word that appears in the training set.
 To do this we will use maximum likelihood estimation.
-The parameter we choose is the one that maximizes the likelihood function
-\begin{align*}
-    \hat{r} = \argmax_{r} L(r \given \x) = \argmax_{r}P(\x \given r).
-\end{align*}
+We will label the chosen value of $r$ for the $i$-th word and class $k$ as $r_{i,k}$.
 In this case, since we are using a Poisson distribution (\ref{eq:poisson}) for each word, we will solve the following problem for both the spam class and the ham classes
 \begin{equation}\label{eq:MLE}
-    r_{i,k} = \argmax_{r\in[0,1]}\frac{(rN_k)^{n_i}e^{-rN_k}}{n_i!},
+    r_{i,k} = \argmax_{r\in[0,1]}\frac{(rN_k)^{N_{i,k}}e^{-rN_k}}{N_{i,k}!},
 \end{equation}
-where $r_{i,k}$ is the Poisson rate for the $i^{\text{th}}$ word in class $k$ (either spam or ham), $N_k$ is the total number of words in class $k$, and $n_i$ is the number of times the $i^{\text{th}}$ word occurs in class $k$.
+where $N_k=N_\text{total words in class $k$}$ is the total number of words in class $k$ and $N_{i,k}=N_\text{occurences of word $i$ in class $k$}$ is the number of times the $i$-th word occurs in class $k$.
 We have $r\in[0,1]$ because a word cannot occur more than once per word in the message.
-If we take the derivative of the right side of equation \ref{eq:MLE} with respect to $r$, set it equal to $0$, and solve for the maximizing $r$, we find that $r_{i,k} = n_i / N_k$.
-
-\subsection*{Predictions}
-Making predictions with this model is exactly the same as we did earlier.
-To clarify the calculation, lets reformulate \ref{eq:log_problem} to fit the Poisson case better. 
-This gives
-\begin{equation}\label{eq:poisson_prob}
-\argmax_{k\in K}\ln\left(P(C=k)\right) + \sum_{i=1}^{l}\ln\left(\frac{(r_{i,k}n)^{n_i}e^{-r_{i,k}n}}{n_i!}\right),
-\end{equation}
-with $l$ being the number of unique words in the message, $n_i$ the number of times the $i^{\text{th}}$ word occurs in the message, $n$ the total number of words in the message, and $r_{i,k}$ the Poisson rate of the $i^{\text{th}}$ word in class $k$.
-Notice, if $r_{i,k}$ is close to $0$, we'll risk getting a total value of $-\infty$.
-We can fix this by using the \emph{Laplace add-one smoothing} method as we did before, but this time on $r_{i,k}$.
-Thus, our new Poisson rate for the $i^{\text{th}}$ word in class $k$ becomes
+It can then be shown that the maximizing value is
+\[
+r_{i,k} = N_\text{occurences of word $i$ in class $k$}
+ / N_\text{total words in class $k$}.
+\]
+However, observe that in Equation \eqref{eq:poisson}, if we have $r=0$ then $P(n_i=x)=0$ whenever $x>0$.
+This leads to the exact same issue we saw with the categorical approach, and will lead to predicted probabilities being 0.
+To resolve this issue, we will again use Laplace add-one smoothing and instead use the values 
 \begin{equation}\label{eq:normalized_r}
-    r_{i,k} = \frac{n_i + 1}{N_k + 2},
+    r_{i,k} = \frac{N_\text{occurences of word $i$ in class $k$}+1}
+{N_\text{total words in class $k$}+2}.
 \end{equation}
-which has a Bayesian interpretation, as it did before.
+As before, this can be interpreted as the maximum likelihood estimator if we start with a certain Bayesian prior for $r$.\footnote{Note that these rates are exactly the same as the probabilities we computed for the categorical model.}
+
+Making predictions with this model is exactly the same as we did earlier, albeit with slightly different equations.
+Specifically, if we write Equation \ref{eq:log_problem} with the Poisson probability, our prediction is given by
+\begin{equation}\label{eq:poisson_prob}
+\argmax_{k\in K}\ln\left(P(C=k)\right) + 
+\sum_{i\in\text{Vocab}}
+\ln\left(\frac{(r_{i,k}n)^{n_i}e^{-r_{i,k}n}}{n_i!}\right),
+\end{equation}
+with $n_i$ the number of times the $i^{\text{th}}$ word occurs in the message, $n$ the total number of words in the message, and $r_{i,k}$ the Poisson rate of the $i^{\text{th}}$ word in class $k$.
 
 \begin{problem}
-Create a new class called \li{PoissonBayesFilter} with an \li{__init__()} method that may be empty.
-Add a \li{fit()} method which takes as arguments training data \li{X} and training labels \li{y}.
+Create a new class called \li{PoissonBayesFilter}, with three methods called \li{fit()}, \li{predict_proba()}, and \li{predict()}, analogous to those in the \li{NaiveBayesFilter} class.
 
-Implement \li{fit()} by finding the MLE found in equation \ref{eq:normalized_r} to predict $r$ for each word in both the spam and ham classes, thereby training the model.
+Implement \li{fit()} by finding the MLE found in Equation \ref{eq:normalized_r} to predict $r$ for each word in both the spam and ham classes, thereby training the model.
 Store these computed rates in dictionaries called \li{self.spam_rates} and \li{self.ham_rates}, where the key is the word and the value is the associated $r$. 
 
 For example, \li{self.ham_rates['in']} will give the computed $r$ value for the word "in" found in ham messages.
 \begin{lstlisting}
->>> #create a poisson bayes object to examine it
->>> PB = PoissonBayesFilter()
->>> PB.fit(X[:300], y[:300])
+# Example model trained on the first 300 data points
+>>> pb = PoissonBayesFilter()
+>>> pb.fit(X[:300], y[:300])
 
->>> # check spam and ham rate of 'in'
->>> PB.ham_rates['in']
+# Check spam and ham rate of 'in'
+>>> pb.ham_rates['in']
 0.012588512981904013
->>> PB.spam_rates['in']
+>>> pb.spam_rates['in']
 0.004166666666666667
 \end{lstlisting}
+
+Implement the \li{predict_proba()} and \li{predict()} methods using equation \ref{eq:poisson_prob}. 
+These methods will take the same arguments and return the same object types as the methods of the same name in the \li{NaiveBayesFilter} class.
+If a word $u$ not in the training set is in one of the messages, use the value $r_{u,k}=1/(N_{k}+2)$.
+In case of a tie in the probabilities of two classes, predict \li{'ham'}.
+Your code should produce the following output with the example above:
+\begin{lstlisting}
+>>> pb.predict_proba(X[800:805])
+array([[ -37.14113097,  -38.2193235 ],
+       [-112.61977379,  -83.54702923],
+       [ -55.70966168,  -63.83602125],
+       [-130.02471282,  -90.15687624],
+       [-102.36539804,  -69.55261684]])
+       
+>>> pb.predict(X[800:805])
+array(['ham', 'spam', 'ham', 'spam', 'spam'], dtype=object)
+\end{lstlisting}
+
+Hint: Most of your code will be very similar to your \li{NaiveBayesFilter} class. The function \li{np.unique} with the argument \li{return_counts=True} and the function \li{scipy.stats.poisson.logpmf} will be useful for \li{predict_proba()}. 
 \end{problem}
 
 \begin{problem}
-Implement the \li{predict_log_proba()} and \li{predict()} methods using equation \ref{eq:poisson_prob}. 
-These methods will take the same arguments and return the same object types as the methods \li{predict_proba()} and \li{predict()} in the \li{NaiveBayesFilter} class, respectively. 
-You may use \li{scipy.stats.poisson.pmf} if you wish.
-\end{problem}
+In the function \li{prob6()}, use the \li{sklearn.model_selection.train_test_split} function to split the data into training and test sets.
+Train a \li{PoissonBayesClassifier} on the train set, and have it predict the labels of each message in the test set.
+Compute the answer to the following questions:
+\begin{itemize}
+\item What proportion of the spam messages in the test set were correctly identified by the classifier?
+\item What proportion of the ham messages were incorrectly identified?
+\end{itemize}
+Return the answers to these two questions as a tuple.
 
+\noindent
+How do the performances of the categorical and Poisson models compare?
+\end{problem}
 
 \section*{Naive Bayes with Sklearn}
 Now that we've explored a few ways to implement our own naïve Bayes classifier, we can examine some robust tools from the sklearn library that will accomplish all the things we've coded up in a very simple manner.
@@ -298,58 +294,30 @@ Now that we've explored a few ways to implement our own naïve Bayes classifier,
 The first thing we need to do is create a dictionary and transform the training data, which is what our first \li{fit()} method did.
 We instantiate a \li{CountVectorizer} model from \li{sklearn.feature_extraction.text}, and then use the \li{fit_transform()} method to create the dictionary and transform the training data.
 \begin{lstlisting}
->>> from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 
->>> vectorizer = CountVectorizer()
->>> train_counts = vectorizer.fit_transform(X_train)
+vectorizer = CountVectorizer()
+train_counts = vectorizer.fit_transform(X_train)
 \end{lstlisting}
 Now we can use the transformed training data to fit a \li{MultinomialNB} model from \li{sklearn.naive_bayes}.
 \begin{lstlisting}
->>> from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import MultinomialNB
 
->>> clf = MultinomialNB()
->>> clf = clf.fit(train_counts, y_train)
+clf = MultinomialNB()
+clf = clf.fit(train_counts, y_train)
 \end{lstlisting}
 Testing data we want to classify must first be transformed by our vectorizer with the \li{transform()} method (not the \li{fit_transform()} method).
 We can then classify the data using the \li{predict()} method of the \li{MultinomialNB} model.
 \begin{lstlisting}
->>> test_counts = vectorizer.transform(X_test)
->>> labels = clf.predict(test_counts)
+test_counts = vectorizer.transform(X_test)
+labels = clf.predict(test_counts)
 \end{lstlisting}
 This naïve Bayes model uses the multinomial distribution where we have used the categorical and poisson distributions.
 Multinomial is very similar to the categorical implementation, as the multinomial distribution models the outcome of $n$ categorical trials (in the same way that the binomial distribution models $n$ Bernoulli trials).
 
-\begin{problem}
-Write a function that will classify messages. 
+\begin{problem}\label{prob:naivebayes:sklearn}
+Write a function that will classify messages using the SkLearn naive Bayes implementation. 
 It will take as arguments training data \li{X_train} and \li{y_train}, and test data \li{X_test}. 
-In this function use the \li{CountVectorizer} and \li{MultinomialNB} from sklearn and return the predicted classification of the model.
+In this function use the \li{CountVectorizer} and \li{MultinomialNB} from SkLearn and return the predicted classification of the model.
 \end{problem}
-
-The results of Problem $7$ can help you test the two Bayes Filters you created in this lab.
-Using the \li{accuracy_score} method of \li{sklearn.metrics}, you can compare your predicted labels with the ones from Problem $7$.
-You should have very high accuracy, as demonstrated below.
-\begin{lstlisting}
->>> from sklearn.metrics import accuracy_score
-
->>> # labels returned by Problem 7
->>> actual_labels = sklearn_method(X_train, y_train, X_test)
-
->>> # test against NaiveBayesFilter
->>> NB = NaiveBayesFilter()
->>> NB.fit(X_train, y_train)
->>> NB_labels = NB.predict_log(X_test)
->>> accuracy_score(actual_labels, NB_labels)
-0.9769289925660087
-
->>> # test against PoissonBayesFilter
->>> PB = PoissonBayesFilter()
->>> PB.fit(X_train, y_train)
->>> PB_labels = PB.predict(X_test)
->>> accuracy_score(acutal_labels, PB_labels)
-0.9782107152012305
-\end{lstlisting}
-
-\section*{References}
-Rish, Irina. (2001). An Empirical Study of the Naïve Bayes Classifier. IJCAI 2001 Work Empir Methods Artif Intell. 3.
-\\~\\
-Data from: \href{http://www.dt.fee.unicamp.br/~tiago/smsspamcollection/}{http://www.dt.fee.unicamp.br/$\sim$tiago/smsspamcollection/}
+%To calculate the accuracy of the predictions, we can use the \li{accuracy_score} method of \li{sklearn.metrics}.

@@ -56,13 +56,11 @@ There are several common architectures that are used for parallel computing, and
 Each architecture offers unique advantages and disadvantages, but the general commands used with each are very similar.
 
 In this lab, we will explore the usage and capabilities of parallel computing using Python's iPyParallel package.
-iPyParallel can be installed with either pip or conda:
+iPyParallel can be installed using pip:
 \begin{lstlisting}
-$ pip install ipyparallel
+$ pip install ipyparallel <=8.6.1
 \end{lstlisting}
-\begin{lstlisting}
-$ conda install ipyparallel
-\end{lstlisting}
+Use version 8.6.1.
 
 \subsection*{The iPyParallel Architecture} % ----------------------------------
 
@@ -264,6 +262,7 @@ Each method also has a shortcut via indexing.
 Write a function \li{variables(dx)} that accepts a dictionary of variables.
 Create a \li{Client} object and a \li{DirectView} and distribute the variables.
 Pull the variables back and make sure they haven't changed.
+Test that the push worked outside the function.
 \end{problem}
 
 \subsubsection*{Scatter and Gather} % - - - - - - - - - - - - - - - - - - - - -
@@ -552,7 +551,7 @@ For example, calculating the Fibonacci sequence using the usual formula, F($n$) 
 \begin{problem}
 The \emph{trapeziod rule} is a simple technique for numerical integration:
 \[
-\int_{a}^b f(x) dx \approx \frac{h}{2} \sum_{k=1}^N (f(x_{k}) + f(x_{k+1})),
+\int_{a}^b f(x) dx \approx \frac{h}{2} \sum_{k=1}^{N-1} (f(x_{k}) + f(x_{k+1})),
 \]
 where $a = x_1 < x_2 < \ldots < x_N = b$ and $h = x_{n+1} - x_{n}$ for each $n$.
 See Figure \ref{fig:parallel-intro-traprule}.
@@ -563,7 +562,8 @@ As a result, this problem is considered embarrassingly parallel.
 
 Write a function that accepts a function handle to integrate, bounds of integration, and the number of points to use for the approximation.
 Parallelize the trapezoid rule in order to estimate the integral of $f$.
-That is, evenly divide the points among all available processors and run the trapezoid rule on each portion simultaneously.
+That is, divide the points among all available processors and run the trapezoid rule on each portion simultaneously.
+Be sure that the intervals for each processor share endpoints so that the subintervals are not skipped, resulting in rather large amounts of error.
 The sum of the results of all the processors will be the estimation of the integral over the entire interval of integration.
 Return this sum.
 
@@ -652,13 +652,7 @@ It is, however, possible in an MPI framework and will be covered in the MPI lab.
 \begin{comment} %Redundant
 \subsection*{Installation and Initialization}
 
-If you have not already installed \li{ipyparallel}, you may do so using the conda package manager.
 
-\begin{lstlisting}[style=ShellInput]
-$ conda update conda
-$ conda update anaconda
-$ conda install ipyparallel
-\end{lstlisting}
 \end{comment}
 
 \subsection*{Clusters of Multiple Machines}
