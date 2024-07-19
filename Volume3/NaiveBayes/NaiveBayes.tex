@@ -15,36 +15,36 @@ While it is generally a bad idea to assume independence, naïve Bayes classifier
 
 Given the feature vector of a piece of data we want to classify, we want to know which of all the classes is most likely. Essentially, we want to answer the following question
 \begin{equation}\label{eq:orig_problem}
-    \argmax_{k\in K} P(C=k | \x),
+    \argmax_{k\in K} P(C=k \mid \x),
 \end{equation}
 where $C$ is the random variable representing the class of the data.
 Using Bayes' Theorem, we can reformulate this problem into something that is actually computable. For any $k\in K$,
 \begin{align*}
-    P(C=k | \x) = \frac{P(C=k)P(\x | C=k)}{P(\x)}.
+    P(C=k \mid \x) = \frac{P(C=k)P(\x \mid C=k)}{P(\x)}.
 \end{align*}
 Now we will examine each feature individually and use the chain rule to expand the new conditional probability:
 \begin{align*}
-    P(\x | C=k) &= P(x_1,\dots,x_n|C=k) \\
-    &= P(x_1 | x_2,\dots,x_n,C=k)P(x_2,\dots,x_n|C=k) \\
+    P(\x \mid C=k) &= P(x_1,\dots,x_n \mid C=k) \\
+    &= P(x_1 \mid x_2,\dots,x_n,C=k)P(x_2,\dots,x_n \mid C=k) \\
     &= \dots \\
-    &= P(x_1 | x_2,\dots,x_n,C=k)P(x_2 | x_3, \dots, x_n,C=k)\cdots P(x_n | C=k).
+    &= P(x_1 \mid x_2,\dots,x_n,C=k)P(x_2 \mid x_3, \dots, x_n,C=k)\cdots P(x_n \mid C=k).
 \end{align*}
 By applying the assumption that each feature is independent we can drastically simplify this expression to the following:
 \begin{align*}
-    P(x_1 | x_2,\dots,x_n,C=k)\cdots P(x_n | C=k) &= \prod_{i=1}^{n}P(x_i | C=k).
+    P(x_1 \mid x_2,\dots,x_n,C=k)\cdots P(x_n \mid C=k) &= \prod_{i=1}^{n}P(x_i \mid C=k).
 \end{align*}
 Therefore we have that 
 \begin{align*}
-    P(C=k | \x) = \frac{P(C=k)}{P(\x)} \prod_{i=1}^{n}P(x_i | C=k),
+    P(C=k \mid \x) = \frac{P(C=k)}{P(\x)} \prod_{i=1}^{n}P(x_i \mid C=k),
 \end{align*}
 which reforms Equation \ref{eq:orig_problem} as
 \begin{equation}\label{eq:simple_problem}
-    \argmax_{k\in K} P(C=k | \x) = \argmax_{k\in K} P(C=k)\prod_{i=1}^{n}P(x_i | C=k).
+    \argmax_{k\in K} P(C=k \mid \x) = \argmax_{k\in K} P(C=k)\prod_{i=1}^{n}P(x_i \mid C=k).
 \end{equation}
 We can drop the $P(\x)$ in the denominator since it does not depend on $k$.
 In this form, the problem is computationally tractable,
-since we can use the training data to find approximations of $P(C=k)$ and $P(x_i|C=k)$ for each $i$ and $k$.
-Something to note here is that we are actually maximizing $P(C=k | \x)$ by computing and maximizing $P(C=k,\x)$.
+since we can use the training data to find approximations of $P(C=k)$ and $P(x_i \mid C=k)$ for each $i$ and $k$.
+Something to note here is that we are actually maximizing $P(C=k \mid \x)$ by computing and maximizing $P(C=k,\x)$.
 This means that naïve Bayes is a generative classifier, and not a discriminative classifier.
 
 \section*{Spam Filters}
@@ -66,23 +66,23 @@ Before we can construct a naive Bayes classifier, we need to choose a probabilit
 Two common choices are categorical distributions and Poisson distributions.
 We will first create a classifier using a categorical distribution.
 In this case, each feature $x_i$ represents the $i$-th word of a message.
-The probability $P(x_i|C=k)$ then represents the probability that a specific word in the message is the word that we observed, given that the category is $k$.
+The probability $P(x_i \mid C=k)$ then represents the probability that a specific word in the message is the word that we observed, given that the category is $k$.
 For simplicity, we assume that these values do not change with respect to $i$, so the probability of observing a specific word is the same for every position in a message.
 
 Suppose we have a labeled training dataset.
-To train the model, we need to just find values for $P(C=k)$ and $P(x_i|C=k)$.
+To train the model, we need to just find values for $P(C=k)$ and $P(x_i \mid C=k)$.
 In this case, a reasonably good choice is the maximum likelihood estimator, which in this case is just
 \begin{align*}
 P(C=k) &=\frac{N_{\text{samples in $k$}}}{N_{\text{samples}}}
 \\
-P(x_i | C=k) &= \frac{N_{\text{occurrences of $x_i$ in class $k$}}}{N_{\text{words in class $k$}}}
+P(x_i \mid C=k) &= \frac{N_{\text{occurrences of $x_i$ in class $k$}}}{N_{\text{words in class $k$}}}
 \end{align*}
 However, this choice leads to some issues.
-For example, if a certain word $x_j$ occurs only in spam messages and never in ham messages in our training dataset, then our classifier will predict $P(x_i | C=\text{ham})=0$ for any message that contains $x_j$.
+For example, if a certain word $x_j$ occurs only in spam messages and never in ham messages in our training dataset, then our classifier will predict $P(x_i \mid C=\text{ham})=0$ for any message that contains $x_j$.
 This is not desirable, but to make matters worse, the same situation could happen for both classes within a single message, leading our model to predict
-$P(x_i|C=k)=0$ for all classes.
+$P(x_i \mid C=k)=0$ for all classes.
 This makes our classifier unable to classify such samples.
-To circumvent this issue, we will use \emph{Laplace add-one smoothing}, which consists of adding $1$ to the numerator of $P(x_i | C=k)$ and $2$ to its denominator.
+To circumvent this issue, we will use \emph{Laplace add-one smoothing}, which consists of adding $1$ to the numerator of $P(x_i \mid C=k)$ and $2$ to its denominator.
 So, the probabilities we will use are the following:
 \begin{align}
 \label{eq:prob_spam}
@@ -91,7 +91,7 @@ So, the probabilities we will use are the following:
     P(C=\text{ham}) &= \frac{N_{\text{messages ham}}}{N_{\text{samples}}},
     \label{eq:prob_ham}
 \\
-    P(x_i | C=k) &= \frac{N_{\text{occurrences of $x_i$ in class $k$}}+1}{N_{\text{total words in class $k$}}+2}.
+    P(x_i \mid C=k) &= \frac{N_{\text{occurrences of $x_i$ in class $k$}}+1}{N_{\text{total words in class $k$}}+2}.
 \label{eq:prob_word}
 \end{align}
 The result of Laplace add-one smoothing is equivalent to the maximum likelihood estimators if a certain Bayesian prior is used for the probabilities.
@@ -102,10 +102,11 @@ Lastly, note that the denominator in Equation \ref{eq:prob_word} is not the numb
 Create a class \li{NaiveBayesFilter}.
 Implement a method \li{fit()} that accepts the training data \li{X} and the training labels \li{y}.
 In this method, compute the probabilities $P(C=\text{spam})$ and $P(C=\text{ham})$ as in Equations \eqref{eq:prob_spam} and \eqref{eq:prob_ham}.
-Also compute the probabilities $P(x_i|C=k)$ for each word in both the spam and ham classes, thereby training the model.
+Also compute the probabilities $P(x_i \mid C=k)$ for each word in both the spam and ham classes, thereby training the model.
 Store these computed probabilities in dictionaries called \li{self.spam_probs} and \li{self.ham_probs}, where the key is the word and the value is the associated probability.
+ Make sure to include an entry in each dictionary for every word that shows up in either class, even if there are no occurrences.
 
-For example, \li{self.ham_probs['out']} will give the computed value for $P(x_i=\text{``out''},C=\text{ham})$ value:
+For example, \li{self.ham_probs['out']} will give the computed value for $P(x_i=\text{``out''} \mid C=\text{ham})$ value:
 \begin{lstlisting}
 # Example model trained on the first 300 data points
 >>> nb = NaiveBayesFilter()
@@ -126,10 +127,10 @@ When using \li{split()}, call it without any arguments, as otherwise you may acc
 \subsection*{Predictions}
 Now that we have trained our model, we can predict the class of a message by calculating
 \[
-P(C=k)\prod_{i=1}^n P(x_i|C=k)
+P(C=k)\prod_{i=1}^n P(x_i \mid C=k)
 \]
 for each class $k$, then choosing the class that maximizes this probability.
-As discussed above, this is equivalent to maximizing the probability $P(C=k|\x)$; however, be aware that we are not actually computing those.
+As discussed above, this is equivalent to maximizing the probability $P(C=k \mid \x)$; however, be aware that we are not actually computing those.
 The probabilities we compute here will not sum to 1, since they are actually the values $P(C=k,\x)$.
 
 However, directly computing this probability as a product can lead to an issue: underflow.
@@ -138,14 +139,14 @@ In this case the computed probability becomes 0.
 This is particularly problematic because if underflow happens for a sample for one class, it will likely also happen for all of the other classes, making such samples impossible to classify.
 To avoid this issue, we will work with the logarithm of the probability:
 \begin{equation}\label{eq:log_problem}
-    \ln P(\x,C=k)=\ln\left(P(C=k)\right) + \sum_{i=1}^{n}\ln\left(P(x_i | C=k)\right).
+    \ln P(\x,C=k)=\ln\left(P(C=k)\right) + \sum_{i=1}^{n}\ln\left(P(x_i \mid C=k)\right).
 \end{equation}
 This has the same maximizer as before, so our predictions are unaffected, while also avoiding any issues with underflow.
 
 \begin{problem}\label{NB:prob_predict_proba}
 Implement the \li{predict_proba()} method in your naïve Bayes classifier. 
 It should take as an argument \li{X}, the data that needs to be classified, and it will compute the log probabilities as given in Equation \ref{eq:log_problem} for each message in \li{X}.
-In the case we have some word $x_u$ that is not found in the training set, use the value $P(x_u|C=k)=\frac{1}{2}$ for both classes.
+In the case we have some word $x_u$ that is not found in the training set, use the value $P(x_u \mid C=k)=\frac{1}{2}$ for both classes.
 
 The method should return an \li{(N, 2)} array, where \li{N} is the length of \li{X}, whose entries are the log probabilities of each message \li{x} in \li{X} belonging to each category.
 The first column corresponds to $\ln P(\x, C=\text{ham})$, and the second to $\ln P(\x, C=\text{spam})$.
@@ -202,7 +203,7 @@ We will again use maximum likelihood estimation to find the values of $r$ for ea
 
 
 \subsection*{Training the Model}
-Similar to the other classifier that we made, training the model amounts to using the training data to determine how $P(x_i | C=k)$ is computed, as well as compting $P(C=k)$.
+Similar to the other classifier that we made, training the model amounts to using the training data to determine how $P(x_i \mid C=k)$ is computed, as well as compting $P(C=k)$.
 For the Poisson model we must find a value for $r$ for each word that appears in the training set.
 To do this we will use maximum likelihood estimation.
 We will label the chosen value of $r$ for the $i$-th word and class $k$ as $r_{i,k}$.

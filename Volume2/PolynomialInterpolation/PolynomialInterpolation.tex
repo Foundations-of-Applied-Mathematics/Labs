@@ -2,7 +2,7 @@
 \label{lab:Polynomial Interpolation}
 \objective{Learn and compare three methods of polynomial interpolation: standard Lagrange interpolation, Barycentric Lagrange interpolation and Chebyshev interpolation.
 Explore Runge's phenomenon and how the choice of interpolating points affect the results.
-Use polynomial interpolation to study air polution by approximating graphs of particulates in air.}
+Use polynomial interpolation to study air pollution by approximating graphs of particulates in air.}
 
 \section*{Polynomial Interpolation}
 Polynomial interpolation is the method of finding a polynomial that matches a function at specific points in its range.
@@ -42,7 +42,7 @@ L_j(x_i) = \begin{cases} 0 &\mbox{ if } i \neq j\\ 1 &\mbox{ if } i =j \\ \end{c
 
 The Lagrange form of this family of basis functions is
 \begin{equation}
-\label{equa:lagrange}
+\label{eq:lagrange}
 L_j(x) = \frac{\displaystyle\prod_{k=1, k \neq j}^n (x-x_k)}{\displaystyle\prod_{k=1, k \neq j}^n (x_j-x_k)}
 \end{equation}
 Each of these Lagrange basis functions is a polynomial of degree $n-1$ and has the necessary properties as given above.
@@ -54,7 +54,7 @@ The function should accept two NumPy arrays of length $n$ which contain the $x$ 
 Within \li{lagrange()}, write a subroutine that will evaluate each of the $n$ Lagrange basis functions at every point in the domain.
 It may be helpful to follow these steps:
 \begin{enumerate}
-\item Compute the denominator of each $L_j$ (as in Equation \ref{equa:lagrange}) .
+\item Compute the denominator of each $L_j$ (as in Equation \ref{eq:lagrange}) .
 \item Using the previous step, evaluate $L_j$ at all points in the computational domain (this will give you $m$ values for each $L_j$.)
 \item Combine the results into an  $n \times m$ NumPy array, consisting of each of the $n$ $L_j$ evaluated at each of the $m$ points in the domain.
 \end{enumerate}
@@ -65,7 +65,7 @@ You may find the functions \li{np.product()} and \li{np.delete()} to be useful w
 
 \emph{Lagrange interpolation} is completed by combining the Lagrange basis functions with the y-values of the function to be interpolated $y_i=f(x_i)$ in the following manner: 
 \begin{equation}
-\label{equa:poly}
+\label{eq:poly}
 p(x) = \sum_{j=1}^n y_j L_j(x)
 \end{equation}
 This will create the unique interpolating polynomial.
@@ -89,7 +89,7 @@ Although the coefficients of the interpolating polynomials will not be explicitl
 
 Complete the implementation of \li{lagrange()}. 
 
-Evaluate the interpolating polynomial at each point in the domain by combining the $y$ values of the interpolation points and the evaluated Lagrange basis functions from Problem \ref{prob:lagrange_basis} as in Equation \ref{equa:poly}. 
+Evaluate the interpolating polynomial at each point in the domain by combining the $y$ values of the interpolation points and the evaluated Lagrange basis functions from Problem \ref{prob:lagrange_basis} as in Equation \ref{eq:poly}. 
 Return the final array of length $m$ that consists of the interpolating polynomial evaluated at each point in the domain.
 
 You can test your function by plotting Runge's function $f(x)=\frac{1}{1+25x^2}$ and your interpolating polynomial on the same plot for different values of $n$ equally spaced interpolating values then comparing
@@ -144,9 +144,10 @@ When computing the barycentric weights, each element of the product $\prod_{k=1,
 (C is known as the \emph{capacity} of the interval).
 In effect, this scales each barycentric weight by $C^{1-n}$ which helps to prevent overflow during computation.
 Thus, the new barycentric weights are given by
-\[
+\begin{equation}
+\label{eq:weights}
 w_j = \frac{1}{\prod_{k=1, k \neq j}^n \left[(x_j-x_k) / C\right]}.
-\]
+\end{equation}
 Once again, this change is possible since the extra factor $C^{1-n}$ is cancelled out in the final product.
 This process is summed up in the following code:
 
@@ -173,7 +174,7 @@ When these two fixes are combined, the Barycentric Algorithm becomes numerically
 Create a class that performs Barycentric Lagrange interpolation.
 The constructor of your class should accept two NumPy arrays which contain the $x$ and $y$ values of the interpolation points.
 Store these arrays as attributes.
-In the constructor, compute the corresponding barycentric weights and store the resulting array as a class attribute.
+In the constructor, compute the corresponding barycentric weights using Equation \ref{eq:weights} and store the resulting array as a class attribute.
 Be sure that the relative ordering of the arrays remains unchanged.
 
 Implement the \li{__call__()} method so that it accepts a NumPy array of values at which to evaluate the interpolating polynomial and returns an array of the evaluated points.
@@ -220,11 +221,11 @@ The following code will produce a figure similar to Figure \ref{fig:bad2}.
 >>> domain = np.linspace(-1, 1, 200)
 
 >>> poly = BarycentricInterpolator(pts[:-1])
->>> poly.add_xi(pts[-1])          # Oops, forgot one of the points.
+>>> poly.add_xi([pts[-1]])        # Oops, forgot one of the points.
 >>> poly.set_yi(f(pts))           # Set the y values.
 
 >>> plt.plot(domain, f(domain))
->>> plt.plot(domain, poly.<<eval>>(domain))
+>>> plt.plot(domain, poly(domain))
 \end{lstlisting}
 
 \begin{comment} # Potential timing problem comparing student written barycentr, lagrange and Scipy's Lagrange.  Superceded by later problem which also includes Chebyshev.

@@ -21,20 +21,24 @@ Additionally, the residuals are represented by a column vector  $\boldsymbol\eps
 So we have \[ \boldsymbol y = m \boldsymbol x + \boldsymbol 1 b + \boldsymbol\epsilon = [\boldsymbol 1, \boldsymbol x] \cdot \begin{bmatrix} b \\ m \end{bmatrix} + \boldsymbol\epsilon. \]
 Denoting $X = [ \boldsymbol 1, \boldsymbol x ]$, we have our final equation given as \[ \boldsymbol y = X \boldsymbol\beta + \boldsymbol\epsilon . \]
 This notation may seem excessive, but suppose we wanted to fit a model of the form $y=ax^3 + bx^2 + cx+d$
-A little work can show that $X=[ \boldsymbol 1,\boldsymbol x, \boldsymbol x^2, \boldsymbol x^3]$ and $\boldsymbol\beta = [\beta_0, \beta_1, \beta_2, \beta_3]^T$, which is very easy to work with.
+A little work can show that $X=[ \boldsymbol 1,\boldsymbol x, \boldsymbol x^2, \boldsymbol x^3]$ and $\boldsymbol\beta = [\beta_0, \beta_1, \beta_2, \beta_3]\trp $, which is very easy to work with.
 Thus, this notation is actually the ideal way to generalize linear regression, especially when working with higher degree polynomials.
 
 The solution to OLS is straight forward with some important assumptions. Sparing you the algebraic details and assuming that 
 $\boldsymbol y \sim \mathcal{N}(X\boldsymbol\beta, \sigma^2 \boldsymbol I)$ and $\boldsymbol\epsilon \sim \mathcal{N}(\boldsymbol 0, \sigma^2 \boldsymbol I)$ and $\boldsymbol I$ is the identity matrix, 
 the least squares estimator for $\boldsymbol\beta$ is given as 
 \begin{equation}
-\widehat{\boldsymbol\beta} = (X^TX)^{-1} X^T \boldsymbol y .
+\widehat{\boldsymbol\beta} = (X\trp X)^{-1} X\trp  \boldsymbol y .
+\label{eq:ols}
 \end{equation}
 
 \begin{problem}
-Write a function that takes as input \li{X} and \li{y}. In your function, add a column of ones to \li{X} to account for $\beta_0$. Call this function \li{ols}. This function should return the least squares estimator for $\boldsymbol\beta$ as a numpy array.
+Write a function that takes as input \li{X} and \li{y}. 
+In your function, add a column of ones to \li{X} to account for $\beta_0$.
+Call this function \li{ols}. 
+This function should return the least squares estimator for $\boldsymbol\beta$ as a numpy array.
 
-Hint: Try rearranging equation $1.1$ and use \li{np.linalg.solve()} to avoid inverting $(X^T X)$.
+Hint: Try rearranging equation \eqref{eq:ols} and use \li{np.linalg.solve()} to avoid inverting $(X\trp  X)$.
 \end{problem}
 
 \begin{problem}
@@ -51,16 +55,16 @@ Your plot should include a title, axis labels, and a legend.
 \end{problem}
 
 \section*{Rank-Deficient Models}
-Notice that in order to find the least squares estimator $\widehat{\boldsymbol\beta}$, we need $X^TX$ to be invertible. 
-However, when $X$ does not have full rank, the product $X^TX$ is singular and not invertible. 
+Notice that in order to find the least squares estimator $\widehat{\boldsymbol\beta}$, we need $X\trp X$ to be invertible. 
+However, when $X$ does not have full rank, the product $X\trp X$ is singular and not invertible. 
 We can no longer use the previous solution for the least squares estimator, but we can use the SVD and still compute a solution. 
 
-Recall that if $X \in M_{n\times d}$ has rank $r$, then the compact form of the SVD of $X$ is \[ X = U\Sigma V^H \]
+Recall that if $X \in M_{n\times d}$ has rank $r$, then the compact form of the SVD of $X$ is \[ X = U\Sigma V\hrm  \]
 where $U \in M_{n\times r}$ and $V \in M_{r\times d}$ have orthonormal columns and $\Sigma \in M_{r\times r}$ is diagonal. 
-In addition, if $X$ is real, then the factors $U$, $\Sigma$, and $V^H$ are also real. In this lab we assume $X$ is real. 
+In addition, if $X$ is real, then the factors $U$, $\Sigma$, and $V\hrm $ are also real. In this lab we assume $X$ is real. 
 As described in Volume 1, there is a unique solution for the least squares estimator given by 
 \begin{equation}
-\widehat{\boldsymbol\beta} = V \Sigma^{-1}U^T\boldsymbol y. 
+\widehat{\boldsymbol\beta} = V \Sigma^{-1}U\trp \boldsymbol y. 
 \end{equation}
 
 \begin{problem}
@@ -73,7 +77,7 @@ Hint: Use \li{np.linalg.svd} to factor \li{X} and use the argument \li{full_matr
 \begin{problem}
 Use the following code to generate random data:
 \begin{lstlisting}
-x = np.linspace(-4, 2, 500)
+x = np.linspace(-4, 2, 100)
 y = x**3 + 3*x**2 - x - 3.5 
 eps = np.random.normal(0, 3, len(y)) # Create noise 
 y += eps # Add noise to randomize data
@@ -183,15 +187,17 @@ print(model.aic) # or print(model.bic)
 \end{lstlisting} 
 
 \begin{problem}
-Use the file \li{realestate.csv} and the Python Example above as a template for constructing \li{y} and \li{X} and calculating model AIC and BIC. 
+Use the file \li{realestate.csv} and the Python Example above as a template for constructing \li{y} and \li{X} and calculating model \li{AIC} and \li{BIC}. 
 For the dependent variable, use \li{house price of unit area}. 
 For the independent variables, use \li{house age}, \li{distance to the nearest MRT station}, \li{number of convenience stores}, \li{latitude}, and \li{longitude}.
 Loop through all of the combinations of these variables and create \li{OLS} models for each of these combinations.
 Solve for the \li{AIC} and \li{BIC} for each of these models.
 
-Find the model that has the lowest AIC and the model that has the lowest BIC. Are they the same model? Print the features of the model with the lowest AIC as a list.
+Find the model that has the lowest \li{AIC} and the model that has the lowest \li{BIC}. 
+Print the features of the model with the lowest \li{AIC} and then the features of the model with the lowest \li{BIC} as separate lists.
 
 Hint: The \li{combinations} method from the \li{itertools} package will be very helpful for finding all feature combinations. 
+\label{prob:feature-selection}
 \end{problem}
 
 \section*{Regularization}
@@ -229,7 +235,8 @@ The example below goes over the syntax for implementing Ridge Regularization. No
 
 
 \begin{problem}
-Use Ridge and Lasso Regression to model \li{house price of unit area} from the file \li{realestate.csv}. 
+Use Ridge and Lasso Regression to model \li{house price of unit area} from the file \li{realestate.csv}.
+Use the same columns for your independent variables as you did in Problem \ref{prob:feature-selection}.
 First, do a grid search for the model parameter for both the Ridge and the Lasso models, separately.
 Note that the objects \li{RidgeCV} and \li{LassoCV} have built in cross-validation.
 Be sure to pass in \li{alphas=np.logspace(-6, 6, 13)} as grid parameters for each of the models. 

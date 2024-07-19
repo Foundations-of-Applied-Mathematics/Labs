@@ -335,26 +335,27 @@ Notice that Gauss-Seidel converges in less than half as many iterations as Jacob
 % \label{eq:gauss-seidel-method}
 % \end{align}
 
-Because Gauss-Seidel updates only one element of the solution vector at a time, the iteration cannot be summarized by a single matrix equation.
+Because Gauss-Seidel updates only one element of the solution vector at a time, \textbf{the iteration cannot be summarized by a single matrix equation}.
 Instead, the process is most generally described by the equation
 \begin{equation}
 \label{eq:gauss-seidel-full}
-x^{(k+1)}_i = \frac{1}{a_{ii}} \left(b_i - \sum_{j < i}a_{ij}x^{(k)}_j - \sum_{j > i}a_{ij}x^{(k)}_j \right).
+x^{(k+1)}_i = \frac{1}{a_{ii}} \left(b_i - \sum_{j < i}a_{ij}x^{(k+1)}_j - \sum_{j > i}a_{ij}x^{(k)}_j \right).
 \end{equation}
-
-Let $\a_i$ be the $i$th \textbf{row} of $A$.
-The two sums closely resemble the regular vector product of $\a_i$ and $\x^{(k)}$ without the $i^{\text{th}}$ term $a_{ii}x^{(k)}_i$.
+\\
+Let $\a_i$ be the $i$th \textbf{row} of $A$ and let $\mathbf{\hat{x}}^{(k)}_i = (x^{(k+1)}_1,\ldots, x^{(k+1)}_{i-1}, x^{(k)}_i, x^{(k)}_{i+1},\ldots, x^{(k)}_n)$.
+The two sums are the regular vector product of $\a_i$ and $\mathbf{\hat{x}}^{(k)}_i$ without the $i^{\text{th}}$ term $a_{ii}x^{(k)}_i$.
 This suggests the simplification
 \begin{align}
-\nonumber x^{(k+1)}_i &= \frac{1}{a_{ii}} \left(b_i - \a_i\trp\x^{(k)} + a_{ii}x^{(k)}_i \right)\\
-&= x^{(k)}_i + \frac{1}{a_{ii}}\left( b_i - \a_i\trp\x^{(k)}\right).
+\nonumber x^{(k+1)}_i &= \frac{1}{a_{ii}} \left(b_i - \a_i\trp\mathbf{\hat{x}}^{(k)}_i + a_{ii}x^{(k)}_i \right)\\
+&= x^{(k)}_i + \frac{1}{a_{ii}}\left( b_i - \a_i\trp\mathbf{\hat{x}}^{(k)}_i\right).
 \label{eq:gauss_seidel}
 \end{align}
 One sweep through all the entries of $\x$ completes one iteration.
 
 \begin{problem} % Implement Gauss-Seidel.
 Write a function that accepts a matrix $A$, a vector $\b$, a convergence tolerance \li{tol} defaulting to $10^{-8}$, a maximum number of iterations \li{maxiter} defaulting to $100$, and a keyword argument \li{plot} that defaults to \li{False}.
-Implement the Gauss-Seidel method using (\ref{eq:gauss_seidel}), returning the approximate solution to the equation $A\x = \b$.
+Implement the Gauss-Seidel method using (\ref{eq:gauss_seidel}) and details from the example above. 
+Return the approximate solution to the equation $A\x = \b$.
 
 Use the same stopping criterion as in Problem \ref{prob:jacobi}.
 Also keep track of the absolute errors of the iteration, as in Problem \ref{prob:plot-iterative-convergence}.
@@ -608,6 +609,11 @@ If \li{plot=True}, visualize the solution $\u$ with a heatmap using \li{plt.pcol
 This shows the distribution of heat over the hot plate after it has reached its steady state.
 Note that the $\u$ must be reshaped as an $n\times n$ array to properly visualize the result.
 \label{prob:finite-difference-setup}
+\begin{warn}
+    Integer arrays are generally not suitable for iterative methods that need to converge.
+    Float arrays should be used instead.
+    To ensure that the array being passed into your iterative method is of the desired datatype use \li{b.astype(float)} where \li{b} is the array in question.
+\end{warn}
 \end{problem}
 
 \begin{problem}

@@ -1,7 +1,8 @@
 \lab{The Finite Difference Method}{The Finite Difference Method}
 \label{lab:finitedifference2}
 
-\objective{The finite difference method provides a solid foundation for solving partial differential equations. Understanding and applying finite difference is key to understanding numerical solutions to PDEs.}
+\objective{The finite difference method provides a solid foundation for solving partial differential equations.
+Understanding and applying finite difference is key to understanding numerical solutions to PDEs.}
 \labdependencies{NumericalIVP}
 
 A \textbf{finite difference} for a function $f(x)$ is an expression of the form $f(x+s)-f(x+t)$.
@@ -14,9 +15,10 @@ You are used to seeing the derivative $u'(x)$, which can written in centered-dif
 \begin{align*}
 u'(x)=\lim_{h\to\infty}\frac{u(x+h)-u(x-h)}{2h}.
  \end{align*}
-Suppose we are interested in knowing the value of the derivative at the points $\{x_i\}$. Even if we don't have a formula for $u'(x)$, we can approximate it using finite differences.
-We first write the Taylor polynomial expansion of $u(x+h)$ and $u(x-h)$ centered at $x$. This gives
-
+Suppose we are interested in knowing the value of the derivative at the points $\{x_i\}$.
+Even if we don't have a formula for $u'(x)$, we can approximate it using finite differences.
+We first write the Taylor polynomial expansion of $u(x+h)$ and $u(x-h)$ centered at $x$.
+This gives
 \begin{align}
 u(x+h)=u(x)+u'(x)h+\frac{1}{2}u''(x)h^2+\frac{1}{6}u'''(x)h^3+\mathcal{O}(h^4)\label{plus}\\
 u(x-h)=u(x)-u'(x)h+\frac{1}{2}u''(x)h^2-\frac{1}{6}u'''(x)h^3+\mathcal{O}(h^4)\label{minus}
@@ -32,7 +34,6 @@ u'(x_i) \approx \frac{u(x_i+h)-u(x_i-h)}{2h}=\frac{u(x_{i+1})-u(x_{i-1})}{2h}.
 \end{align*}
 We won't worry about the derivative at the endpoints, $u'(x_0)$ and $u'(x_n)$.
 This allows us to approximate the values $\{u'(x_i)\}$ as the solution to a system of equations:
-
 \begin{align}
 \frac{1}{2h}
 \begin{array}{c}
@@ -131,8 +132,7 @@ u''(x_1) \\ u''(x_2)\\ \vdots  \\ u''(x_{n-2}) \\ u''(x_{n-1})
 \label{finitedifference2:uppp}
 \end{array}.
 \end{align}
-
-\noindent This can also be written with a $(n-1)\times(n-1)$ tridiagonal matrix:
+This can also be written with a $(n-1)\times(n-1)$ tridiagonal matrix:
 \begin{align}
 \frac{1}{h^2}
 \begin{array}{c}
@@ -166,11 +166,20 @@ u''(x_1) \\ u''(x_2)\\ \vdots  \\ u''(x_{n-2}) \\ u''(x_{n-1})
 \end{array}
 \end{align}
 
+Each of these matrices consists mostly of zeros; that is, they are \textit{sparse}.
+So make sure to use \li{scipy.sparse} when constructing these matrices and those that follow in this lab.\footnote{See the Volume 1 lab ``Linear Systems'' for a refresher on sparse matrices.}
+
 \begin{problem}
-	Let $u(x) = \sin((x+\pi)^2-1)$. Use \eqref{finitedifference2:up} - \eqref{finitedifference2:upp} to approximate $\frac{1}{2}u'' - u'$ at the grid points where $a=0$, $b=1$, and $n=10$. Graph the result.
+	Let $u(x) = \sin((x+\pi)^2-1)$.
+	Use \eqref{finitedifference2:up} - \eqref{finitedifference2:upp} to approximate $\frac{1}{2}u'' - u'$ at the grid points where $a=0$, $b=1$, and $n=10$.
+	Graph the result.
+    
+    Hint: You may find \li{scipy.sparse.diags} useful.
 \end{problem}
 
-The previous equations are not only useful for approximating derivatives, but they can be also used to solve differential equations. Suppose that instead of knowing the function $u(x)$, we know that $\frac{1}{2}u'' - u' = f$, where the function $f(x)$ is given. How do we solve for $u(x)$?
+The previous equations are not only useful for approximating derivatives, but they can be also used to solve differential equations.
+Suppose that instead of knowing the function $u(x)$, we know that $\frac{1}{2}u'' - u' = f$, where the function $f(x)$ is given.
+How do we solve for $u(x)$?
 
 \section*{Finite Difference Methods}
 
@@ -249,12 +258,13 @@ As before, we can remove two equations to modify the system to obtain an $(n-1)\
 
 
 \begin{problem}
-Use equation \eqref{eqn:practical_fin_dif} to solve the singularly perturbed BVP \eqref{eqn:singular_perturbed_BVP} on the interval $[0,1]$ with $\epsilon = 1/10$, $f(x) = -1$, $\alpha=1$, and $\beta=3$ on a grid with $n=30$ subintervals. Graph the solution.
+Use equation \eqref{eqn:practical_fin_dif} to solve the singularly perturbed BVP \eqref{eqn:singular_perturbed_BVP} on the interval $[0,1]$ with $\epsilon = 1/10$, $f(x) = -1$, $\alpha=1$, and $\beta=3$ on a grid with $n=30$ subintervals.
+Graph the solution.
 This BVP is called singularly perturbed because of the location of the parameter $\epsilon$.
-For $\epsilon = 0$ the ODE has a drastically different character - it then becomes first order, and can no longer support two boundary conditions.
+For $\epsilon = 0$ the ODE has a drastically different character---it then becomes first-order, and can no longer support two boundary conditions.
     \label{prob:finitedifference2:prob1}
 
-Hint: Use \li{np.linalg.solve} to solve for $U$.
+Hint: Use \li{scipy.sparse.linalg.spsolve} to solve for $U$.
 \end{problem}
 
 \begin{figure}[h]
@@ -265,54 +275,16 @@ The solution gets steeper near $x = 1$ as $\epsilon $ gets small.}
 \end{figure}
 
 
-\begin{comment}
-\begin{lstlisting}
-import numpy as np
-from scipy.sparse import spdiags
-from scipy.sparse.linalg import spsolve
-import matplotlib.pyplot as plt
-
-def bvp(func, epsilon, alpha, beta, N):
-	a,b = 0., 1. 	# Interval for the BVP
-	h = (b-a)/N 	# The length of each subinterval
-
-	# Initialize and define the vector F on the right
-	F = np.empty(N-1.)
-	F[0] = func(a+1.*h)-alpha*(epsilon+h/2.)*h**(-2.)
-	F[N-2] = func(a+(N-1)*h)-beta*(epsilon-h/2.)*h**(-2.)
-	for j in xrange(1,N-2):
-		F[j] = func(a + (j+1)*h)
-
-	# Here we define the arrays that will go on the diagonals of A
-	data = np.empty((3,N-1))
-	data[0,:] = -2.*epsilon*np.ones((1,N-1)) # main diagonal
-	data[1,:]  = (epsilon+h/2.)*np.ones((1,N-1))  	 # off-diagonals
-	data[2,:] = (epsilon-h/2.)*np.ones((1,N-1))
-	# Next we specify on which diagonals they will be placed, and create A
-	diags = np.array([0,-1,1])
-	A=h**(-2.)*spdiags(data,diags,N-1,N-1).asformat('csr')
-
-	U = np.empty(N+1)
-	U[1:-1] = spsolve(A,F)
-	U[0], U[-1] = alpha, beta
-	return np.linspace(a,b,N+1), U
-
-x, y = bvp(lambda x:-1., epsilon=.05,alpha=1, beta=3, N=400)
-plt.plot(x,y,'-k',linewidth=2.0)
-plt.show()
-
-\end{lstlisting}
-\end{comment}
-
-
 \section*{A heuristic test for convergence}
 \begin{figure}[ht]
 \centering
 \includegraphics[width=12cm]{figures/example_convergence.pdf}
-\caption{Demonstration of second order convergence for the finite difference approximation \eqref{fd_operator} of the BVP given in \eqref{eqn:singular_perturbed_BVP} with $\epsilon = .5$. } \label{fig:finitedifference2}
+\caption{Demonstration of second-order convergence for the finite difference approximation \eqref{fd_operator} of the BVP given in \eqref{eqn:singular_perturbed_BVP} with $\epsilon = .5$. } \label{fig:finitedifference2}
 \end{figure}
 
-The finite differences used above are second order approximations of the first and second derivatives of a function.  It seems reasonable to expect that the numerical solution would converge at a rate of about $\mathcal{O}(h^2)$. How can we check that a numerical approximation is reasonable?
+The finite differences used above are second-order approximations of the first and second derivatives of a function.
+It seems reasonable to expect that the numerical solution would converge at a rate of about $\mathcal{O}(h^2)$.
+How can we check that a numerical approximation is reasonable?
 
 Suppose a finite difference method is $\mathcal{O}(h^p)$ accurate.
 This means that the error $E(h) \approx Ch^p$ for some constant $C$ as $h \to 0$ (in other words, for $h>0$ small enough).
@@ -326,15 +298,19 @@ stepsize $h_k, k < m,$ is
 	\log(E(h_k)) &= \log(C) + p \log(h_k).
 \end{align*}
 
-Thus on a log-log plot of $E(h)$ vs. $h$, these values should be on a straight line with slope $p$ when $h$ is small enough to start getting convergence. We should note that demonstrating second-order convergence does NOT imply that the numerical approximation is converging to the correct solution.
+Thus on a log-log plot of $E(h)$ vs. $h$, these values should be on a straight line with slope $p$ when $h$ is small enough to start getting convergence.
+We should note that demonstrating second-order convergence does NOT imply that the numerical approximation is converging to the correct solution.
 
 
 \begin{problem}
-Implement a function \li{singular_bvp} to compute the finite difference solution to \ref{eqn:singular_perturbed_BVP}.
+Implement a function \li{singular_bvp} to compute the finite difference solution to \eqref{eqn:singular_perturbed_BVP}.
 Using $n = 5 \times 2^0,5 \times 2^1, \dots ,5 \times 2^9$ subintervals, compute 10 approximate solutions. 
-Use these to visualize the $\mathcal{O}(h^2)$ convergence of the finite difference method from Problem \ref{prob:finitedifference2:prob1} by producing a loglog plot of error against subinterval count; this will be similar to Figure \ref{fig:finitedifference2}, except with $\epsilon=0.1$. Also plot $h^2$ on the same plot, as in Figure \ref{fig:finitedifference2}.
+Use these to visualize the $\mathcal{O}(h^2)$ convergence of the finite difference method from Problem \ref{prob:finitedifference2:prob1} by producing a loglog plot of error against subinterval count; this will be similar to Figure \ref{fig:finitedifference2}, except with $\epsilon=0.1$.
+Also plot $h^2$ on the same plot, as in Figure \ref{fig:finitedifference2}.
+Remember to use sparse matrices.
 
-To produce the plot, treat the approximation with $n = 5 \times 2^9$ subintervals as the "true solution", and measure the error for the other approximations against it. Note that, since the ratios of numbers of subintervals between approximations are multiples of 2, we can compute the $L_{\infty}$ error for the $n=5 \times 2^j$ approximation by using the \li{step} argument in the array slicing syntax:
+To produce the plot, treat the approximation with $n = 5 \times 2^9$ subintervals as the ``true solution,'' and measure the error for the other approximations against it.
+Note that, since the ratios of numbers of subintervals between approximations are multiples of 2, we can compute the $L_{\infty}$ error for the $n=5 \times 2^j$ approximation by using the \li{step} argument in the array slicing syntax:
 \begin{lstlisting}
 # best approximation; the vector has length 5*2^9+1
 sol_best = singular_bvp(eps,alpha,beta,f,5*(2**9))
@@ -355,21 +331,31 @@ Consider a similar, but somewhat generalized ODE of the form in (\ref{eqn:singul
 	&{ } y(a) = \alpha, \quad y(b) = \beta.
 \end{align*}
 The functional coefficients $a_1, a_2, a_3$ can be treated similarly to constant coefficients, but with each row corresponding to a gridpoint in $x$ (but not including the endpoints).
+Applying the finite difference approximations gives the following system of equations:
+\begin{align*}
+\frac{1}{h^2} & \left( \left(-2a_1(x_1) + h^2a_3(x_1)\right)U_1 + \left(a_1(x_1) + \frac{h}{2}a_2(x_1)\right)U_2  \right) \\
+&\hspace{7cm} = f(x_1) - \alpha \left(\frac{a_1(x_1)}{h^2}- \frac{a_2(x_1)}{2h}\right) \\
+\frac{1}{h^2} & \left( \left(a_1(x_2) - \frac{h}{2}a_2(x_2)\right) U_1 + \left(- 2a_1(x_2) + h^2a_3(x_2)\right)U_2  + \left(a_1(x_2) + \frac{h}{2}a_2(x_2) \right)U_3 \right) \\
+&\hspace{7cm}= f(x_2)
+\\
+&\hspace{7cm}~~\vdots
+\\
+\frac{1}{h^2}& \left( \left(a_1(x_k) - \frac{h}{2}a_2(x_k)\right) U_{k-1} + \left(- 2a_1(x_k) + h^2a_3(x_k)\right)U_k + \left(a_1(x_k) + \frac{h}{2}a_2(x_k) \right)U_{k+1} \right) \\
+&\hspace{7cm}= f(x_k) \\
+\end{align*}\begin{align*}
+&\hspace{7cm}~~\vdots \\
+\frac{1}{h^2}& \left( \left(a_1(x_{n-1}) - \frac{h}{2}a_2(x_{n-1})\right) U_{n-2} + \left(- 2a_1(x_{n-1}) + h^2 a_3(x_{n-1})\right)U_{n-1} \right) \\
+&\hspace{7cm}= f(x_{n-1}) 
+- \beta\left(
+\frac{a_1(x_{n-1})}{h^2}+ \frac{a_2(x_{n-1})}{2h}
+\right)
+\end{align*}
 
-\begin{gather*}
-\frac{1}{h^2} \left((-2a_1(x_1) + a_3(x_1))U_1 + \left(a_1(x_1) - a_2(x_1)\frac{h}{2}\right)U_1 \right) = f(x_1) -\alpha\frac{a_1(x_0) - a_2(x_0)(h/2)}{h^2}\\
-\frac{1}{h^2} \left(\left(a_1(x_2) + a_2(x_2)\frac{h}{2}\right) U_1 + (- 2a_1(x_2) + a_3(x_2)h^2)U_2 + \left(a_1(x_2) - a_2(x_2)\frac{h}{2} \right)U_3 \right) = f(x_2)\\
-\vdots \\
-\frac{1}{h^2} \left( \left(a_1(x_{n-2}) + a_2(x_{n-2})\frac{h}{2}\right) U_{n-3} + (- 2a_1(x_{n-2}) + a_3(x_{n-2})h^2)U_{n-2} + \right.\\
-	\left. \left(a_1(x_{n-2}) - a_2(x_{n-2})\frac{h}{2} \right)U_{n-1} \right) = f(x_{n-2})\\
-\frac{1}{h^2} \left( \left(a_1(x_{n-1}) + a_2(x_{n-1})\frac{h}{2}\right) U_{n-2} + (- 2a_1(x_{n-1}) + a_3(x_{n-1})h^2)U_{n-1} \right)\\
-= f(x_{n-1}) - \beta\left(\frac{a_1(x_{n-1})}{h^2}+ \frac{a_2(x_{n-1})}{2h}\right)
-\end{gather*}
-
-This can (and should) be put into matrix form to be solved. It was not done here because it requires more page space than is available.
+This can (and should) be put into matrix form to be solved.
+It was not done here because it requires more page space than is available.
 
 \begin{problem}
-Extend your finite difference code to the case of a general second order linear BVP with boundary conditions:
+Extend your finite difference code to the case of a general second-order linear BVP with boundary conditions:
 \begin{align*}
 	&{ } a_1(x)y''(x) +a_2(x)y'(x)+ a_3(x) y(x) = f(x), \quad x \in (a,b),\\
 	&{ } y(a) = \alpha, \quad y(b) = \beta.
@@ -382,6 +368,7 @@ Use your code to solve the boundary value problem
 for $\epsilon = 0.1$ on a grid with $n=30$ subintervals.
 \label{prob:finitedifference2:prob3}
 Be sure to modify the finite difference operator $D_h$ in \eqref{fd_operator} correctly.
+Remember to use sparse matrices.
 
 \end{problem}
 
@@ -404,7 +391,9 @@ Numerically solve the boundary value problem
 	\epsilon y''(x) + xy'(x) = -\epsilon \pi^2 \cos(\pi x) - \pi x \sin(\pi x), \\
 	y(-1) = -2, \quad y(1) = 0,
 \end{align*}
-for $\epsilon = 0.1, 0.01,$ and $0.001$. Use a grid with $n=150$ subintervals. Plot your solutions.
+for $\epsilon = 0.1, 0.01,$ and $0.001$.
+Use a grid with $n=150$ subintervals.
+Plot your solutions.
 \label{prob:finitedifference2:prob4}
 \end{problem}
 
@@ -414,7 +403,9 @@ Numerically solve the boundary value problem
 	(\epsilon +x^2)y''(x) + 4xy'(x) + 2y(x) = 0, \\
 	y(-1) = 1/(1+\epsilon), \quad y(1) = 1/(1+\epsilon),
 \end{align*}
-for $\epsilon = 0.05, 0.02$. Use a grid with $n=150$ subintervals. Plot your solutions.
+for $\epsilon = 0.05, 0.02$.
+Use a grid with $n=150$ subintervals.
+Plot your solutions.
 \label{prob:finitedifference2:prob5}
 \end{problem}
 

@@ -64,7 +64,7 @@ array([ 3.74165739,  8.77496439])   # This is ||x0|| and ||x1||.
 \subsection*{Exhaustive Search} % ---------------------------------------------
 
 Consider again the post office example.
-One way to find out which post office is closest is to drive from home to each post office, measuring the distance travelled in each trip.
+One way to find out which post office is closest is to drive from home to each post office, measuring the distance traveled in each trip.
 That is, we solve \eqref{eq:nearest-neighbor-def} by computing $\|\x - \z\|$ for every point $\x\in X$.
 This strategy is called a \emph{brute force} or \emph{exhaustive search}.
 
@@ -153,6 +153,43 @@ The file \li{test_nearest_neighbor.py} contains some prewritten unit tests for P
 % Here we simply insert the data in the order that it is given.
 % TODO: put this elsewhere (in the problem statement?).
 
+\begin{figure}[H]
+    \begin{tikzpicture}[
+        level 1/.style={sibling distance=7cm},
+        level 2/.style={sibling distance=4cm},
+        level 3/.style={sibling distance=3cm},
+        level 4/.style={sibling distance=3cm},
+        edge from parent/.style={draw, ->,thick, >=stealth'}]
+    
+        % Place the nodes and labels
+        \node [draw=blue, circle,fill=blue!10!,thick] (a) {$[\textcolor{red}{3},1,4]$}
+            child {node[draw=blue, circle, fill=blue!10!,thick] (b) {$[1,\textcolor{red}{2},7]$}
+                child {node[thick,circle,draw] (c) {$[2,0,\textcolor{red}{3}]$}}
+                child {node[draw=blue, circle,thick,fill=blue!10!] (d) {$[2,4,\textcolor{red}{5}]$}
+                    child {node[draw=blue, circle,thick,fill=blue!10!] (e) {$[\textcolor{red}{1},4,3]$}}
+                    child {node[thick,circle,draw] (f) {$[\textcolor{red}{0},5,7]$}}}}
+            child {node[thick,circle,draw] (g) {$[4,\textcolor{red}{3},5]$}
+                child {node[thick,circle,draw] (h) {$[6,1,\textcolor{red}{4}]$}
+                    child {node[draw = none] (invisble) {} edge from parent[draw=none]}
+                    child {node[thick,circle,draw] (i) {$[\textcolor{red}{5},2,5]$}}}
+                child {node[draw = none] (invisble1) {} edge from parent[draw=none]}};
+        \draw [blue!100!,->,thick,>=stealth'] (a)--(b);
+        \draw [blue!100!,->,thick,>=stealth'] (b)--(d);
+        \draw [blue!100!,->,thick,>=stealth'] (d)--(e);
+    
+        % pivot labels
+        \node [draw=none,red,node distance=5.7cm]  (1) [right of=a] {\li{pivot=0}};
+        \node [draw=none,red,node distance=2.18cm] (2) [right of=g] {\li{pivot=1}};
+        \node [draw=none,red,node distance=4.19cm] (3) [right of=h] {\li{pivot=2}};
+        \node [draw=none,red,node distance=2.69cm] (4) [right of=i] {\li{pivot=0}};
+    \end{tikzpicture}
+    \caption{To locate the node containing $[1,4,3]$, start by comparing $[1,4,3]$ to the root $[\textcolor{red}{3},1,4]$.
+    The root has an \li{pivot} of $0$, so compare the first component of the data to the first component of the root: since $1<\textcolor{red}{3}$, step left.
+    Next, $[1,4,3]$ must be to the right of $[1,\textcolor{red}{2},7]$ because $\textcolor{red}{2}\le 4$.
+    Similarly, $[1,4,3]$ must be to the left of $[2,4,\textcolor{red}{5}]$ as $3<\textcolor{red}{5}$.} %, where the node containing $[1,4,3]$ is found.}
+    \label{fig:nearest-neighbor-kdfind}
+    \end{figure}
+
 \subsection*{Constructing the Tree} % -----------------------------------------
 
 \subsubsection*{Locating Nodes} % - - - - - - - - - - - - - - - - - - - - - - -
@@ -198,42 +235,39 @@ class KDT:
         return _step(self.root)
 \end{lstlisting}
 
-\begin{figure}[H]
-\begin{tikzpicture}[
-    level 1/.style={sibling distance=7cm},
-    level 2/.style={sibling distance=4cm},
-    level 3/.style={sibling distance=3cm},
-    level 4/.style={sibling distance=3cm},
-    edge from parent/.style={draw, ->,thick, >=stealth'}]
+\subsubsection*{Inserting Nodes} % - - - - - - - - - - - - - - - - - - - - - -
 
-    % Place the nodes and labels
-    \node [draw=blue, circle,fill=blue!10!,thick] (a) {$[\textcolor{red}{3},1,4]$}
-        child {node[draw=blue, circle, fill=blue!10!,thick] (b) {$[1,\textcolor{red}{2},7]$}
-            child {node[thick,circle,draw] (c) {$[2,0,\textcolor{red}{3}]$}}
-            child {node[draw=blue, circle,thick,fill=blue!10!] (d) {$[2,4,\textcolor{red}{5}]$}
-                child {node[draw=blue, circle,thick,fill=blue!10!] (e) {$[\textcolor{red}{1},4,3]$}}
-                child {node[thick,circle,draw] (f) {$[\textcolor{red}{0},5,7]$}}}}
-        child {node[thick,circle,draw] (g) {$[4,\textcolor{red}{3},5]$}
-            child {node[thick,circle,draw] (h) {$[6,1,\textcolor{red}{4}]$}
-                child {node[draw = none] (invisble) {} edge from parent[draw=none]}
-                child {node[thick,circle,draw] (i) {$[\textcolor{red}{5},2,5]$}}}
-            child {node[draw = none] (invisble1) {} edge from parent[draw=none]}};
-    \draw [blue!100!,->,thick,>=stealth'] (a)--(b);
-    \draw [blue!100!,->,thick,>=stealth'] (b)--(d);
-    \draw [blue!100!,->,thick,>=stealth'] (d)--(e);
+% New nodes in a $k$-d tree are always added as leaf nodes.
+To add a new node to a $k$-d tree, determine which existing node should be the parent of the new node by recursively stepping down the tree as in the \li{find()} method.
+Next, assign the new node as the \li{left} or \li{right} child of the parent, and set its \li{pivot} based on its parent's \li{pivot}: if the parent's \li{pivot} is $i$, the new node's \li{pivot} should be $i+1$, or $0$ if $i = k-1$.
 
-    % pivot labels
-    \node [draw=none,red,node distance=5.7cm]  (1) [right of=a] {\li{pivot=0}};
-    \node [draw=none,red,node distance=2.18cm] (2) [right of=g] {\li{pivot=1}};
-    \node [draw=none,red,node distance=4.19cm] (3) [right of=h] {\li{pivot=2}};
-    \node [draw=none,red,node distance=2.69cm] (4) [right of=i] {\li{pivot=0}};
-\end{tikzpicture}
-\caption{To locate the node containing $[1,4,3]$, start by comparing $[1,4,3]$ to the root $[\textcolor{red}{3},1,4]$.
-The root has an \li{pivot} of $0$, so compare the first component of the data to the first component of the root: since $1<\textcolor{red}{3}$, step left.
-Next, $[1,4,3]$ must be to the right of $[1,\textcolor{red}{2},7]$ because $\textcolor{red}{2}\le 4$.
-Similarly, $[1,4,3]$ must be to the left of $[2,4,\textcolor{red}{5}]$ as $3<\textcolor{red}{5}$.} %, where the node containing $[1,4,3]$ is found.}
-\label{fig:nearest-neighbor-kdfind}
-\end{figure}
+Consider again the $k$-d tree in Figure \ref{fig:nearest-neighbor-kdfind}.
+To insert $[2,3,4]$, search the tree for $[2,3,4]$ until hitting an empty slot.
+In this case, the search steps from the root down to $[\textcolor{red}{1},4,3]$, which has an \li{pivot} of $0$.
+Then since $\textcolor{red}{1} \le 2$, the new node should be to the right of $[1,4,3]$.
+However, $[\textcolor{red}{1},4,3]$ has no right child, so it becomes the parent of $[2,3,4]$.
+The \li{pivot} of the new node should therefore be $1$.
+See Figure \ref{fig:nearest-neighbor-KDT_insert} for another example.
+% This method partitions $\mathbb{R}^k$ into smaller subsections, allowing for efficient searching.
+
+\begin{problem} % KDT.insert()
+\label{prob:kdt-insert}
+Write an \li{insert()} method for the \li{KDT} class that accepts a point $\x\in\mathbb{R}^k$.
+\begin{enumerate}
+\item If the tree is empty, create a new \li{KDTNode} containing $\x$ and set its \li{pivot} to $0$.
+Assign the \li{root} attribute to the new node and set the \li{k} attribute as the length of $\x$.
+Thereafter, raise a \li{ValueError} if data to be inserted is not in $\mathbb{R}^k$.
+\item If the tree is nonempty, create a new \li{KDTNode} containing $\x$ and find the existing node that should become its parent.
+Determine whether the new node will be the parent's \li{left} or \li{right} child, then link the parent to the new node accordingly.
+Set the \li{pivot} of the new node based on its parent's \li{pivot}.
+\\(Hint: write a recursive function like \li{_step()} to find and link the parent.)
+\item Do not allow duplicates in the tree: if there is already a node in the tree containing $\x$, raise a \li{ValueError}.
+% Be careful to check the entire array, not just the \li{pivot} entry.
+\end{enumerate}
+To test your method, use the \li{__str__()} method provided in the Additional Materials section.
+Try constructing the trees in Figures \ref{fig:nearest-neighbor-pivot-tree} and \ref{fig:nearest-neighbor-KDT_insert}.
+Also check that the provided \li{find()} method works as expected.
+\end{problem}
 
 \begin{figure}[H] % KDT.insert()
 \captionsetup[subfigure]{justification=justified}
@@ -324,40 +358,6 @@ The more points, the finer the partition.}
 \label{fig:nearest-neighbor-KDT_insert}
 \end{figure}
 
-\subsubsection*{Inserting Nodes} % - - - - - - - - - - - - - - - - - - - - - -
-
-% New nodes in a $k$-d tree are always added as leaf nodes.
-To add a new node to a $k$-d tree, determine which existing node should be the parent of the new node by recursively stepping down the tree as in the \li{find()} method.
-Next, assign the new node as the \li{left} or \li{right} child of the parent, and set its \li{pivot} based on its parent's \li{pivot}: if the parent's \li{pivot} is $i$, the new node's \li{pivot} should be $i+1$, or $0$ if $i = k-1$.
-
-Consider again the $k$-d tree in Figure \ref{fig:nearest-neighbor-kdfind}.
-To insert $[2,3,4]$, search the tree for $[2,3,4]$ until hitting an empty slot.
-In this case, the search steps from the root down to $[\textcolor{red}{1},4,3]$, which has an \li{pivot} of $0$.
-Then since $\textcolor{red}{1} \le 2$, the new node should be to the right of $[1,4,3]$.
-However, $[\textcolor{red}{1},4,3]$ has no right child, so it becomes the parent of $[2,3,4]$.
-The \li{pivot} of the new node should therefore be $1$.
-See Figure \ref{fig:nearest-neighbor-KDT_insert} for another example.
-% This method partitions $\mathbb{R}^k$ into smaller subsections, allowing for efficient searching.
-
-\begin{problem} % KDT.insert()
-\label{prob:kdt-insert}
-Write an \li{insert()} method for the \li{KDT} class that accepts a point $\x\in\mathbb{R}^k$.
-\begin{enumerate}
-\item If the tree is empty, create a new \li{KDTNode} containing $\x$ and set its \li{pivot} to $0$.
-Assign the \li{root} attribute to the new node and set the \li{k} attribute as the length of $\x$.
-Thereafter, raise a \li{ValueError} if data to be inserted is not in $\mathbb{R}^k$.
-\item If the tree is nonempty, create a new \li{KDTNode} containing $\x$ and find the existing node that should become its parent.
-Determine whether the new node will be the parent's \li{left} or \li{right} child, then link the parent to the new node accordingly.
-Set the \li{pivot} of the new node based on its parent's \li{pivot}.
-\\(Hint: write a recursive function like \li{_step()} to find and link the parent.)
-\item Do not allow duplicates in the tree: if there is already a node in the tree containing $\x$, raise a \li{ValueError}.
-% Be careful to check the entire array, not just the \li{pivot} entry.
-\end{enumerate}
-To test your method, use the \li{__str__()} method provided in the Additional Materials section.
-Try constructing the trees in Figures \ref{fig:nearest-neighbor-pivot-tree} and \ref{fig:nearest-neighbor-KDT_insert}.
-Also check that the provided \li{find()} method works as expected.
-\end{problem}
-
 \subsection*{Nearest Neighbor Search with K-D Trees} % ------------------------
 
 Given a target $\z\in\mathbb{R}^k$ and a $k$-d tree containing a set $X\subset\mathbb{R}^k$ of $m$ points, the nearest neighbor problem can be solved by traversing the tree in a manner that is similar to the \li{find()} or \li{insert()} methods from the previous section.
@@ -427,6 +427,16 @@ See Figure \ref{fig:nearest-neighbor-query} for an example and Algorithm \ref{al
     Since $d(\x,\z) < d(\x^*,\z)$, reassign $\x^* = \x$ and recompute $d^*$.
     Now the sphere of radius $d^*$ centered at $\z$ no longer intersects the root's hyperplane, so the nearest neighbor cannot be in the root's right subtree.}
 \end{subfigure}
+\end{center}
+\end{figure}
+
+\afterpage{\clearpage}
+
+\begin{figure}[H]
+\ContinuedFloat % continue the figure numbering
+\captionsetup[subfigure]{justification=justified}
+\begin{center}
+
 \begin{subfigure}{\textwidth}
     \begin{tabular}{lcr}
     \begin{tikzpicture}[
@@ -690,9 +700,9 @@ The following code uses \li{np.load()} to extract the data.
 % An \texttt{npz} file holds several arrays, which can be accessed like the values of a dictionary.
 \begin{lstlisting}
 >>> data = np.load("mnist_subset.npz")
->>> X_train = data["X_train"].astype(np.<<float>>)          # Training data
+>>> X_train = data["X_train"].astype(np.<<float64>>)          # Training data
 >>> y_train = data["y_train"]                           # Training labels
->>> X_test = data["X_test"].astype(np.<<float>>)            # Test data
+>>> X_test = data["X_test"].astype(np.<<float64>>)            # Test data
 >>> y_test = data["y_test"]                             # Test labels
 \end{lstlisting}
 To visualize one of the images, reshape it as a $28\times 28$ array and use \li{plt.imshow()}.

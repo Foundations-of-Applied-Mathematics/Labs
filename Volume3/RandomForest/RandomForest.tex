@@ -156,14 +156,12 @@ This can make the classification tree vulnerable to overfitting and noisy data.
 For this reason, we will include an argument to specify the smallest allowable leaf size, or the minimum number of samples at any node.
 A reasonable minimum number depends on the size of the whole dataset, so a dataset with 10,000 samples would have a larger minimum leaf size than our first example with only 10 samples.
 
-To find the optimal split, begin by instantiating \li{best_gain} to 0 and \li{best_question} to \texttt{None}.
-Iterate through each feature (column) of the dataset, and then through each unique value (row) that the feature takes on.
-You must iterate through the columns and then the rows; doing the opposite will yeild the wrong answer!
-Instantiate a \li{Question} object with the column and value, and then use \li{partition()} to split the dataset into left and right partitions.
-If either the left or right partition has less samples than the smallest allowable leaf size (called \li{min_samples_leaf}), then discard this partition and iterate to the next one.
-If the left and right partitions are ok, then calculate the \li{info_gain()} of these two partitions with the Gini impurity of the dataset.
-If this \li{info_gain()} is greater than \li{best_gain}, then set this \li{info_gain()} and its corresponding \li{Question} equal to \li{best_gain} and \li{best_question}, respectively.
-Once you iterate through every column and row, return \li{best_gain} and \li{best_question}.
+To find the optimal split, begin by instantiating \li{best_gain} to 0 and \li{best_question} to \li{None}.
+For each unique value in each feature (column) of the dataset, instantiate a \li{Question} object with the column and value, then use \li{partition()} to split the dataset into left and right partitions.
+If either the left or right partition has fewer samples than the smallest allowable leaf size (called \mbox{\li{min_samples_leaf}),} then discard this split and iterate to the next one.
+If the left and right partitions are ok, then calculate the \li{info_gain()} of these two partitions.
+If this \li{info_gain()} is greater than \li{best_gain}, then set \li{best_gain} and \li{best_question} equal to \li{info_gain()} and the corresponding \li{Question}, respectively.
+After checking all possible partitions (every column and row), return \li{best_gain} and \li{best_question}.
 
 \begin{problem}
 Write a function \li{find\_best\_split()} that computes the optimal split of a dataset by following the directions given above.
@@ -172,6 +170,7 @@ Include a minimum leaf size argument \li{min_samples_leaf} defaulting to 5.
 
 Return the information gain and corresponding question for the best split, in that order.
 If two splits have the same information gain, choose the first split.
+Iterate through each feature (column) of the dataset, then through each unique value (row) that the feature takes on; that is, iterate through columns in the outer loop and rows in the inner loop.
 If no partitions are possible due to \li{2*min_samples_leaf}, return \li{None} for the question.
 
 \noindent You should get the following output for the animals dataset.

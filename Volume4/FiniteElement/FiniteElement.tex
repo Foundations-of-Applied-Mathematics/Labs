@@ -1,50 +1,10 @@
 \lab{The Finite Element Method}{The Finite Element Method}
 \label{lab:finite_element}
-\objective{The finite element method is commonly used for numerically solving partial differential equations. We introduce the finite element method via a simple BVP describing the steady state distribution of heat in a pipe as fluid flows through.}
+\objective{The finite element method is commonly used for numerically solving partial differential equations.
+We introduce the finite element method via a simple BVP describing the steady state distribution of heat in a pipe as fluid flows through.}
 \labdependencies{FiniteDifferenceMethod}
 
 \section*{Advection-Diffusion of Heat in a Fluid}
-
-%%%% Old explanation
-\begin{comment}
-We begin with the heat equation
-\begin{align*}
-y_t = \epsilon y_{xx} + f(x) %\label{FEM:diffusion}
-\end{align*}
-where $f(x)$ represents any heat sources in the system, and $\epsilon y_{xx}$ models the diffusion of heat.
-We wish to study the distribution of heat in a fluid that is moving at some constant speed $a$.
-This can be modelled by adding an \textit{advection} or \textit{transport} term to the heat equation, giving us
-\begin{align*}
-y_t + ay_x = \epsilon y_{xx} + f(x).
-\end{align*}
-We consider the scenario of a fluid flowing through a pipe from $x = 0$ to $x = 1$ with  speed $a = 1$, and as it travels it is warmed at a constant rate $f= 1$.
-Suppose that the fluid is already at a known temperature \(y=2\) as it enters the pipe.
-This imposes the boundary condition \(y(0)=2\).
-
-These conditions yield 
-\begin{align*}
-	&{ } y_t + y_x = \epsilon y_{xx} + 1, \quad 0 < x < 1, \\
-	&{ } y(0) = 2
-\end{align*}
-As time progresses, we expect the temperature of the fluid in the pipe to reach a steady state distribution, with $y_t = 0$. The heat distribution then satisfies 
-\begin{align*}
-\begin{split}
-&{ } \epsilon y'' - y' = -1, \quad 0 < x < 1,\\
-&{ } y(0) = 2.
-\end{split}
-\end{align*}
-This problem is not fully specified, since it is a linear second-order ODE but has only one boundary condition.
-Suppose a device is installed on the end of the pipe that nearly instantaneously brings the heat of the water up to $y = 4$.
-Physically, we expect this extra heat that is introduced at $x = 1$ to diffuse backward through the water in the pipe. This leads to a well defined BVP 
-\begin{align}
-	\begin{split}
-	&{ } \epsilon y'' - y' = -1, \quad 0 < x < 1, \\
-	&{ } y(0) = 2, \quad y(1) = 4.
-	\end{split}\label{eqn:FEM_steady_state}
-\end{align}
-\end{comment}
-
-%%%%%%%%%%
 
 We wish to study the distribution of heat in a fluid that is moving at some constant speed $a$.
 Let \(y\) denote the temperature of the fluid at any given location and time.
@@ -129,11 +89,6 @@ Let $\mathrm{P}_n$ be some partition of $[0,1]$, $0 = x_0 < x_1< \ldots < x_{n} 
 These subintervals are the finite elements for which this method is named.
 Note that $V_n$ has dimension $n+1$, since each of the continuous piecewise linear functions in $V$ are uniquely determined by their values at the \(n+1\) points \(x_0,x_1\ldots,x_n\).
 Let $V_{n,0}$ be the subspace of $V_n$ of dimension $n-1$ whose elements are zero at the endpoints of $[0,1]$.
-%We now seek to find a convenient basis for \(V_n\) in order to apply \eqref{eqn:FEM_integral_form}
-
-%Now, consider $\{\mathrm{P}_n\}$ be a sequence of partitions that are refinements of each other, such that $\triangle x_n \to 0$ as $n \to \infty$.
-%Then in particular $V_1 \subset V_2 \subset \ldots \subset V_n \ldots \subset V$.
-%For each partition $\mathrm{P}_n$ we can find an approximation $y_n \in V_n$ for the true solution $y$; if this is done correctly then $y_n \to y$ as $n \to \infty$.
 
 Let the $\phi_i$ be the hat functions 
 \[\phi_i(x) = \begin{cases}
@@ -231,7 +186,7 @@ l(\phi_j) &= -\frac{1}{2}(h_j + h_{j+1}).
 \label{eqn:FEM:l_definition}
 \end{align}
 Equation \eqref{eqn:FEM_linear_system} may now be solved using any standard linear solver. 
-To handle the large number of elements required for Problem \ref{prob:FEM_accuracy_comparison}, you will want to use sparse matrices from \li{scipy.sparse}.
+To handle the large number of elements required for Problem \ref{prob:FEM_accuracy_comparison}, you will want to use sparse matrices from \li{scipy.sparse}.\footnote{See the Volume 1 lab ``Linear Systems'' for a refresher on sparse matrices.}
 
 If you have become completely lost in the math at this point, do not fear.
 To summarize, we need to solve \ref{eqn:FEM_linear_system} for $K$, where $A$ is defined by \ref{eqn:FEM:A_matrix} and $\Phi$ is defined in \ref{eqn:FEM:K_Phi_definition}.
@@ -256,12 +211,14 @@ Compare your solution with the analytic solution
 \[y(x) = \alpha + x + (\beta - \alpha - 1 ) \frac{e^{x/\epsilon} -1}{e^{1/\epsilon} -1}.\]
 
 Hint: Make sure that your code does not assume that the grid points are evenly spaced.
+You may find \li{scipy.sparse.diags} useful.
 \end{problem}
 
 \begin{problem}
 One of the strengths of the finite element method is the ability to generate grids that better suit the problem.
 The solution of \eqref{eqn:FEM_exercise} changes most rapidly near $x = 1$.
-Compare the numerical solution when the grid points are unevenly spaced versus when the grid points are clustered in the area of greatest change; see Figure \ref{fig:FEM_compare_methods}. Specifically, use the grid points defined by
+Compare the numerical solution when the grid points are unevenly spaced versus when the grid points are clustered in the area of greatest change; see Figure \ref{fig:FEM_compare_methods}.
+Specifically, use the grid points defined by
 \begin{lstlisting}
 even_grid = np.linspace(0,1,15)
 clustered_grid = np.linspace(0,1,15)**(1./8)
@@ -283,8 +240,8 @@ So why do we use them when a low order method will converge just as well, albeit
 The answer concerns the roundoff error associated with floating point arithmetic.
 Low order methods generally require more floating point operations, so roundoff error has a much greater effect.
 
-The finite element method introduced here is a second order method, even though the approximate solution is piecewise linear.
-(To see this, note that if the grid points are evenly spaced, the matrix $A$ in \eqref{eqn:FEM_linear_system} is exactly the same as the matrix for the second order centered finite difference method.)
+The finite element method introduced here is a second-order method, even though the approximate solution is piecewise linear.
+(To see this, note that if the grid points are evenly spaced, the matrix $A$ in \eqref{eqn:FEM_linear_system} is exactly the same as the matrix for the second-order centered finite difference method.)
 
 Solve \eqref{eqn:FEM_exercise} with the finite element method using $N = 2^i$ evenly-spaced finite elements, $i = 4, 5, \ldots, 21$.
 Remember to use sparse matrices, as this greatly reduces the memory and computation needed for the larger \(N\).
@@ -297,43 +254,7 @@ Be sure to label your axes.
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/FEM_error_2nd_order.pdf}
-\caption{Error for the second order finite element method, as the number of subintervals $N$ grows. Round-off error eventually overwhelms the approximation. }
+\caption{Error for the second-order finite element method, as the number of subintervals $N$ grows.
+Round-off error eventually overwhelms the approximation.}
 \label{fig:FEM_error_2nd_order}
 \end{figure}
-
-%\newpage
-%\section*{A Comparison of Numerical Methods}
-%
-%\begin{table}[t]
-%  \begin{tabular}{ l |l l }
-%    % \hline
-%     & Finite Element & Finite Difference  \\ \hline
-%    Linear System& sparse& sparse  \\
-%   Derivative & approximated locally & approximated locally \\
-%Domain & irregular domains & fairly regular\\
-%% Problem Formulation & integral & derivative & derivative & integral \\
-%Convergence & polynomial & polynomial \\
-%Strengths & adaptive mesh & easier to understand \\
-%& refinement & and implement \\
-%& complex geometries & easier for higher dimensions \\
-%    \hline
-%  \end{tabular}
-%\end{table}
-%
-%\begin{table}
-%  \begin{tabular}{ l |l l }
-%    % \hline
-%      & Pseudospectral & Finite Volume \\ \hline
-%    Linear System & dense & sparse \\
-%   Derivative & global & local\\
-%Domain  & very nice & fairly regular\\
-%Convergence  & exponential & polynomial\\
-%Strengths  & fast convergence & handling discontinuities in \\
-%& accurate to high precisions &the initial conditions \\
-%& & dealing with shock formation \\
-%& & and propagation \\
-%    \hline
-%  \end{tabular}
-%\end{table}
-%
-%It is important to note that these methods are often mixed, so, for example, it is common to work with a finite element mesh in space and a finite differencing scheme in time.

@@ -58,7 +58,7 @@ Each architecture offers unique advantages and disadvantages, but the general co
 In this lab, we will explore the usage and capabilities of parallel computing using Python's iPyParallel package.
 iPyParallel can be installed using pip:
 \begin{lstlisting}
-$ pip install ipyparallel <=8.6.1
+$ pip install ipyparallel==8.6.1
 \end{lstlisting}
 Use version 8.6.1.
 
@@ -210,15 +210,6 @@ There is more than one way to do this, but the easiest way is to use the \li{Dir
 client.close()
 \end{lstlisting}
 
-\begin{problem} % Dummy problem.
-Write a function that initializes a \li{Client} object, creates a \li{DirectView} with all available engines, and imports \li{scipy.sparse} as \li{sparse} on all engines.
-Return the \li{DirectView}. Note: Make sure to include client.close() after EVERY function or else the test driver will time out.
-\end{problem}
-
-% The \li{DirectView} gives control of the available engines to the user and allows them to interact with each engine individually or as a group.
-% Each engine can be likened to its own iPython terminal with a namespace in which variables, functions, and imports must be defined individually.
-
-\subsection*{Managing Engine Namespaces} % ------------------------------------
 Before continuing, set the \li{DirectView} you are using to use blocking:
 \begin{lstlisting}
 >>> dview.block = True
@@ -226,6 +217,17 @@ Before continuing, set the \li{DirectView} you are using to use blocking:
 This affects the way that functions called using the \li{DirectView} return their values.
 Using blocking makes the process simpler, so we will use it initially.
 What blocking is will be explained later.
+
+\begin{problem} % Dummy problem.
+Write a function that initializes a \li{Client} object, creates a \li{DirectView} (with blocking) with all available engines, and imports \li{scipy.sparse} as \li{sparse} on all engines.
+Return the \li{DirectView}. Note: Make sure to include client.close() after EVERY function or else the test driver will time out.
+\end{problem}
+
+% The \li{DirectView} gives control of the available engines to the user and allows them to interact with each engine individually or as a group.
+% Each engine can be likened to its own iPython terminal with a namespace in which variables, functions, and imports must be defined individually.
+
+\subsection*{Managing Engine Namespaces} % ------------------------------------
+We now discuss how to handle namespaces within each engine, beginning with setting and retrieving variables.
 
 \subsubsection*{Push and Pull} % - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -257,13 +259,6 @@ Each method also has a shortcut via indexing.
 % >>> res.get()
 % << [[10, 5], [10, 5], [10, 5], [10, 5]] >>
 % \end{lstlisting}
-
-\begin{problem}
-Write a function \li{variables(dx)} that accepts a dictionary of variables.
-Create a \li{Client} object and a \li{DirectView} and distribute the variables.
-Pull the variables back and make sure they haven't changed.
-Test that the push worked outside the function.
-\end{problem}
 
 \subsubsection*{Scatter and Gather} % - - - - - - - - - - - - - - - - - - - - -
 
@@ -549,7 +544,7 @@ For example, calculating the Fibonacci sequence using the usual formula, F($n$) 
 
 
 \begin{problem}
-The \emph{trapeziod rule} is a simple technique for numerical integration:
+The \emph{trapezoid rule} is a simple technique for numerical integration:
 \[
 \int_{a}^b f(x) dx \approx \frac{h}{2} \sum_{k=1}^{N-1} (f(x_{k}) + f(x_{k+1})),
 \]
@@ -565,7 +560,7 @@ Parallelize the trapezoid rule in order to estimate the integral of $f$.
 That is, divide the points among all available processors and run the trapezoid rule on each portion simultaneously.
 Be sure that the intervals for each processor share endpoints so that the subintervals are not skipped, resulting in rather large amounts of error.
 The sum of the results of all the processors will be the estimation of the integral over the entire interval of integration.
-Return this sum.
+Return this sum (consider coding the problem in serial to test your function).
 
 \begin{figure}[H]
 

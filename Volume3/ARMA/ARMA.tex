@@ -118,11 +118,10 @@ Write a function \li{arma_forecast_naive()} that builds an ARMA(p,q) model.
 Your function should accept as parameters \li{p}, \li{q}, and \li{n}, where \li{p} is the order of the autoregressive model, \li{q} is the order of the moving average model, and \li{n} is the number of observations to predict.
 Assume \li{c}$ = 0$, and let $\phi_i=.5$, $\theta_i=.1$, and $\epsilon_i\sim\mathscr{N}(0,1)$ for all $i$.
 
-Use your function to predict the next \li{n} values of the time series found in \li{weather.npy}.
-This file contains data on the temperature in Provo, Utah from 7:56 PM May 13, 2019 to 6:56 PM May 16, 2019, taken every hour.
+The file \li{weather.npy} contains data on the temperature in Provo, Utah from 7:56 PM May 13, 2019 to 6:56 PM May 16, 2019, taken every hour.
 This time series is NOT covariance stationary, so to make it covariance stationary, take its first difference (Hint: you might find \li{np.diff()} helpful).
 We denote the new covariance stationary time series as $\{z_t\}_{t=1}^T$.
-Predict the next \li{n} observations by iterating through Equation \ref{eq:arima:def}.
+Predict the next \li{n} observations for $\{z_t\}$ by iterating through Equation \ref{eq:arima:def}.
 
 Run your code on \li{weather.npy}, and plot the observed differences $\{z_t\}_{t=1}^T$ followed by your predicted observations of $z_t$.
 For \li{p=2}, \li{q=1}, and \li{n=20}, your plot should look similar to Figure \ref{fig:ARMA:naive}, however, due to the variance of the error $\epsilon_t$, the plot will not look exactly like Figure \ref{fig:ARMA:naive}.
@@ -156,7 +155,7 @@ likelihood.
 We demonstrate one possible state-space representation of an $\text{ARMA}(p,q)$ model. Let
 $r = \max(p, q+1)$. Define
 \begin{align}
-    \hat{\textbf{x}}_{t|t-1}&=\begin{bmatrix}x_{t-1}&x_{t-2}&\dotsb&x_{t-r}\end{bmatrix}^T\\
+    \hat{\textbf{x}}_{t|t-1}&=\begin{bmatrix}x_{t-1}&x_{t-2}&\dotsb&x_{t-r}\end{bmatrix}\trp \\
     F &= \begin{bmatrix}
         \phi_1 & \phi_2 & \cdots & \phi_{r-1} & \phi_r\\
         1 & 0 & \cdots & 0 & 0\\
@@ -185,7 +184,7 @@ Note that Equation \ref{eq:AR} gives
                                 \vdots\\
                                 x_{t-(r-1)}
                   \end{bmatrix}+\begin{bmatrix}\epsilon_t\\0\\0\\\vdots\\0\end{bmatrix}\\
-                &=\begin{bmatrix}x_t&x_{t-1}&\cdots&x_{t-(r-1)}\end{bmatrix}^T\\
+                &=\begin{bmatrix}x_t&x_{t-1}&\cdots&x_{t-(r-1)}\end{bmatrix}\trp \\
                 &=\hat{\textbf{x}}_{t|t-1}
 \end{align}
 We note that $z_{t|t-1}=H\hat{\textbf{x}}_{t|t-1}+\mu$.\footnote{
@@ -216,13 +215,13 @@ This means that each conditional distribution in \ref{eq:arma:factorized} is als
     \label{eq:mean:variance1}
     \text{mean} & \quad H\hat{\textbf{x}}_{t|t-1} + \mu \\
     \label{eq:mean:variance2}
-    \text{variance} & \quad HP_{t|t-1}H^T
+    \text{variance} & \quad HP_{t|t-1}H\trp 
 \end{align}
 where $\hat{\textbf{x}}_{t|t-1}$ and $P_{t|t-1}$ are easily found via the Kalman filter, during the Predict step.
 Given that each conditional distribution is Gaussian, the likelihood can then be found as
 \begin{align}
     \label{eq:arma:likelihood}
-    p(\{z_t\} \mid \Theta)& = \prod_{t=1}^{n} \mathscr{N}(z_t\mid H\hat{\textbf{x}}_{t|t-1} + \mu, HP_{t|t-1}H^T).
+    p(\{z_t\} \mid \Theta)& = \prod_{t=1}^{n} \mathscr{N}(z_t\mid H\hat{\textbf{x}}_{t|t-1} + \mu, HP_{t|t-1}H\trp ).
 \end{align}
 
 \begin{problem}
@@ -270,8 +269,12 @@ from scipy.optimize import minimize
 
 # assume p, q, and time_series are defined
 def f(x): # x contains the phis, thetas, mu, and std
-    return -1*arma_likelihood(filename, phis=x[:p], thetas=x[p:p+q], 
-                                    mu=x[-2], std=x[-1])
+    try:
+        return -1*arma_likelihood(filename, phis=x[:i], thetas=x[i:i+j], 
+                                        mu=x[-2],std=x[-1])
+    except np.linalg.LinAlgError:
+        return np.inf
+
 # create initial point
 x0 = np.zeros(p + q + 2)
 x0[-2] = time_series.mean()
@@ -310,15 +313,15 @@ The Kalman filter provides a straightforward way to predict future states by giv
 Observations can be found as follows
 \begin{align}
     z_{t + k} \mid z_{1}, \cdots, z_{t} \sim \mathscr{N}(z_{t+k} \mid H\hat{x}_{t+k|t} + \mu,\;
-    HP_{t+k|t}H^T)
+    HP_{t+k|t}H\trp )
 \end{align}
 To evolve the Kalman filter, recall the predict and update rules of a Kalman filter.
 \begin{align*}
 \textbf{Predict} & & \widehat{\mathbf{x}}_{k|k-1} & = F\widehat{\mathbf{x}}_{k-1|k-1} + \mathbf{u} \\
- & & P_{k|k-1} & = FP_{k-1|k-1}F^{T} + Q \\
+ & & P_{k|k-1} & = FP_{k-1|k-1}F\trp  + Q \\
 \textbf{Update} & & \tilde{\mathbf{y}}_{k} & = \mathbf{z}_{k} - H\widehat{\mathbf{x}}_{k|k-1} \\
- & & S_{k} & = HP_{k|k-1}H^{T} + R \\
- & & K_{k} & = P_{k|k-1}H^{T}S_{k}^{-1} \\
+ & & S_{k} & = HP_{k|k-1}H\trp  + R \\
+ & & K_{k} & = P_{k|k-1}H\trp S_{k}^{-1} \\
  & & \widehat{\mathbf{x}}_{k|k} & = \widehat{\mathbf{x}}_{k|k-1} + K_{k}\tilde{\mathbf{y}}_{k} \\
  & & P_{k|k} & = (I - K_{k}H)P_{k|k-1}
 \end{align*}

@@ -33,7 +33,7 @@ For this lab, we will use the Frobenius norm, given by
 ||A||_{F} = \sqrt{\sum_{i=1}^{m}\sum_{j=1}^{n} |a|_{ij}^{2}}.
 \]
 
-It is equivalent to the square root of the sum of the diagonal of $A^{H}A$
+It is equivalent to the square root of the sum of the diagonal of $A\hrm A$.
 
 
 
@@ -41,7 +41,7 @@ It is equivalent to the square root of the sum of the diagonal of $A^{H}A$
 Create the \texttt{NMFRecommender} class, which will be used to implement the NMF algorithm.
 Initialize the class with the following parameters: 
 \texttt{random\_state} defaulting to $15$,
-\texttt{tol} defaulting to $1e-3$, \texttt{maxiter} defaulting to $200$, and \texttt{rank} defaulting to $2$.
+\texttt{tol} defaulting to $1\mathrm{e}{-3}$, \texttt{maxiter} defaulting to $200$, and \texttt{rank} defaulting to $2$.
 
 
 Add a method called \texttt{\_initialize\_matrices} that takes in $m$ and $n$, the dimensions of $V$.
@@ -89,12 +89,12 @@ There are other methods for optimization and updating, but because of the simpli
 As with any other iterative algorithm, we perform the step until the \texttt{tol} or \texttt{maxiter} is met.
 
 \begin{equation}
-H^{s+1}_{ij} = H^{s}_{ij} \frac{((W^s)^T V)_{ij}}{((W^{s})^{T}W^sH^s)_{ij}} 
+H^{s+1}_{ij} = H^{s}_{ij} \frac{((W^s)\trp  V)_{ij}}{((W^{s})\trp W^sH^s)_{ij}} 
 \label{eq:H}
 \end{equation}
 and
 \begin{equation}
-W^{s+1}_{ij} = W^{s}_{ij} \frac{(V(H^{s+1})^T)_{ij}}{(W^{s}H^{s+1}(H^{s+1})^{T})_{ij}}
+W^{s+1}_{ij} = W^{s}_{ij} \frac{(V(H^{s+1})\trp )_{ij}}{(W^{s}H^{s+1}(H^{s+1})\trp )_{ij}}
 \label{eq:W}
 \end{equation}
 
@@ -111,7 +111,7 @@ It should accept \texttt{V} as a numpy array, perform the multiplicative update 
 
 Call the function \texttt{\_initialize\_matrices()} in order to run \texttt{\_update\_matrices()} and \texttt{\_compute\_loss()}.
 
-Finally add a method called \texttt{reconstruct} that reconstructs and returns \texttt{V} by multiplying \texttt{W} and \texttt{H}.  
+Finally add a method called \texttt{reconstruct} that reconstructs and returns \texttt{V} by multiplying \texttt{W} and \texttt{H}. You may assume that \texttt{fit} has already been run (so \li{self.V} and \li{self.W} will already be initialized, in particular).  
 \end{problem}
 
 \subsection*{Using NMF for Recommendations}
@@ -226,21 +226,27 @@ Every week, Spotify creates a playlist of songs that the user has not listened t
 This helps users find new music that they enjoy and keeps Spotify at the forefront of music trends.
 
 \begin{problem}
-Read the file \texttt{artist\_user.csv} as a pandas dataframe.
+Read the file \texttt{artist\_user.csv} as a pandas dataframe with \texttt{index\_col}\li{=0}.
 The rows represent users, with the user id in the first column, and the columns represent artists.
 For each artist $j$ that a user $i$ has listened to, the $ij$ entry contains the number of times user $i$ has listened to artist $j$.
 
 Identify the rank, or number of components to use.
 Ideally, we want the smallest rank that minimizes the error.
 However, this rank may be too computationally expensive, as in this situation.
-We'll choose the rank by using the following method. 
-First, calculate the frobenius norm of the dataframe and multiply it by $.0001$.
-This will be our benchmark value.
-Next, iterate through \li{rank}$=10,11,12,13,\dots$.	
-For each iteration, run NMF using \texttt{n\_components}\li{=rank} and \texttt{random\_seed}\li{=0} and reconstruct the matrix $V$.
-Calculate the root mean square error (RMSE) by taking the square root of the MSE -- calculated by \texttt{sklearn.metrics.mean\_squared\_error} -- of the original dataframe and the reconstructed matrix $V$.
-If the RMSE is less than the benchmark value, stop. 
-Return the rank and the reconstructed matrix of this rank.
+
+We'll choose the rank by using the following method:
+
+\begin{enumerate}
+  \item First, calculate the frobenius norm of the dataframe and multiply it by $0.0001$ (this will be our benchmark value)
+  \item Next, iterate through \li{rank}$=10,11,12,13,\dots$ and for each iteration:
+  \begin{enumerate}
+    \item Run NMF using \texttt{n\_components}\li{=rank}, \texttt{init}\li{="random"}, \texttt{random\_state}\li{=0} and \texttt{max\_iter}\li{=500}
+    \item Reconstruct the matrix $V$
+    \item Calculate the root mean square error (RMSE) by taking the square root of the MSE -- calculated by \texttt{sklearn.metrics.mean\_squared\_error} -- of the original dataframe and the reconstructed matrix $V$
+    \item If the RMSE is less than the benchmark value, stop
+  \end{enumerate}
+  \item Return the rank (as an integer) and the reconstructed matrix of this rank
+\end{enumerate}
 
 \noindent Hint: the optimal rank can be found between 10 and 15, so you only actually need to iterate through \li{rank}$=10,\dots,15$.
 
@@ -251,7 +257,7 @@ Return the rank and the reconstructed matrix of this rank.
 Write a function \texttt{discover\_weekly} that takes in a user id and the reconstructed matrix from Problem \ref{prob:music_nmf}, and returns a list of $30$ artists to recommend as strings.
 
 This list of strings should be sorted so that the first artist is the recommendation with the highest weight and the last artist is the least, and it should not contain any artists that the user has already listed to.
-Use the file \texttt{artists.csv} to match the artist ID to their name.
+Use the file \texttt{artists.csv} with \texttt{index\_col}\li{=0}, to match the artist ID to their name.
 
 \noindent As a check, the Discover Weekly for user $2$ should return 
 

@@ -398,7 +398,7 @@ It accepts any number of positional arguments and prints them out with \li{sep} 
 % \end{lstlisting}
 
 Write a function called \li{isolate()} that accepts five arguments. 
-The function should print the first three arguments separated by 5 spaces and then print the last two arguments with a single space seperating the last three arguments.
+The function should print the first three arguments separated by 5 spaces and then print the last two arguments with a single space separating the last three arguments.
 For example,
 \begin{lstlisting}
 >>> isolate(1, 2, 3, 4, 5)
@@ -410,6 +410,7 @@ For example,
 In previous versions of Python, \li{print()} was a \emph{statement} (like \li{return}), not a function, and could therefore be executed without parentheses.
 However, it lacked keyword arguments like \li{sep} and \li{end}.
 If you are using Python 2.7, include the following line at the top of the file to turn the \li{print} statement into the new \li{print()} function.
+
 \begin{lstlisting}
 >>> from __future__ import print_function
 \end{lstlisting}
@@ -546,7 +547,7 @@ Access entries in a list with the same indexing or slicing operations used with 
 <<['Hello', 93.8]>>
 \end{lstlisting}
 
-Common list methods (functions) include \li{append()}, \li{insert()}, \li{remove()}, and \li{pop()}.
+Common list methods (functions) include \li{append()}, \li{insert()}, \li{remove()}, \li{extend()}, and\\ \li{pop()}.
 Consult IPython for details on each of these methods using object introspection.
 \begin{lstlisting}
 >>> my_list = [1, 2]                # Create a simple list of two integers.
@@ -559,6 +560,9 @@ Consult IPython for details on each of these methods using object introspection.
 4
 >>> my_list
 [1, 2]
+>>> my_list.extend([5,6])           # Append multiple values at once.
+>>> my_list
+[1, 2, 5, 6]
 \end{lstlisting}
 
 Slicing is also very useful for replacing values in a list.
@@ -935,6 +939,60 @@ As you continue your study of Python, we strongly recommend the following readin
 \item PEP8 - Python style guide: \url{http://www.python.org/dev/peps/pep-0008/}.
 \end{itemize}
 
+
+\subsection*{Advanced List Comprehension} % ------------------------------------
+
+As shown in the previous lab, list comprehensions can be used to create lists in a single line of code.
+There are several ways to supercharge list comprehensions to make them even more powerful.
+It all depends on what you would like to control within the list.
+We can add conditionals (i.e \li{if}-\li{else} statements) to the list comprehension to filter out or change certain elements.
+Moreover, nested looping is applicable for all list comprehensions.
+You can combine all of the following methods to create a list comprehension that fits your needs.
+Note that an iterable is an object that is countable and is meant to be traversed through (e.g. lists, tuples, strings, etc.).
+\begin{itemize}
+    \item Nested Looping: Just like a nested \li{for} loop, you can nest the loops within the syntax of your comprehension.
+    This is useful when you want to iterate over multiple lists at the same time.
+    The syntax for this follows a similar structure to a normal nested \li{for} loop where the outer loop of the iterable goes before all loops it encompasses.
+    \item Filtering the elements of the iterable: If you want to be able to only look at certain elements of the iterable, you can add an \li{if} statement following the name of the iterable.
+    Note that this typically only works for simple conditionals.
+    If you require a more complex conditional, you may want to create a function for the conditional and call the function in the list comprehension.
+    \item Changing or filtering the elements going into the list: If your goal is to change or filter the actual elements that will go into the list you are making, you can add an \li{if} conditional following the expression dictating what the value of the element will be and immediately before the start of the \li{for} statement.
+    All other conditionals that function like the \li{elif} statement come after the first \li{if} statement.
+    However, even if you only have one \li{if} statement, Python syntax requires that you have an \li{else} statement at the end of all your conditionals, but before the start of the \li{for} loop, so the list has a default value it can give the element.
+    Note we say ``function like the \li{elif} statement'' because list comprehension does not support the \li{elif} statement.
+    To make conditionals that function like the \li{elif} statement, you must first state the \li{else} statement followed by the expression or value that the element will take, and then by the \li{if} statement and the condition the element must meet.
+    That is, we use [\ldots \li{else} \emph{expression} \li{if} \emph{condition} \ldots] for however many \li{elif} statements you need after the first \li{if} statement and always ensuring we end with the default \li{else} statement.
+\end{itemize}
+\begin{lstlisting}
+# Nested Looping
+>>> [letter for word in ["Hello", "There"] for letter in word]
+['H', 'e', 'l', 'l', 'o', 'T', 'h', 'e', 'r', 'e']
+
+# Filtering the elements of the iterable
+# Make a list of only even numbers from 0 to 9 (range is the iterable)
+>>> [i for i in range(10) if i % 2 == 0]
+[0, 2, 4, 6, 8]
+
+# Changing or filtering the elements going into the list
+# Make a list of the modulus of 3 of all numbers from 0 to 9
+# using 'z' for 0, 'o' for 1, and 't' for 2. Note 'o' is
+# the elif and 't' is the default if no other condition is met
+>>> ['z' if i%3==0 else 'o' if i%3==1 else 't' for i in range(10)]
+['z', 'o', 't', 'z', 'o', 't', 'z', 'o', 't', 'z']
+
+# Combination of all three (notice the difficulty in code readability)
+>>> iterable = ["General", "Kenobi"]
+>>> [letter if letter != 'K' else 0 for word in iterable for letter in word if letter not in "aeiou"]
+['G', 'n', 'r', 'l', 0, 'n', 'b']
+\end{lstlisting}
+
+List comprehensions are actually faster than normal \li{for} loops.
+This is because when you append or create lists, Python has to perform a few operations to check that the given variable is a list and then append the new element to the list.
+This is not the case with list comprehensions.
+You can view this \href{https://www.youtube.com/watch?v=U88M8YbAzQk}{video} for more information on list comprehensions.
+While list comprehensions are faster, they are not always the best option.
+They can be hard to read and understand, especially when they use various conditionals and nesting, and cannot give you all the control you may need when doing a normal for loop.
+So be sure to use them wisely and not overuse or overcomplicate them.
 \subsection*{Generalized Function Input} % ------------------------------------
 
 On rare occasion, it is necessary to define a function without knowing exactly what the parameters will be like or how many there will be.

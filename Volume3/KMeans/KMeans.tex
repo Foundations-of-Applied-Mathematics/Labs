@@ -2,41 +2,41 @@
 \objective{Clustering is the one of the main tools in unsupervised learning---machine learning problems where the data comes without labels.
 In this lab we implement the k-means algorithm, a simple and popular clustering method, and apply it to geographic clustering and color quantization.
 }
-\begin{comment}
-\section*{Jupyter Notebooks}
-Unlike previous labs where the python file submitted was a normal \li{.py} file, this lab among others will be done in a Jupyter Notebook (\li{.ipynb} or an iPython Notebook). 
-Jupyter Notebooks is a powerful tool in visualizing data.
-If you have used Google Colab, this works in a similar manner but it is run on your personal machine. 
+\labdependencies{LSI_SkLearn}
 
-Once Jupyter Notebook is installed, there are several ways of starting a Jupyter Notebook. 
-The easiest way is to open a new terminal window and navigate to the directory with your .ipynb file, once in the desired directory, type \li{jupyter notebook}.
-This should automatically open a web browser to the Jupyter Notebook dashboard, from there you can select the .ipynb file and open and edit it.
+% \section*{Jupyter Notebooks}
+% Unlike previous labs where the python file submitted was a normal \li{.py} file, this lab among others will be done in a Jupyter Notebook (\li{.ipynb} or an iPython Notebook). 
+% Jupyter Notebooks is a powerful tool in visualizing data.
+% If you have used Google Colab, this works in a similar manner but it is run on your personal machine. 
 
-The Python kernel will keep running in the background until told to stop.
-So when you are done, to close the Jupyter Notebook, you need to go to file-> Close and Halt, or in the terminal window press ctrl+c (cmd+c for Mac). 
+% Once Jupyter Notebook is installed, there are several ways of starting a Jupyter Notebook. 
+% The easiest way is to open a new terminal window and navigate to the directory with your .ipynb file, once in the desired directory, type \li{jupyter notebook}.
+% This should automatically open a web browser to the Jupyter Notebook dashboard, from there you can select the .ipynb file and open and edit it.
 
-\begin{warn}
-Before you push this file to your online repository to be graded, be sure to run each cell. 
-When you push a .ipynb file, the current state of the file is pushed.
-This means what you see is exactly what the graders will see.
-\end{warn}
-\end{comment}
+% The Python kernel will keep running in the background until told to stop.
+% So when you are done, to close the Jupyter Notebook, you need to go to file-> Close and Halt, or in the terminal window press ctrl+c (cmd+c for Mac). 
+
+% \begin{warn}
+% Before you push this file to your online repository to be graded, be sure to run each cell. 
+% When you push a .ipynb file, the current state of the file is pushed.
+% This means what you see is exactly what the graders will see.
+% \end{warn}
 
 
 \section*{Clustering}
 
 %Previously, we analyzed the iris dataset from \li{sklearn} using PCA; we have reproduced the first two principal components of the iris data in Figure \ref{fig:iris_data}.
 %Upon inspection, a human can easily see that there are two very distinct groups of irises.
-In this lab, we will analyze a few different datasets from Scikit-Learn's library and use the K-means algorithm. 
+In this lab, we will analyze a few different datasets from Scikit-Learn's library and use the \emph{k-means} algorithm. 
 Figure \ref{fig:iris_data} is a graph of the iris dataset.
 As a human, it is easy to identify the two distinct groups of data.
 Can we create an algorithm to identify these groups without human supervision?
 This task is called \emph{clustering}, an instance of \emph{unsupervised learning}.
-The K-means algorithm is a simple way of helping computers see the group distinctions.
+The \emph{k-means} algorithm is a simple way of helping computers see the group distinctions.
 
 \begin{figure}
 \centering
-\includegraphics[width=.7\textwidth]{figures/iris_pca.pdf}
+\includegraphics[width=.7\textwidth]{figures/iris.pdf}
 \caption{The first two principal components of the iris dataset.}
 \label{fig:iris_data}
 \end{figure}
@@ -48,21 +48,21 @@ Throughout this lab, we will use the metric $d(x,y) = \|x-y\|_2$, the Euclidean 
 More formally, suppose we have a collection of $\mathbb{R}^K$-valued observations $X = \{x_1,x_2,\ldots,x_n\}$.
 Let $N \in \mathbb{N}$ and let $\mathcal{S}$ be the set of all $N$-partitions of $X$, where an $N$-partition is a partition with exactly $N$ nonempty elements.
 We can represent a typical partition in $\mathcal{S}$ as $S = \{S_1,S_2,\ldots,S_N\}$, where
-\[
-X = \bigcup_{i=1}^N S_i
-\]
+\begin{equation*}
+    X = \bigcup_{i=1}^N S_i    
+\end{equation*}
 and
-\[
-|S_i| > 0, \qquad i=1,2,\ldots,N.
-\]
+\begin{equation*}
+    |S_i| > 0, \qquad i=1,2,\ldots,N.
+\end{equation*}
 We seek the $N$-partition $S^*$ that minimizes the within-cluster sum of squares, i.e.
-\[
-S^* = \underset{S\in\mathcal{S}}{\arg\min} \sum_{i=1}^N\sum_{x_j\in S_i}\|x_j-\mu_i\|_2^2,
-\]
+\begin{equation*}
+    S^* = \underset{S\in\mathcal{S}}{\arg\min} \sum_{i=1}^N\sum_{x_j\in S_i}\|x_j-\mu_i\|_2^2,
+\end{equation*}
 where $\mu_i$ is the mean of the elements in $S_i$, i.e.
-\[
-\mu_i = \frac{1}{|S_i|}\sum_{x_j\in S_i}x_j.
-\]
+\begin{equation*}
+    \mu_i = \frac{1}{|S_i|}\sum_{x_j\in S_i}x_j.
+\end{equation*}
 
 \subsection*{The K-Means Algorithm}
 
@@ -92,10 +92,10 @@ Thus, when implementing the algorithm, it is a good idea to terminate after some
 \begin{figure}[h]
     \centering
     \begin{tabular}{cc}
-    \includegraphics[width=.49\textwidth]{figures/iris_means_1.pdf} &
-    \includegraphics[width=.49\textwidth]{figures/iris_means_2.pdf}
+    \includegraphics[width=.49\textwidth]{figures/iris_kmeans_1.pdf} &
+    \includegraphics[width=.49\textwidth]{figures/iris_kmeans_2.pdf}
     \end{tabular}
-    \caption{Two different K-Means clusterings for the iris dataset.
+    \caption{Two different \emph{k-means} clusterings for the iris dataset.
             Notice that the clustering on the left predicts the flower species to a high degree of accuracy,
             while the clustering on the right is less effective.}
     \label{fig:iris_clusterings}
@@ -104,7 +104,7 @@ Thus, when implementing the algorithm, it is a good idea to terminate after some
 The algorithm can be summarized as follows.
 \begin{enumerate}
     \item From the data points, choose $k$ initial cluster centers.
-    \item For $i=0,\ \ldots,$\ \li{max_iter},
+    \item For $i=0,\dots,$\ \li{max_iter}:
     \begin{enumerate}
         \item Assign each data point to the cluster center that is closest, forming $k$ clusters.
         \item Recompute the cluster centers as the means of the new clusters.
@@ -133,29 +133,34 @@ The algorithm can be summarized as follows.
 %\end{itemize}
 
 \begin{problem}
-Write a \li{KMeans} class for doing basic $k$-means clustering.
+Write a \li{KMeans} class for doing basic \emph{k-means} clustering.
 Implement the following methods.
 \begin{enumerate}
-\item \li{__init__()}: Accept a number of clusters $k$, a maximum number of iterations, and a convergence tolerance.
+\item \li{__init__()}: Accept a number of clusters \li{k}, a maximum number of iterations, and a convergence tolerance.
 Store these as attributes.
 
-\item \li{fit()}: Accept an $m \times n$ matrix $X$ of $m$ data points with $n$ features.
-Choose $k$ random rows of $X$ as the initial cluster centers.
-Run the $k$-means iteration until consecutive centers are within the convergence tolerance, or until iterating the maximum number of times.
+\item \li{fit()}: Accept an $m \times n$ matrix \li{X} of $m$ data points with $n$ features.
+Choose \li{k} random rows of \li{X} as the initial cluster centers.
+Run the \emph{k-means} iteration until consecutive centers are within the convergence tolerance, or until iterating the maximum number of times.
 Save the cluster centers as attributes.
 
 If a cluster is empty, reassign the cluster center as a random row of $X$.
 
-\item \li{predict()}: Accept an $l \times n$ matrix $X$ of data.
-Return an array of $l$ integers where the $i$th entry indicates which cluster center the $i$th row of $X$ is closest to.
+\item \li{predict()}: Accept an $l \times n$ matrix \li{X} of data.
+Return an array of $l$ integers where the $i$th entry indicates which cluster center the $i$th row of \li{X} is closest to.
 
-\item \li{plot()}: Accept an $l \times n$ matrix $X$ of $l$ data points and an array $y$ of $l$ integers representing the labels.
-Plot each data point from the matrix, colored by cluster, along with the cluster centers.
+\item \li{plot()}: Accept an $l \times n$ matrix \li{X} of $l$ data points and an array \li{y} of $l$ integers representing the labels.
+Plot each data point from the matrix, colored by cluster, as well as the cluster centers.
 Note that in this case, $n = 2$.
 \end{enumerate}
 %
-Test your class on the iris data set after reducing the data to two principal components.
-Plot the data, coloring by cluster.
+Test your class on the iris data set (with \li{k = 3}) after reducing the data to two principal components
+Plot the data and cluster centers, coloring the data by cluster.
+
+Hint: There are various ways to color data points given their cluster labels.
+A simple way is to create a list of color names, and then set each cluster color by indexing the list using the cluster labels as indices.
+Another way (more adaptable to a varying number of clusters) is to use \li{plt.scatter} and set the colors \li{c} equal to the cluster labels \li{y} (i.e. \li{c=y}), and then provide a colormap (i.e. \li{cmap='jet'}).
+\label{eq:prob1}
 \end{problem}
 
 \section*{Fire Station Placement} %=============================================
@@ -165,7 +170,7 @@ When choosing a suitable location for the city, urban planners look at the curre
 We will simplify this complex problem by only taking into account the distances from each building to the nearest fire station (see Additional Material for a harder version of this problem).
 
 Using another data set from SKLearn, we can get the data from the 1990 US Census for California housing based on the blocks of the residents.
-This has been saved in \texttt{sacramento.npy} and can be accessed by using the np.load() function.
+This has been saved in \texttt{sacramento.npy} and can be accessed by using the \li{np.load()} function.
 This file contains demographic data for each block in Sacramento and nearby cities. 
 The eight columns in the file are: median block income, median house age in the block, average number of rooms, average number of bedrooms, average house occupancy, latitude and longitude.
 
@@ -175,17 +180,18 @@ Another option is to minimize the distance to the farthest house in each group.
 For this problem, minimize the distance to the farthest house in each group.
 
 \begin{problem}
-Using the Methods you wrote in Problem 1, add a parameter, p, to your class that denotes the norm and defaults to 2.
-Save p as an attribute to be used in your fit() and predict() functions.
-Using the latitude and longitude data in \texttt{sacramento.npy} find the optimal placement for 12 fire stations. 
-Plot the longitude and latitudes, the centers, and color them by cluster.
-Make plots for different values for \texttt{p} to find the optimal locations for the fire stations.
-As the initial centers are chosen at random, make sure to run the \texttt{predict()} function several times.
-In a Markdown cell report which norm was the best at keeping the maximum distance small.
+Using the Methods you wrote in Problem \ref{eq:prob1}, add a parameter \li{p} to your class that denotes the norm and defaults to 2.
+Save \li{p} as an attribute to be used in your \li{fit()} and \li{predict()} functions.
+
+Using the latitude and longitude data in \texttt{sacramento.npy}, find the optimal placement for 12 fire stations. 
+Plot the longitude and latitude data points colored by cluster as well as the cluster centers.
+Make plots for 3 different values of \texttt{p} to find the optimal locations for the fire stations.
+In a Markdown cell, report which norm you found to be the best at keeping the maximum distance small.
+\label{eq:prob2}
 \end{problem}
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.7\textwidth]{figures/sacramento.png}
+	\includegraphics[width=.7\textwidth]{figures/sacramento.pdf}
 	\caption{Sacramento Housing Data (1990 US Census).}
 	\label{fig:sacramento}
 \end{figure}
@@ -193,7 +199,7 @@ In a Markdown cell report which norm was the best at keeping the maximum distanc
 \section*{Detecting Active Earthquake Regions} % ==============================
 
 Suppose we are interested in learning about which regions are prone to experience frequent earthquake activity.
-We could make a map of all earthquakes over a given period of time and examine it ourselves, but this, as an unsupervised learning problem, can be solved using our $k$-means clustering tool.
+We could make a map of all earthquakes over a given period of time and examine it ourselves, but this, as an unsupervised learning problem, can be solved using our \emph{k-means} clustering tool.
 
 % % Old approach (required students to parse 6 files for some reason).
 % These files contain a lot of information which isn't of interest to us at the present time; all we would like to extract from them is the location of each earthquake, which appears in characters $21$ through $33$ of each line.
@@ -201,7 +207,7 @@ We could make a map of all earthquakes over a given period of time and examine i
 % We need to divide each value by $1,000$ to represent these as degrees and decimals.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=.7\textwidth]{figures/earthquakes.png}
+    \includegraphics[width=.7\textwidth]{figures/earthquakes.pdf}
     \caption{Earthquake epicenters over a 6 month period.}
     \label{fig:earthquakes}
 \end{figure}
@@ -244,54 +250,52 @@ Cluster the earthquake data in three dimensions by converting the data from raw 
 \item Convert longitude and latitude to radians, then to spherical coordinates.
 \\(Hint: \li{np.deg2rad()} may be helpful.)
 \item Convert the spherical coordinates to euclidean coordinates in $\mathbb{R}^3$.
-\item Use your \li{KMeans} class with normalization to cluster the euclidean coordinates.
+\item Use your \li{KMeans} class with normalization to cluster the euclidean coordinates with \li{k = 15}.
 \item Translate the cluster center coordinates back to spherical coordinates, then to degrees.
 Transform the cluster means back to latitude and longitude coordinates.
-\\(Hint: use \li{numpy.arctan2()} for $\arctan$, so that that correct quadrant is chosen).
+\\(Hint: use \li{np.arctan2()} for arctangent so that that correct quadrant is chosen).
 \item Plot the data, coloring by cluster.
 Also mark the cluster centers.
 \end{enumerate}
-With 15 clusters, your plot should resemble the Figure \ref{fig:earthquakeclusters}.
+With 15 clusters, your plot should resemble Figure \ref{fig:earthquakeclusters}.
 \end{problem}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=.7\textwidth]{figures/earthquake_clusters.png}
+    \includegraphics[width=.7\textwidth]{figures/earthquake_clusters.pdf}
     \caption{Earthquake epicenter clusters with $k = 15$.}
     \label{fig:earthquakeclusters}
 \end{figure}
 
-\begin{comment}
-Though plotting our results in two dimensions gives us a good picture, we can see that this is not entirely accurate.  There are points that appear to be closer to a different cluster center than the one to which they belong.  This comes from viewing the results in only two dimensions.  When viewing in three dimensions, we can see more clearly the accuracy of our results.
-\begin{problem}
-Add a keyword argument \li{3d=False} to your \li{kmeans} function, and add code to show the three-dimensional plot instead of the two-dimensional scatter plot should this argument be set to \li{True}.  Maintain the same color-coding scheme as before.
-\end{problem}
-\end{comment}
+% Though plotting our results in two dimensions gives us a good picture, we can see that this is not entirely accurate.  There are points that appear to be closer to a different cluster center than the one to which they belong.  This comes from viewing the results in only two dimensions.  When viewing in three dimensions, we can see more clearly the accuracy of our results.
+% \begin{problem}
+% Add a keyword argument \li{3d=False} to your \li{kmeans} function, and add code to show the three-dimensional plot instead of the two-dimensional scatter plot should this argument be set to \li{True}.  Maintain the same color-coding scheme as before.
+% \end{problem}
 
 
 
 
 \section*{Color Quantization} % ===============================================
 
-The $k$-means algorithm uses the euclidean metric, so it is natural to cluster geographic data.
+The \emph{k-means} algorithm uses the euclidean metric, so it is natural to cluster geographic data.
 However, clustering can be done in any abstract vector space.
 The following application is one example.
 
-Images are usually represented on computers as $3$-dimensional arrays.
-Each $2$-dimensional layer represents the red, green, and blue color values, so each pixel on the image is really a vector in $\mathbb{R}^3$.
+Images are usually represented on computers as 3-dimensional arrays.
+Each 2-dimensional layer represents the red, green, and blue color values, so each pixel on the image is really a vector in $\mathbb{R}^3$.
 Clustering the pixels in $RGB$ space leads a one kind of image segmentation that facilitate memory reduction.
 
 Reading: \url{https://en.wikipedia.org/wiki/Color_quantization}
 
 \begin{problem}
-Write a function that accepts an image array (of shape $(m,n,3)$), an integer number of clusters $k$, and an integer number of samples $S$.
+Write a function that accepts an image array (of shape $(m,n,3)$), an integer number of clusters \li{k}, and an integer number of samples \li{S}.
 Reshape the image so that each row represents a single pixel.
-Choose $S$ pixels to train a $k$-means model on with $k$ clusters.
+Choose \li{S} pixels to train a \emph{k-means} model on with \li{k} clusters.
 Make a copy of the original picture where each pixel has the same color as its cluster center.
 Return the new image.
-For this problem, you may use \li{sklearn.cluster.KMeans} instead of your \li{KMeans} class from Problem 1.
+For this problem, you may use \li{sklearn.cluster.KMeans} instead of your \li{KMeans} class from Problem \ref{eq:prob1}.
 
-Test your function on some of the provided NASA images.
+Test your function on the six provided NASA images.
 \end{problem}
 
 \newpage
@@ -336,11 +340,11 @@ Given a similarity measure, which type of Laplacian to use, and the desired numb
     \item Compute $W$, $D$, and the appropriate Laplacian matrix.
     \item Compute the first $k$ eigenvectors $u_1, \cdots , u_k$ of the Laplacian matrix.
     \item Set $U = [u_1, \cdots , u_k]$, and if using $L_{sym}$ or $L_{rw}$ normalize $U$ so that each row is a unit vector in the Euclidean norm.
-    \item Perform $k$-means clustering on the $n$ rows of $U$.
+    \item Perform \emph{k-means} clustering on the $n$ rows of $U$.
     \item The $n$ labels returned from your \li{kmeans} function correspond to the label assignments for $x_1, \cdots, x_n$.
 \end{itemize}
 
-As before, we need to run through our $k$-means function multiple times to find the best measure when we use random initialization.  Also, if you normalize the rows of $U$, then you will need to set the argument \li{normalize = True}.
+As before, we need to run through our \emph{k-means} function multiple times to find the best measure when we use random initialization.  Also, if you normalize the rows of $U$, then you will need to set the argument \li{normalize = True}.
 
 You can use the following function declaration to implement the Spectral Clustering Algorithm by calling your \li{kmeans} function.
 \begin{lstlisting}
@@ -416,7 +420,7 @@ def test_specClus(location,measure,Laplacian,args,arg1=None,kiters=10):
 \end{lstlisting}
 
 \subsection*{Fire Station Placement II}
-In problem 2 we looked at choosing the best location for a fire station. 
+In Problem \ref{eq:prob2} we looked at choosing the best location for a fire station. 
 However, because we looked at the city of Sacramento where the geography doesn't role in choosing a location, we didn't need to double check that there is a place for the station.
 The \li{sanfrancisco.npy} data is organized the same way as \li{sacramento.py}, as this also comes from the SKLearn California Housing Module.
 Doing the same method as before will give us groups of houses, however, the group centers may be in the middle of the bay.
@@ -426,7 +430,7 @@ The \li{bayboundary.npy} has only 2 columns, longitude and latitude.
 Using the boundaries set, make sure that the chosen centers are on land and not on water.
 
 As an additional exercise, import and parse the data from the \li{bayboundary.npy} and the \li{sanfrancisco.npy} files.
-Using either the algorithm that you wrote in problem 1 or the $k$-means algorithm in the SK Learn library, find the optimal locations for the 12 fire stations.
+Using either the algorithm that you wrote in Problem \ref{eq:prob1} or the \emph{k-means} algorithm in the SK Learn library, find the optimal locations for the 12 fire stations.
 	
 After the algorithm has finished running, check to see if the new coordinates are on land.
 Return the graph of the clusters, the centers (the fire station locations) as different colors.

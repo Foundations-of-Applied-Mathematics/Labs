@@ -336,6 +336,13 @@ The component with the highest probability will be the neural network's predicti
 This also enables the use of cross-entropy as a very natural loss function, which will be discussed later.
 These two activation functions are available as \li{nn.ReLU} and \li{nn.Softmax}.
 
+\begin{warn}
+    The cross-entropy loss function from PyTorch, \li{nn.CrossEntropyLoss}, combines logarithmic softmax \li{log_softmax} and the negative log likelihood loss \li{NLLLoss}, 
+    which means you should NOT apply softmax as the last layer of your model.
+    
+    Performing softmax twice can cause numerical instabiility in the model's accuracy.
+\end{warn}
+
 \subsection*{Creating a model}
 To create a neural network in PyTorch, we begin by creating a class that inherits from \li{nn.Module}:
 \begin{lstlisting}
@@ -356,7 +363,6 @@ Since our inputs are \(3\times32\times32\) tensors and linear layers only work w
         self.linear1 = nn.Linear(in_features=3*32*32, out_features=100)
         self.relu = nn.ReLU()
         self.linear2 = nn.Linear(in_features=100, out_features=10)
-        self.softmax = nn.Softmax(dim=1)
 \end{lstlisting}
 We need to set all of these layers as members of our class in order for them to be properly detected in the training process.
 Notice that the input dimension of the first layer (\li{linear1}) is equal to the dimension of the (flattened) input image ($3\times32\times32$), but from there, the output dimension is chosen arbitrarily to be 100.
@@ -367,7 +373,7 @@ Lastly, we define the \li{forward()} method, which calls all of the layers on an
     def forward(self, x):
         x_flat = self.flatten(x)
         x_layer1 = self.relu(self.linear1(x_flat))
-        output = self.softmax(self.linear2(x_layer1))
+        output = x_layer1
         return output
 \end{lstlisting}
 Even though each layer is really a class (note how we initialize them in \li{__init__()}), we can call them as if they are functions.
@@ -638,7 +644,6 @@ Include at least the following:
 	\item A max pooling layer
 	\item Two linear layers
 \end{itemize}
-Be sure that your final activation function is the softmax function.
 Choose the size of the layers so that your model has at least 50,000 parameters (use Table \ref{table:param_cts}), and print out this calculation in the Jupyter notebook file.
 In practice, specifications of model architecture (i.e. number of layers, layer sizes, etc.) are chosen quite arbitrarily until something works.
 As such, you may customize your model architecture to your liking, provided your model meets the requirements specified above.
@@ -652,7 +657,7 @@ You can check that your model works correctly by passing an (unsqueezed) image t
 \begin{lstlisting}
 >>> model = NNExample()
 >>> model(images[0].unsqueeze(0))
-tensor([[0.0952, 0.1120, 0.1019, 0.0992, 0.0955, 0.0984, 0.0886, 0.1326, 0.0966, 0.0800]], grad_fn=<SoftmaxBackward0>)
+tensor([[0.0952, 0.1120, 0.1019, 0.0992, 0.0955, 0.0984, 0.0886, 0.1326, 0.0966, 0.0800]], grad_fn=<AddmmBackward0>)
 \end{lstlisting}
 Note that your neural network will predict different probabilities for each of the categories.
 
@@ -667,7 +672,7 @@ A common classification loss function is Cross Entropy Loss
     L_{CE} = -\sum_i a_i log(p_i),
     \label{eq:cel}
 \end{equation*}
-where $i$ represents each data point, $p_i$ is the Softmax probability for each data point, and $a_i$ is the label for each data point.
+where $i$ represents each data point, $p_i$ is the softmax probability for each data point, and $a_i$ is the label for each data point.
 PyTorch's \li{nn.CrossEntropyLoss()} conveniently handles all of this.
 
 Once the loss is calculated by the objective, we can use it to optimize the model weights to make the loss smaller.
@@ -766,8 +771,8 @@ Lastly, print the final test score using the testing data, as described above.
 \begin{figure}[H]
     \centering
     \begin{tabular}{cc}
-    \includegraphics[width=.45\textwidth]{figures/training.pdf} &
-    \includegraphics[width=.45\textwidth]{figures/validation.pdf}
+    \includegraphics[width=.45\textwidth]{figures/training_updated.pdf} &
+    \includegraphics[width=.45\textwidth]{figures/validation_updated.pdf}
     \end{tabular}
     \caption{Training Loss and Validation Accuracy for a CNN on CIFAR10.}
     \label{fig:results}
@@ -806,7 +811,8 @@ Then, we zero out the optimizer's gradient, run \li{x} through the model, and co
 After this, the gradient of the output with respect to \li{x} can be obtained using the attribute \li{x.grad.data}.
 
 The following function \li{fgsm_attack} accepts a model and an image and performs the FGSM attack, returning the perturbed image:
-\begin{lstlisting}
+\newpage
+\begin{lstlisting}[belowskip=-0.8 \baselineskip]
 def fgsm_attack(model, optimizer, objective, x, y, eps):
     """
     Performs the FGSM attack on the given model and data point x with label y.
@@ -825,9 +831,7 @@ def fgsm_attack(model, optimizer, objective, x, y, eps):
     
     return x_perturbed
 \end{lstlisting}
-
 We will use this function to explore this type of adversarial attack on our neural network.
-
 \begin{comment}
 \begin{algorithm}
 \begin{algorithmic}[1]
@@ -862,9 +866,6 @@ If the model is correct, we perform the attack to modify the image slightly, wit
 The accuracy of the model is the percentage of modified images that still match their labels over the total number of images.
 Notice that since we are evaluating the test set, the model should be set to \li{eval()}, and we do not need to optimize.
 \end{comment}
-
-
-
 \begin{problem}
 Write a function that loops through the test data using the function \li{fgsm_attack} to perturb the images and using your trained model from Problem \ref{prob:train}.
 
@@ -885,13 +886,16 @@ Your figure should look similar to Figure \ref{fig:perturbed}.
 \label{problem:adv}
 \end{problem}
 
-\begin{figure}[H] 
-\includegraphics[width=\textwidth]{figures/perturbed-2.png}
+\begin{figure}[H]
+\includegraphics[width=\textwidth]{figures/perturbed_updated.png}
 \caption{The first modified image for different values of epsilon.}
 \label{fig:perturbed}
 \end{figure}
 
 
+
+
+\newpage
 \section*{Additional Materials}
 \subsection*{TensorBoard}
 

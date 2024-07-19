@@ -51,7 +51,7 @@ We now plug it into the PDE:
 \sum_{k=-n}^n y_k(t)e^{ikx}
 \right)^2
 -
-\frac{\partial^3}{\partial^3 x}\sum_{k=-n}^n y_k(t)e^{ikx}
+\frac{\partial^3}{\partial x^3}\sum_{k=-n}^n y_k(t)e^{ikx}
 \\
 \sum_{k=-n}^n y_k'(t)e^{ikx}
 &=
@@ -109,7 +109,6 @@ To obtain the initial condition for the \(y_k\), we can simply use the discrete 
 \]
 
 To compute the fast Fourier and inverse fast Fourier transforms numerically, we will use the \li{scipy.fft} module, which has functions \li{fft} for the fast Fourier transform and \li{ifft} for the inverse fast Fourier transform.
-% it also has \li{rfft} and \li{irfft}, but these are a little funny to work with because the latter treats everything as the positive coefficients because the negative ones are actually redundant; we're just going to not mention them because of that.
 These functions use an order for the coefficients that is slightly nonintuitive: the coefficients for \(k\geq 0\) are all listed first, followed by the coefficients for \(k<0\).
 The vector of wavenumbers can be created as follows:
 \begin{lstlisting}
@@ -120,171 +119,58 @@ k = np.concatenate([
 \end{lstlisting}
 We are now prepared to numerically solve the KdV equation.
 
-
-\begin{comment} %%%% Confusing explanation starts here
-\section*{Confusing explanation}
-If we use $N$ subintervals in space, we then obtain the spatial step $h = 2\pi/N$ and the grid points $\{x_j\}_{j=1} = \{-\pi,-\pi + h,\ldots,\pi-h\}$.  
-Let $\mathcal{F}(u)(t) = \hat{u}(t)$ denote the Fourier transform of $u(x,t)$ (in space), so that 
-\[
-\mathcal{F}(u) = \hat{u}(k,t), \quad k=-N/2+1, \ldots, N/2.
-\]
-Similarly we let $\mathcal{F}^{-1}$ represent the discrete inverse Fourier transform.
-Recall that $k$ represents the wave numbers in Fourier space; our code defines it by 
-\begin{lstlisting}
-[BAD CODE THAT USES TABS]
-\end{lstlisting}
-
-We now apply the Fourier transform to the KdV equation.
-In Fourier space, we obtain 
-\begin{align*}
-	\mathcal{F}(u)_t &= -\frac{ik}{2}\mathcal{F}(u^2)- (ik)^3\mathcal{F}(u).
-\end{align*}
-Let $U(t)$ be the vector valued function given by $U(t) = (u(x_j,t))_{j=1}^N$.
-Let $\mathcal{F}(U)(t)$ denote the discrete Fourier transform of $u(x,t)$ (in space), so that 
-\[
-\mathcal{F}(U)(t) = (\mathcal{F}(u)(k,t))_{k=-N/2+1}^{N/2}.
-\]
-Similarly we let $\mathcal{F}^{-1}$ represent the discrete inverse Fourier transform.
-Using the pseudospectral approximation in space leads to the system of ODEs
-\begin{align}
-	\mathcal{F}(U)_t =  -\frac{i}{2} \vec{k}\mathcal{F}\left( \mathcal{F}^{-1}(\mathcal{F}(U))^2\right) + i\vec{k}^3\mathcal{F}(U)
-\end{align}
-where $\vec{k}$ is a vector, and multiplication is done element-wise. In terms of $Y = \mathcal{F}(U)$, this simplifies to 
-\begin{align}
-	Y_t =  -\frac{i}{2} \vec{k}\mathcal{F}\left( \mathcal{F}^{-1}(Y)^2\right) + i\vec{k}^3Y
-	\label{lab:solitons:pseudospectral}
-\end{align}
-and is implemented below.
-\begin{lstlisting}
-# Defines the left hand side of the ODE y' = G(t,y)
-# defined above.
-ik3 = 1j*k**3.
-def G_unscaled(t,y):
-	out = -.5*1j*k*fft(ifft(y,axis=0)**2.,axis=0)  + ik3*y        
-	return out
-\end{lstlisting}
-
-Equation \eqref{lab:solitons:pseudospectral} is solved below, using a soliton as initial data for the KdV equation. 
-Note that the Fourier transform must be applied to the soliton before solving, and that the final numerical solution must be transformed back from Fourier space before plotting. 
-\begin{lstlisting}
-N = 256
-x = (2.*np.pi/N)*np.arange(-N/2,N/2).reshape(N,1)   # Space discretization
-s, shift = 25.**2., 2.  							# Initial data is a soliton
-y0 = (3.*s*np.cosh(.5*(sqrt(s)*(x+shift)))**(-2.)).reshape(N,) 
-
-# Solves the ODE.
-max_t = .0075
-dt = .02*N**(-2.)
-max_tsteps = int(round(max_t/dt))
-y0 = fft(y0,axis=0)
-T,Y = RK4(G_unscaled, y0, t0=0, t1=max_t, n=max_tsteps)
-
-# Using the variable stride, we step through the data, 
-# applying the inverse fourier transform to obtain u.
-# These values will be plotted.
-stride = int(np.floor((max_t/25.)/dt))
-uvalues, tvalues = np.real(ifft(y0,axis=0)).reshape(N,1), np.array(0.).reshape(1,1)
-for n in range(1,max_tsteps+1):
-	if np.mod(n,stride) == 0:
-		t = n*dt
-		u = np.real( ifft(Y[n], axis=0) ).reshape(N,1)
-		uvalues = np.concatenate((uvalues,np.nan_to_num(u)),axis=1)
-		tvalues = np.concatenate((tvalues,np.array(t).reshape(1,1)),axis=1)
-
-fig = plt.figure()
-ax = fig.gca(projection='3d')
-ax.view_init(elev=45., azim=150)
-tv, xv = np.meshgrid(tvalues,x,indexing='ij')
-surf = ax.plot_surface(tv,xv, uvalues.T, rstride=1, cstride=1, cmap=cm.coolwarm,
-						linewidth=0, antialiased=False)
-tvalues = tvalues[0]; ax.set_xlim(tvalues[0], tvalues[-1])
-ax.set_ylim(-pi, pi); ax.invert_yaxis()
-ax.set_zlim(0., 4000.)
-ax.set_xlabel('T'); ax.set_ylabel('X'); ax.set_zlabel('Z')
-plt.show()
-\end{lstlisting}
-
-The method we have used requires the use of an algorithm for (ODE) initial value problems, such as the RK4 algorithm.
-The RK4 method is implemented below.
-\begin{lstlisting}
-def initialize_all(y0, t0, t1, n):
-	""" An initialization routine for the different ODE solving
-	methods in the lab. This initializes Y, T, and h. """
-	
-	if isinstance(y0, np.ndarray):
-		Y = np.empty((n, y0.size),dtype=complex).squeeze()
-	else:
-		Y = np.empty(n,dtype=complex)
-	Y[0] = y0
-	T = np.linspace(t0, t1, n)
-	h = float(t1 - t0) / (n - 1)
-	return Y, T, h
-
-def RK4(f, y0, t0, t1, n):
-	""" Use the RK4 method to compute an approximate solution
-	to the ODE y' = f(t, y) at n equispaced parameter values from t0 to t
-	with initial conditions y(t0) = y0.
-	
-	'y0' is assumed to be either a constant or a one-dimensional numpy array.
-	't0' and 't1' are assumed to be constants.
-	'f' is assumed to accept two arguments.
-	The first is a constant giving the current value of t.
-	The second is a one-dimensional numpy array of the same size as y.
-	
-	This function returns an array Y of shape (n,) if
-	y is a constant or an array of size 1.
-	It returns an array of shape (n, y.size) otherwise.
-	In either case, Y[i] is the approximate value of y at
-	the i'th value of np.linspace(t0, t, n).
-	"""
-	Y, T, h = initialize_all(y0, t0, t1, n)
-	for i in xrange(1, n):
-		K1 = f(T[i-1], Y[i-1])
-		tplus = (T[i] + T[i-1]) * .5
-		K2 = f(tplus, Y[i-1] + .5 * h * K1)
-		K3 = f(tplus, Y[i-1] + .5 * h * K2)
-		K4 = f(T[i], Y[i-1] + h * K3)
-		Y[i] = Y[i-1] + (h / 6.) * (K1 + 2 * K2 + 2 * K3 + K4)
-	return T, Y
-\end{lstlisting}
-\end{comment} % end confusing explanation
-
 \begin{problem}
 Write a function that accepts the time value \(t\) (which won't be used here, but will be useful later) the vector \(\mathbf{y}=(y_0,y_1,\ldots,y_n,y_{-n-1},\ldots,y_{-1})\) and the vector \(\mathbf{k}\) of wavenumbers and returns \(\mathbf{y}'\) as given in (\ref{lab:solitons:pseudospectral}).
-
-%\noindent
-%Hint: complex numbers are denoted in Python as \li{0.5j}.
 \end{problem}
 
-\noindent
-To numerically solve this ODE, use the following implementation of the RK4 algorithm:
+\noindent To numerically solve this ODE, we'll use \li{solve_ivp}.
+For this lab we want to specify a fixed time step size to use with the RK4 algorithm, but \li{scipy}'s implementation uses an adaptive method to control the time step.
+So we've defined an RK4 implementation that can be passed into \li{solve_ivp} with the \li{method} argument, and we provide the time step \li{dt} through the call to \li{solve_ivp}.
 \begin{lstlisting}
-def RK4(f, y0, T, dt, k):
-    """
-    Solves the ODE y'=f(t, y) using the Runge-Kutta 4 method with initial 
-    condition y0 on the time interval [0,T] using a time step of dt.
-    The value of k is passed directly into the function f.
-    
-    Returns:
-        t ((n_t,) ndarray) - the time values
-        Y ((n_t, 2n+2) ndarray) - the solution values. The solution at the 
-                i-th time step can be indexed as Y[i].
-    """
-    # Set up matrices for the solution
-    ts = np.arange(0, T+dt, dt)
-    Y = np.empty((len(ts),len(k)), dtype=complex)
-    y = y0
-    Y[0] = y
-    for i in range(1, len(ts)):
-        # Use RK4
-        t = ts[i]
-        K1 = f(t, y, k)
-        K2 = f(t + dt/2, y + 0.5*dt*K1, k)
-        K3 = f(t + dt/2, y + 0.5*dt*K2, k)
-        K4 = f(t + dt, y + dt*K3, k)
-        y = y + (dt / 6.) * (K1 + 2*K2 + 2*K3 + K4)
-        Y[i] = y
-    return ts, Y
+from scipy.integrate import solve_ivp, OdeSolver
+from scipy.integrate._ivp.common import warn_extraneous
+
+class RK4(OdeSolver):
+    def __init__(self, fun, t0, y0, t_bound, dt, vectorized, **extraneous):
+        super().__init__(fun, t0, y0, t_bound, vectorized, support_complex=True)
+
+        self.dt = dt
+
+        # t-linspace
+        self.tls = np.arange(0, t_bound + dt, dt)
+        
+        self.idx = iter(range(1, len(self.tls)))
+
+        warn_extraneous(extraneous)
+
+    def _step_impl(self):
+        self.y_old = self.y
+
+        i = next(self.idx)
+        t = self.tls[i]
+        y = self.y
+        f = self.fun
+        dt = self.dt
+
+        # RK4 algorithm
+        K1 = f(t, y)
+        K2 = f(t + dt / 2, y + dt * K1 / 2)
+        K3 = f(t + dt / 2, y + dt * K2 / 2)
+        K4 = f(t + dt, y + dt * K3)
+        y_new = y + (dt / 6) * (K1 + 2 * K2 + 2 * K3 + K4)
+
+        self.t = t
+        self.y = y_new
+        return True, None
+
+    def _dense_output_impl(self):
+        return lambda xs: np.interp(
+            xs, (self.t_old, self.t), (self.y_old, self.y)
+        )
+
+# `args` is passed to the ODE function you defined in Problem 1.
+# `dt` is passed to `RK4`.
+sol = solve_ivp(..., args=(k,), method=RK4, dt=dt)
 \end{lstlisting}
 
 Once we have solved for the coefficients \(\mathbf{y}(t)\), we need to convert them back into function values \(u(x,t)\) in order to visualize the solution.
@@ -336,7 +222,7 @@ Hint: \li{numpy} does not have a \li{sech} function; use \li{1/cosh(x)} to compu
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{figures/soliton.png}
+\includegraphics[width=\textwidth]{figures/soliton.pdf}
 \caption{The solution to Problem \ref{problem:solitons:single}.}
 \label{fig:solitons:single}
 \end{figure}
@@ -356,7 +242,7 @@ The solution is shown in Figure \ref{fig:solitons:interacting}.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{figures/interacting_solitons.png}
+\includegraphics[width=\textwidth]{figures/interacting_solitons.pdf}
 \caption{The solution to Problem \ref{problem:solitons:interacting}.}
 \label{fig:solitons:interacting}
 \end{figure}

@@ -120,7 +120,7 @@ A decent selection could be a function based on an ellipse, such as this functio
 \begin{equation}\label{eq:obstacle}
     C(x,y) = \frac{W_1}{((x-c_x)^2 / r_x + (y - c_y)^2 / r_y)^\lambda + 1}.
 \end{equation}
-With the function \ref{eq:obstacle} we can manipulate the center by changing $c_x$ and $c_y$, and we can control the size by changing $r_x$ and $r_y$.
+With the function \ref{eq:obstacle}, we can manipulate the center by changing $c_x$ and $c_y$, and we can control the size by changing $r_x$ and $r_y$.
 Changing the constant $W_1$ allows us to change the relative penalty of occupying the same location as the obstacle, and a reasonable value for $\lambda$ will control the vanishing rate.
 We will also include a term in the cost functional that weights against high acceleration.
 This will allow us to model the real world more accurately, though the term we will be using is not a perfect representation of real world acceleration limitations.
@@ -162,6 +162,35 @@ Since we're given $H_u = 0$ in equation \ref{eq:control_relation}, then we also 
     \end{aligned}
 \end{equation}
 
+\subsection*{Using Initial Guesses with \li{solve_bvp}}
+When solving boundary value problems in Python, we need to supply \li{solve_bvp} with an initial guess \li{y0} of the solution \li{y}.
+Note that this initial guess \li{y0} differs from the initial guess provided to \li{solve_ivp} and many other iterative solvers.
+Rather than providing \li{solve_bvp} with initial conditions, we are providing a guess for the entire solution of the ODE (i.e. at every time step). 
+For many applications, providing an initial guess of ones is sufficient for \li{solve_bvp} to find the correct solution. 
+However, for obstacle avoidance, solutions are often unstable enough that it becomes useful to provide \li{solve_bvp} with a better guess at the final solution. 
+Note that our inital guess need not satisfy the boundary conditions.
+Also note that \li{solve_bvp} does not necessarily find a globally optimal solution.
+In a lot of cases, the solution it finds will be a local minimum, but for many practical applications (and for the purposes of this lab) local minima are sufficient.
+
+An easy way to create an initial guess is to approximate a solution using line segments. 
+For example, suppose we have an obstacle centered at $(4,1)$ and we use the ODE found in \ref{eq:ex-state-ode} and \ref{eq:ex-costate-odes} with an initial condition of $(6, 1.5, 0, 0)$ and a final condition of $(0,0,0, 0)$. 
+It could make sense for the path to move ``over" the obstacle going through a point at around $(3, 1.75)$. 
+Thus, we could make our initial guess for $x$ be a linspace from 6 to 0 and our initial guess for $y$ be a line that moves from $(6,1.5)$ to $(3, 1.75)$ and then a line that moves from $(3, 1.75)$ to $(0,0)$. 
+It also makes sense for us to initialize the derivatives of $x$ as negative values since we will be moving from right to left. 
+The following code reflects these assumptions in the creation of the initial guess:
+
+\begin{lstlisting}
+# Make initial guess
+y0 = np.ones((8,t_steps))
+x = np.linspace(0, 6, t_steps)
+y1 = (1.75 / 3) * x[:int(t_steps/2)]
+y2 = (1.5 - 1.75) / 3 * (x[int(t_steps/2):] - 3) + 1.75
+y_init = np.concatenate((y1,y2))
+y0[0,:] = x[::-1]
+y0[1,:] = y_init[::-1]
+y0[2,:] = -1*np.ones(t_steps)
+\end{lstlisting}
+
 
 \begin{problem}
 \label{prob:obstacle:bvp2}
@@ -175,7 +204,7 @@ Using the ODEs found in \ref{eq:ex-state-ode} and \ref{eq:ex-costate-odes}, the 
 \end{align*}
 You will need to choose a $W_1$ and $W_2$ which allow the solver to find a valid path.
 If these parameters are not chosen correctly, the solver may find a path which goes through the obstacle, not around it.
-Plot the obstacle using \li{plt.contour()} to be certain path doesn't pass through the obstacle.
+Plot the obstacle using \li{plt.contour()} to be certain path doesn't pass through the obstacle. Also plot the initial guess for $x$ and $y$ provided to \li{solve_bvp}.
 
 Hint: The default for a parameter of \li{solve_bvp()} called \li{max_nodes} is not large enough.
 Try at least \li{max_nodes = 30000}.
@@ -186,7 +215,7 @@ If you are struggling to find viable values for $W_1$ and $W_2$, try $W_1\in (1,
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{figures/OA_prob2.pdf}
-    \caption{Solution to problem \ref{prob:obstacle:bvp2} for certain choice of parameters.  Here we used $W_1=3$ and $W_2=70$, but those parameters are a choice.  Other choices work, too, but will result in a different optimal path around the obstacle.}
+    \caption{Solution to problem \ref{prob:obstacle:bvp2} for certain choice of parameters.  Here we used $W_1=3$ and $W_2=70$, but those parameters are a choice.  Other choices work too, but will result in a different optimal path around the obstacle.}
     \label{fig:OA_prob2}
 \end{figure}
 
@@ -222,7 +251,7 @@ We start with a first-order ODE system. Note that the fixed final time has been 
     =
     \begin{bmatrix}
         y_2 \\
-        cos(t) - 9y_1
+        \cos(t) - 9y_1
     \end{bmatrix},
     \quad y_1(0) = 5/3,\quad y_2(0) = 5,\quad y_1(t_f) = -\frac{5}{3}.
 \end{align*}
@@ -234,7 +263,7 @@ Now we make the coordinate change, giving the following system
     =
     t_f\begin{bmatrix}
         z_2 \\
-        \cos(\hat{t}) - 9z_1
+        \cos( t_f \hat{t}) - 9z_1
     \end{bmatrix},
     \quad z_1(0) = 5/3,\quad z_2(0) = 5,\quad z_1(1) = -\frac{5}{3}.
 \end{equation}
@@ -293,26 +322,32 @@ Hint: Be careful with $\sin(t)$. We have made the substitution for $t$ (it is no
 \section*{Free Time, Fixed Endpoint Control Problems}
 
 Now that we understand how to formulate free time horizon problems, we can modify our optimal control BVP to become a free time horizon problem.
-This is actually the best way to formulate many optimal control problems, as we usually don't know exactly how long it takes to traverse the optimal path. The methodology is exactly the same as we used in the last problem, we only need to find the extra boundary value which will allow us to make the end time a free variable.
+This is actually the best way to formulate many optimal control problems, as we usually don't know exactly how long it takes to traverse the optimal path. 
+The methodology is exactly the same as we used in the last problem, we only need to find the extra boundary value which will allow us to make the end time a free variable.
 
-To find this extra boundary value we will use the fact that the Hamiltonian is 0 for all $t$ along the optimal path. It is standard to use the final time as the representative so we will assert that
+To find this extra boundary value, we will use the fact that the Hamiltonian is 0 for all $t$ along the optimal path. It is standard to use the final time as the representative so we will assert that
 \begin{equation}\label{eq:ex-boundary-value}
     H(t_f,p(t_f),s(t_f),u(t_f)) = 0.
 \end{equation}
 
-You may notice that when you solve an optimal control problem as a free end time BVP, the optimal path you get is different than what you found when it was a fixed end time BVP.
-This is because the free end time solution actually arrives faster.
-The solution found in the fixed end time formulation is the optimal path for a certain fixed end time, but it may not be the overall fastest path that avoids the obstacle.
+You may notice that when you solve an optimal control problem as a free end time BVP, the optimal path you get is different than what you found when it was a fixed end time BVP. 
+This is because the solution found in the fixed end time formulation is the optimal path for a certain end time, but it may not be the optimal path when time is allowed to vary.
+The cost functional will control how time constraints are balanced with other costs and thus determine the optimal path.
 
 \begin{problem}
 \label{prob:obstacle:bvp4}
-Refactor your code from problem \ref{prob:obstacle:bvp2} to create a free end time BVP and use a new boundary value derived from \ref{eq:ex-boundary-value}. Let $W_1 = 4$ and $W_2 = 0.1$, and use $6$ as the initial guess for \li{p[0]}.
-Plot the solution you found.
-What is the optimal time?
+Refactor your code from problem \ref{prob:obstacle:bvp2} to create a free end time BVP and use a new boundary value derived from \ref{eq:ex-boundary-value}. 
+Let $W_1 = 4$ and $W_2 = 0.1$, and use \li{max_nodes = 60000}. 
+Plot the solution you found along with the initial guess for $x$ and $y$ and print the optimal time.
+
+Hint: You may find that the initial guess provided for Problem \ref{prob:obstacle:bvp2} becomes more unstable when used with this problem. 
+Try using an initial guess for \li{p[0]} that is close to $3$ or change the initial guess \li{y0} so that the path runs underneath the obstacle. 
+One such initial guess is shown in Figure \ref{fig:OA_prob4}. It does not matter which path your solution takes, it need only look reasonable and have a reasonable optimal time.
 \end{problem}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{figures/OA_prob4.pdf}
-    \caption{The solution to \ref{prob:obstacle:bvp4}.  Here we used $W_1 = 4$ and $W_2 = 0.1$ and got an optimal time of about 4.47.  Those parameters are a choice.  Other choices work, too, but will result in a different optimal path around the obstacle and in a different optimal time.}
+    \includegraphics[width=5.75in]{figures/OA_prob4.pdf}
+    \caption{The solution to Problem \ref{prob:obstacle:bvp4}.  Here we used $W_1 = 4$ and $W_2 = 0.1$ and got an optimal time of about 4.47.  Those parameters are a choice.  Other choices work too, but will result in a different optimal path around the obstacle and in a different optimal time.}
+    \label{fig:OA_prob4}
 \end{figure}

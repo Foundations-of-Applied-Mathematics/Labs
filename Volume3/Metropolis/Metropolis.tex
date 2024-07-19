@@ -163,16 +163,16 @@ The kernel density estimator for $\mu$ should be approximately normal, and the k
 We will use the Metropolis algorithm to obtain samples from a multivariate normal distribution to demonstrate this process.
 Suppose also that we desire to obtain samples from a multivariate normal distribution with arbitrary covariance matrix $\Sigma$, and that this is difficult (obviously we can do this directly in Python, but this is merely a tutorial to see how the Metropolis algorithm works). Suppose further that we are able to easily compute the ratio of the density of this distribution at two points $\mathbf{x}$ and $\mathbf{y}$ of length $K$, i.e.
 \begin{align*}
-\frac{N(\mathbf{x} \; ; \; \mu, \Sigma)}{N(\mathbf{y} \; ; \; \mu, \Sigma)} & = \frac{\frac{1}{(2\pi)^{K/2}|\Sigma|^{1/2}} e^{-\frac{1}{2}(\mathbf{x} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu)}}{\frac{1}{(2\pi)^{K/2}|\Sigma|^{1/2}} e^{-\frac{1}{2}(\mathbf{y} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu)}} \\
-& = \frac{e^{-\frac{1}{2}(\mathbf{x} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu)}}{e^{-\frac{1}{2}(\mathbf{y} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu)}} \\
-& = e^{-\frac{1}{2}\left((\mathbf{x} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu) - (\mathbf{y} - \mu)^{T} \Sigma^{-1} (\mathbf{y} - \mu)\right)}
+\frac{N(\mathbf{x} \; ; \; \mu, \Sigma)}{N(\mathbf{y} \; ; \; \mu, \Sigma)} & = \frac{\frac{1}{(2\pi)^{K/2}|\Sigma|^{1/2}} e^{-\frac{1}{2}(\mathbf{x} - \mu)\trp  \Sigma^{-1} (\mathbf{x} - \mu)}}{\frac{1}{(2\pi)^{K/2}|\Sigma|^{1/2}} e^{-\frac{1}{2}(\mathbf{y} - \mu)\trp  \Sigma^{-1} (\mathbf{x} - \mu)}} \\
+& = \frac{e^{-\frac{1}{2}(\mathbf{x} - \mu)\trp  \Sigma^{-1} (\mathbf{x} - \mu)}}{e^{-\frac{1}{2}(\mathbf{y} - \mu)\trp  \Sigma^{-1} (\mathbf{x} - \mu)}} \\
+& = e^{-\frac{1}{2}\left((\mathbf{x} - \mu)\trp  \Sigma^{-1} (\mathbf{x} - \mu) - (\mathbf{y} - \mu)\trp  \Sigma^{-1} (\mathbf{y} - \mu)\right)}
 \end{align*}
 
 \begin{problem}
 \label{problem1}
 Write an acceptance function that computes
 \begin{equation*}
-p = \min \{1, e^{-\frac{1}{2}\left((\mathbf{x} - \mu)^{T} \Sigma^{-1} (\mathbf{x} - \mu) - (\mathbf{y} - \mu)^{T} \Sigma^{-1} (\mathbf{y} - \mu)\right)}\}
+p = \min \{1, e^{-\frac{1}{2}\left((\mathbf{x} - \mu)\trp  \Sigma^{-1} (\mathbf{x} - \mu) - (\mathbf{y} - \mu)\trp  \Sigma^{-1} (\mathbf{y} - \mu)\right)}\}
 \end{equation*}
 given $\mathbf{x}, \mathbf{y}, \mu,$ and $\Sigma$, and then draws from a Bernoulli distribution with parameter $p$. It should return a $1$ if it accepts the new state, and a $0$ if it rejects it.
 \end{problem}
@@ -373,8 +373,8 @@ After the burn-in period, continue the iteration \li{n_samples} times, also reco
 The acceptance rate is counted after the burn-in period.
 Return the samples, the sequence of weighted energies $-\beta H(\sigma)$, and the acceptance rate.
 
-Test your sampler on a $100 \times 100$ grid with $200000$ total iterations, with \li{n_samples} large enough so that you will keep $50$ samples, for $\beta = 0.2, 0.4, 1$.
-Plot the proportional log probabilities, as well as a late sample from each test.
+Test your sampler on a $100 \times 100$ grid with $20{\small,}0000$ total iterations, with \li{n_samples} large enough so that you will keep $50$ samples, for $\beta = 0.2, 0.4, 1$.
+Plot the proportional log probabilities across all iterations (including the burn-in), as well as a late sample from each test.
 How does the ferromagnetic material behave differently with differing temperatures?
 Recall that $\beta$ is an inverse function of temperature.
 You should see more structure with lower temperature, as illustrated in Figure \ref{fig:ising-results}.

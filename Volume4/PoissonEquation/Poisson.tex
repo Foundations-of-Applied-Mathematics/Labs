@@ -36,7 +36,8 @@ Poisson's equation is often used in electrostatics, image processing, surface re
 	\end{split}\label{eqn:2d_poisson}
 \end{align}
 Let $a = x_0, x_1, \ldots, x_n = b$ and $c = y_0, y_1, \ldots, y_n = d$ be evenly spaced grids.
-Furthermore, suppose that $b-a=d-c$, so the rectangular domain is also square. Thus we have a single stepsize $h$, where $h = x_{i+1}-x_i = y_{i+1}-y_i$
+Furthermore, suppose that $b-a=d-c$, so the rectangular domain is also square.
+Thus we have a single stepsize $h$, where $h = x_{i+1}-x_i = y_{i+1}-y_i$
 
 We look for an approximation $U_{i,\,j}$ on the grid $\{(x_i,y_j)\}_{i,j=0}^{n}$.
 
@@ -54,10 +55,13 @@ Recall that
 \label{eqn:finite_diff_op}
  \end{align}
 
-These equations are linear, so we can expect to write them in matrix form. However, since our unknown variables are doubly-indexed (for $x_i$ and $y_j$), we first need to rewrite them as a 1-dimensional array. We can do this by "stacking" the columns of the 2-dimensional array. Let the vector of unknowns $U$ be:
+These equations are linear, so we can expect to write them in matrix form.
+However, since our unknown variables are doubly-indexed (for $x_i$ and $y_j$), we first need to rewrite them as a 1-dimensional array.
+We can do this by "stacking" the columns of the 2-dimensional array.
+Let the vector of unknowns $U$ be:
 
-\[U = \begin{bmatrix} U^1 \\ U^2 \\ \\ U^{n-1} \end{bmatrix} \text{ where } U^j = 
-\begin{bmatrix} U_{1,\,j} \\ U_{2,\,j} \\ \\ U_{n-1,\,j} \end{bmatrix} \text{ for each } j, \text{ }1\leq j \leq n-1.\]
+\[U = \begin{bmatrix} U^1 \\ U^2 \\ \vdots \\ U^{n-1} \end{bmatrix} \text{ where } U^j = 
+\begin{bmatrix} U_{1,\,j} \\ U_{2,\,j} \\ \vdots \\ U_{n-1,\,j} \end{bmatrix} \text{ for each } j, \text{ }1\leq j \leq n-1.\]
 
 Then the set of equations  
 \[
@@ -68,8 +72,6 @@ can be written in matrix form as
 \begin{equation} \label{eqn:matrix_form}
 AU + p +  q  = f.
 \end{equation}
-
-
 $A$ is the $(n-1) \times (n-1)$ block tridiagonal matrix (of total size $(n-1)^2 \times (n-1)^2$) given by 
 \begin{align}
 	\frac{1}{h^2}
@@ -81,8 +83,7 @@ I &T & I & &\\
 &  &  & I & T\end{bmatrix}\label{poisson2d:matrixA}
 \end{align}
 
-where $I$ is the $n-1\times n-1$ % $m\times m$
-identity matrix, and $T$ is the $n-1\times n-1$ tridiagonal matrix
+\noindent where $I$ is the $n-1\times n-1$ identity matrix, and $T$ is the $n-1\times n-1$ tridiagonal matrix
 \[\begin{bmatrix}
 -4 & 1 & &  &\\
 1 &-4 & 1 & &\\
@@ -90,146 +91,24 @@ identity matrix, and $T$ is the $n-1\times n-1$ tridiagonal matrix
 &  & 1 & -4 & 1 \\
 &  &  & 1 & -4 \end{bmatrix}.\]
 
-
 The vectors $p$ and $q$ come from the boundary conditions of \eqref{eqn:2d_poisson}, and are given by 
-\[p = \begin{bmatrix} p^1 \\ \ldots \\ \\ p^{n-1} \end{bmatrix}, \quad  q = \begin{bmatrix} q^1 \\ \ldots \\ \\ q^{n-1} \end{bmatrix},\]
+\[p = \begin{bmatrix} p^1 \\ \vdots \\ p^{n-1} \end{bmatrix}, \quad  q = \begin{bmatrix} q^1 \\ \vdots \\ q^{n-1} \end{bmatrix},\]
 where 
-\[p^j = \frac{1}{h^2} \begin{bmatrix} g(x_0,y_j)\\ 0 \\ \vdots \\0\\ g(x_n,y_j) \end{bmatrix} ,\,\,\, 1 \leq j \leq n-1,\]
+\[p^j = \frac{1}{h^2} \begin{bmatrix} g(x_1,y_j)\\ 0 \\ \vdots \\0\\ g(x_{n-1},y_j) \end{bmatrix} ,\,\,\, 1 \leq j \leq n-1,\]
 and 
 \[q^1 = \frac{1}{h^2}\begin{bmatrix} g(x_1,y_0)  \\ g(x_2,y_0) \\ \vdots \\ g(x_{n-2},y_0) \\ g(x_{n-1},y_0) \end{bmatrix}, \quad q^{n-1} = \frac{1}{h^2}\begin{bmatrix} g(x_1,y_n) \\ g(x_2,y_n)\\ \vdots \\ g(x_{n-2},y_n)\\ g(x_{n-1},y_n) \end{bmatrix}, \quad q^{j} = \begin{bmatrix} 0 \\ 0 \\ \vdots \\ 0 \\ 0 \end{bmatrix} ,\,\,\, 2 \leq j \leq n-2.\]
 Note that both $p$ and $q$ have a total size of $(n-1)^2 \times 1$, and each $p^j$ and $q^j$ is $(n-1)\times1$.
 
 The vector $f$ (which is the same size as $p$ and $q$) comes from the source term of \eqref{eqn:2d_poisson}, and is given by 
-\[f = \begin{bmatrix} f^1 \\ \ldots \\ \\ f^{n-1} \end{bmatrix}, \quad  \text{where} \quad f^j = \begin{bmatrix} f(x_1,y_j) \\ f(x_2,y_j) \\ \ldots \\ \\ f(x_{n-1},y_j) \end{bmatrix}\]
+\[f = \begin{bmatrix} f^1 \\ \vdots \\ f^{n-1} \end{bmatrix}, \quad  \text{where} \quad f^j = \begin{bmatrix} f(x_1,y_j) \\ f(x_2,y_j) \\ \vdots \\ f(x_{n-1},y_j) \end{bmatrix}\]
 
-Note that this linear system is very large ($A$ has $(n-1)^4$ entries) and very sparse (most of the entries in $A$ are zero). Thus we will should make use of sparse matrix routines (such as those in \li{scipy.sparse} and \li{scipy.sparse.linalg}) in order to reduce the time and memory used in setting up and solving the linear system.
-
-% The vector $q$ is given by $u = [q^0 \ldots q^{N-2}]^T$, %   $u = [q^1 \ldots q^m]^T$,
-% where
-% \[q^j = \frac{1}{h^2} \begin{bmatrix} g_{0,\,j} \\ 0 \\ \vdots \\0\\ g_{m+1,\,j} \end{bmatrix} , \,\,\, 2 \leq j \leq m-1\]
-% and
-% \[q^1 = \frac{1}{h^2}\begin{bmatrix} g_{1,0} + g_{0,1} \\ g_{2,0} \\ \vdots \\ g_{m-1,0}\\ g_{m,0} + g_{m+1,1}\end{bmatrix}, \quad q^m = \frac{1}{h^2}\begin{bmatrix} g_{1,m+1} + g_{0,m}\\ g_{2,m+1} \\ \vdots \\ g_{m-1,m+1}\\ g_{m,m+1} + g_{m+1,m}\end{bmatrix}\]
-
-
-
-
-% \begin{problem}
-% Find the solution $u$ of the 2D Poisson equation with the given Dirichlet boundary conditions:
-% \begin{align*}
-% 	\Delta u &= -\pi^2 \sin(\pi x)\sin(\pi y), \quad (x,y) \in [0,1]\times [0,1], \\
-% 	u(x,0) &= 1-x, \\
-% 	u(x,1) &= 1-2x, \\
-% 	u(0,y) &= 1, \\
-% 	u(1,y) &= -y.
-% \end{align*}
-%
-% Graph your solution, and demonstrate convergence of the numerical approximation by
-% creating a log-log plot of the error $E(h).$
-% \end{problem}
-
-% The matrix $A$ is sparse, and so we can use several functions from the package \texttt{scipy.sparse.linalg}.
-% In particular, we use the functions \texttt{spdiags} and \texttt{spsolve}.
-%
-%  \begin{verbatim}
-% D1,D2,D3 = -4*np.ones((1,m**2)), np.ones((1,m**2)), np.ones((1,m**2))
-% Dm1, Dm2 = np.ones((1,m**2)), np.ones((1,m**2))
-% for j in range(0,D2.shape[1]):
-% 	if (j%m)==m-1:
-% 		D2[0,j]=0
-% 	if (j%m)==0:
-% 		D3[0,j]=0
-% diags = np.array([0,-1,1,-m,m])
-% data = np.concatenate((D1,D2,D3,Dm1,Dm2),axis=0) # This stacks up rows
-% A = 1./h**2.*spdiags(data, diags, m**2,m**2).asformat('csr') # This ap
-%  \end{verbatim}
-
-\begin{comment}
-\subsection{2D Heat Equation}
-Recall that the collection of finite difference equations
-\[\nabla^2_h U_{ij} = 0, \quad 1 \leq i,j\leq m\]
-can be written in matrix form as
-\[AU + q  = 0\]
-
-The Crank-Nicolson method for the 2D heat equation is given by
-\[U_{i,\,j}^{n+1}- U_{i,\,j}^{n} = \frac{\Delta t}{2}(\nabla_h^2 U_{i,\,j}^{n} + \nabla_h^2 U_{i,\,j}^{n+1}) \text{ for each } 1 \leq i,j \leq m\]
-is a second order accurate in both space and time. Basically we're using a midpoint scheme in time,
-and a trapezoidal scheme in space. The resulting method is implicit, and can be written in matrix form as
-\begin{align*}
-	IU^{n+1} &= IU^n + \frac{\Delta t}{2}(AU^n + q + AU^{n+1} + q)\\
-	(I - \frac{\Delta t}{2}A)U^{n+1}&= (I + \frac{\Delta t}{2}A)U^n + \Delta t q
-\end{align*}
-
-% TODO: What size must the time step be to ensure stability?
-
-We will need to take many time steps, where many equations must be solved with the matrix $(I - \frac{\Delta t}{2}A)$.
-The function \texttt{factorized} from \texttt{scipy.sparse.linalg} computes the LU decomposition of the matrix.
-This decomposition reduces the time required for solving consecutive time steps.
-
-
-The following code implements the greater portion of the finite difference method; it leaves the construction of the matrix $A$ in \eqref{poisson2d:matrixA} to problem \ref{poisson2d:laplace}.
-
-\begin{lstlisting}
-from __future__ import division
-from scipy.sparse import spdiags
-from scipy.sparse.linalg import spsolve
-
-def poisson_square(a1,b1,c1,d1,n,bcs, source): 
-	# n = number of subintervals
-	# We discretize in the x dimension by 
-	# a1 = x_0 < x_1< ... < x_n=b1, and 
-	# We discretize in the y dimension by 
-	# c1 = y_0 < y_1< ... < y_n=d1. 
-	# This means that we have interior points 
-	# {x_1, ..., x_{n-1}}\times {y_1, ..., y_{n-1}}
-	# or {x_1, ..., x_m}\times {y_1, ..., y_m} where m = n-1. 
-	# In Python, this is indexed as 
-	# {x_0, ..., x_{m-1}}\times {y_0, ..., y_{m-1}}
-	# We will have m**2 pairs of interior points, and 
-	# m**2 corresponding equations.
-	# We will organize these equations by their 
-	# y coordinates: all equations centered 
-	# at (x_i, y_0) will be listed first, 
-	# then (x_i, y_1), and so on till (x_i, y_{m-1})
-	delta_x, delta_y, h, m = (b1-a1)/n, (d1-c1)/n, (b1-a1)/n, n-1
-	
-	####    Construct the matrix A    ####
-	
-	
-	####    Here we construct the vector b    ####
-	b, Array = np.zeros(m**2), np.linspace(0.,1.,m+2)[1:-1]
-	# In the next line, source represents 
-	# the inhomogenous part of Poisson's equation
-	for j in xrange(m): 
-		b[j*m:(j+1)*m] = source(a1+(b1-a1)*Array, c1+(j+1)*h*np.ones(m) )
-	
-    # In the next four lines, bcs represents the 
-	# Dirichlet conditions on the boundary
-	# y = c1+h, d1-h
-	b[0:m] -= h**(-2.)*bcs(a1+(b1-a1)*Array,c1*np.ones(m))
-	b[(m-1)*m:m**2] -= h**(-2.)*bcs(a1+(b1-a1)*Array,d1*np.ones(m))
-	# x = a1+h, b1-h
-	b[0::m] -= h**(-2.)*bcs(a1*np.ones(m),c1+(d1-c1)*Array) 
-	b[(m-1)::m] -= h**(-2.)*bcs(b1*np.ones(m),c1+(d1-c1)*Array)
-	
-    ####    Here we solve the system A*soln = b    ####
-	soln = spsolve(A,b) 
-	
-	# We return the solution, and the boundary values, 
-	# in the array z.
-	z = np.zeros((m+2,m+2) ) 
-	for j in xrange(m): 
-		z[1:-1,j+1] = soln[j*m:(j+1)*m]
-	
-	x, y = np.linspace(a1,b1,m+2), np.linspace(c1,d1,m+2)
-	z[:,0], z[:,m+1]  = bcs(x,c1*np.ones(len(x)) ), bcs(x,d1*np.ones(len(x)) )
-	z[0,:], z[m+1,:] = bcs(a1*np.ones(len(x)),y), bcs(b1*np.ones(len(x)),y)
-	return z
-
-\end{lstlisting}
-\end{comment}
+Note that this linear system is very large ($A$ has $(n-1)^4$ entries) and very sparse (most of the entries in $A$ are zero).
+Thus we will should make use of sparse matrix routines (such as those in \li{scipy.sparse} and \li{scipy.sparse.linalg}) in order to reduce the time and memory used in setting up and solving the linear system.
 
 \begin{problem}
-Complete the function \li{poisson_square} by implementing the finite difference method \ref{eqn:matrix_form}. Use \li{scipy.sparse.linalg.spsolve} to solve the linear system. Use your function to solve the boundary value problem:
+Complete the function \li{poisson_square} by implementing the finite difference method \eqref{eqn:matrix_form}, returning the approximate solution $U$ as a an array.
+Use \li{scipy.sparse.linalg.spsolve} to solve the linear system.
+Use your function to solve the boundary value problem:
 \begin{align}
 	\begin{split}
 	\Delta u = 0, &{}\quad x \in [0,1]\times [0,1],\\
@@ -237,7 +116,11 @@ Complete the function \li{poisson_square} by implementing the finite difference 
 	\end{split}
 	\label{poisson2d:laplace}
 \end{align}
-Use $n=100$ subintervals for both $x$ and $y$. Plot the solution as a 3D surface.
+Use $n=100$ subintervals for both $x$ and $y$.
+Plot the solution as a 3D surface.
+
+Hint: \li{scipy.sparse.block_diag} and \li{scipy.sparse.diags} may be useful.
+\label{poisson:prob:poisson_square}
 \end{problem}
 
 \begin{figure}
@@ -250,7 +133,7 @@ In physics Poisson's equation is used to describe the scalar potential of a cons
 In general
 \[ \Delta V = - f\]
 where $V$ is the scalar potential of the force, or the potential energy a particle would have at that point, and $f$ is a source term.
-Examples of conservative forces include Newton's Law of Gravity (where matter become the source term) and Coulomb's Law, which gives the force between two charge particles (where charge is the source term).
+Examples of conservative forces include Newton's Law of Gravity (where matter is the source term) and Coulomb's Law, which gives the force between two charge particles (where charge is the source term).
 
 In electrostatics the electric potential is also known as the voltage, and is denoted by $V.$ 
 From Maxwell's equations it can be shown that that the voltage obeys Poisson's equation with the electric charge density (like a continuous cloud of electrons) being the source term: 
@@ -260,7 +143,7 @@ From Maxwell's equations it can be shown that that the voltage obeys Poisson's e
 where $\rho$ is the charge density and $\epsilon_0$ is the permissivity of 
 free space, which is a constant that we'll leave as $1$.
 
-Usually a non zero $V$ at a point will cause a charged particle to move to a lower potential, changing $\rho$ and the solution to $V$.
+Usually a nonzero $V$ at a point will cause a charged particle to move to a lower potential, changing $\rho$ and the solution to $V$.
 However, in this analysis we'll assume that the charges are fixed in place.
 
 Suppose we have 3 nested pipes.
@@ -270,49 +153,43 @@ Physically the two inner pipes would function like a capacitor.
 The following code will plot the charge distribution of this setup.
 \begin{lstlisting}
 import matplotlib.colors as mcolors
-
-def source(X,Y):
+def source(X, Y):
     """
     Takes arbitrary arrays of coordinates X and Y and returns an array of the same shape
     representing the charge density of nested charged squares
     """
     src = np.zeros(X.shape)
-    src[ np.logical_or(
-        np.logical_and( np.logical_or(abs(X-1.5) < .1,abs(X+1.5) < .1) ,abs(Y) < 1.6),
-        np.logical_and( np.logical_or(abs(Y-1.5) < .1,abs(Y+1.5) < .1) ,abs(X) < 1.6))] = 1
-    src[ np.logical_or(
-        np.logical_and( np.logical_or(abs(X-0.9) < .1,abs(X+0.9) < .1) ,abs(Y) < 1.0),
-        np.logical_and( np.logical_or(abs(Y-0.9) < .1,abs(Y+0.9) < .1) ,abs(X) < 1.0))] = -1
+
+    src[np.logical_or(np.logical_and(np.logical_or(abs(X - 1.5) < .1, abs(X + 1.5) < .1), abs(Y) < 1.6),
+        np.logical_and(np.logical_or(abs(Y - 1.5) < .1, abs(Y + 1.5) < .1), abs(X) < 1.6))] = 1
+    
+    src[np.logical_or(np.logical_and(np.logical_or(abs(X - 0.9) < .1, abs(X + 0.9) < .1), abs(Y) <  1),
+        np.logical_and(np.logical_or(abs(Y - 0.9) < .1, abs(Y + 0.9) < .1), abs(X) < 1))] = -1
+
     return src
-
-#Generate a color dictionary for use with LinearSegmentedColormap
-#that places red and blue at the min and max values of data
-#and white when data is zero
-
+    
+# Generate a color dictionary for use with LinearSegmentedColormap
+# that places red and blue at the min and max values of data
+# and white when data is zero.
 def genDict(data):
-    zero = 1/(1 - np.max(data)/np.min(data))
-    cdict = {'red':   [(0.0,  1.0, 1.0),
-                   (zero,  1.0, 1.0),
-                   (1.0,  0.0, 0.0)],
-         'green': [(0.0,  0.0, 0.0),
-                   (zero,  1.0, 1.0),
-                   (1.0,  0.0, 0.0)],
-         'blue':  [(0.0,  0.0, 0.0),
-                   (zero,  1.0, 1.0),
-                   (1.0,  1.0, 1.0)]}
+    zero = 1 / (1 - np.max(data) / np.min(data))
+    cdict = {
+        'red':   [(0, 1, 1), (zero, 1, 1), (1, 0, 0)],
+        'green': [(0, 0, 0), (zero, 1, 1), (1, 0, 0)],
+        'blue':  [(0, 0, 0), (zero, 1, 1), (1, 1, 1)]
+    }
     return cdict
 
+a1 = -2
+b1 = 2
+c1 = -2
+d1 = 2
+n = 100
+X = np.linspace(a1, b1, n)
+Y = np.linspace(c1, d1, n)
+X, Y = np.meshgrid(X, Y)
 
-a1 = -2.
-b1 = 2.
-c1 = -2.
-d1 = 2.
-n =100
-X = np.linspace(a1,b1,n)
-Y = np.linspace(c1,d1,n)
-X,Y = np.meshgrid(X,Y)
-
-plt.imshow(source(X,Y),cmap =  mcolors.LinearSegmentedColormap('cmap', genDict(source(X,Y))))
+plt.imshow(source(X, Y), cmap=mcolors.LinearSegmentedColormap('cmap', genDict(source(X, Y))))
 plt.colorbar(label="Relative Charge")
 plt.show()
 \end{lstlisting}
@@ -340,18 +217,27 @@ Using the \li{poisson_square} function, solve
 \end{align}
 % 
 for the electric potential $V.$
-Use the source function defined above, such that $\rho(x,y) = \text{source}(x,y)$. Use $n=100$ subintervals for $x$ and $y$. Use the provided code to plot your solution.
+Use the source function defined above, such that $\rho(x,y) = \text{source}(x,y)$.
+Use $n=100$ subintervals for $x$ and $y$.
+Using the code provided above, plot your solution along with the \li{source} function.
+Compare your solution with Figure \ref{poisson:fig:poisson-square}.
 \end{problem}
 
 \begin{figure}
 \includegraphics[scale=0.7]{figures/potential.pdf}
 \caption{The electric potential of the 3 nested pipes.}
+\label{poisson:fig:poisson-square}
 \end{figure}
 
 \section*{Poisson's Equation and Image Editing}
-The Poisson equation is also very useful for things outside of physics. For example, it can be used for image editing. We will use it to photoshop one image $g$ onto another image $S$.
+The Poisson equation is also very useful for things outside of physics.
+For example, it can be used for image editing.
+We will use it to photoshop one image $v$ onto another image $u_0$.
 
-Let $u_0:  S \rightarrow \mathbb{R}, S \subset \mathbb{R}^2$ be the original image, which is a 2D grid of values between 0 and 255. We want to insert a new image, $v: P\rightarrow \mathbb{R}$ into $P' \subset S$. Numerically, we will treat these as arrays where $v\in M_{m\times n}$, $u_0\in M_{m'\times n'}, m'>m, n'>n$, and $u \in M_{m\times n}$ is the smoothed image inside of $u_0$. A visual representation can be seen in Figure \ref{figure:photoshop_eqn}.
+Let $u_0:  S \rightarrow \mathbb{R}, S \subset \mathbb{R}^2$ be the original image, which is a 2D grid of values between 0 and 255.
+We want to insert a new image, $v: P\rightarrow \mathbb{R}$ into $P' \subset S$.
+Numerically, we will treat these as arrays where $v\in M_{m\times n}$, $u_0\in M_{m'\times n'}, m'>m, n'>n$, and $u \in M_{m\times n}$ is the smoothed image inside of $u_0$.
+A visual representation can be seen in Figure \ref{figure:photoshop_eqn}.
 
 \begin{warn}
 Note that $u_0$ is defined on $P'$ since $P' \subset S$.
@@ -367,7 +253,7 @@ Note that $u_0$ is defined on $P'$ since $P' \subset S$.
 
 \draw[->, ultra thick, >=stealth'] (-2,5) arc (120:60:3.25);
 
-\node[draw=none] at (-2.5, 4.2){$g: P\rightarrow \mathbb{R}$};
+\node[draw=none] at (-2.5, 4.2){$v: P\rightarrow \mathbb{R}$};
 \node[draw=none] at (2.5, 4.2){$u: P'\rightarrow \mathbb{R}$};
 \node[draw=none] at (1, 0.5){$u_0: S\rightarrow \mathbb{R}$};
 
@@ -381,43 +267,87 @@ Note that $u_0$ is defined on $P'$ since $P' \subset S$.
 \end{figure}
 
 We will use $v$ to create the source function $f$ in Equation \eqref{eqn:2d_poisson}.
-
 \begin{align}
-f(x,y) &= -\triangle v(x,y).
+f(x,y) &= \triangle v(x,y).
 \label{eqn:photoshop_step1}
 \end{align}
 
 We want to use the original picture $u_0$ to constrain the boundary of $P'$, so let $g$ from Equation \eqref{eqn:2d_poisson} be defined as
-
 \begin{align}
-g(x,y) = u_0(x,y), \quad (x,y)\in \partial P'
-\end{align}.
+g(x,y) = u_0(x,y), \quad (x,y)\in \partial P'.
+\end{align}
 
-Using these equations, we can blend and image $v$ in very well. There are, of course, ways to make this better (but also more complicated), such as adding some of the original texture from $u_0$ to the final image $u$, but we'll leave those aside for now.
+Using these equations, we can blend an image $v$ in very well.
+There are, of course, ways to make this better (but also more complicated), such as adding some of the original texture from $u_0$ to the final image $u$, but we'll leave those aside for now.
 If you're interested, see \href{https://www.cs.jhu.edu/~misha/Fall07/Papers/Perez03.pdf}{this paper} for more information on using the Poisson equation for image editing.
 
 \begin{problem}
-Using the data file \li{dr_jarvis.jpg} as the source image $v$ and \li{mount_rushmore.jpg} as the destination image $u_0$, put Dr. Jarvis' face on Mount Rushmore. Use Equation \eqref{eqn:finite_diff_op} to calculate $f$ from $v$.
+Using the data file \li{dr_jarvis.jpg} as the source image $v$ and \li{mount_rushmore.jpg} as the destination image $u_0$, put Dr. Jarvis' face on Mount Rushmore using Poisson's equation to blend it in.
 
-Hints: You will only want to use part of the image from \li{dr_jarvis.jpg} to paste onto Mount Rushmore. The following code will help you import the image, select the appropriate part, and paste it in the correct place so that it looks like the image in Figure \ref{poisson:mt_rushmore}. Note that you will need to transpose the image again before displaying it.
+We'll follow a similar process to what we did in Problem \ref{poisson:prob:poisson_square}.
+Use equation \eqref{eqn:finite_diff_op} (letting $h=1$) with equation \eqref{eqn:photoshop_step1} to calculate $f(x, y)$ from $v$.
+Consruct the matrices $T$ and $A$.
+Then note that instead of flattening the source function $f(x, y)$ and the boundary conditions $g(x, y)$ into vectors $f$, $p$, and $q$ to insert into the matrix equation $AU = f - p - q$ (see \eqref{eqn:matrix_form}), we can instead subtract the boundary condition matrix $g(x, y)$ from the source function matrix $f(x, y)$ first and then flatten.
+That is, construct a matrix
+\begin{equation*}
+r(x, y) =
+\begin{cases}
+f(x, y), & (x, y) \in P'\\
+f(x, y) - g(x, y), & (x, y) \in \partial P',
+\end{cases}
+\end{equation*}
+then flatten
+\begin{equation*}
+r =
+\begin{bmatrix}
+r^1 \\ \vdots \\ r^{n-1}
+\end{bmatrix}, \quad
+r^j =
+\begin{bmatrix}
+r(x_1, y_j)\\ \vdots \\ r(x_{n-1}, y_j)
+\end{bmatrix},
+\end{equation*}
+
+\noindent and finally solve $AU = r$. 
+
+Hint: Consider the region $P'$ of the original image to be the set of matrix indices included in \li{[x0, x0+w-1]} $\times$ \li{[y0, y0+w-1]}.
+Then the boundary $\partial P'$ is the border along the rows \li{x0-1} and \li{x0+w} and along the columns \li{y0-1} and \li{y0+w}.
+
+Hint: You will only want to use part of the image from \li{dr_jarvis.jpg} to paste onto Mount Rushmore.
+The following code will help you import the image, select the appropriate part, and paste it in the correct place so that it looks like the image in Figure \ref{poisson:mt_rushmore}.
+Note that you will need to transpose the image again before displaying it.
 
 \begin{lstlisting}
-source = np.mean(imageio.v3.imread('dr_jarvis.jpg'), axis=2).transpose() / 255
-dest = np.mean(imageio.v3.imread('mount_rushmore.jpg'), axis=2).transpose() / 255
+source_im = np.mean(imageio.v3.imread('dr_jarvis.jpg'), axis=2).transpose() / 255
+dest_im = np.mean(imageio.v3.imread('mount_rushmore.jpg'), axis=2).transpose() / 255
 
-w = 130 # width and height to crop out.
-x0s = 60 # position in source image
-y0s = 84
-x0 = 322 # position in destination image
+# Width of space (number of pixels) to replace in destination image
+w = 130
+
+# Position in destination image
+x0 = 322
 y0 = 215
 
-image = source[x0s-1:x0s+w+1,y0s-1:y0s+w+1]*0.58 # source image with a buffer of 1 pixel for the finite difference method. The buffer will need to be removed before inserting into the Mount Rushmore image. The '*0.58' will make it look better when displayed
+# Position in source image
+x0s = 60 
+y0s = 84
 
-# code to calculate f, and then the solution u
-# ...
+# Show original image
+plt.imshow(dest_im.transpose(), cmap='gray')
+plt.show()
 
-new_image = dest.copy()
-new_image[x0:x0+w,y0:y0+w] = u.reshape(w,w)
+# Source image with a buffer of 1 pixel for the finite difference method.
+# The buffer will be excluded when inserting into the Mount Rushmore image.
+# The '*0.58' will make it look better when displayed.
+image = source_im[x0s-1 : x0s+w+1, y0s-1 : y0s+w+1] * 0.58
+
+# Calculate f(x, y)...
+
+# Calculate the solution U...
+
+# Paste Dr. Jarvis into the original image
+new_image = dest_im.copy()
+new_image[x0:x0+w, y0:y0+w] = U.reshape(w,w)
 
 plt.imshow(new_image.transpose(), cmap='gray')
 plt.show()
@@ -428,6 +358,7 @@ plt.show()
 
 \begin{figure}[H]
 \includegraphics[scale=0.7]{figures/mt_rushmore.pdf}
-\caption{A Founding Father. Also the solution to Problem \ref{prob:poisson:rushmore}.}
+\caption{A Founding Father.
+Also the solution to Problem \ref{prob:poisson:rushmore}.}
 \label{poisson:mt_rushmore}
 \end{figure}

@@ -13,7 +13,7 @@ It consists of family members and some basic details.
 # Example dataset
 >>> df = pd.read_csv('toy_dataset.csv')
 
->>>
+>>> df
           Name  Age        name         DOB Marital_Status
 0     John Doe   30        john  01/01/2010       Divorcee
 1     Jane Doe   29    	   jane	 12/02/1990       Divorced
@@ -99,16 +99,16 @@ Other options for looking at the values include line plots, histograms, and boxp
 Some other useful Pandas commands for evaluating the breadth of a dataset include \li{df.nunique()} (which returns a series giving the name of each column and the number of unique values in each column), \li{pd.unique()} (which returns an array of the unique values in a series), and \li{value_counts()} (which counts the number of instances of each unique value in a column, like a histogram).
 
 \begin{lstlisting}
-# Count the number of unique values in each row
+# Count the number of unique values in each column
 >>> df.nunique()
 Name              7
 Age               6
-name              2
+name              4
 DOB               7
 Marital_Status    5
 Height            7
 Weight            7
-Marriage_Len      4
+Marriage_Len      3
 Spouse            4
 dtype: int64
 
@@ -121,12 +121,13 @@ array(['Divorcee', 'Divorced', 'married', 'marrieed', nan, 'single'],
 
 # Count the number of each Marital_Status values
 >>> df['Marital_Status'].value_counts()
+Marital_Status
 married     2
-single      1
-marrieed    1
 Divorcee    1
 Divorced    1
-Name: Marital_Status, dtype: int64
+marrieed    1
+single      1
+Name: count, dtype: int64
 
 \end{lstlisting}
 
@@ -144,12 +145,12 @@ Information on how to deal with missing data is described in later sections.
 >>> df.isna().sum()
 Name              0
 Age               0
-name              6
+name              4
 DOB               0
 Marital_Status    2
 Height            0
 Weight            0
-Marriage_Len      2
+Marriage_Len      3
 Spouse            4
 dtype: int64
 \end{lstlisting}
@@ -214,7 +215,7 @@ There are many aspects and methods of cleaning; here are a few ways of doing so.
 \subsubsection*{Unwanted Data}
 Removing unwanted data typically falls into two categories, duplicated data and irrelevant data.
 Irrelevant data consists of observations that don't fit the specific problem you are trying to solve or don't have enough variation to affect the model.
-We can drop duplicated data using the \li{duplicated()} function described above with \li{drop()} or \li{drop_duplicates}.
+We can drop duplicated data using the \li{duplicated()} function described above with \li{drop()} or \li{drop_duplicates()}.
 \subsubsection*{Missing Data}
 Some commonly suggested methods for handling data are removing the missing data and setting the missing values to some value based on other observations.
 However, missing data can be informative and removing or replacing missing data erases that information.
@@ -253,24 +254,28 @@ import numpy as np
 # Change Not Applicable row to NaNs
 >>> df = df.replace('Not Applicable',np.nan)
 
-# Drop rows will NaNs
+# Drop rows with NaNs
 >>> df = df.dropna()
 
 
 >>> df
-          Name  Age         DOB Marital_Status
-0     JOHN DOE   30  01/01/2010       divorcee
-1     JANE DOE   29  12/02/1990       divorced
-2   JILL SMITH   40  03/04/1980        married
-3   JACK SMITH   40    4/4/1980        married
-4  JENNY SMITH    5  05/05/2015        missing
+          Name  Age     name         DOB Marital_Status
+0     John Doe   30     john  01/01/2010       Divorcee
+1     Jane Doe   29     jane  12/02/1990       Divorced
+2   Jill smith   40  missing  03/04/1980        married
+3   Jill smith   40     jill  03/04/1980        married
+4   jack smith  100     jack    4/4/1980       marrieed
+5  Jenny Smith    5  missing  05/05/2015        missing
+7        Rover    2  missing  05/05/2018        missing
 
-   Height  Weight Marriage_Len      Spouse  missing_ML
-0    72.0     175            5     missing       False
-1    68.0     125            5    John Doe       False
-2    64.0     120           10  Jack Smith       False
-3    71.0     220           10  jill smith       False
-4    41.0      40            0     missing        True
+    Height  Weight  Marriage_Len       Spouse  missing_ML
+0     72.0     175             5      missing       False
+1     5.5      125             5     John Doe       False
+2     64.0     120            10   Jack Smith       False
+3     64.0     120             0   jack smith        True
+4      1.8     220            10   jill smith       False
+5    105.0      40             0      missing        True
+7     36.0      50             0      missing        True
 \end{lstlisting}
 
 \subsubsection*{Nonnumerical Values Misencoded as Numbers}
@@ -321,7 +326,7 @@ Print the first five rows of your dataframe.
 
 Constructing new features is called \emph{feature engineering}.
 Once new features are created, we can analyze how much a model depends on each feature. 
-Features with low importance probably do not contributed much and could potentially be removed.
+Features with low importance probably do not contribute much and could potentially be removed.
 
 Discrete Fourier transforms and wavelet decomposition often reveal important properties of data collected over time (\emph{called time-series}), like sound, video, economic indicators, etc.  In many such settings it is useful to engineer new features from a  wavelet decomposition, the DFT, or some other function of the data.
 
@@ -348,14 +353,14 @@ Ballot number & For Governor & For President\\
 
 A common mistake occurs when someone assigns a number to each categorical entry (say 1 for Cooke, 2 for Herbert, 3 for Romney, etc.).  
 While this assignment is not, in itself, inherently incorrect, it is incorrect to use the value of this number in a statistical model.  
-Whenever you encounter categorical data that is encoded numerically like this, immediately change it either to non-numerical form (``Cooke,'' ``Herbert,'' ``Romney,''\dots) or apply \emph{one-hot encoding} or \emph{dummy variable encoding}.
+Whenever you encounter categorical data that is encoded numerically like this, immediately change it to non-numerical form (``Cooke,'' ``Herbert,'' ``Romney,''\dots) or apply \emph{one-hot encoding} or \emph{dummy variable encoding}.
 \footnote{Yes, these are silly names, but they are the most common names for it. Unfortunately, it is probably too late to change these now.} 
 To do this construct a new feature for every possible value of the categorical variable, and assign the value $1$ to that feature if the variable takes that value and zero otherwise.  
 Pandas makes one-hot encoding simple:
 
 \begin{lstlisting}
 # one-hot encoding 
-df = pd.get_dummies(df, columns=['For President']])
+df = pd.get_dummies(df, columns=['For President'])
 
 \end{lstlisting}
 
@@ -456,7 +461,7 @@ import statsmodels.api as sm
 \begin{problem}
 
 Using the copy of the dataframe you created in Problem \ref{prob:housing}, one-hot encode all the categorical variables.
-Print the shape of you database, and Run OLS.
+Print the shape of your database, and Run OLS.
 
 Print the ten features that have the highest coefficient in your model and the summary.
 Write a couple of sentences discussing which model is better and why.

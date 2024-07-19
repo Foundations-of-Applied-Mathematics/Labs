@@ -11,12 +11,6 @@ GeoPandas can be installed via \li{pip}:
 \begin{lstlisting}
 >>> pip install geopandas
 \end{lstlisting}
-However, Geopandas can be notoriously difficult to install.
-%It is very finicky, which is likely a by-product of it still being in development
-This is especially the case if the python environment is not carefully maintained.
-Some of its dependencies can also be very difficult to install on certain systems.
-Because of this, using Colab for this lab is recommended; its environment is set up in a way that makes GeoPandas very easy to install.
-Otherwise, the GeoPandas documentation contains some additional options that can be used if installation difficulties occur: \url{https://geopandas.org/install.html}.
 
 \section*{GeoSeries} %============================
 
@@ -35,7 +29,7 @@ Multipoints, multilines, and multipolygons contain lists of points, lines, and p
 Since each object in the GeoSeries is also a Shapely object, the GeoSeries inherits many methods and attributes of Shapely objects.
 Some of the key attributes and methods are listed in Table \ref{shapely-methods}.
 These attributes and methods can be used to calculate distances, find the sizes of countries, and determine whether coordinates are within country's boundaries.
-The example below uses the attribute \li{bounds} to find the maximum and minimum coordinates of Egypt in a built-in GeoDataFrame.
+The example below uses the attribute \li{bounds} to find the maximum and minimum coordinates of Egypt in the GeoDataFrame \li{worldmap.gpkg}.
 
 \begin{table}[ht]
 \begin{center}
@@ -56,9 +50,9 @@ Method/Attribute & Description\\
 
 \begin{lstlisting}
 >>> import geopandas as gpd
->>> world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+>>> world = gpd.read_file(worldmap.gpkg)
 # Get GeoSeries for Egypt
->>> egypt = world[world['name']=='Egypt']
+>>> egypt = world[world['SOVEREIGNT']=='Egypt']
 
 # Find bounds of Egypt
 >>> egypt.bounds
@@ -187,7 +181,7 @@ In the following example, the file \li{airports.csv}, containing the coordinates
 
 \begin{lstlisting}
 # Set outline of world countries as base
->>> fig, ax = plt.subplots(figsize=(10,4), ncols=1, nrows=1)
+>>> fig, ax = plt.subplots(1, figsize=(10,4))
 >>> base = world.boundary.plot(edgecolor='black', ax=ax, linewidth=1)
 
 # Load airport data and convert to a GeoDataFrame
@@ -212,11 +206,14 @@ In the following example, the file \li{airports.csv}, containing the coordinates
 \end{figure}
 
 \begin{problem}
-Read in the file \li{airports.csv} as a pandas DataFrame.
+The file \li{worldmap.gpkg.zip} contains data of the worldmap used in above examples.\footnote{Source: \url{https://www.naturalearthdata.com/downloads/110m-cultural-vectors/}}
+After unzipping, use the command \li{geopandas.read_file('worldmap.gpkg')} to create a GeoDataFrame of this information.
+
+Then, read in the file \li{airports.csv} as a pandas DataFrame.
 Create three convex hulls around the three sets of airports listed below.
 This can be done by passing in lists of the airports' coordinates (Longitude and Latitude zipped together) to a \li{shapely.geometry.Polygon} object.
 
-Then, create a new GeoDataFrame using a dictionary with key \li{'geometry'} and with a list of these three Polygons as the value.
+Finally, create a new GeoDataFrame using a dictionary with key \li{'geometry'} and with a list of these three Polygons as the value.
 Plot this GeoDataFrame, and then plot the outlined world map on top of it.
 
 \begin{itemize} %These could also be listed by 4-character ICAO codes, but listing the names makes the problem more exciting/realistic. Probably.
@@ -226,14 +223,20 @@ Plot this GeoDataFrame, and then plot the outlined world map on top of it.
 \end{itemize}
 \end{problem}
 
+\begin{info}
+\li{.gpkg} files are actually structured as a directory that contains several files that each contain parts of the data.
+For instance, \li{worldmap.gpkg} consists of the files \li{worldmap.cpg}, \li{worldmap.dbf}, \li{worldmap.prj}, \li{worldmap.shp}, and \li{worldmap.shx}.
+Be sure that these files are placed directly in the first level of \li{worldmap.gpkg}, and not in further subdirectories.\\
+\end{info}
+
 \section*{Working with GeoDataFrames} %============================
 
 As previously mentioned, GeoDataFrames contain many of the functionalities of pandas DataFrames.
 For example, to create a new column, define a new column name in the GeoDataFrame with the needed information for each GeoSeries.
 
 \begin{lstlisting}
-# Create column in the world GeoDataFrame for gdp_per_capita
->>> world['gdp_per_cap'] = world.gdp_md_est / world.pop_est
+# Create column in the world GeoDataFrame for GDP_PER_CAPITA
+>>> world['GDP_PER_CAP'] = world.GDP_MD / world.POP_EST
 \end{lstlisting}
 
 GeoDataFrames can utilize many pandas functionalities, and they can also be parsed by geometric manipulations.
@@ -258,10 +261,10 @@ The default \li{aggfunc} is \li{first}, which returns the first application entr
 In the following example, we use \li{sum} as the \li{aggfunc} so that each continent is the combination of its countries.
 
 \begin{lstlisting}
->>> world = world[['continent', 'geometry', 'gdp_per_cap']]
+>>> world = world[['CONTINENT', 'geometry', 'GDP_PER_CAP']]
 
 # Dissolve world GeoDataFrame by continent
->>> continent = world.dissolve(by='continent', aggfunc='sum')
+>>> continent = world.dissolve(by='CONTINENT', aggfunc='sum')
 \end{lstlisting}
 
 
@@ -311,14 +314,14 @@ Datum: World Geodetic System 1984
 - Prime Meridian: Greenwich
 \end{lstlisting}
 
-GeoDataFrames can also be plotted using the values in the the other attributes of the GeoSeries.
+GeoDataFrames can also be plotted using the values in the other attributes of the GeoSeries.
 The map plots the color of each geometry object according to the value of the column selected.
 This is done by passing in the parameter \li{column} into the \li{plot()} method.
 
 \begin{lstlisting}
 >>> fig, ax = plt.subplots(1, figsize=(10,4))
 # Plot world based on gdp
->>> world.plot(column='gdp_md_est', cmap='OrRd', legend=True,  ax=ax)
+>>> world.plot(column='GDP_MD', cmap='OrRd', legend=True,  ax=ax)
 >>> ax.set_title('World Map based on GDP')
 >>> ax.set_xlabel('Longitude')
 >>> ax.set_ylabel('Latitude')
@@ -347,19 +350,6 @@ Ensure a CRS of EPSG:5071.
 \label{problem:us_counties}
 \end{problem}
 
-\begin{info}
-\li{.gpkg} files are actually structured as a directory that contains several files that each contain parts of the data.
-For instance, \li{county_data.gpkg} consists of the files \li{county_data.cpg}, \li{county_data.dbf}, \li{county_data.prj}, \li{county_data.shp}, and \li{county_data.shx}.
-Be sure that these files are placed directly in the first level of folders, and not in further subdirectories.\\
-To use this file in Google Colab, upload the zipped file and extract it with the following code:
-\begin{lstlisting}
-!unzip 'county_data.gpkg.zip'
-\end{lstlisting}
-It then can be loaded:
-\begin{lstlisting}
-county_df = gpd.read_file('county_data.gpkg')
-\end{lstlisting}
-\end{info}
 
 \section*{Merging GeoDataFrames} %============================
 
@@ -368,15 +358,15 @@ An attribute join is similar to a merge in pandas.
 It combines two GeoDataFrames on a column (not the geometry column) and then combines the rest of the data into one GeoDataFrame.
 
 \begin{lstlisting}
->>> world = gpd.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
->>> cities = gpd.read_file(geopandas.datasets.get_path('naturalearth_cities'))
+>>> world = gpd.read_file(worldmap.gpkg)
+>>> cities = gpd.read_file(cities.gpkg)
 
 # Create subsets of the world and cities GeoDataFrames
->>> world = world[['continent', 'name', 'iso_a3']]
->>> cities = cities[['name', 'iso_a3']]
+>>> world = world[['CONTINENT', 'SOVEREIGNT', 'SOV_A3']]
+>>> cities = cities[['NAME', 'SOV_A3']]
 
-# Merge the GeoDataFrames on their iso_a3 code
->>> countries = world.merge(cities, on='iso_a3')
+# Merge the GeoDataFrames on their SOV_A3 code
+>>> countries = world.merge(cities, on='SOV_A3')
 \end{lstlisting}
 
 A spatial join merges two GeoDataFrames based on their geometry data.
@@ -390,7 +380,7 @@ Other options include \li{contains} and \li{within}.
 
 \begin{lstlisting}
 # Combine countries and cities on their geographic location
->>> countries = gpd.sjoin(world, cities, how='inner', op='intersects')
+>>> countries = gpd.sjoin(world, cities, how='inner', predicate='intersects')
 \end{lstlisting}
 
 \begin{problem}
@@ -405,7 +395,7 @@ Drop the regions from the county GeoDataFrame with the same \li{STATEFP} codes a
 Also, make sure to change the CRS of the county GeoDataFrame to EPSG:5071 \emph{before} you merge the two DataFrames (this will make the code run much faster).
 
 Plot the cases from March 21, 2020, and then plot your state outline map from Problem \ref{problem:us_counties} on top of that (with a CRS of EPSG:5071).
-Include a colorbar using the arguments \li{legend=True} and \li{cmap='PuBu_r'} in the \li{plot} function.
+Include a colorbar using the arguments \li{legend=True} and \li{cmap='plasma_r'} in the \li{plot} function.
 Finally, print out the name of the county with the most cases on March 21, 2020, along with its case count.
 
 \noindent Hint: every state should have multiple covid cases.
@@ -420,8 +410,8 @@ Note also that you can reverse any colormap by adding \li{_r} to the end.
 The following example demonstrates some plotting features, using country GDP as in Figure \ref{figure:gdp_map}.
 
 \begin{lstlisting}
->>> fig, ax = plt.subplots(figsize=(10,4), ncols=1, nrows=1)
->>> world.plot(column='gdp_md_est', cmap='plasma_r',
+>>> fig, ax = plt.subplots(1, figsize=(10,4))
+>>> world.plot(column='GDP_MD', cmap='plasma_r',
 ...			ax=ax, legend=True, edgecolor='gray')
 
 # Add title and remove axis tick marks
@@ -446,14 +436,14 @@ Depending on the purpose of the graph, Figure \ref{figure:log_world} may be more
 \begin{lstlisting}
 >>> from matplotlib.colors import LogNorm
 >>> from matplotlib.cm import ScalarMappable
->>> fig, ax = plt.subplots(figsize=(10,7), ncols=1, nrows=1)
+>>> fig, ax = plt.subplots(1, figsize=(10,7))
 
 # Set the norm using data bounds
->>> data = world.gdp_md_est
+>>> data = world.GDP_MD
 >>> norm = LogNorm(vmin=min(data), vmax=max(data))
 
 # Plot the graph using the norm
->>> world.plot(column='gdp_md_est', cmap='plasma_r', ax=ax,
+>>> world.plot(column='GDP_MD', cmap='plasma_r', ax=ax,
 ...			edgecolor='gray', norm=norm)
 
 # Create a custom colorbar

@@ -3,6 +3,386 @@
 
 Measured observations are often prone to significant noise, due to restrictions on measurement accuracy.
 For example, most commercial GPS devices can provide a good estimate of geolocation, but only within a dozen meters or so.
+A Kalman filter is an algorithm that takes a sequence of noisy observations made over time and attempts to get rid of the noise, producing more accurate estimates than the original observations.
+To do this, the algorithm needs information about the system being observed.
+
+Consider the problem of tracking a projectile as it travels through the air.
+Short-range projectiles approximately trace out parabolas, but a sensor that is recording measurements of the projectile's position over time will likely show a path that is much less smooth.
+Because we know something about the laws of physics, we can filter out the noise in the measurements using basic Newtonian mechanics, recovering a more accurate estimate of the projectile's trajectory.
+In this lab, we will simulate measurements of a projectile and implement a Kalman filter to estimate the complete trajectory of the projectile.
+
+\section*{Linear Dynamical Systems}
+The standard Kalman filter assumes that:
+(1) we have a linear dynamical system,
+(2) the state of the system evolves over time with some noise, and
+(3) we receive noisy measurements about the state of the system at each iteration.
+More formally, letting $\mathbf{x}_{k}$ denote the state of the system at time $k$, we have
+\begin{equation}
+\mathbf{x}_{k+1} = F_{k} \mathbf{x}_{k} + G_{k}\mathbf{u}_{k} + \mathbf{w}_{k}
+\label{eq:state}
+\end{equation}
+where $F_{k}$ is a state-transition model, $G_{k}$ is a control-input model, $\mathbf{u}_{k}$ is a control vector, and $\mathbf{w}_{k}$ is the noise present in state $k$.
+This noise is assumed to be drawn from a multivariate Gaussian distribution with zero mean and covariance matrix $Q_{k}$.
+The control-input model and control vector allow the assumption that the state can be additionally influenced by some other factor than the linear state-transition model.
+
+We further assume that the states are ``hidden,'' and we only get the noisy observations
+\begin{equation}
+\mathbf{z}_{k} = H_{k}\mathbf{x}_{k} + \mathbf{v}_{k}
+\label{eq:obs}
+\end{equation}
+where $H_{k}$ is the observation model mapping the state space to the observation space, and $\mathbf{v}_{k}$ is the observation noise present at iteration $k$.
+As with the aforementioned error, we assume that this noise is drawn from a multivariate Gaussian distribution with zero mean and covariance matrix $R_{k}$.
+
+The dynamics stated above are all taken to be linear.
+Thus, for our purposes, the operators $F_k$, $G_k$, and $H_k$ are all matrices, and $\mathbf{x}_k$, $\mathbf{u}_k$, $\mathbf{z}_k$, and $\mathbf{v}_k$ are all vectors.
+
+We will assume that the transition and observation models, the control vector, and the noise covariances are constant, i.e. for each $k$, we will replace $F_{k}, Q_{k}, H_k, R_{k},$ and $\mathbf{u}_{k}$ and with $F, Q, H, R$, and $\mathbf{u}$.
+We will also assume that $G = I$ is the identity matrix, so it can safely be ignored.
+
+\begin{problem}
+Begin implementing a \li{KalmanFilter} class by writing an initialization method that stores the transition and observation models, noise covariances, and control vector.
+We provide an interface below:
+\begin{lstlisting}
+class KalmanFilter(object):
+    def __init__(self,F,Q,H,R,u):
+        """
+        Initialize the dynamical system models.
+
+        Parameters
+        ----------
+        F : ndarray of shape (n,n)
+            The state transition model.
+        Q : ndarray of shape (n,n)
+            The covariance matrix for the state noise.
+        H : ndarray of shape (m,n)
+            The observation model.
+        R : ndarray of shape (m,m)
+            The covariance matrix for observation noise.
+        u : ndarray of shape (n,)
+            The control vector.
+        """
+        pass
+\end{lstlisting}
+\end{problem}
+
+We now derive the linear dynamical system parameters for a projectile traveling through $\mathbb{R}^2$ undergoing a constant downward gravitational force of 9.8 $m/s^2$.
+The relevant information needed to describe how the projectile moves through space is its position and velocity.
+Thus, our state vector has the form
+\begin{equation*}
+    \def\arraystretch{1.5}
+    \mathbf{x}_k = \left( \begin{array}{c} s_k^{x} \\ s_k^{y} \\ V_k^{x} \\ V_k^{y} \end{array} \right),
+\end{equation*}
+where $s_k^x$ and $s_k^y$ give the $x$ and $y$ coordinates of the position (in meters) at the $k$th time interval, and $V_k^x$ and $V_k^y$ give the horizontal and vertical components of the velocity (in meters per second) at the $k$th time interval, respectively.
+
+How does the system evolve from one time step to the next?
+Assuming each time step is 0.1 seconds, it is easy enough to calculate the new position:
+\begin{align*}
+    s_{k+1}^x &= s_k^x + (0.1)V_k^x \\
+    s_{k+1}^y &= s_k^y + (0.1)V_k^y.
+\end{align*}
+Further, since the only force acting on the projectile is gravity (we are ignoring things like wind resistance), the horizontal velocity remains constant:
+\begin{equation*}
+    V_{k+1}^x = V_k^x.
+\end{equation*}
+The vertical velocity, however, does change due to the effects of gravity.
+From basic Newtonian mechanics, we have
+\begin{equation*}
+    V_{k+1}^y = V_k^y - (0.1)(9.8).
+\end{equation*}
+In summary, over one time step, the state evolves from $\mathbf{x}_k$ to $\mathbf{x}_{k+1}$, where
+\begin{equation*}
+    \def\arraystretch{1.5}
+    \mathbf{x}_{k+1} = \left( \begin{array}{c} s_k^x + (0.1)V_k^x \\ s_k^y + (0.1)V_k^y \\ V_k^x \\ V_k^y - 0.98 \end{array} \right).
+\end{equation*}
+From this equation, you can extract the state transition model $F$ and the control vector $u$.
+
+We now turn our attention to the observation model.
+Imagine that a radar sensor captures (noisy) measurements of the projectile's position as it travels through the air.
+At each time step, the radar transmits the observation $z = (z_x, z_y)$ given by
+\begin{align*}
+z_x &= s_x + v_x\\
+z_y &= s_y + v_y,
+\end{align*}
+where $(v_x, v_y)$ is a noise vector assumed to be drawn from a multivariate Gaussian with mean zero and some known covariance.
+These equations indicate the appropriate choice of observation model.
+
+\begin{problem}
+Work out the transition and observation models $F$ and $H$, along with the control vector $\mathbf{u}$, corresponding to the projectile.
+Assume that the noise covariances are given by
+\begin{align*}
+Q &= 0.1 \cdot I_4\\
+R &= 5000 \cdot I_2.
+\end{align*}
+Instantiate a \li{KalmanFilter} object with these values.
+\end{problem}
+
+
+\section*{Generating Testable Data}
+In real-world problems, we would only have access to the observation data, but for this lab, we would like to see for certain how well our Kalman filter is predicting the true states.
+To do this, we'll need a toy dataset consisting of a sequence of true states and corresponding observations, which we'll simulate from the dynamical system derived above.
+In addition to the system parameters, we need an initial state $\mathbf{x}_0$ to get started.
+Computing the subsequent states and observations is simply a matter of following Equations \ref{eq:state} and \ref{eq:obs}.
+Bear in mind that the initial state $\mathbf{x}_0$ does not have added noise, but the initial observation and all subsequent states and observations take noise into account.
+
+\begin{problem}
+Write a function that generates a state and observation sequence by evolving the dynamical system from a given initial state (the function \li{numpy.random.multivariate_normal} will be useful).
+To do this, implement the following:
+\begin{lstlisting}
+def evolve(x0,N,F,Q,H,R,u):
+    """
+    Generate the first N states and observations from the dynamical system.
+
+    Parameters
+    ----------
+    x0 : ndarray of shape (n,)
+        The initial state.
+    N : integer
+        The number of time steps to evolve.
+    F : ndarray of shape (n,n)
+        The state transition model.
+    Q : ndarray of shape (n,n)
+        The covariance matrix for the state noise.
+    H : ndarray of shape (m,n)
+        The observation model.
+    R : ndarray of shape (m,m)
+        The covariance matrix for observation noise.
+    u : ndarray of shape (n,)
+        The control vector.
+
+    Returns
+    -------
+    states : ndarray of shape (n,N)
+        States 0 through N-1, given by each column.
+    obs : ndarray of shape (m,N)
+        Observations 0 through N-1, given by each column.
+    """
+    pass
+\end{lstlisting}
+
+\noindent To test our Kalman filter, simulate the true and observed trajectories of a projectile with initial state
+\begin{equation*}
+    \mathbf{x}_0 = \left( \begin{array}{c} 0\\ 0 \\ 300 \\ 600\end{array} \right).
+\end{equation*}
+Approximately 1250 time steps should be sufficient for the projectile to hit the ground (i.e. for the $y$ coordinate to return to 0).
+Plot both the true trajectory (as a blue line) and the observed trajectory (as red dots).
+Your results should qualitatively match those given in Figure \ref{fig:evolution}.
+\label{prob:simulation}
+\end{problem}
+
+
+\begin{figure}
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[width=.45\textwidth]{figures/states_evolution} &
+    \includegraphics[width=.45\textwidth]{figures/obs_evolution}
+    \end{tabular}
+    \caption{State sequence (left) and sampling of observation sequence (right).}
+    \label{fig:evolution}
+\end{figure}
+
+
+\section*{State Estimation with the Kalman Filter}
+The Kalman filter is a recursive estimator that smooths out the noise in real time, estimating each current state based on the past state estimate and the current measurement.
+This process is done by repeatedly invoking two steps: Predict and Update.
+The predict step is used to estimate the current state based on the previous state.
+The update step then combines this prediction with the current observation, yielding a more robust estimate of the current state.
+
+To describe these steps in detail, we need additional notation. Let
+\begin{itemize}
+    \item $\widehat{\mathbf{x}}_{n|m}$ be the state estimate at time $n$ given only measurements up through time $m$; and
+    \item $P_{n|m}$ be an error covariance matrix, measuring the estimated accuracy of the state at time $n$ given only measurements up through time $m$.
+\end{itemize}
+
+The elements $\widehat{\mathbf{x}}_{k|k}$ and $P_{k|k}$ represent the state of the filter at time $k$, giving the state estimate and the accuracy of the estimate, respectively.
+We evolve the filter recursively, as follows:
+\begin{align*}
+\textbf{Predict} & & \widehat{\mathbf{x}}_{k|k-1} & = F\widehat{\mathbf{x}}_{k-1|k-1} + \mathbf{u} \\
+ & & P_{k|k-1} & = FP_{k-1|k-1}F\trp + Q \\
+\textbf{Update} & & \tilde{\mathbf{y}}_{k} & = \mathbf{z}_{k} - H\widehat{\mathbf{x}}_{k|k-1} \\
+ & & S_{k} & = HP_{k|k-1}H\trp + R \\
+ & & K_{k} & = P_{k|k-1}H\trp S_{k}^{-1} \\
+ & & \widehat{\mathbf{x}}_{k|k} & = \widehat{\mathbf{x}}_{k|k-1} + K_{k}\tilde{\mathbf{y}}_{k} \\
+ & & P_{k|k} & = (I - K_{k}H)P_{k|k-1}
+\end{align*}
+
+The more observations we have, the greater the accuracy of these estimates becomes (i.e the norm of the error covariance matrix converges to 0).
+
+\begin{problem}
+Add a method to your \li{KalmanFilter} class to estimate a state sequence corresponding to a given observation sequence and initial state estimate.
+Implement the following class method:
+\begin{lstlisting}
+def estimate(self,x,P,z):
+    """
+    Compute the state estimates using the Kalman filter.
+    If x and P correspond to time step k, then z is a sequence of
+    observations starting at time step k+1.
+
+    Parameters
+    ----------
+    x : ndarray of shape (n,)
+        The initial state estimate.
+    P : ndarray of shape (n,n)
+        The initial error covariance matrix.
+    z : ndarray of shape (m,N)
+        Sequence of N observations (each column is an observation).
+
+    Returns
+    -------
+    out : ndarray of shape (n,N)
+        Sequence of state estimates (each column is an estimate).
+    """
+    pass
+\end{lstlisting}
+\end{problem}
+
+Returning to the projectile example, we now assume that our radar sensor has taken observations from time steps 200 through 800 (take the corresponding slice of the observations produced in Problem \ref{prob:simulation}).
+Using these observations, we seek to estimate the corresponding true states of the projectile.
+We must first come up with a state estimate $\widehat{\mathbf{x}}_{200}$ for time step 200, and then feed this into the Kalman filter to obtain estimates $\widehat{\mathbf{x}}_{201}, \ldots, \widehat{\mathbf{x}}_{800}$.
+\begin{problem}
+Calculate an initial state estimate $\widehat{\mathbf{x}}_{200}$ as follows:
+For the horizontal and vertical positions, simply use the observed position at time $200$.
+For the velocity, compute the average velocity between the observations $\mathbf{z}_k$ and $\mathbf{z}_{k+1}$ for $k = 200,\ldots,208$, then average these 9 values and take this as the initial velocity estimate.
+(Hint: \li{numpy.diff} is useful here.)
+
+Using the initial state estimate, $P_{200} = 10^{6} \cdot Q$ and your Kalman filter, compute the next 600 state estimates, i.e. compute $\widehat{\mathbf{x}}_{201}, \ldots, \widehat{\mathbf{x}}_{800}$.
+Plot these state estimates as a smooth green curve together with the radar observations (as red dots) and the entire true state sequence (as a blue curve).
+Zoom in to see how well it follows the true path. Your plots should be similar to Figure \ref{fig:estimates}.
+\label{prob:state_estimate}
+\end{problem}
+
+\begin{figure}
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[width=.45\textwidth]{figures/estimate_macro} &
+    \includegraphics[width=.45\textwidth]{figures/estimate_micro}
+    \end{tabular}
+    \caption{State estimates (green) together with observations (red) and true state sequence (blue).}
+    \label{fig:estimates}
+\end{figure}
+
+In the absence of observations, we can still estimate some information about the state of the system at some future time.
+We can do this by recognizing that the expected state noise $\mathbb{E}\left[\boldsymbol{\epsilon}_{k}\right] = 0$ at any time $k$.
+Thus, given a current state estimate $\widehat{\mathbf{x}}_{n|m}$ using only measurements up through time $m$, the expected state at time $n+1$ is
+\begin{equation*}
+\widehat{\mathbf{x}}_{n+1|m} = F \widehat{\mathbf{x}}_{n|m} + \mathbf{u}
+\end{equation*}
+
+\begin{problem}
+Add a method to your class that predicts the next $k$ states given a current state estimate but in the absence of observations.
+Do so by implementing the following method:
+\begin{lstlisting}
+def predict(self,x,k):
+    """
+    Predict the next k states in the absence of observations.
+
+    Parameters
+    ----------
+    x : ndarray of shape (n,)
+        The current state estimate.
+    k : integer
+        The number of states to predict.
+
+    Returns
+    -------
+    out : ndarray of shape (n,k)
+        The next k predicted states.
+    """
+    pass
+\end{lstlisting}
+\end{problem}
+
+\begin{figure}
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[width=.45\textwidth]{figures/impact_macro} &
+    \includegraphics[width=.45\textwidth]{figures/impact_micro}
+    \end{tabular}
+    \caption{Predicted (yellow) vs. actual (blue) point of impact.}
+    \label{fig:impact}
+\end{figure}
+
+We can use this prediction routine to estimate where the projectile will hit the surface.
+\begin{problem}
+Using the final state estimate $\widehat{\mathbf{x}}_{800}$ that you obtained in Problem \ref{prob:state_estimate}, predict the future states of the projectile until it hits the ground.
+Predicting approximately the next 450 states should be sufficient.
+
+Plot the actual state sequence together with the predicted state sequence (as a yellow curve), and observe how near the prediction is to the actual point of impact.
+Your results should be similar to those shown in Figure \ref{fig:impact}.
+The following code will help you plot both the actual and predicted state sequences together in a nice plot.
+\begin{lstlisting}
+>>> predicted = kal.predict(estimates[:,-1],450)
+
+>>> # create a dynamic xlim to always plot both sequences together
+>>> x1 = actual_states[0,:][np.where(actual_states[1,:]>=0)][-1]
+>>> x2 = predicted[0,:][np.where(predicted[1,:]>=0)][-1]
+>>> plt.xlim(min(x1,x2)-50, max(x1,x2)+50)
+\end{lstlisting}
+
+\end{problem}
+
+In the absence of observations, we can also reverse the system and iterate backward in time to infer information about states of the system prior to measured observations.
+The system is reversed by
+\begin{equation*}
+\mathbf{x}_{k} = F^{-1}(\mathbf{x}_{k+1} - \mathbf{u} - \boldsymbol{\epsilon}_{k+1}).
+\end{equation*}
+Considering again that $\mathbb{E}\left[\boldsymbol{\epsilon}_{k}\right] = 0$ at any time $k$, we can ignore this term, simplifying the recursive estimation backward in time.
+
+\begin{figure}[htb]
+    \centering
+    \begin{tabular}{cc}
+    \includegraphics[width=.45\textwidth]{figures/origin_macro} &
+    \includegraphics[width=.45\textwidth]{figures/origin_micro}
+    \end{tabular}
+    \caption{Predicted (green) vs. actual (blue) point of origin.}
+    \label{fig:origin}
+\end{figure}
+
+\begin{problem}
+Add a method to you class that rewinds the system from a given state estimate, returning predictions for the previous states.
+Do so by implementing the following method:
+\begin{lstlisting}
+def rewind(self,x,k):
+    """
+    Predict the k states preceding the current state estimate x.
+
+    Parameters
+    ----------
+    x : ndarray of shape (n,)
+        The current state estimate.
+    k : integer
+        The number of preceding states to predict.
+
+    Returns
+    -------
+    out : ndarray of shape (n,k)
+        The k preceding predicted states.
+    """
+    pass
+\end{lstlisting}
+\end{problem}
+
+Returning to the projectile example, we can now predict the point of origin.
+
+\begin{problem}
+Using your state estimate $\widehat{\mathbf{x}}_{250}$, predict the point of origin of the projectile along with
+all states leading up to time step 250. Note that you may have to take a few extra time steps to predict the point of origin.
+(The point of origin is the first point along the trajectory where the $y$ coordinate is 0.)
+Plot these predicted states (in green) together with the original state sequence.
+Zoom in to see how accurate your prediction is.
+Your plots should be similar to Figure \ref{fig:origin}.
+\label{prob:origin_pt}
+
+Repeat the prediction starting with $\widehat{\mathbf{x}}_{600}$.  
+Compare to the previous results.  
+Which is better?  
+Why?
+\end{problem}
+=======
+\lab{Kalman Filter}{Kalman Filter}
+\objective{Understand how to implement the standard Kalman Filter. Apply to the problem of projectile tracking.}
+
+Measured observations are often prone to significant noise, due to restrictions on measurement accuracy.
+For example, most commercial GPS devices can provide a good estimate of geolocation, but only within a dozen meters or so.
 A Kalman filter is an algorithm that takes a sequence of noisy observations made over time and attempts to get rid of the noise,
 producing more accurate estimates than the original observations.
 To do this, the algorithm needs information about the system being observed.
@@ -192,10 +572,10 @@ The elements $\widehat{\mathbf{x}}_{k|k}$ and $P_{k|k}$ represent the state of t
 We evolve the filter recursively, as follows:
 \begin{align*}
 \textbf{Predict} & & \widehat{\mathbf{x}}_{k|k-1} & = F\widehat{\mathbf{x}}_{k-1|k-1} + \mathbf{u} \\
- & & P_{k|k-1} & = FP_{k-1|k-1}F^{T} + Q \\
+ & & P_{k|k-1} & = FP_{k-1|k-1}F\trp  + Q \\
 \textbf{Update} & & \tilde{\mathbf{y}}_{k} & = \mathbf{z}_{k} - H\widehat{\mathbf{x}}_{k|k-1} \\
- & & S_{k} & = HP_{k|k-1}H^{T} + R \\
- & & K_{k} & = P_{k|k-1}H^{T}S_{k}^{-1} \\
+ & & S_{k} & = HP_{k|k-1}H\trp  + R \\
+ & & K_{k} & = P_{k|k-1}H\trp S_{k}^{-1} \\
  & & \widehat{\mathbf{x}}_{k|k} & = \widehat{\mathbf{x}}_{k|k-1} + K_{k}\tilde{\mathbf{y}}_{k} \\
  & & P_{k|k} & = (I - K_{k}H)P_{k|k-1}
 \end{align*}

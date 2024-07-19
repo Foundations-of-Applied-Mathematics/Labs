@@ -96,11 +96,14 @@ where the Lagrangian $L = T - U$ is the difference between the kinetic energy of
 Since the position of the rickshaw and the present are $(x(t),0)$ and $(x-l\sin \theta, l\cos \theta)$ respectively, the total kinetic energy is 
 \begin{align}
 	\begin{split}
-	T &= \frac{1}{2}Mv_1^2 +  \frac{1}{2}mv_2^2,\\
-	&= \frac{1}{2}M\dot{x}^2 +  \frac{1}{2}m((\dot{x} - l\dot{\theta}\cos \theta)^2 + (- l\dot{\theta}\sin \theta)^2),\\
+	T &= \frac{1}{2}Mv_1^2 +  \frac{1}{2}mv_2^2\\
+	&= \frac{1}{2}M\dot{x}^2 +  \frac{1}{2}m\left((\dot{x} - l\dot{\theta}\cos \theta)^2 + (- l\dot{\theta}\sin \theta)^2\right)\\
 	&= \frac{1}{2}(M+m)\dot{x}^2 +\frac{1}{2}m l^2\dot{\theta}^2-ml\dot{x}\dot{\theta}\cos \theta.
 	\end{split}
 \end{align}
+
+\noindent where $v_1$ is the norm of the velocity vector of the rickshaw and $v_2$ is that of the present.
+
 % The potential energy $U$ is composed of two parts: the first is the gravitational potential energy of the bob/present on the pendulum, and is given by $(mg)(l\cos \theta)$.
 % The second part is the potential energy in the system due to any force $F$ exerted on the rickshaw.
 % Recalling that whenever a force field $\mathbf{F}$ has the form $\mathbf{F} = \nabla \phi(\mathbf{x})$, where $\phi(\mathbf{x})$ is a scalar field, the potential energy derived from that force is $ -\phi(\mathbf{x})$.
@@ -129,17 +132,17 @@ By way of D'Alambert's Principle, our normal Euler-Lagrange equations now includ
 After expanding \eqref{inverted_pendulum:langrange_eqns} we see that $x(t)$ and $\theta(t)$ satisfy
 \begin{align}
 	\begin{split}
-		F &= (M + m)\ddot{x} - ml\ddot{\theta} \cos \theta + ml \dot{\theta}^2 \sin \theta,\\
+		F &= ml\ddot{\theta} \cos \theta - (M + m)\ddot{x} - ml \dot{\theta}^2 \sin \theta,\\
 		l \ddot{\theta} &= g \sin \theta + \ddot{x} \cos \theta.
 	\end{split}\label{inverted_pendulum:langrange_eqns_explicit}
 \end{align}
 
 At this point we make a further simplifying assumption. 
 If $\theta$ starts close to $0$, we may assume that the corresponding force $F$ will keep $\theta$ small. 
-In this case, we linearize \eqref{inverted_pendulum:langrange_eqns_explicit} about $(\theta, \dot{\theta}) = (0,0)$, obtaining the equations 
+In this case, we linearize\footnote{See Additional Material section for derivation.} \eqref{inverted_pendulum:langrange_eqns_explicit} about $(\theta, \dot{\theta}) = (0,0)$, obtaining the equations 
 \begin{align*}
 	\begin{split}
-		F &= (M + m)\ddot{x} - ml\ddot{\theta},\\
+		F &= ml\ddot{\theta} - (M + m)\ddot{x},\\
 		l \ddot{\theta} &= g \theta + \ddot{x}.
 	\end{split}%\label{inverted_pendulum:langrange_eqns_explicit2}
 \end{align*}
@@ -148,13 +151,13 @@ These equations can be further manipulated
 to obtain 
 \begin{align}
 	\begin{split}
-		\ddot{x} &= \frac{1}{M}F - \frac{m}{M}g\theta,\\
-		\ddot{\theta} &= \frac{1}{Ml}F + \frac{g}{Ml} (M+m) \theta.
+		\ddot{x} &=  - \frac{1}{M}F + \frac{m}{M}g\theta,\\
+		\ddot{\theta} &= -\frac{1}{Ml}F + \frac{g}{Ml} (M+m) \theta.
 	\end{split}\label{inverted_pendulum:langrange_eqns_explicit3}
 \end{align}
 
 We will now write \eqref{inverted_pendulum:langrange_eqns_explicit3} as a first order system. 
-Making the assignments $x_1 = x$, $x_2 = x_1'$, $\theta_1 = \theta$, $\theta_2 = \theta_1'$, letting $u = F$ represent the control variable, we obtain 
+Making the assignments $x_1 = x$, $x_2 = x_1'$, $\theta_1 = \theta$, $\theta_2 = \theta_1'$, letting $u = -F$ represent the control variable, we obtain 
 \begin{align*}
 \begin{bmatrix}
 x_1\\
@@ -164,7 +167,7 @@ x_2 \\
 \end{bmatrix}' &= 
 \begin{bmatrix}
 0 & 1 & 0 & 0\\
-0 & 0 & -\frac{mg}{M} & 0 \\
+0 & 0 & \frac{mg}{M} & 0 \\
 0 & 0 & 0 & 1 \\
 0 & 0 & \frac{g}{Ml}(M+m) & 0
 \end{bmatrix}
@@ -189,7 +192,7 @@ We consider the cost function
 \begin{align}
 \begin{split}
 J[z] &= \int_0^{\infty} (q_1x_1^2 + q_2x_2^2  + q_3\theta_1^2 + q_4\theta_2^2 + ru^2)\, dt\\
-&= \int_0^{\infty} z^TQz + u^TRu \, dt
+&= \int_0^{\infty} z\trp Qz + u\trp Ru \, dt
 \end{split} \label{inverted_pendulum:LQR}
 \end{align}
 where $q_1, q_2, q_3, q_4$, and $r$ are nonnegative weights, and 
@@ -200,7 +203,7 @@ q_1 & 0 & 0 & 0 \\
 0 & q_2 & 0 & 0\\
 0 & 0 & q_3 & 0 \\
 0 & 0 & 0 & q_4
-\end{bmatrix}, R = \begin{bmatrix} r \end{bmatrix}.
+\end{bmatrix}, \quad R = \begin{bmatrix} r \end{bmatrix}.
 \]
 
 \begin{problem}
@@ -232,19 +235,19 @@ def linearized_init(M, m, l, q1, q2, q3, q4, r):
 
 The optimal control problem \eqref{inverted_pendulum:LQR} is an example of a Linear Quadratic Regulator (LQR), and is known to have an optimal control $\tilde{u}$ described by a linear state feedback law:
 \begin{align*}
-\tilde{u} &= -R^{-1}B^TP\tilde{z}.
+\tilde{u} &= -R^{-1}B\trp P\tilde{z}.
 \end{align*}
 Here $P$ is a matrix function that satisfies the Riccati differential equation (RDE)
 \[
-\dot{P}(t) = PA + A^TP + Q - PBR^{-1}B^T P.  
+\dot{P}(t) = PA + A\trp P + Q - PBR^{-1}B\trp  P.  
 \]
 Since this problem has an infinite time horizon, we have $\dot{P} = 0$. Thus $P$ is a constant matrix, and can be found by solving the algebraic Riccati equation (ARE)
 \begin{align}
- PA + A^TP + Q - PBR^{-1}B^T P = 0.  \label{inverted_pendulum:ARE}
+ PA + A\trp P + Q - PBR^{-1}B\trp  P = 0.  \label{inverted_pendulum:ARE}
 \end{align}
 The evolution of the optimal state vector $\tilde{z}$ can then be described by \footnote{See Calculus of Variations and Optimal Control Theory, Daniel Liberzon, Ch.6}
 \begin{align}
-\dot{\tilde{z}} = (A - BR^{-1}B^TP)\tilde{z}. \label{inverted_pendulum:optimal_state}
+\dot{\tilde{z}} = (A - BR^{-1}B\trp P)\tilde{z}. \label{inverted_pendulum:optimal_state}
 \end{align}
 
 \begin{problem}
@@ -274,7 +277,7 @@ l = 4.
 q1, q2, q3, q4 = 1., 1., 1., 1.
 r = 10.
 \end{lstlisting}
-compute the eigenvalues of $A - BR^{-1}B^TP$.
+compute the eigenvalues of $A - BR^{-1}B\trp P$.
 Are any of the eigenvalues positive? 
 Consider differential equation \eqref{inverted_pendulum:optimal_state} governing the optimal state $\tilde{z}$. 
 Using this value of $P$, will we necessarily have $\tilde{z} \to 0$?
@@ -308,7 +311,7 @@ def rickshaw(tv, X0, A, B, Q, R, P):
 
 Notice that we have no information on how many solutions \eqref{inverted_pendulum:ARE} possesses. 
 In general there may be many solutions. 
-We hope to find a unique solution $P$ that is \textit{stabilizing}: the eigenvalues of $A - BR^{-1}B^TP$ have negative real part. 
+We hope to find a unique solution $P$ that is \textit{stabilizing}: the eigenvalues of $A - BR^{-1}B\trp P$ have negative real part. 
 To find this $P$, use the function \li{solve_continuous_are} from \li{scipy.linalg}. 
 This function is designed to solve the continuous algebraic Riccati equation. 
 
@@ -327,7 +330,7 @@ Find the matrix P using the \li{scipy.optimize.root} method with \li{tf=6} as we
 
 \noindent \li{solve_continuous_are} method with \li{tf=60}.
 Plot the solutions $\tilde{z}$ and $\tilde{u}$. 
-Compare your results as shown in Figure \ref{fig:inverted_pendulum:4}.
+Your results should show behavior similar to that in Figure \ref{fig:inverted_pendulum:4}.
 Be sure to include a legend.
 % and \ref{fig:inverted_pendulum:prob4_stable} respectively.
 \label{prob:inverted_pendulum:4}
@@ -366,13 +369,13 @@ Vary the entries of \li{X0} responsible for $\theta(0)$ and $\dot{\theta}(0)$ to
 
 The LQR solution we have found only works for the linearized version of the ODE system that we found. What if we were to apply the control found in the LQR formulation to the original, nonlinear ODE found in \eqref{inverted_pendulum:langrange_eqns_explicit}?
 To do this, we need to first be able to interpolate the control variable $u$ found in Problem \ref{prob:inverted_pendulum:4} using SciPy's \li{CubicSpline} function (see the \href{https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.CubicSpline.html}{documentation} for more details).
-We also need to solve \eqref{inverted_pendulum:langrange_eqns_explicit} for $\ddot x$ and $\ddot \theta$. Note that $F$ in \eqref{inverted_pendulum:langrange_eqns_explicit} is the control variable $u$ in \eqref{inverted_pendulum:langrange_eqns_solved}.
+We also need to solve \eqref{inverted_pendulum:langrange_eqns_explicit} for $\ddot x$ and $\ddot \theta$. Note that $-F$ in \eqref{inverted_pendulum:langrange_eqns_explicit} is the control variable $u$ in \eqref{inverted_pendulum:langrange_eqns_solved}.
 
 
 \begin{align}
 	\begin{split}
-		\ddot x &= \frac{u+m\sin\theta(-l\dot \theta^2+g\cos\theta)}{l(M+m(1-\cos^2\theta))},\\
-		\ddot{\theta} &= \frac{g(m+M)\sin\theta+\cos\theta(u-lm\dot\theta^2\sin\theta)}{M+m(1-\cos^2\theta)}.
+		\ddot x &= \frac{u+m\sin\theta(-l\dot \theta^2+g\cos\theta)}{M+m(1-\cos^2\theta)},\\
+		\ddot{\theta} &= \frac{g(m+M)\sin\theta+\cos\theta(u-lm\dot\theta^2\sin\theta)}{l(M+m(1-\cos^2\theta))}.
 	\end{split}\label{inverted_pendulum:langrange_eqns_solved}
 \end{align}
 
@@ -381,16 +384,21 @@ Using the same variables and initial conditions as in Problem \ref{prob:inverted
 Notice that the initial $\theta$ is large enough that the inverted pendulum is not balanced. Instead, it falls over at about 5 seconds.
 
 
-Let's solve the linearized equation over smaller increments.
-Starting with the initial condition given in Problem \ref{prob:inverted_pendulum:4}, solve the linearized equation over a small interval $t\in[t_0,t_1]$.
-Use the control found in the linearized equation to solve the nonlinear equation over the same interval.
-Then, using the state at $t=t_1$ as the initial condition, solve the equation over the interval $t\in[t_1,t_2]$.
+The problem is that the the linearized system is only a valid approximation of the true nonlinear system on small time intervals.
+So let's solve for the optimal control of the linearized system one small interval at a time.
+
+Starting with the initial condition given in Problem \ref{prob:inverted_pendulum:4}, use your \li{rickshaw} solver (from Problem \ref{prob:inverted_pendulum3}) to solve the linearized system over a small interval $t\in[t_0,t_1]$ and obtain the control $\tilde u$.
+Interpolate this $\tilde u$ (again using \li{CubicSpline}), then use this interpolation to evolve the true nonlinear system on the same interval.
+Now we repeat the process by taking the final state $\tilde z$ on this interval as our new initial condition for the next interval $t \in [t_1, t_2]$.
+Plugging this initial condition into \li{rickshaw}, we obtain a control which we then interpolate and use to evolve the nonlinear system.
 Continue this until you have solved over the entire time interval $t\in[0,60]$.
+
 Plot the pieced-together $\tilde{z}$ and $\tilde{u}$.
 Be sure to include a legend.
 Compare your results with the second image in Figure \ref{fig:nonlinear_inverted_pendulum:5}.
 
-Hint: use \li{np.geomspace(1,61,120)-1} to get a list of $\{t_0, t_1, ... t_f\}$ that will work well. Solving the equation more often at the beginning will keep the control variable approximately continuous. You only need to solve for the control $u$ at 3 points in each interval $[t_i, t_{i+1}]$ for the method to work well.
+Hint: use \li{np.geomspace(1,61,120)-1} to get a list of $\{t_0, t_1, ... t_f\}$ that will work well. Solving the equation more often at the beginning will keep the control variable approximately continuous. You only need to solve for the control $\tilde u$ at 3 points in each interval $[t_i, t_{i+1}]$ for the method to work well.
+Also, use \li{solve_continuous_are} rather than \li{scipy.optimize.root} when solving the linearized system.
 
 \label{prob:inverted_pendulum:5}
 \end{problem}
@@ -411,3 +419,63 @@ Hint: use \li{np.geomspace(1,61,120)-1} to get a list of $\{t_0, t_1, ... t_f\}$
 \label{fig:nonlinear_inverted_pendulum:5}
 \end{figure}
 
+
+\newpage
+
+\section*{Additional Material} % ==============================================
+
+\subsection*{Linearization} % -----------------------------------------------
+
+Recall that a first-order Taylor approximation of a function $\f(\x)$, centered at $\x_0$, is
+
+\begin{equation*}
+\f(\x) \approx \f(\x_0) + D\f(\x_0) (\x - \x_0).
+\end{equation*}
+
+\noindent We linearize the right-hand sides of equations \eqref{inverted_pendulum:langrange_eqns_explicit} around $(\theta, \dot \theta) = (0, 0)$ as follows:
+
+\begin{align*}
+H_1(\theta, \dot \theta) &\coloneq ml\ddot{\theta} \cos \theta - (M + m)\ddot{x} - ml \dot{\theta}^2 \sin \theta\\
+&\approx H_1(0, 0) + DH_1(0, 0)
+    \begin{bmatrix}
+        \theta - 0\\
+        \dot \theta - 0
+    \end{bmatrix}\\
+&= m l \ddot \theta - (M + m) \ddot x\\
+& \quad + \left[- m l \ddot \theta \sin \theta - m l \dot \theta^2 \cos \theta,
+- 2 m l \dot \theta \sin \theta \right]
+\bigg|_{(\theta, \dot \theta) = (0, 0)}
+    \begin{bmatrix}
+        \theta\\
+        \dot \theta
+    \end{bmatrix}\\
+&= m l \ddot \theta - (M + m) \ddot x + \left[0, 0 \right]
+    \begin{bmatrix}
+        \theta\\
+        \dot \theta
+    \end{bmatrix}\\
+&= m l \ddot \theta - (M + m) \ddot x.
+\end{align*}
+
+\noindent Similarly,
+
+\begin{align*}
+H_2(\theta, \dot \theta) &\coloneq g \sin \theta + \ddot x \cos \theta\\
+&\approx H_2(0, 0) + DH_2(0, 0)
+    \begin{bmatrix}
+        \theta\\
+        \dot \theta
+    \end{bmatrix}\\
+&= \ddot x + \left[g \cos \theta - \ddot x \sin \theta, \; 0\right]
+\bigg|_{(\theta, \dot \theta) = (0, 0)}
+    \begin{bmatrix}
+        \theta\\
+        \dot \theta
+    \end{bmatrix}\\
+&= \ddot x + \left[g, 0\right]
+    \begin{bmatrix}
+        \theta\\
+        \dot \theta
+    \end{bmatrix}\\
+&= \ddot x + g \theta.
+\end{align*}
