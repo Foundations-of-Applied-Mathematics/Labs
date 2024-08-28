@@ -1,4 +1,5 @@
 \lab{Iterative Solvers}{Iterative Solvers}
+\labdependencies{LinearSystems}
 \label{lab:iter_methods}
 
 \objective{
@@ -205,10 +206,10 @@ To test your function, generate a random $\b$ with \li{np.random.random()} and u
 Run the iteration, then check that $A\x^{(k)}$ and $\b$ are close using \li{np.allclose()}.
 There is a file called \li{test_iterative_solvers.py} that contains prewritten unit tests to test your function for this problem.
 
-\begin{comment} We have to create the strictly diagonally dominant matrix as a sparse 
-    matrix in order to be more efficient, but we need to be able to use this as a regular 
-    ndarray or a CSR sparse matrix depending solely on whether we're using it in problen 4 
-    or not, I thought this might be a good solution using the code provided from GitHub. 
+\begin{comment} We have to create the strictly diagonally dominant matrix as a sparse
+    matrix in order to be more efficient, but we need to be able to use this as a regular
+    ndarray or a CSR sparse matrix depending solely on whether we're using it in problen 4
+    or not, I thought this might be a good solution using the code provided from GitHub.
     See code for method diag_dom() in problem 1.
 \end{comment}
 
@@ -221,19 +222,19 @@ def diag_dom(n, num_entries=None, as_sparse=False):
             Defaults to n^(3/2)-n.
         as_sparse: If True, an equivalent sparse CSR matrix is returned.
     Returns:
-        A ((n,n) ndarray): A (n, n) strictly diagonally dominant matrix.
+        A ((n, n) ndarray): A (n, n) strictly diagonally dominant matrix.
     """
     if num_entries is None:
         num_entries = int(n**1.5) - n
-    A = sparse.dok_matrix((n,n))
+    A = sparse.dok_array((n, n))
     rows = np.random.choice(n, size=num_entries)
-    cols = np.random.choice(n, size=num_entries) 
+    cols = np.random.choice(n, size=num_entries)
     data = np.random.randint(-4, 4, size=num_entries)
     for i in range(num_entries):
         A[rows[i], cols[i]] = data[i]
     B = A.tocsr()          # convert to row format for the next step
     for i in range(n):
-        A[i,i] = abs(B[i]).sum() + 1
+        A[i, i] = abs(B[i]).sum() + 1
     return A.tocsr() if as_sparse else A.toarray()
 \end{lstlisting}
 
@@ -354,7 +355,7 @@ One sweep through all the entries of $\x$ completes one iteration.
 
 \begin{problem} % Implement Gauss-Seidel.
 Write a function that accepts a matrix $A$, a vector $\b$, a convergence tolerance \li{tol} defaulting to $10^{-8}$, a maximum number of iterations \li{maxiter} defaulting to $100$, and a keyword argument \li{plot} that defaults to \li{False}.
-Implement the Gauss-Seidel method using (\ref{eq:gauss_seidel}) and details from the example above. 
+Implement the Gauss-Seidel method using (\ref{eq:gauss_seidel}) and details from the example above.
 Return the approximate solution to the equation $A\x = \b$.
 
 Use the same stopping criterion as in Problem \ref{prob:jacobi}.
@@ -426,10 +427,10 @@ rowend = A.indptr[i+1]
 Aix = A.data[rowstart:rowend] @ x[A.indices[rowstart:rowend]]
 \end{lstlisting}
 
-\begin{comment} Now diag_dom returns the matrix as an ndarray by default, 
-    but it actually constructs it as a sparse matrix using the code given. 
-    Only when we need it as a CSR matrix, we just pass as_csr=True inside the function call. 
-    This way, the audience doesn't need to modify anything except for the way in which they 
+\begin{comment} Now diag_dom returns the matrix as an ndarray by default,
+    but it actually constructs it as a sparse matrix using the code given.
+    Only when we need it as a CSR matrix, we just pass as_csr=True inside the function call.
+    This way, the audience doesn't need to modify anything except for the way in which they
     create the matrix to be used for testing problem 4:
 \end{comment}
 

@@ -4,7 +4,7 @@
 
 Recall that any ordinary differential equation can be written as a first order system of ODEs,
 \begin{align}
-x' = F(x), \quad x' := \frac{d}{dt}x(t).\label{fos}
+x' = F(x), \quad x' \coloneq \frac{d}{dt}x(t).\label{fos}
 \end{align}
 Many interesting applications and physical phenomena can be modeled using ODEs.
 Given a mathematical model of the form \eqref{fos}, it is important to understand geometrically how its solutions behave.
@@ -39,35 +39,6 @@ The bifurcation diagram is shown in Figure \ref{bifurcation:sn}
 \label{bifurcation:sn}
 \end{figure}
 
-% The flow of a differential equation \[\dot{x} = f(x)\] is the family of all possible solutions $\phi(t,x_0)$, where $x_0$ represents the arbitrary initial value, $t \in \mathbb{R}.$
-% Here we will mainly consider scalar differential equations (so-called because $x$ is one dimensional).
-% It is often necessary to study a family of differential equations. These will have the form
-% \[\dot{x}= F(x,c),\]
-% where $c$ may be a single parameter or a vector of parameters.
-%
-% Bifurcation theory is the study of how the qualitative structure of the flow of a differential equation varies as parameters in the differential equation are varied.
-% A differential equation has a stable orbit structure if sufficiently small changes in the parameter value do not change the qualitative structure of the flow.
-% A parameter value for which the flow does not have a stable orbit structure is called a bifurcation value.
-%
-% Terminology
-% bifurcation theory: 'the study of possible changes in the structure of orbits of a differential equation depending on variable parameters'
-% 'the study of changes in the qualitative structure of the flow of a differential equation as parameters are varied'
-% phase portrait:
-% bifurcation diagram:
-% number of orbits and their direction of flow of a differential equation = 'orbit structure of the differential equation' or 'the qualitiative structure of the flow'.
-%
-% Hyperbolic equilibrium points
-% $F(x_0,c_0) = 0$ where $\frac{df}{dx}(x_0,c_0) \not = 0.$
-% In this case the stability of the equilibrium point $x_0$ for values of $c$ near $c_0$ is determined by the derivative $\frac{df}{dx}(x_0,c_0)$.
-% Example: $\dot{x} = x-c.$ Plot $x$
-%
-% Hyperbolic equilibrium - mainly to be used when discussing stability
-% Saddle-Node Bifurcation - \[\dot{x} = c + x^2.\]
-% Transcritical Bifurcation - \[\dot{x} = cx + x^2.\]
-% Hysteresis Loop - \[\dot{x} = c + x-x^3.\]
-% Pitchfork Bifurcation (Supercritical) - \[\dot{x} = cx-x^3.\]
-% For an exercise, do a variation of \[\dot{x} = 1+cx-x^3.\]
-
 Suppose that $F(x_0,\lambda_0) = 0.$
 We use a method called natural embedding to find zeros $(x,\lambda)$ of $F$ for nearby values of $\lambda$.
 Specifically, we step forward in $\lambda$ by letting $\lambda_1 = \lambda_0 + \triangle \lambda$, and use Newton's method to find the value $x_1$ that satisfies $F(x_1,\lambda_1) = 0.$
@@ -89,29 +60,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import newton
 
-def embedding_alg(param_list, guess, F):
-    X = []
-    for param in param_list:
+def embedding_alg(lams, guess, F):
+    xs = list()
+    for lam in lams:
         try:
             # Solve for x_value making F(x_value, param) = 0.
-            x_value = newton(F, guess, fprime=None, args=(param,), tol=1E-7, maxiter=50)
+            x_value = newton(F, guess, args=(param,), tol=1e-7)
             # Record the solution and update guess for the next iteration.
-            X.append(x_value)
+            xs.append(x_value)
             guess = x_value
         except RuntimeError:
             # If Newton's method fails, return a truncated list of parameters
             # with the corresponding x values.
-            return param_list[:len(X)], X
+            return lams[: len(xs)], xs
     # Return the list of parameters and the corresponding x values.
-    return param_list, X
+    return lams, xs
 
 def F(x, lmbda):
     return x**2 + lmbda
 
 # Top curve shown in the bifurcation diagram
-C1, X1 = embedding_alg(np.linspace(-5, 0, 200), np.sqrt(5), F)
+lams1, xs1 = embedding_alg(np.linspace(-5, 0, 200), np.sqrt(5), F)
 # The bottom curve
-C2, X2 = embedding_alg(np.linspace(-5, 0, 200), -np.sqrt(5), F)
+lams2, xs2 = embedding_alg(np.linspace(-5, 0, 200), -np.sqrt(5), F)
 \end{lstlisting}
 
 \begin{problem}
@@ -151,24 +122,6 @@ See Figure \ref{fig:hysteresis:pitchfork_state_space}.
 \caption{Possible trajectories given different $x_0$'s and $\lambda$'s for the equation $x' = \lambda x - x^3$.}
 \label{fig:hysteresis:pitchfork_state_space}
 \end{figure}
-
-\begin{comment}
-\begin{problem}
-Create bifurcation diagrams for the differential equation
-\[x' = \eta + \lambda x-x^3,\]
-where $\eta = -1, -.2, .2$ and $1.$  Notice that when $\eta = 0$ you can see the pitchfork bifurcation of the previous problem.
-There should be four different images, one for each value of $\eta$.
-Each image will be built of 3 pieces.
-See Figure \ref{prob2}.
-\end{problem}
-
-\begin{figure}
-\centering
-\includegraphics[width=\textwidth]{figures/prob2.pdf}
-\caption{Bifurcation diagram for the equation $x' = \eta + \lambda x - x^3$ with $\eta=-1$.}
-\label{prob2}
-\end{figure}
-\end{comment}
 
 \section*{Hysteresis}
 
@@ -264,3 +217,80 @@ Be sure to include a legend.
 Notice that returning the parameter $k$ to $8$ does not make the budworm population decrease back to the value it approached before increasing $k$ to $12$.
 
 \end{problem} 
+
+\section*{Two-Dimensional State Space}
+The \emph{Hopf bifurcation} is one type of bifurcation that only occurs in a two- or higher-dimensional space.\footnote{\url{https://www.biodyn.ro/course/literatura/Nonlinear_Dynamics_and_Chaos_2018_Steven_H._Strogatz.pdf}}
+Examples include railway vehicle stability, in which a vehicle's motion transitions from stable to unstable as speed increases.
+There are two types of Hopf bifurcations: \emph{supercritical} and \emph{subcritical}.
+In polar coordinates, a simple supercritical system can take the form
+\begin{align}
+    \begin{split}
+        \label{hysteresis:eqn:2d-polar}
+        r' &= \mu r - r^3 \\
+        \theta' &= \omega + b r^2.
+    \end{split}
+\end{align}
+We will be examining the effect of $\mu$ on the stability of the origin.
+We restrict our analysis with the convention that $r \ge 0$.
+At the origin ($r = 0$), we have $r' = 0$.
+This suggests that the origin is an equilibrium, and a conversion to Cartesian coordinates confirms this (see the ``Additional Material'' section).
+
+For $r > 0$, $\mu \le 0$ implies that $r' < 0$, so the origin is in fact \emph{asymptotically stable}.
+However, something interesting happens when $\mu$ becomes positive.
+In that case, we find that for $r < \sqrt \mu$ we have $r' > 0$, so the origin is unstable.
+On the other hand, for $r > \sqrt \mu$ we have $r' < 0$.
+This means that all trajectories not on the circle $S = \{r : r = \sqrt \mu\}$ tend toward $S$.
+Moreover, on $S$ we have $r' = 0$, so trajectories on the circle will stay on it.
+
+It turns out $S$ is a special case of a \emph{stable} limit cycle, defined by the property that nearby trajectories approach the cycle as time goes to infinity.
+(The circle $S$ is special in that it attracts trajectories globally, rather than just in a neighborhood.)
+
+\begin{problem}
+    \label{hysteresis:prob:2d-state-space}
+    Create an animation showing how two trajectories of the system \eqref{hysteresis:eqn:2d-polar} change as the parameter $\mu$ changes from $-0.25$ to $0.25$.
+    Use 251 steps in your $\mu$-linspace.
+    Use the two inital starting points $(r_0, \theta_0) = (0.1, 0)$ and $(0.6, 0)$.
+    Set $\omega = b = 1$.
+    Using \li{solve_ivp}, let the two trajectories evolve from $t_0 = 0$ to $t_f = 16 \pi$.
+    Also plot the limit cycle (when $\mu > 0$), recalling from the above that it occurs at $r = \sqrt \mu$.
+    Be sure to include a legend.
+    Compare with Figure \ref{hysteresis:fig:2d-state-space}.
+    Embed your animation in your notebook, and remember to push the animation as well.
+
+    \noindent Hint: To fit the animation in the frame, it may be useful to set the plot view limits to $(-0.7, 0.7)$ (e.g., with \li{ax.set_xlim}).
+\end{problem}
+
+\begin{figure}
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/hopf_mu_-025.pdf}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/hopf_mu_025.pdf}
+    \end{subfigure}
+    \caption{The solution to Problem \ref{hysteresis:prob:2d-state-space} at $\mu = -0.25$ and at $\mu = 0.25$. The points mark the initial positions of the two trajectories.}
+    \label{hysteresis:fig:2d-state-space}
+\end{figure}
+
+\newpage
+
+\section*{Additional Material}
+
+\subsection*{Conversion of the Hopf Bifurcation System to Cartesian Coordinates}
+
+We can convert the polar system \eqref{hysteresis:eqn:2d-polar} to Cartesian coordinates using $x = r \cos \theta$, $y = r \sin \theta$, and $x^2 + y^2 = r^2$:
+\begin{align*}
+    x'
+    &= r' \cos \theta - r \theta' \sin \theta \\
+    &= \left(\mu r - r^3\right) \cos \theta - r \left(\omega + b r^2\right) \sin \theta \\
+    &= \left(\mu - r^2\right) r \cos \theta - \left(\omega + b r^2\right) r \sin \theta \\
+    &= \left(\mu - \left(x^2 + y^2\right)\right) x - \left(\omega + b \left(x^2 + y^2\right)\right) y \\
+    &= \mu x - x^3 - x y^2 - \omega y - b x^2 y - b y^3 \\
+    y'
+    &= r' \sin \theta + r \theta' \cos \theta \\
+    &= \left(\mu r - r^3\right) \sin \theta + r \left(\omega + b r^2\right) \cos \theta \\
+    &= \left(\mu - r^2\right) r \sin \theta + \left(\omega + b r^2\right) r \cos \theta \\
+    &= \left(\mu - \left(x^2 + y^2\right)\right) y + \left(\omega + b \left(x^2 + y^2\right)\right) x \\
+    &= \mu y - x^2 y - y^3 + \omega x + b x^3 + b x y^2
+\end{align*}

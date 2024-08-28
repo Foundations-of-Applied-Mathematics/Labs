@@ -1,6 +1,7 @@
 \lab{PCA, LSI, and Scikit-Learn}{LSI and SkLearn}
+\labdependencies{}
 \objective{Understand the basics of principal component analysis and latent semantic indexing. Learn more about scikit-learn and implement a machine learning pipeline.}
-\label{lab:pca} 
+\label{lab:pca}
 
 \section*{Principal Component Analysis} % --------------------------------------------------
 
@@ -77,7 +78,7 @@ As expected, we let $X_{i,j}$ be the number of times term $j$ occurs in document
 Note that $X$ is often a sparse matrix, as any single document likely does not contain most of the vocabulary words.
 This mode of representation is called the \emph{bag of words} model for documents.
 
-We calculate the SVD of $X$ \emph{without} centering or scaling the data so that we may retain the sparsity. 
+We calculate the SVD of $X$ \emph{without} centering or scaling the data so that we may retain the sparsity.
 This is unique to this particular problem.
 We now have $X = U\Sigma V\trp $.
 If we are keeping $l$ principal components, we can represent the corpus of documents by the matrix
@@ -115,7 +116,7 @@ X = np.array([
     [0.77, 0.  , 0.27, 0.2 ],
     [0.86, 0.47, 0.  , 0.06],
     [0.89, 0.  , 0.  , 0.  ]
-]) 
+])
 \end{lstlisting}
 With \li{i=4} your function should output the following:
 \begin{lstlisting}
@@ -124,7 +125,7 @@ With \li{i=4} your function should output the following:
 \end{lstlisting}
 \end{problem}
 
-\section*{Application: State of the Union} 
+\section*{Application: State of the Union}
 We now discuss some practical issues involved in creating the bag of words representation $X$ from the raw text.
 Our dataset will consist of the US State of the Union addresses from 1945 through 2013, each contained in a separate text file in the folder {\tt Addresses}.
 We would like to avoid loading in all of the text into memory at once, and so we will \emph{stream} the documents one at a time.
@@ -132,7 +133,7 @@ We would like to avoid loading in all of the text into memory at once, and so we
 The first thing we need to establish is the vocabulary set, i.e. the set of unique words that occur throughout the collection of documents.
 A Python set object automatically preserves the uniqueness of the elements, so we will create a set and then iteratively read through the documents, adding the unique words of each document to the set.
 As we read in each document, we will remove punctuation and numerical characters and convert everything to lower case.
-The following code, found in the function \li{document_converter()}, will accomplish this task. 
+The following code, found in the function \li{document_converter()}, will accomplish this task.
 
 \begin{lstlisting}
 # Get list of filepaths to each text file in the folder.
@@ -200,8 +201,8 @@ X = sparse.csr_array((counts, [doc_index, word_index]),
 \begin{problem} %Problem 3
 Applying the techniques of LSI discussed above to the word count matrix $X$, created with the \li{document_converter()} function, and keeping the first 7 principal components, write a function that takes in the path to a single State of the Union address \li{speech} and returns a tuple of the addresses that are most and least similar to \li{speech}.
 
-For Ronald Reagan's 1984 speech, the input would be \li{'./Addresses/1984-Reagan.txt'}, and your output should be \li{('1988-Reagan', '1946-Truman')}.
-Be sure to format the strings properly. 
+For Ronald Reagan's 1984 speech, the input would be \li{"./Addresses/1984-Reagan.txt"}, and your output should be \li{("1988-Reagan", "1946-Truman")}.
+Be sure to format the strings properly.
 Also run your algorithm on Clinton's 1993 speech, and display your output.
 
 Since $X$ is a sparse matrix, you will need to use the SVD method found in \li{scipy.sparse.linalg}.
@@ -268,7 +269,7 @@ Its hyperparameters include the desired number of principal components and the t
 Its \li{fit_transform()} method takes in an array of data and returns the decomposition with \li{n_components}.
 
 \begin{lstlisting}
->>> from sklearn.decomposition import PCA 
+>>> from sklearn.decomposition import PCA
 >>> pca = PCA(n_components=5) # Create the PCA transformer with hyperparameters
 >>> Xhat = pca.fit_transform(X) # Fit the transformer and transform the data
 \end{lstlisting}
@@ -285,7 +286,7 @@ The resulting graph will have the $x$-axis flipped, because a matrix's singular 
 Repeat Problem \ref{prob:LSI1} using your weighted document converter function and scikit-learn's \li{sklearn.decomposition.TruncatedSVD} class.
 For consistency, also pass the argument \li{random_state=74} in the constructor to this class.
 
-For Bill Clinton's 1993 speech, your code should return \li{('1992-Bush', '1946-Truman')}.
+For Bill Clinton's 1993 speech, your code should return \li{("1992-Bush", "1946-Truman")}.
 Also run the algorithm on Reagan's 1984 speech, and display the results.
 \end{problem}
 
@@ -301,7 +302,7 @@ The \li{score()} method of a scikit-learn classifier returns the \emph{accuracy}
 However, accuracy isn't always the best measure of success.
 Consider the \emph{confusion matrix} for a classifier, the matrix where the $(i,j)$th entry is the number of samples with actual label $i$ but that are classified with label $j$.
 Call the class with label $0$ the \emph{negatives} and the class with label $1$ the \emph{positives}.
-Then the confusion matrix is as follows. 
+Then the confusion matrix is as follows.
 
 \begin{align*}
 \begin{blockarray}{ccc}
@@ -397,7 +398,7 @@ The cost of a grid search rapidly increases as the hyperparameter space grows.
 However, the outcomes of each trial are completely independent of each other, so the problem of training each classifier is \emph{embarassingly parallel}, meaning the trials can easily be computed simultaneously.
 To parallelize the grid search over $n$ CPU cores, set the \li{n_jobs} parameter to $n$, or set it to $-1$ to divide the labor between as many cores as are available.
 
-\begin{lstlisting} 
+\begin{lstlisting}
 >>> from sklearn.model_selection import GridSearchCV
 
 >>> knn = KNeighborsClassifier()
@@ -435,6 +436,10 @@ Print out a confusion matrix using these values.
 \label{problem:gridsearch}
 \end{problem}
 
+\begin{warn}
+Because grid searches can be computationally expensive to perform, it is recommended to debug your code using a small subset of data to ensure everything is functioning correctly before performing a grid search on the full data.
+\end{warn}
+
 \section*{Pipelines} % ========================================================
 
 Most machine learning problems require at least a little data preprocessing before estimation in order to get good results.
@@ -465,11 +470,11 @@ For example, \li{knn__n_neighbors} corresponds to the \li{n_neighbors} hyperpara
 # Create the Pipeline, labeling each step.
 >>> pipe = Pipeline([("scaler", StandardScaler()),
                      ("knn", KNeighborsClassifier())])
-                     
+
 # Specify the hyperparameters to test for each step.
 >>> pipe_param_grid = {"scaler__with_mean": [True, False],
 ...                    "scaler__with_std": [True, False],
-...                    "knn__n_neighbors": [2,3,4,5,6],
+...                    "knn__n_neighbors": [2, 3, 4, 5, 6],
 ...                    "knn__weights": ["uniform", "distance"]}
 
 # Pass the Pipeline object to the GridSearchCV and fit it to the data.
@@ -494,7 +499,7 @@ Like before, you can use a list of dictionaries to specify the specific combinat
 # Create the grid
 >>> pipe_param_grid = [
 ...     {"classifier": [KNeighborsClassifier()],    # Try a KNN classifier...
-...      "classifier__n_neighbors": [2,3,4,5],
+...      "classifier__n_neighbors": [2, 3, 4, 5],
 ...      "classifier__weights": ["uniform", "distance"]},
 ...     {"classifier": [SVC(kernel="rbf")],         # ...and an SVM classifier.
 ...      "classifier__C": [.001, .01, .1, 1, 10, 100],

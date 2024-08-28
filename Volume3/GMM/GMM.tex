@@ -1,4 +1,5 @@
 \lab{Gaussian Mixture Models}{Gaussian Mixture Models}
+\labdependencies{}
 \objective{Understand the formulation of Gaussian Mixture Models (GMMs) and use the Expectation Maximization algorithm to estimate GMM parameters.}
 
 
@@ -27,13 +28,13 @@ Each component has a certain probability associated with it, called its \emph{we
 We denote the weight of the \(i\)-th component as \(w_i\).
 
 In this lab, we focus on \emph{Gaussian Mixture Models}, or GMMs for short.
-In a GMM, each component is a multivariate %\footnote{Strictly speaking, they can also be univariate, but the distinction is minor} 
+In a GMM, each component is a multivariate %\footnote{Strictly speaking, they can also be univariate, but the distinction is minor}
  Gaussian (normal) distribution.
 Each of these is parameterized by a mean \(\mu_i\) and a covariance matrix \(\Sigma_i\).
 
 A GMM with \(K\) components thus has parameters \(\theta = \left(w_1,\ldots,w_K, \mu_1,\ldots,\mu_K,\Sigma_1,\ldots,\Sigma_K\right)
 \).
-We can use the law of total probability to evaluate the density of a GMM, which is given by 
+We can use the law of total probability to evaluate the density of a GMM, which is given by
 \[
 P(z | \theta) = \sum_{k=1}^{K} w_{k} \mathcal{N}(z | \mu_{k}, \Sigma_{k})
 \]
@@ -43,8 +44,8 @@ where
 \]
 is the density function of a multivariate normal distribution.
 
-It is important to keep in mind that a GMM does \emph{not} arise from adding weighted multivariate normal random variables, but rather from weighting the responsibility of each multivariate normal random variable. 
-The first case simply results in a different multivariate normal distribution. %\footnote{If they are independent; if they aren't, weird things can happen.} 
+It is important to keep in mind that a GMM does \emph{not} arise from adding weighted multivariate normal random variables, but rather from weighting the responsibility of each multivariate normal random variable.
+The first case simply results in a different multivariate normal distribution. %\footnote{If they are independent; if they aren't, weird things can happen.}
 Refer to Figure \ref{fig:gmm-threedplots} for a visualization of these two cases.
 
 \begin{figure}[h]
@@ -88,7 +89,7 @@ The parameters for the \(k\)-th component can be found as \li{weights[k], means[
 \end{problem}
 %%
 \begin{problem}
-Write a method \li{component_logpdf} for your class that accepts a component \li{k} and a point \li{z} and computes 
+Write a method \li{component_logpdf} for your class that accepts a component \li{k} and a point \li{z} and computes
 \[
 \log w_k + \log \mathcal{N}(z|\mu_k,\Sigma_k)
 ,
@@ -157,7 +158,7 @@ P(X_i=k | z_i, \theta^t)
 &=
 \frac{P(z_i|X_i=k,\theta^t)}{P(z_i|\theta^t)}
 \\
-&= 
+&=
 \frac{
 w_k^t \,\mathcal{N}(z_i| \mu_k^t,\Sigma_k^t)
 }{
@@ -167,14 +168,14 @@ w_{k'}^t \,\mathcal{N}(z_i| \mu_{k'}^t,\Sigma_{k'}^t)
 \end{align*}
 
 In order to accurately compute this quantity, however, we need to be more careful.
-It is possible that due to floating point underflow\footnote{As a refresher, one way that floating point numbers are limited is that they cannot represent positive numbers arbitrarily close to zero; at some point, if the number in a computation becomes too small, the computer is forced to round it to zero, which is called \emph{underflow}. The threshhold is about \(10^{-323}\) for the 64-bit floating point numbers used in python. Even if underflow does not occur, very small floating points have greatly reduced precision, so it is generally good to avoid using them.} that each term 
+It is possible that due to floating point underflow\footnote{As a refresher, one way that floating point numbers are limited is that they cannot represent positive numbers arbitrarily close to zero; at some point, if the number in a computation becomes too small, the computer is forced to round it to zero, which is called \emph{underflow}. The threshhold is about \(10^{-323}\) for the 64-bit floating point numbers used in python. Even if underflow does not occur, very small floating points have greatly reduced precision, so it is generally good to avoid using them.} that each term
 \(
 w_{k'}^t \,\mathcal{N}(z_i| \mu_{k'},\Sigma_{k'})
 \)
 in the sum in the denominator becomes zero, which is a major problem.
 This particularly happens if the exponents in the multivariate normal densities all are large negative numbers.
 To avoid this problem, we can rescale the numerator and denominator.
-Let 
+Let
 \[
 \ell_{i,k} = \log w_{k}^t +\log\mathcal{N}(z_i| \mu_{k}^t,\Sigma_{k}^t),\]
 the logarithm of each term in the denominator.
@@ -262,7 +263,7 @@ Q^t(\theta)
 \sum_{k=1}^K
 q_i^t(k)\log w_k^t\mathcal{N}(z_i| \mu_k,\Sigma_k)
 \end{align*}
-We then set 
+We then set
 \[
 \theta^{t+1}=\underset{\theta}{\argmax} Q^t(\theta)
 \]
@@ -282,22 +283,22 @@ For details on the derivation of the maximizer, refer to the Volume 3 textbook.
 
 \begin{problem}
 \label{gmm:prob:mstep}
-Write a method \li{_compute_m_step} for your GMM class that takes the output of Problem \ref{gmm:prob:estep} as the \(q_i^t(k)\) values 
-and calculates the next iteration of weights and means using the formulas above. Be sure to use array broadcasting when possible. Coding the formula for
-the sigma update requires a rather involved approach using devious array broadcasting and a very useful function, np.einsum.
+Write a method \li{_compute_m_step} for your GMM class that takes the output of Problem \ref{gmm:prob:estep} as the \(q_i^t(k)\) values and calculates the next iteration of weights and means using the formulas above. 
+Be sure to use array broadcasting when possible. 
+Coding the formula for the sigma update requires a rather involved approach using devious array broadcasting and a very useful function, \li{np.einsum}.\footnote{For a detailed explanation of \li{np.einsum}, see the Additional Materials section of the Advanced Numpy lab.}
 \begin{lstlisting}
 # This gets the centered observations for the numerator
 # by subtracting them as per the formula
-obs_centered = np.expand_dims(Z,0) - np.expand_dims(new_means, 1)
+obs_centered = np.expand_dims(Z, 0) - np.expand_dims(new_means, 1)
 # This function creates the rest of the numerator and uses array
 # broadcasting to implement the denominator. The K, n, d, and D tell
 # np.einsum which axes to multiply and which to sum
-new_covars = 
-	np.einsum('Kn,Knd,KnD->KdD', q_values, obs_centered, obs_centered) / q_sum.reshape(-1,1,1)
+new_covars =
+	np.einsum('Kn,Knd,KnD->KdD', q_values, obs_centered, obs_centered) / q_sum.reshape(-1, 1, 1)
 \end{lstlisting}
 
 The code above has been provided in the spec file, but a general understanding of the method will be useful in a variety of other situations.
-Return the updated parameters (weights, means, and covariance matrices). 
+Return the updated parameters (weights, means, and covariance matrices).
 
 With the same GMM and data as in Problem \ref{gmm:prob:estep}, you should get the following results:
 \begin{lstlisting}
@@ -336,11 +337,11 @@ change = (np.max(np.abs(new_weights - old_weights))
 \end{lstlisting}%
 
 The file \li{gmm\_data.npy} contains a collection of data drawn from a two-dimensional GMM.
-Finish check\_problem6() by creating a variable named gmm that is a GMM object initialized with 3 
-componnts and fitted to the data from  \li{gmm\_data.npy}. 
+Finish check\_problem6() by creating a variable named gmm that is a GMM object initialized with 3
+componnts and fitted to the data from  \li{gmm\_data.npy}.
 
 The check function will plot the pdf of your trained gmm and a hexbin plot of the training data. They should
-look very similar to each other. Additionally, your class should take less than 15 seconds to train on the dataset. 
+look very similar to each other. Additionally, your class should take less than 15 seconds to train on the dataset.
 The check code will time your fit function and print the training time to make sure you are within that range.
 \end{problem}
 
@@ -368,7 +369,7 @@ Given a set of data points, return which cluster has the highest pdf density for
 The file \li{classification.npz} contains a set of 3-dimensional data points (\li{X}) and their labels (\li{y}).
 Use your class with \li{n_components=4} to cluster the data.
 Plot the points with the predicted and actual labels, and compute and return your model's accuracy.
-Your class should take less than 30 seconds to train on this dataset. Make sure to time your .fit() or .fit\_predict() 
+Your class should take less than 30 seconds to train on this dataset. Make sure to time your .fit() or .fit\_predict()
 and print the time spent in training to receive credit.
 
 Note that the labels may be permuted; for instance, your model might cluster the points correctly, but swap the labels of clusters 1 and 2 compared to the true labels.
@@ -416,18 +417,15 @@ As the dimension of the dataset grows, GMMs suffer computationally from the curs
 \subsection*{Jax}
 Jax is a combination of both Autograd and XLA (Accelerated Linear Algebra) to provide high performance computations. It is a tool that can automatically differentiate various Python and NumPy code including \li{if} statement, \li{for} loops, recursion, and other native code types.
 
- Jax provides a Numpy-like API to build machine learning models. Jax can only run on GPUs and TPUs which makes it more efficient than NumPy, which can only run on a CPU. The three main Jax functions include \li{jit}, \li{grad} and \li{vmap}. 
- 
+ Jax provides a Numpy-like API to build machine learning models. Jax can only run on GPUs and TPUs which makes it more efficient than NumPy, which can only run on a CPU. The three main Jax functions include \li{jit}, \li{grad} and \li{vmap}.
+
 \begin{itemize}
  \item jit: Adding \li{\@jax.jit}  to the beginning of a function creates an optimized version of the function.
 \item grad: Used to compute the gradient or derivative of a function.
-\item vmap: This is used to vectorize your functions. Since list comprehension isn't available using Jax's version of NumPy, this can be helpful and used instead. 
+\item vmap: This is used to vectorize your functions. Since list comprehension isn't available using Jax's version of NumPy, this can be helpful and used instead.
 \end{itemize}
 
 \section*{Dynamax}
 Dynamax is a library that uses Jax for probabilistic state space models (SSMs).
 The SSMs that Dynamax is able to compute include Hidden Markov Models (HMMs), Linear and Nonlinear Gaussian state space models, and Generalized Gaussian state space models.
 More information can be found at the website: \url{https://probml.github.io/dynamax/}.
-
- 
- 

@@ -4,29 +4,29 @@
 
 \objective{Use a pseudospectral method to study solitons, the traveling wave solutions of the Korteweg-de Vries equation.}
 
-The Korteweg-de Vries (KdV) equation is a partial differential equation given by 
+The Korteweg-de Vries (KdV) equation is a partial differential equation given by
 \[  \frac{\partial u }{\partial t} + u \frac{\partial u}{\partial x} + \frac{\partial^3 u}{\partial x^3} = 0.
 \]
-that describes shallow water waves. 
+that describes shallow water waves.
 
-The KdV equation possesses traveling wave solutions called \emph{solitons}.  
-These traveling waves have the form 
+The KdV equation possesses traveling wave solutions called \emph{solitons}.
+These traveling waves have the form
 \[ u(x,t) = 3s \sech^2\left(\frac{\sqrt{s}}{2}(x - st - a)\right),
 \]
-where $s$ is the speed of the wave. 
-Solitons were first studied by John Scott Russell in 1834, in the Union Canal in Scotland. 
-When a canal boat suddenly stopped, the water piled up in front of the boat continued moving down the canal in the shape of a pulse.  
+where $s$ is the speed of the wave.
+Solitons were first studied by John Scott Russell in 1834, in the Union Canal in Scotland.
+When a canal boat suddenly stopped, the water piled up in front of the boat continued moving down the canal in the shape of a pulse.
 
-Note that there is a soliton solution for each wave speed $s$, and that the amplitude and speed of the soliton determine each other. 
-Solitons are nonlinearly stable (bumped waves return to their previous shape), and they maintain their energy as they travel. 
-Two interacting solitons will also both maintain their shapes after crossing paths. 
+Note that there is a soliton solution for each wave speed $s$, and that the amplitude and speed of the soliton determine each other.
+Solitons are nonlinearly stable (bumped waves return to their previous shape), and they maintain their energy as they travel.
+Two interacting solitons will also both maintain their shapes after crossing paths.
 
 \section*{Numerical solution}
-Consider the KdV equation on $[-\pi,\pi]$, together with an appropriate initial condition: 
+Consider the KdV equation on $[-\pi,\pi]$, together with an appropriate initial condition:
 \begin{align*}
 	 &{ }u_t = -\frac{1}{2}\left(u^2 \right)_x - u_{xxx},\\
      &{ }u(x,0) = u_0(x).
-\end{align*} 
+\end{align*}
 This form of the equation is slightly more convenient for the approach we will take.
 We will suppose the initial condition is equal at the two endpoints; that is, \(u_0(-\pi)=u_0(\pi)\).
 This will allow us to use the pseudospectral method to find a numerical approximation for the solution $u(x,t)$.
@@ -76,7 +76,7 @@ We will denote these as \(w_k\), so
 \[
 u^2(x,t)=\sum_{k=-n}^n w_k(t) e^{ikx}.
 \]
-Then, 
+Then,
 \[
 \frac{\partial}{\partial x}
 u^2(x,t)=\sum_{k=-n}^n ik w_k(t) e^{ikx},
@@ -113,8 +113,8 @@ These functions use an order for the coefficients that is slightly nonintuitive:
 The vector of wavenumbers can be created as follows:
 \begin{lstlisting}
 k = np.concatenate([
-        np.arange(0,n+1),
-        np.arange(-n-1,0)
+        np.arange(0, n+1),
+        np.arange(-n-1, 0)
 ])
 \end{lstlisting}
 We are now prepared to numerically solve the KdV equation.
@@ -138,7 +138,7 @@ class RK4(OdeSolver):
 
         # t-linspace
         self.tls = np.arange(0, t_bound + dt, dt)
-        
+
         self.idx = iter(range(1, len(self.tls)))
 
         warn_extraneous(extraneous)
@@ -192,15 +192,15 @@ Once we have the function values, we can plot them as a surface as follows:
 % could always change it to an animation :)
 \begin{lstlisting}
 fig = plt.figure()
-ax = fig.add_subplot(1,1,1, projection='3d')
+ax = fig.add_subplot(1,1,1, projection="3d")
 
-T, X = np.meshgrid(t, x, indexing='ij')
-ax.plot_surface(T, X, u, cmap='coolwarm', rstride=1, cstride=1)
+T, X = np.meshgrid(t, x, indexing="ij")
+ax.plot_surface(T, X, u, cmap="coolwarm", rstride=1, cstride=1)
 \end{lstlisting}
-%This creates a 3-d plot, so the subplot this is done in must be created with \li{projection='3d'}.
+%This creates a 3-d plot, so the subplot this is done in must be created with \li{projection="3d"}.
 
 \begin{problem}
-Numerically solve the KdV equation on $[-\pi,\pi]$ with initial conditions 
+Numerically solve the KdV equation on $[-\pi,\pi]$ with initial conditions
 \[
 u(x,t=0) = 3s\sech^2\left(\frac{\sqrt{s}}{2}(x+a)\right),
 \]
@@ -229,7 +229,7 @@ Hint: \li{numpy} does not have a \li{sech} function; use \li{1/cosh(x)} to compu
 
 \begin{problem}
 Numerically solve the KdV equation on $[-\pi,\pi]$.
-This time we define the initial condition 
+This time we define the initial condition
 to be the superposition of two solitons:
 \[
 u(x,t=0) = 3s_1\sech^2\left(\frac{\sqrt{s_1}}{2}(x+a_1)\right) + 3s_2\sech^2\left(\frac{\sqrt{s_2}}{2}(x+a_2)\right),

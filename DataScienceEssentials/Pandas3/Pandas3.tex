@@ -1,29 +1,10 @@
 \lab{Pandas 3: Grouping}{Pandas 3: Grouping}
+\labdependencies{Pandas1,Pandas2}
 \objective{
 Many data sets contain categorical values that naturally sort the data into groups.
 Analyzing and comparing such groups is an important part of data analysis.
 In this lab we explore pandas tools for grouping data and presenting tabular data more compactly, primarily through groupby and pivot tables.
 }
-
-
-% \begin{info}
-% This lab will be done using Colab Notebooks.
-% These notebooks are similar to Jupyter Notebooks but run remotely on Google's servers.
-% Open a Google Colab notebook by going to your Google Drive account and creating a new Colaboratory file.
-% If making a Colaboratory file is not an option, download the application Colaboratory onto your Google Drive.
-% Once opening a new Colab Notebook, upload the file \li{pandas3.ipynb}.
-% To make the data files accessible, run the following at the top of the lab:
-% \begin{lstlisting}
-% >>> from google.colab import files
-
-% >>> uploaded = files.upload()
-% \end{lstlisting}
-% This will prompt you upload files for this notebook.
-% For this lab, upload \li{college.csv} and \li{ohio_1999.csv}.
-
-% Once the lab is complete, delete BOTH lines of code used for uploading files (the import statement and the upload statement) and download as a \li{.py} file to your git repository.
-% Push the newly made \li{pandas3.py} file.
-% \end{info}
 
 \section*{Groupby} % ==========================================================
 
@@ -70,16 +51,16 @@ For example, the columns \li{"genus"}, \li{"vore"}, and \li{"order"} in the mamm
 Since the \li{"vore"} column has only a few unique values, we start by grouping the animals by diet.
 
 \begin{lstlisting}
-# List all of the unique values in the 'vore' column.
+# List all of the unique values in the "vore" column.
 >>> set(msleep["vore"])
 <<{nan, 'herbi', 'omni', 'carni', 'insecti'}>>
 
-# Group the data by the 'vore' column.
+# Group the data by the "vore" column.
 >>> vores = msleep.groupby("vore")
 >>> list(vores.groups)
 <<['carni', 'herbi', 'insecti', 'omni']>>       # NaN values for vore were dropped.
 
-# Get a single group and sample a few rows. Note vore='carni' in each entry.
+# Get a single group and sample a few rows. Note vore="carni" in each entry.
 >>> vores.get_group("carni").sample(5)
 <<       name     genus   vore      order  sleep_total  sleep_rem  sleep_cycle
 80    Genet   Genetta  carni  Carnivora          6.3        1.3          NaN
@@ -104,7 +85,7 @@ herbi          9.509      1.367        0.418
 insecti       14.940      3.525        0.161
 omni          10.925      1.956        0.592>>
 
-# Get more detailed statistics for 'sleep_total' by group.
+# Get more detailed statistics for "sleep_total" by group.
 >>> vores["sleep_total"].describe()
 <<         count    mean    std  min   25%   50%     75%   max
 vore
@@ -159,7 +140,7 @@ First of all, \li{groupby()} makes it easy to visualize one group at a time usin
 The following visualization improves on Figure \ref{fig:pandas-mammals-sleep-all} by grouping mammals by their diets.
 
 \begin{lstlisting}
-# Plot histograms of 'sleep_total' for two separate groups.
+# Plot histograms of "sleep_total" for two separate groups.
 >>> vores.get_group("carni").plot(kind="hist", y="sleep_total", legend="False",
                                                 title="Carnivore Sleep Data")
 >>> plt.xlabel("Hours")
@@ -183,23 +164,12 @@ The following visualization improves on Figure \ref{fig:pandas-mammals-sleep-all
 \caption{\li{"sleep_total"} histograms for two groups in the mammalian sleep data set.}
 \end{figure}
 
-\begin{comment} % hist() isn't a great option from a datavis standpoint.
-\begin{info}
-The \li{hist()} method of the \li{DataFrame} class has a keyword \li{by} that groups data before plotting, producing one histogram per group.
-This can be a very quick way to get an overview of the data in multiple groups.
-
-\begin{lstlisting}
->>> msleep.hist("sleep_total", by="vore", sharex=True)
->>> plt.tight_layout()
-\end{lstlisting}
-\end{info}
-\end{comment}
-
 The statistical summaries from the \li{GroupBy} object's \li{mean()}, \li{std()}, or \li{describe()} methods also lend themselves well to certain visualizations for comparing groups.
 
 \begin{lstlisting}
->>> vores[["sleep_total", "sleep_rem", "sleep_cycle"]].mean().plot(kind="barh",
-                xerr=vores.std(), title=r"Mammallian Sleep, $\mu\pm\sigma$")
+>>> cols = ["sleep_total", "sleep_rem", "sleep_cycle"]
+>>> vores[cols].mean().plot(kind="barh", xerr=vores[cols].std(),
+... title="Mammalian Sleep, $\mu\pm\sigma$")
 >>> plt.xlabel("Hours")
 >>> plt.ylabel("Mammal Diet Classification (vore)")
 \end{lstlisting}
@@ -239,34 +209,6 @@ Specify the \li{by} keyword to group the data appropriately.
 Like \li{groupby()}, the \li{by} argument can be a single column label or a list of column labels.
 Similar methods exist for creating histograms (\li{GroupBy.hist()} and \li{DataFrame.hist()} with \li{by} keyword), but generally box plots are better for comparing multiple distributions.
 
-\begin{comment}
-\begin{problem} % More dataset visualizations.
-Examine the following data sets from \li{pydataset} and answer the corresponding questions.
-Use visualizations to support your conclusions.
-
-\begin{itemize}
-    \item \li{"iris"}, measurements of various species of iris flowers.
-    \begin{enumerate}
-        \item Which species is easiest to distinguish from the others? How?
-        \item Given iris data without a species label, what strategies could you use to identify the flower's species?
-    \end{enumerate}
-    \item \li{"poisons"}, experimental results of three different poisons and four different treatments.
-    \begin{enumerate}
-        \item In general, which poison is most deadly?
-        Which treatment is most effective?
-        \item If you were poisoned, how would you choose the treatment if you did not know which poison it was? What if you did know which poison it was?
-        \\(Hint: group the data by poison, then group each subset by treatment.)
-    \end{enumerate}
-    \item \li{"diamonds"}, prices and characteristics of almost 54,000 round-cut diamonds.
-    \begin{enumerate}
-        \item How does the color and cut of a diamond affect its price?
-        \item Of the diamonds with color \li{"H"}, those with a \li{"Fair"} cut sell, on average, for a \textbf{higher} price than those with an \li{"Ideal"} (superior) cut.
-        What other factors could explain this unintuitive statistic?
-    \end{enumerate}
-\end{itemize}
-\end{problem}
-\end{comment}
-
 \begin{problem}
 Create visualizations that give relevant information answering the following questions (using \li{college.csv}):
 \begin{enumerate}
@@ -295,7 +237,7 @@ As an example, consider the \li{"HairEyeColor"} data set from \li{pydataset}.
 21  Black   Blue  Female     9>>
 
 >>> for col in ["Hair", "Eye", "Sex"]:      # Get unique values per column.
-...     print(f"{col}: {', '.join(set(str(x) for x in hec[col])})")
+...     print(f"{col}: {", ".join(set(str(x) for x in hec[col])})")
 ...
 Hair: Brown, Black, Blond, Red
 Eye: Brown, Blue, Hazel, Green
@@ -336,8 +278,8 @@ To construct a pivot table, data of similar groups must be \emph{aggregated} tog
 
 By default entries are aggregated by averaging the non-null values.
 You can use the keyword argument \li{aggfunc} to choose among different ways to aggregate the data.
-For example, if you use \li{aggfunc='min'}, the value displayed will be the minimum of all the values.
-Other arguments include \li{'max'}, \li{'std'} for standard deviation, \li{'sum'}, or \li{'count'} to count the number of occurrences.
+For example, if you use \li{aggfunc="min"}, the value displayed will be the minimum of all the values.
+Other arguments include \li{"max"}, \li{"std"} for standard deviation, \li{"sum"}, or \li{"count"} to count the number of occurrences.
 You also may pass in any function that reduces to a single float, like \li{np.argmax} or even \li{np.linalg.norm} if you wish.
 A list of functions can also be passed into the \li{aggfunc} keyword argument.
 
@@ -425,8 +367,6 @@ If we add \li{"Age"} as another pivot, then the table would create a new row for
 Instead, we partition the \li{"Age"} column into intervals with \li{pd.cut()}, thus creating a categorical that can be used for grouping.
 Notice that when creating the pivot table, the index uses the categorical \li{age} instead of the column name \li{"Age"}.
 
-%\newpage
-
 \begin{lstlisting}
 # pd.cut() maps continuous entries to discrete intervals.
 >>> pd.cut([1, 2, 3, 4, 5, 6, 7], [0, 4, 8])
@@ -434,7 +374,7 @@ Notice that when creating the pivot table, the index uses the categorical \li{ag
 Categories (2, interval[int64, right]): [(0, 4] < (4, 8]]>>
 
 # Partition the passengers into 3 categories based on age.
->>> age = pd.cut(titanic['Age'], [0, 12, 18, 80])
+>>> age = pd.cut(titanic["Age"], [0, 12, 18, 80])
 
 >>> titanic.pivot_table(values="Survived", index=["Sex", age],
                         columns="Pclass", aggfunc="mean")
@@ -452,10 +392,6 @@ From this table, it appears that male children (ages 0 to 12) in the 1st and 2nd
 This clarifies the claim that males were less likely to survive than females.
 However, there are a few oddities in this table: zero percent of the female children in 1st class survived, and zero percent of teenage males in second class survived.
 To further investigate, count the number of entries in each group.
-
-%
-% This might seem a little odd, but if we looked at our data set again to see how many passengers fell into this category of female, 1st class, and age 0 to 12, we would find only one passenger.
-% Therefore, the statistic that 0\% of female children in first class lived is misleading.
 
 \begin{lstlisting}
 >>> titanic.pivot_table(values="Survived", index=["Sex", age],
@@ -507,8 +443,6 @@ male   (0, 12]                 -   -    8                 4  11  27
 \end{lstlisting}
 
 Not surprisingly, most of the cheap tickets went to passengers in 3rd class.
-%
-% It should be noted though that with datasets where NaN's occur frequently, some preprocessing needs to be done so as to get the most accurate statistics and insights about your dataset.
 
 \begin{problem}
 Use the employment data from Ohio in 1999 to answer the following questions:
@@ -564,52 +498,8 @@ Partition this column into evenly spaced intervals of 25\% using \li{pd.cut()}.
 Is it true that the partition with the least average number of students from the top 10 percent of their high school class is the same for both private and public universities?
 
 \item Use the same partition as part 3.
-The average percentage of students admitted from the top 10 percent of their high school class is very high in private universities with the lowest acceptance rates ($<25$\% acceptance rate). 
-Why is this \emph{not} a good conclusion to draw solely from this dataset? 
+The average percentage of students admitted from the top 10 percent of their high school class is very high in private universities with the lowest acceptance rates ($<25$\% acceptance rate).
+Why is this \emph{not} a good conclusion to draw solely from this dataset?
 Use only the data to explain why; do not extrapolate.
 \end{enumerate}
 \end{problem}
-
-
-
-
-
-\begin{comment}
-\begin{problem} % More Titanic analysis.
-Suppose that someone claims that the city from which a passenger embarked had a strong influence on the passenger's survival rate.
-Investigate this claim.
-\begin{enumerate}
-    \item Check the survival rates of the passengers based on where they embarked from (given in the \li{"Embarked"} column).
-    \item Create a pivot table to examine survival rates based on both place of embarkment and gender.
-    \item What do these tables suggest to you about the significance of where people embarked in influencing their survival rate?
-    Examine the context of the problem, and explain what you think this really means.
-    \item Investigate the claim further with at least two more pivot tables, exploring other criteria (e.g., class, age, etc.).
-    Carefully explain your conclusions.
-\end{enumerate}
-\end{problem}
-
-\newpage
-
-\begin{problem} % More grouping visualizations / pivot tables.
-Examine the following data sets from \li{pydataset} and answer the corresponding questions.
-Use visualizations and/or pivot tables as appropriate to support your conclusions.
-\begin{itemize}
-    \item \li{"npk"}, an experiment on the effects of nitrogen (N), phosphate (P), and potassium (K) on the growth of peas.
-    \begin{enumerate}
-        \item Which element is most effective in general for simulating growth?
-        Which is the least effective?
-        \item What combination of N, P, and K is optimal? What combination is the worst?
-    \end{enumerate}
-    \item \li{"swiss"}, standardized fertility measures and socio-economic indicators for French-speaking provinces of Switzerland at about 1888.
-    \begin{enumerate}
-        \item What is the relationship in the data between fertility rates and infant mortality?
-        \item How are provinces that are predominantly Catholic different from non-Catholic provinces, if at all?
-        \item What factors in the data are the most important for predicting fertility?
-    \end{enumerate}
-    \item Examine a data set of your choice.
-    Formulate simple questions about the data and hypothesize the answers to those questions.
-    Demonstrate the correctness of incorrectness of each hypothesis.
-    Explain your conclusions.
-\end{itemize}
-\end{problem}
-\end{comment}

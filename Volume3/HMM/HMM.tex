@@ -1,5 +1,6 @@
 \lab{Discrete Hidden Markov Models}{Discrete Hidden Markov Models}
 \label{lab:hmm}
+\labdependencies{}
 \objective{Understand how to use discrete Hidden Markov Models.}
 
 A common probabilistic model is the \emph{hidden Markov model} (HMM).
@@ -10,12 +11,12 @@ We also typically assume that we only know the values of the $Z_t$, not the $X_t
 We denote the state space as $\mathscr{X}$ and the observation space as $\mathscr{Z}$, so that for all $t$ we have $X_t\in \mathscr{X}$ and $Z_t\in \mathscr{Z}$.
 Hidden Markov models are useful in many situations where we have indirect observations of a sequential or time-based process, including speech and handwriting prediction, text analysis, gene prediction, and many other areas.
 
-In this lab, we explore HMMs with discrete state and observation spaces. 
+In this lab, we explore HMMs with discrete state and observation spaces.
 Assume the state space $\mathscr{X}$ and observation space $\mathscr{Z}$ are finite sets where $\vert \mathscr{X}\vert = n$ and $\vert \mathscr{Z} \vert = m$.
 For simplicity we relabel these sets as $\mathscr{X}=\{0,1,2,\ldots,n-1\}$ and $\mathscr{Z}=\{0,1,2,\ldots,m-1\}$
 We will also assume that the HMM is temporally homogeneous, i.e. that the transition probabilities do not change with $t$.
 
-In this case, we can parameterize all such HMMs by $\boldsymbol\theta = (\boldsymbol\pi, A, B)$ where $\boldsymbol\pi\in\mathbb{R}^n$ represents the distribution of $X_0$ (the initial state distribution), $A$ is a $n \times n$  
+In this case, we can parameterize all such HMMs by $\boldsymbol\theta = (\boldsymbol\pi, A, B)$ where $\boldsymbol\pi\in\mathbb{R}^n$ represents the distribution of $X_0$ (the initial state distribution), $A$ is a $n \times n$
 column-stochastic matrix describing how $X_t$ is affected by $X_{t-1}$ (the state transition matrix), and $B$ is a $m \times n$ column-stochastic matrix describing how $Z_t$ is affected by $X_t$ (the state observation matrix).
 The entries of $\boldsymbol\pi$, $A$, and $B$ specifically are the following:
 \begin{align*}
@@ -80,7 +81,7 @@ To test your code, use the following example HMM:
 You should get the following output using the example HMM:
 \begin{lstlisting}
 >>> alpha = example_hmm.forward_pass(z_example)
->>> print(np.sum(alpha[-1,:]) # the probability of the observation
+>>> print(np.sum(alpha[-1, :]) # the probability of the observation
 0.009629599999
 \end{lstlisting}
 \end{problem}
@@ -224,7 +225,7 @@ This class uses slightly different conventions and syntax from the HMM class tha
 \begin{lstlisting}
 import numpy as np
 from hmmlearn import hmm
-z = np.load('stocks.npy')
+z = np.load("stocks.npy")
 \end{lstlisting}
 In the initializer, we specify the number of hidden states as the \li{n_components} argument (we will use 3):
 \begin{lstlisting}
@@ -234,10 +235,10 @@ To train the HMM, call the \li{fit} method.
 This method accepts the observation sequence $\mathbf{z}$.
 However, it expects it to be an array with shape \li{(T,1)}, so reshape it as follows when you pass it in:
 \begin{lstlisting}
-h.fit(z.reshape(-1,1))
+h.fit(z.reshape(-1, 1))
 \end{lstlisting}
 Now the HMM is trained.
-To see the trained HMM parameters, use the following attributes: 
+To see the trained HMM parameters, use the following attributes:
 $\boldsymbol\pi$ is stored as \li{h.startprob_}, $A$ is stored as \li{h.transmat_}, and $B$ is stored as \li{h.emissionprob_}.
 However, $A$ and $B$ are transposed from the convention we are using, so extracting the parameters looks like the following:
 \begin{lstlisting}
@@ -269,10 +270,10 @@ def prep_data(filename):
         obs_sequence (ndarray): an array of integers representing the read-in text
     """
     # Get the data as a single string
-    with codecs.open(filename, encoding='utf-8') as f:
+    with codecs.open(filename, encoding="utf-8") as f:
         data=f.read().lower()  # and convert to all lower case
     # remove punctuation and newlines
-    remove_punct_map = {ord(char): 
+    remove_punct_map = {ord(char):
                         None for char in string.punctuation+"\n\r"}
     data = data.translate(remove_punct_map)
     # make a list of the symbols in the data
@@ -280,10 +281,10 @@ def prep_data(filename):
     # convert the data to a NumPy array of symbols
     a = np.array(list(data))
     # make a conversion dictionary from symbols to state numbers
-    symbols_to_obsstates = {x:i for i,x in enumerate(symbols)}
+    symbols_to_obsstates = {x: i for i, x in enumerate(symbols)}
     # convert the symbols in a to state numbers
     obs_sequence = vec_translate(a,symbols_to_obsstates)
-    return symbols, obs_sequence.reshape(-1,1)
+    return symbols, obs_sequence.reshape(-1, 1)
 \end{lstlisting}
 
 \begin{problem}\label{hmm:prob:declaration}
@@ -295,7 +296,7 @@ Train the HMM with \li{n_iter=200} and \li{tol=1e-4} (note that both of these ar
 Once the learning algorithm converges, analyze the state observation matrix $B$.
 Note which rows correspond to the largest and smallest probability values in each column of $B$,
 and check the corresponding characters.
-The code below displays typical results for a well-converged HMM. 
+The code below displays typical results for a well-converged HMM.
 (Note that the \li{u} before the \li{"} indicates that the string should be unicode, which will be useful in the next problem.)
 \begin{lstlisting}
 >>> B = h.emissionprob_.T

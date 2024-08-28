@@ -17,87 +17,81 @@ ACME.
 your summer workflow.
 \fi
 
+\ifbyu
+\begin{info}
+    One little-known resource BYU students should be aware of is BYU IT Surplus.
+    They offer ``rental'' laptops, desktops, and monitors to BYU students \textbf{for free}.
+    However, hardware is distributed on a first-come, first-served basis.
+    To find equipment, simply stop by their location during their hours with your BYU ID or give them a call (find their information at \url{https://itsurplus.byu.edu} or internet search ``BYU IT Surplus'').
+
+    Most of the code we run in ACME isn't terribly demanding, but occassionally older computers may struggle.
+    In addition to BYU IT Surplus, this document will also show you how to remotely run your code on ACME lab computers to take advantage of their newer hardware, and in future labs we'll show you how to use online services such as Google Colab and Kaggle.
+\end{info}
+\fi
 
 \ifwindows
-\section*{Installing WSL}
+\section*{Installing or Updating WSL}
 
-Windows Subsystem for Linux (WSL) is a compatibility layer for running Linux natively on Windows 10 and 11. 
-We'll go through the steps to install Ubuntu on Windows using WSL, which you will use to run all your code in ACME.
+Windows Subsystem for Linux (WSL) is a compatibility layer for running Linux natively on Windows 10 and 11.
+Specifically, we'll install Ubuntu on Windows using WSL, and this is how you will run all your code in ACME.
 You may have already developed your own workflow on Windows that you're familiar with, but we highly recommend that you use WSL, as not doing so will most certainly give you extensive grief when trying to install different items for many ACME labs.
 
 \noindent Don't worry if you have zero Linux experience. 
 Even with very little or no Linux experience, you will soon become comfortable enough to help your peers and coworkers with it in the future.
+
 \begin{enumerate}
-\item \emph{Enabling WSL:}
-\begin{enumerate}
-    \item Open the Start menu and search for ``Turn Windows features on or off''. 
-    \item Click on it.
-    \item In the ``Windows Features'' window, scroll down until you see ``Windows Subsystem for Linux'' in the list. 
-    \item Check the box next to it to enable the feature.
-    \item You should also enable ``Virtual Machine Platform''.
-    \item Click ``OK'' to save your changes. 
+    \item \emph{Installing WSL and Ubuntu}
+    \begin{enumerate}
+        \item Open the command prompt \emph{in administrator mode}.
+        To do so, press the Windows key, type ``command prompt'', right-click the Command Prompt program, and select ``Run as administrator''.
+        \item In the command prompt, type \li{wsl --install}.
+        \item Restart your computer.
+    \end{enumerate}
+    \item \emph{Updating WSL (if you've installed it before)}
+    \begin{enumerate}
+        \item If you've installed WSL before, make sure it's updated by running in the Command Prompt \li{wsl --update}.
+    \end{enumerate}
+    \item \emph{Updating Ubuntu}
+    \begin{enumerate}
+        \item Open Ubuntu.
+        Again, you may press the Windows key and type ``Ubuntu''.
+        Ubuntu may take a few minutes to set up the first time. This is normal.
+        \item Create a new user account with a username and password when prompted.
+        This does not need to correspond to your Windows username.
+        Make sure to remember your password, or skip setting one by just pressing the Enter key instead of entering a password.
+        \item Run the command \li{sudo apt update} to update the package list.
+        \item Run the command \li{sudo apt upgrade} to install any necessary updates.
+    \end{enumerate}
 \end{enumerate}
 
-\item \emph{Installing Ubuntu:}
-Now that WSL is enabled, you can install Ubuntu on your computer.
-\begin{enumerate}
-\item Open the Microsoft Store app on your computer.
-\item Search for ``Ubuntu'' in the search bar and select ``Ubuntu'' from the search results.
-\item Click the ``Get'' button to download and install Ubuntu on your computer.
-\item Wait for the installation to complete.
-\end{enumerate}
+\section*{Navigating the WSL File System}
 
-\item \emph{Launching Ubuntu:}
-Now that Ubuntu is installed, we can launch it and start using it.
-\begin{enumerate}
-\item Press the Windows key and type ``Ubuntu'' in the search bar. 
-\item Select ``Ubuntu'' from the search results to launch it.
-\item Wait for Ubuntu to start up and create a new user account with a username and password when prompted.
-\end{enumerate}
-Make sure not to forget your password!
+When WSL installs a Linux \emph{distribution} (meaning any Linux-based operating system; in our case it's Ubuntu), it creates a home and file system separate from Windows.
+While you can still access your files in Windows from WSL by navigating through the \li{/mnt/} directory, we recommend keeping your code in the Linux file system.
+This is because in WSL 2 (the version of WSL you should now have), accessing files on the Windows file system is \emph{much} slower than accessing files on the Linux file system.
+(In WSL 1 this was not the case, but WSL 2 made changes that sacrificed speed in accessing Windows to improve performance in other areas.)
 
-\item \emph{Installing Linux Updates:}
-\begin{enumerate}
-\item In the Ubuntu terminal, run the command \li{sudo apt update} to update the package list.
-\item Run the command \li{sudo apt upgrade} to install any necessary updates.
-\end{enumerate}
-% \item If you plan on accessing the Windows filesystem from within Ubuntu, you'll need to configure the Windows username and password by running the command "sudo nano /etc/wsl.conf" and adding the following lines to the file:
+When the Ubuntu terminal first starts up, the ``current working directory'' is your user folder.
+Its absolute path is \li{/home/<username>}, but it is abbreviated by the tilde, \li{\~}.
+At any time you may navigate back here with the command \li{cd ~}, or even just \li{cd} for short.
 
-% \begin{lstlisting}[language=bash, backgroundcolor=\color{black}, basicstyle=\color{white}]
-% [user]
-% default=username
-% \end{lstlisting}
+If you'd like to create a new directory in your user folder---say, a ``documents'' folder in which to keep your ACME code---you can navigate to your user folder, then execute the command \li{mkdir documents}.
 
-% Replace "username" with your Windows username.
-
-% \item Save and exit the file by pressing "Ctrl+X", then "Y", and finally "Enter".
-\end{enumerate}
-
-
-\section*{Finding Your Files in WSL}
-
-WSL has its own independent home and file system apart from Windows, but you can still access your files in Windows from WSL by navigating back through the \li{mnt} directory.
-For example, to access your \li{c} drive (your files) you can use \li{cd /mnt/c} to navigate to your standard head directory.
-So if you want to access your \li{Desktop}, you can find it at \li{/mnt/c/Users/<username>/Desktop}.
-% In order to find your Documents, you can use the command \li{ls /mnt/c/Users/<username>/OneDrive/Documents}.
-This may feel counterintuitive to how Windows normally works, but this one difference is a small price to pay to make your life much easier.
-
-Fortunately, you can actually change the default ``boot'' directory that Ubuntu starts in.
-The process for changing your boot directory is very simple, and it is recommended that you do so to make your life easier.
+You can configure Ubuntu to automatically navigate to a folder of your choice instead of your user directory \li{\~}.
+You may follow these steps:
 \begin{enumerate}
     \item Open your Ubuntu terminal.
     \item Type \li{cd ~} to go to your home directory.
-    \item Type \li{sudo nano .profile} to open your profile file.
+    \item Type \li{nano .profile} to open your profile file.
     \item Add the path of the desired default directory to the end of the file.
-    For example, if you wanted to change the default ``boot'' directory to be your base user directory, you would add the following line of code to the end of the file:
-\begin{lstlisting}[language=bash]
-cd /mnt/c/Users/<username>
-\end{lstlisting}
-    where \li{<username>} is the name of your user.
+    For example, if you wanted to change the default ``boot'' directory to be your \li{documents} folder, you would add the following line of code to the end of the file:
+    \begin{lstlisting}[language=bash]
+cd ~/documents
+    \end{lstlisting}
     \item Save and exit the file by pressing \li{Ctrl+X}, then \li{Y}, and finally \li{Enter}.
     \item Close your terminal and reopen it.
 \end{enumerate}
-Ubuntu should now immediately start in your user directory.
+Ubuntu should now immediately start in your \li{documents} folder.
 \fi
 
 
@@ -155,10 +149,6 @@ There is a more involved way to set everything up (found in the Additional Mater
     Otherwise, create a GitHub account at \url{https://github.com/}.
     This is where you will store your files online for grading.
   
-%   You may next be asked to make a workspace. 
-%   If you are, using your name for the workspace will make everything much easier for the grader.
-%   If you do not receive this prompt, it will likely default to your name.
-
     \item \emph{Set up your Git credentials.}
     You will need to set up your your Git \li{user.name} and \li{user.email}.
     \li{user.name} should be your actual name, and \li{user.email} must be the email associated with your GitHub account.
@@ -217,8 +207,6 @@ ssh-add ~/.ssh/id_ecdsa
 \end{lstlisting}
 
     To verify that this worked, when you make your first commit the new ssh key should be added to the file \li{\~/.ssh/known_hosts}.
-  
-%   For more options and some troubleshooting information, refer to \href{https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account}{this link}.
   
     \item \emph{Clone GitHub Classroom Repository}.
     In this step, you will set up a GitHub repository with all of your lab materials.
@@ -287,10 +275,6 @@ If your folder is nested, move the inner folder out so that there's only ``one l
     Otherwise, create a GitHub account at \url{https://github.com/}.
     This is where you will store your files online for grading.
   
-%   You may next be asked to make a workspace. 
-%   If you are, using your name for the workspace will make everything much easier for the grader.
-%   If you do not receive this prompt, it will likely default to your name.
-
     \item \emph{Create an ssh key}.
     This step only needs to be done once on each computer you want to use to access your repository.
     If you have multiple repositories on the same computer, you do \emph{not} need to repeat this step for each one.
@@ -335,8 +319,6 @@ ssh-add ~/.ssh/id_ecdsa
 
     To verify that this worked, when you make your first commit the new ssh key should be added to the file \li{\~/.ssh/known_hosts}.
   
-%   For more options and some troubleshooting information, refer to \href{https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account}{this link}.
-  
     \item \emph{Make a new repository}.
     You will need to create a new repository for each lab folder you downloaded.
     Note: you \emph{must} follow these instructions exactly. 
@@ -346,10 +328,8 @@ ssh-add ~/.ssh/id_ecdsa
         \item First you will need to provide a Repository name; this can be anything you want, but please make it relevant to the lab folder it will represent; you may also provide a repository description if you like.
         \item Mark the repository as \textbf{Private}.
         \item Leave the box next to \textbf{Add a README file} unchecked (if you accidentally include a \texttt{README}, delete the repository and start over).
-        % \item For \textbf{Default branch name}, enter \texttt{main}. 
         \item Under \textbf{Add .gitignore}, select \textbf{None} for \texttt{.gitignore template} (if you accidentally include a \texttt{.gitignore}, delete the repository and start over).
         \item Under \textbf{Choose a license}, select \textbf{None} for \texttt{License}.
-        % \item Under \textbf{Advanced settings}, enter a short description for your repository, select \textbf{No forks} under forking, and select \textbf{Python} as the language.
         \item Finally, click the green \textbf{Create repository} button.
     \end{itemize}
     Repeat this process for each lab folder you downloaded.
@@ -452,63 +432,7 @@ $ bash download_data.sh
 \fi
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-\section*{Using VSCode}
-VSCode is the recommended code editor in ACME, though it is not required.
-We recommended it because it's free and
-\ifwindows
-open source, and it can use WSL very easily.
-\else
-open source.
-\fi
-You can download it at \url{https://code.visualstudio.com/}.
-Once you have it installed, you can search for it on your machine under: \li{Visual Studio Code}.
-You can also open it from the terminal by typing \li{code}.
-\ifwindows
-\begin{enumerate}
-    \item \emph{Installing the Remote WSL Extension:}
-    The Remote WSL extension allows you to use VSCode to edit files in WSL.
-    You can install it by opening VSCode and clicking on the \li{Extensions} tab on the left (little building blocks).
-    Search for \li{WSL}.
-    Then click install.
-
-    You will need to restart VSCode for the extension to take effect.
-
-    \item \emph{Opening a Folder in WSL:}
-    In order to open a folder in WSL, click on the bottom left corner of VSCode (blue box) to Open a Remote Window.
-    Then click \li{Connect to WSL}.
-    Now click on the \li{Explorer} icon in the upper left (two pages), and click \li{Open Folder}.
-    If you see 
-    \begin{lstlisting}[language=bash]
-    /home/<username>
-    \end{lstlisting}
-    in the searchbar, you are accessing the WSL home directory, not the one where your files are.
-    Type in the complete file path to
-    \ifbootcamp
-    one of your
-    \ifbyu
-    course directories,
-    \else
-    lab folders,
-    \fi 
-    such as \li{/mnt/c/Users/<username>/Desktop/Volume1}.
-    \else 
-    your course directory, such as \li{/mnt/c/Users/<username>/Desktop/SummerLabs}.
-    \fi
-    Make sure to navigate into the folder that contains all the lab materials, not just \li{Desktop} or another higher directory.
-    Click \li{ok} to save this path.
-    \ifbootcamp
-    \ifbyu
-    Repeat these steps for the other Volume.
-    \else 
-    Repeat these steps for the other lab folders.
-    \fi
-    \fi
-\end{enumerate}
-\fi
-
-
-\section*{Installing Python}
+\section*{Installing Python and Dependencies}
 \ifwindows
 \else
     Before installing Python on Mac, you will need to install Homebrew (brew).
@@ -528,7 +452,15 @@ brew not found
 \begin{lstlisting}[language=bash]
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 \end{lstlisting}
-    You can update brew by running
+When brew finishes installing, it should tell you to run two commands to add Homebrew to your ``path''.
+This makes brew accessible to run from wherever you are in your file system.
+The commands should look something like
+\begin{lstlisting}[language=bash]
+(echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> ~/.zprofile
+(echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> ~/.zprofile
+\end{lstlisting}
+Run the two commands brew tells you to run.
+You can now update brew by running
 \begin{lstlisting}[language=bash]
 brew update
 brew upgrade
@@ -546,20 +478,105 @@ and run
 bash install_python.sh
 \end{lstlisting}
 Now restart your terminal.
-On Windows or Linux, you will need to run the following commands in WSL or Standard Linux Terminal:
+
+The next step is to set up a ``virtual environment.''
+Using a separate virtual environment for separate Python projects makes it possible to isolate sets of dependencies from each other.
+This prevents packages for one project from inadvertently interfering with those of another project---for example, your ACME labs will need one set of packages, while another project you do in Python may require different versions of the same packages.
+Environments are considered good practice in industry, if not essential; for the small amount of extra effort, they can save a \emph{lot} of headache.
+
+We'll be using Python's native virtual environment system, \li{venv}, and we'll be setting up just one environment for all our ACME code (since there's just one set of dependencies).
+In the terminal, navigate to the folder where you'd like to keep your ACME lab folder(s), for example, \li{\~/documents}.
+Then to create an environment in a folder named \li{.venv}, write the command
 \begin{lstlisting}[language=bash]
-sudo apt-get install graphviz
-sudo apt-get install libopenmpi-dev
-sudo apt-get install ffmpeg
-sudo apt-get install g++
-sudo apt-get install python3-tk
-sudo apt-get install openjdk-8-jdk
+python -m venv .venv
 \end{lstlisting}
-Assuming no errors, you should now run
+To ``activate'' the environment---that is, to switch to the environment's version of Python together with its associated dependences---use the \li{source} command:
+\begin{lstlisting}[language=bash]
+source .venv/bin/activate
+\end{lstlisting}
+\begin{info}
+    If you accidentally create the virtual environment folder in the wrong location or with a name you don't like, no worries!
+    Just delete the folder and create a new one with the instructions above.
+    \textbf{Do not} just move or rename the folder, as the environment contains scripts that will not get properly updated, and the environment will simply not work.
+\end{info}
+You should see your activated environment \li{(.venv)} appear at the beginning of the current line in the terminal, like \mbox{\li{(.venv) <username>@<computer_name>:}}.
+To deactivate the environment, simply write \li{deactivate}.
+You should see \li{(.venv)} disappear.
+
+We're finally ready to install some Python packages to our environment.
+First, \textbf{make sure you've activated your new environment} and verify that \li{(.venv)} appears at the start of the current line of the terminal.
+Now run
 \begin{lstlisting}[language=bash]
 bash install_dependencies.sh
 \end{lstlisting}
+The last line of the output should say ``Python dependencies successfully installed!''
+If it doesn't, double-check that you've activated your virtual environment.
+
 You have now installed Python and all necessary dependencies you will need in ACME!
+
+\section*{Using VS Code}
+VS Code is the recommended code editor in ACME, though it is not required.
+We recommend it because it's free and
+\ifwindows
+open source, and it can use WSL very easily.
+\else
+open source.
+\fi
+You can download it at \url{https://code.visualstudio.com/}.
+Once you have it installed, you can search for it on your machine under: \li{Visual Studio Code}.
+You can also open it from the terminal by typing \li{code}.
+\begin{enumerate}
+    \ifwindows
+
+    \item \emph{Installing the Remote WSL Extension:}
+    The Remote WSL extension allows you to use VS Code to edit files in WSL.
+    You can install it by opening VS Code and clicking on the \li{Extensions} tab on the left (little building blocks).
+    Search for \li{WSL}.
+    Then click install.
+
+    You will need to restart VS Code for the extension to take effect.
+    \item \emph{Opening a Folder in WSL:}
+    In order to open a folder in WSL, press \li{Ctrl+Shift+P}, then search ``Remote: Show Remote Menu'' and press \li{Enter}.
+    Click \li{Connect to WSL}.
+    Now click on the \li{File} menu in the upper left, and click \li{Open Folder}.
+    Type in the complete file path to
+    \ifbootcamp
+    one of your
+    \ifbyu
+    course directories,
+    \else
+    lab folders,
+    \fi 
+    such as \li{/home/<username>/documents/Volume1}.
+    \else 
+    your course directory, such as \li{/home/<username>/documents/SummerLabs}.
+    \fi
+    Click \li{OK} to save this path.
+    \ifbootcamp
+    \ifbyu
+    Repeat these steps for the other Volumes.
+    \else 
+    Repeat these steps for the other lab folders.
+    \fi
+    \fi
+
+    \fi
+    
+    \item \emph{Installing the Python Extension:}
+    Search in the \li{Extensions} tab for ``Python'', then click install.
+    This will enable VS Code's support for Python.
+    
+    It will also make it possible for VS Code to use your virtual environment.
+    Press
+    \ifwindows
+    \li{Ctrl+Shift+P},
+    \else
+    \li{Cmd+Shift+P},
+    \fi
+    then search ``Python: Select Interpreter'' and press \li{Enter}.
+    If the path to your virtual environment doesn't come up, click ``Enter interpreter path...'', then ``Find...'', then start by typing the path to your virtual environment folder.
+    Select the Python file inside this folder, located at \lstinline[language=bash]{<virtual_environment_folder>/bin/python}.
+\end{enumerate}
 
 \ifbootcamp
 \ifbyu
@@ -609,8 +626,8 @@ Once you have repeated this process for both volumes, you are ready to go.
 You can now access your repository on the lab machine.
 Now, if anything goes wrong, you can either ssh onto the lab machine or use it in person, and you will be able to access and work on your ACME labs without a problem.
 
-You can also use VSCode to ssh onto the lab machine in a similar way to connecting to WSL.
-To do this, install the Remote-SSH extension using the \li{Extensions} tab on the left (little building blocks) of the window in VSCode.
+You can also use VS Code to ssh onto the lab machine in a similar way to connecting to WSL.
+To do this, install the Remote-SSH extension using the \li{Extensions} tab on the left (little building blocks) of the window in VS Code.
 Then, you can add a Remote Window by clicking on the blue \li{Open a Remote Window} button in the bottom left corner, selecting \emph{Connect To Host}, and typing in \li{<netID>@acme<number_between_01_and_30>.byu.edu}.
 \fi
 
@@ -668,7 +685,6 @@ You probably won't branch your code off the main branch in the ACME courses, but
 \item \emph{Cloning.}
 Cloning a repository is simply downloading a codebase.
 Just like downloading a zip folder, all the files are present, but the original author does not have access to your files unless you push them back.
-% It may seem more difficult than a zip file at first, but the ability to directly and immediately backup what you are doing to the cloud makes the extra effort worth it.
 
 To clone a repository, you'll typically use the command:
 \begin{lstlisting}[language=bash]
@@ -794,10 +810,6 @@ If your folder is nested, move the inner folder out so that there's only ``one l
     Otherwise, create a GitHub account at \url{https://github.com/}.
     This is where you will store your files online for grading.
   
-%   You may next be asked to make a workspace. 
-%   If you are, using your name for the workspace will make everything much easier for the grader.
-%   If you do not receive this prompt, it will likely default to your name.
-
     \item \emph{Create an ssh key}.
     This step only needs to be done once on each computer you want to use to access your repository.
     If you have multiple repositories on the same computer, you do \emph{not} need to repeat this step for each one.
@@ -842,8 +854,6 @@ ssh-add ~/.ssh/id_ecdsa
 
     To verify that this worked, when you make your first commit the new ssh key should be added to the file \li{\~/.ssh/known_hosts}.
   
-%   For more options and some troubleshooting information, refer to \href{https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account}{this link}.
-  
     \item \emph{Make a new repository}.
     You will need to create a new repository for both Volume 1 and Volume 2.
     Note: you \emph{must} follow these instructions exactly. 
@@ -853,10 +863,8 @@ ssh-add ~/.ssh/id_ecdsa
         \item First you will need to provide a Repository name; this can be anything you want, but please make it relevant to the ACME Volume it will represent; you may also provide a repository description if you like.
         \item Mark the repository as \textbf{Private}.
         \item Leave the box next to \textbf{Add a README file} unchecked (if you accidentally include a \texttt{README}, delete the repository and start over).
-        % \item For \textbf{Default branch name}, enter \texttt{main}. 
         \item Under \textbf{Add .gitignore}, select \textbf{None} for \texttt{.gitignore template} (if you accidentally include a \texttt{.gitignore}, delete the repository and start over).
         \item Under \textbf{Choose a license}, select \textbf{None} for \texttt{License}.
-        % \item Under \textbf{Advanced settings}, enter a short description for your repository, select \textbf{No forks} under forking, and select \textbf{Python} as the language.
         \item Finally, click the green \textbf{Create repository} button.
     \end{itemize}
     Repeat this process for both Volume 1 and Volume 2.

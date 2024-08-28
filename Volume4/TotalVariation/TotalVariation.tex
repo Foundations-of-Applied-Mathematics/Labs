@@ -96,7 +96,7 @@ a, b = -1, 1.
 alpha, beta = 1., 7.
 ####  Define variables x_steps, final_T, time_steps  ####
 delta_t, delta_x = final_T/time_steps, (b-a)/x_steps
-x0 = np.linspace(a,b,x_steps+1)
+x0 = np.linspace(a, b, x_steps+1)
 \end{lstlisting}
 
 Most numerical schemes have a stability condition that must be satisfied. Our discretization requires that $\frac{\Delta t}{(\Delta x)^2} \leq \frac{1}{2}$.
@@ -108,16 +108,16 @@ if delta_t/delta_x**2. > .5:
     print("stability condition fails")
 
 u = np.empty((2,x_steps+1))
-u[0]  = (beta - alpha)/(b-a)*(x0-a)  + alpha
-u[1] = (beta - alpha)/(b-a)*(x0-a)  + alpha
+u[0]  = (beta - alpha)/(b-a)*(x0-a) + alpha
+u[1] = (beta - alpha)/(b-a)*(x0-a) + alpha
 \end{lstlisting}
 
 Finally, we define the right hand side of our difference scheme, and time step until the scheme converges.
 \begin{lstlisting}
 def rhs(y):
     # Approximate first and second derivatives to second order accuracy.
-    yp = (np.roll(y,-1) - np.roll(y,1))/(2.*delta_x)
-    ypp = (np.roll(y,-1) - 2.*y + np.roll(y,1))/delta_x**2.
+    yp = (np.roll(y, -1) - np.roll(y, 1))/(2.*delta_x)
+    ypp = (np.roll(y, -1) - 2.*y + np.roll(y, 1))/delta_x**2.
     # Find approximation for the next time step, using a first order Euler step
     y[1:-1] -= delta_t*(1. + yp[1:-1]**2. - 1.*y[1:-1]*ypp[1:-1])
     return y
@@ -157,7 +157,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from imageio.v3 import imread, imwrite
 
-imagename = 'balloons_color.jpg'
+imagename = "balloons_color.jpg"
 changed_pixels=40000
 # Read the image file imagename into an array of numbers, IM
 # Multiply by 1. / 255 to change the values so that they are floating point
@@ -166,9 +166,9 @@ IM = imread(imagename, mode='F') * (1. / 255)
 IM_x, IM_y = IM.shape
 
 for lost in range(changed_pixels):
-    x_,y_ = randint(1,IM_x-2), randint(1,IM_y-2)
+    x_, y_ = randint(1, IM_x-2), randint(1, IM_y-2)
     val =  .1*randn() + .5
-    IM[x_,y_] = max( min(val,1.), 0.)
+    IM[x_, y_] = max( min(val, 1.), 0.)
 imwrite("noised_"+imagename, IM)
 \end{lstlisting}
 A color image can be represented by three functions $u_1, u_2,$ and $u_3$. In this lab we will work with black and white images, but total variation techniques can easily be used on more general images.
@@ -213,7 +213,7 @@ Using $\Delta t = 1e{-3},$ $\lambda = 40,$ $\Delta x = 1,$ and $\Delta y = 1$, i
 
 Hint: Use the function \li{np.roll} to compute the spatial derivatives. For example, the second derivative can be approximated at interior grid points using
 \begin{lstlisting}
-u_xx = np.roll(u,-1,axis=1) - 2*u + np.roll(u,1,axis=1)
+u_xx = np.roll(u, -1, axis=1) - 2*u + np.roll(u, 1, axis=1)
 \end{lstlisting}
 \end{problem}
 
@@ -320,9 +320,9 @@ Using $\Delta t = 1e-3, \lambda = 1, \Delta x = 1,$ and $ \Delta y = 1$, impleme
 
 Hint: To compute the spatial derivatives, consider the following:
 \begin{lstlisting}
-u_x = (np.roll(u,-1,axis=1) -  np.roll(u,1,axis=1))/2
-u_xx = np.roll(u,-1,axis=1) - 2*u + np.roll(u,1,axis=1)
-u_xy = (np.roll(u_x,-1,axis=0) - np.roll(u_x,1,axis=0))/2.
+u_x = (np.roll(u, -1, axis=1) -  np.roll(u, 1, axis=1))/2
+u_xx = np.roll(u, -1, axis=1) - 2*u + np.roll(u, 1, axis=1)
+u_xy = (np.roll(u_x, -1, axis=0) - np.roll(u_x, 1, axis=0))/2.
 \end{lstlisting}
 \end{problem}
 

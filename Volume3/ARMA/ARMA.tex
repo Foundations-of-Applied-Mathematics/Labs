@@ -1,5 +1,6 @@
 \lab{ARMA Models}{ARMA Models}
 \label{lab:arma}
+\labdependencies{KalmanFilter,Pandas1}
 \objective{ARMA$(p,q)$ models combine autoregressive and moving-average models in order to forecast future observations using time-series. In this lab, we will build an ARMA$(p,q)$ model to analyze and predict future weather data and then compare this model to statsmodels built-in ARMA package as well as the VARMAX package. Then we will forecast macroeconomic data as well as the future height of the Rio Negro.}
 
 % spec file should be consistent with std and sigma...change variable to filename
@@ -8,7 +9,7 @@
 \section*{Time Series}
 
 
-A time series is any discrete-time stochastic process.  
+A time series is any discrete-time stochastic process.
 In other words, it is a sequence of random variables, $\{Z_t\}_{t=1}^T$, that are determined by their time $t$.  We let the realization of the time series $\{Z_t\}_{t=1}^T$ be denoted by $\{z_t\}_{t=1}^T$.
 Examples of time series include heart rate readings over time, pollution readings over time, stock prices at the closing of each day, and air temperature.
 Often when analyzing time series, we want to forecast future data, such as what will the stock price of a company will be in a week and what will the temperature be in 10 days.
@@ -57,7 +58,7 @@ The correlation is weaker in each graph successively, showing that the further i
 \label{fig:correlations}
 \end{figure}
 
-\subsection*{MA($q$) Models} 
+\subsection*{MA($q$) Models}
 
 A moving average model of order $q$ is used to factor in the varying error of the time series.
 This model uses the error of the current data point and the previous data points to predict the next datapoint.
@@ -75,16 +76,16 @@ Combining both the AR$(p$) and MA($q$) models, we get an ARMA($p,q$) model which
 
 \subsection*{ARIMA$(p,d,q)$ Models}
 
-Not all ARMA models are covariance stationary. 
+Not all ARMA models are covariance stationary.
 However, many time series can be made covariance stationary by differencing.
-Let $\delta Z_t$ represent the time series $z_t = Z_t - Z_{t-1}$ obtained by taking a difference of the terms. 
+Let $\delta Z_t$ represent the time series $z_t = Z_t - Z_{t-1}$ obtained by taking a difference of the terms.
 If the trend is linear a first difference is usually stationary.
 If the trend is quadratic a second difference may be necessary $\delta ^2 Z_t = \delta ( \delta Z_t)$.
 An $\text{ARIMA}(p,d,q)$ model is a discrete-time stochastic process $(Z_t)_{t \in \mathbb{Z}}$ satisfying the equation
 
 \begin{align}
     \label{eq:arima:def}
-    \delta ^ d Z_t = \mathbf{c} + \underbrace{\left(\sum_{i=1}^p \Phi_{i}z_{t - i}\right)}_\text{AR(p)} +  
+    \delta ^ d Z_t = \mathbf{c} + \underbrace{\left(\sum_{i=1}^p \Phi_{i}z_{t - i}\right)}_\text{AR(p)} +
     \underbrace{\left(\sum_{j=1}^{q} \Theta_{j}\boldsymbol{\epsilon_{t-j}} \right)}_\text{MA(q)} + \text{ } \boldsymbol{\epsilon_t}
 \end{align}
 
@@ -114,7 +115,7 @@ Thus, a naive choice for our model is an ARMA($2,1)$ model.
 \end{figure}
 
 \begin{problem}
-Write a function \li{arma_forecast_naive()} that builds an ARMA(p,q) model. 
+Write a function \li{arma_forecast_naive()} that builds an ARMA(p,q) model.
 Your function should accept as parameters \li{p}, \li{q}, and \li{n}, where \li{p} is the order of the autoregressive model, \li{q} is the order of the moving average model, and \li{n} is the number of observations to predict.
 Assume \li{c}$ = 0$, and let $\phi_i=.5$, $\theta_i=.1$, and $\epsilon_i\sim\mathscr{N}(0,1)$ for all $i$.
 
@@ -132,7 +133,7 @@ The predictions may be higher or lower on the $y$-axis.
 Let $\Theta = \{\phi_i, \theta_j, \mu, \sigma\}$ be the set of parameters
 for an $\text{ARMA}(p,q)$ model.
 Suppose we have a set of observations $\{z_t\}_{t=1}^n$.
-Our goal is to find the $p,q$, and $\Theta$ that maximize the likelihood of the ARMA model given the data.
+Our goal is to find the $p, q$, and $\Theta$ that maximize the likelihood of the ARMA model given the data.
 Using the chain rule, we can factorize the likelihood of the model given this data as
 \begin{align}
     \label{eq:arma:factorized}
@@ -153,7 +154,7 @@ Kalman filter affords a straightforward, recursive way to compute the
 likelihood.
 
 We demonstrate one possible state-space representation of an $\text{ARMA}(p,q)$ model. Let
-$r = \max(p, q+1)$. Define
+$r = \max(p,q+1)$. Define
 \begin{align}
     \hat{\textbf{x}}_{t|t-1}&=\begin{bmatrix}x_{t-1}&x_{t-2}&\dotsb&x_{t-r}\end{bmatrix}\trp \\
     F &= \begin{bmatrix}
@@ -215,7 +216,7 @@ This means that each conditional distribution in \ref{eq:arma:factorized} is als
     \label{eq:mean:variance1}
     \text{mean} & \quad H\hat{\textbf{x}}_{t|t-1} + \mu \\
     \label{eq:mean:variance2}
-    \text{variance} & \quad HP_{t|t-1}H\trp 
+    \text{variance} & \quad HP_{t|t-1}H\trp
 \end{align}
 where $\hat{\textbf{x}}_{t|t-1}$ and $P_{t|t-1}$ are easily found via the Kalman filter, during the Predict step.
 Given that each conditional distribution is Gaussian, the likelihood can then be found as
@@ -227,11 +228,11 @@ Given that each conditional distribution is Gaussian, the likelihood can then be
 \begin{problem}
 \label{prob:arma:likelihood}
 Write a function \li{arma_likelihood()} that returns the log-likelihood of an ARMA model, given a time series $\{z_t\}_{t=1}^T$.
-This function should accept \li{filename} which contains the observations, and it should accept as parameters each parameter in $\Theta$. 
+This function should accept \li{filename} which contains the observations, and it should accept as parameters each parameter in $\Theta$.
 In this case, the time series should be the change in temperature of \li{weather.npy}, which is the first difference of the time series found in \li{weather.npy}, as was done in Problem \ref{prob:arma:naive}.
 Adapt Equation \ref{eq:arma:likelihood} to calculate and return the log-likelihood of the $\text{ARMA}(p,q)$ model as a $\mathbf{float}$.
 
-Use the provided \li{state_space_rep()} function to generate $F,Q$, and $H$.
+Use the provided \li{state_space_rep()} function to generate $F, Q$, and $H$.
 The function \li{kalman()} has also been provided to help calculate the means and covariances of each observation.
 Calling the function \li{kalman()} on a time series will return an array whose values are $\hat{\textbf{x}}_{t|t-1}$ and an array whose values are $P_{t\mid t-1}$ for each $t\leq n$.
 
@@ -240,7 +241,7 @@ Calling the function \li{kalman()} on a time series will return an array whose v
 Also, when implementing Equation \ref{eq:arma:likelihood}, you may find it best to use \li{scipy.stats.distributions.norm.pdf}, but keep in mind that this method accepts standard deviations, not variances.
 When implemented correctly, your function should match the following output:
 \begin{lstlisting}
->>> arma_likelihood(filename='weather.npy', phis=np.array([0.9]), 
+>>> arma_likelihood(filename="weather.npy", phis=np.array([0.9]),
                     thetas=np.array([0]), mu=17., std=0.4)
 -1375.1805469978776
 \end{lstlisting}
@@ -270,8 +271,8 @@ from scipy.optimize import minimize
 # assume p, q, and time_series are defined
 def f(x): # x contains the phis, thetas, mu, and std
     try:
-        return -1*arma_likelihood(filename, phis=x[:i], thetas=x[i:i+j], 
-                                        mu=x[-2],std=x[-1])
+        return -1*arma_likelihood(filename, phis=x[:i], thetas=x[i:i+j],
+                                        mu=x[-2], std=x[-1])
     except np.linalg.LinAlgError:
         return np.inf
 
@@ -279,7 +280,7 @@ def f(x): # x contains the phis, thetas, mu, and std
 x0 = np.zeros(p + q + 2)
 x0[-2] = time_series.mean()
 x0[-1] = time_series.std()
-sol = minimize(f,  x0, method = "SLSQP")
+sol = minimize(f, x0, method = "SLSQP")
 sol = sol['x']
 \end{lstlisting}
 
@@ -293,7 +294,7 @@ The order of the model which minimizes the AIC is then the optimal model.
 
 \begin{problem}
 \label{prob:model-identification}
-Write a function \li{model_identification()} that accepts \li{filename} containing the time series data and parameters \li{p_max} and \li{q_max} as integers. 
+Write a function \li{model_identification()} that accepts \li{filename} containing the time series data and parameters \li{p_max} and \li{q_max} as integers.
 Determine which ARMA($p,q$) model has the minimum AIC for all $1\leq p \leq \text{\li{p_max}}$ and $1\leq q \leq \text{\li{q_max}}$.
 Then, return each parameter in $\Theta$ of that model.
 
@@ -301,7 +302,7 @@ Then, return each parameter in $\Theta$ of that model.
 
 Your code should replicate the following output up to at least 4 decimal places.
 \begin{lstlisting}
->>> model_identification(filename='weather.npy', p_max=4, q_max=4)
+>>> model_identification(filename="weather.npy", p_max=4, q_max=4)
 (array([ 0.7213538]), array([-0.26246426]), 0.359785001944352, 1.5568374351425505)
 \end{lstlisting}
 \end{problem}
@@ -316,15 +317,21 @@ Observations can be found as follows
     HP_{t+k|t}H\trp )
 \end{align}
 To evolve the Kalman filter, recall the predict and update rules of a Kalman filter.
-\begin{align*}
-\textbf{Predict} & & \widehat{\mathbf{x}}_{k|k-1} & = F\widehat{\mathbf{x}}_{k-1|k-1} + \mathbf{u} \\
- & & P_{k|k-1} & = FP_{k-1|k-1}F\trp  + Q \\
-\textbf{Update} & & \tilde{\mathbf{y}}_{k} & = \mathbf{z}_{k} - H\widehat{\mathbf{x}}_{k|k-1} \\
- & & S_{k} & = HP_{k|k-1}H\trp  + R \\
- & & K_{k} & = P_{k|k-1}H\trp S_{k}^{-1} \\
- & & \widehat{\mathbf{x}}_{k|k} & = \widehat{\mathbf{x}}_{k|k-1} + K_{k}\tilde{\mathbf{y}}_{k} \\
- & & P_{k|k} & = (I - K_{k}H)P_{k|k-1}
-\end{align*}
+
+\begin{subequations}
+    \begin{align*}
+        (Initialize) \qquad \widehat{\mathbf{x}}_{0|-1} & = \boldsymbol \mu_0 \\
+        \qquad P_{0|-1} & = Q_0 \\
+        \vspace{0.2cm} \notag \\
+        \textbf{Predict} \qquad \widehat{\mathbf{x}}_{k|k-1} & = F\widehat{\mathbf{x}}_{k-1|k-1} + \mathbf{u} && k = 1, \dots, T \\
+        \qquad P_{k|k-1} & = FP_{k-1|k-1}F\trp + Q && k = 1,\dots, T \\
+        \vspace{0.2cm} \notag \\
+        \textbf{Update} \hspace{1.5em} \qquad K_{k} & = P_{k|k-1}H\trp \left(HP_{k|k-1}H\trp + R\right)^{-1}  && k = 0, \dots, T\\
+        \qquad \widehat{\mathbf{x}}_{k|k} & = \widehat{\mathbf{x}}_{k|k-1} + K_{k}\left(\mathbf{z}_{k} - H\widehat{\mathbf{x}}_{k|k-1}\right) && k = 0, \dots, T \\
+        \qquad P_{k|k} & = (I - K_{k}H)P_{k|k-1}  && k = 0, \dots, T
+    \end{align*}
+    \label{eqn:kalman_algorithm}
+\end{subequations}
 
 \noindent With ARMA, we define observational noise covariance $R$ and drift term $\mathbf{u}$ to both be 0.
 
@@ -357,7 +364,7 @@ The following code should create a plot similar to Figure \ref{fig:forecasted}.
 phis, thetas, mu, std = np.array([0.72135856]), np.array([-0.26246788]), 0.35980339870105321, 1.5568331253098422
 
 # Forecast optimal mode
-arma_forecast(filename='weather.npy', phis=phis, thetas=thetas, 
+arma_forecast(filename="weather.npy", phis=phis, thetas=thetas,
                     mu=mu, std=std, n=30)
 \end{lstlisting}
 
@@ -376,8 +383,8 @@ The object can then be fitted based on the MLE using a Kalman Filter.
 
 \begin{lstlisting}
 from statsmodels.tsa.arima.model import ARIMA
-# Intialize the object with weather data and order (1,1)
->>> model = ARIMA(z,order=(p,0,q),trend='c').fit(method='innovations_mle')
+# Intialize the object with weather data and order (1, 1)
+>>> model = ARIMA(z, order=(p, 0, q), trend='c').fit(method="innovations_mle")
 
 # Access p and q
 >>> model.specification.k_ar
@@ -389,7 +396,7 @@ q
 \begin{figure}
 \centering
 \includegraphics[width=\textwidth]{figures/arma.pdf}
-\caption{ARMA(1,1) forecast on \li{weather.npy}}
+\caption{ARMA(1, 1) forecast on \li{weather.npy}}
 \label{fig:forecasted}
 \end{figure}
 
@@ -401,7 +408,7 @@ It will return the mean of each future observation.
 
 \begin{lstlisting}
 # Predict from the beginning of the model to 30 observations in the future
-model.predict(start=0,end=len(data)+30)
+model.predict(start=0, end=len(data)+30)
 \end{lstlisting}
 
 \begin{problem}
@@ -441,9 +448,9 @@ The multivariate ARMA(1,1) model is as follows:
 
 This can be written in matrix form as shown in Equation \ref{eq:arma:def}.
 The module \li{statsmodels} contains a package that includes a VARMAX model class which can be used to create a multivariate ARMA model.
-VARMAX stands for Vector Autoregression Moving Average with Exogenous Regressors. 
+VARMAX stands for Vector Autoregression Moving Average with Exogenous Regressors.
 An exogenous regressor is a time series that affects the model but is not affected by it.
-In the example below we have two time series corresponding to the price of copper and aluminum. 
+In the example below we have two time series corresponding to the price of copper and aluminum.
 Since aluminum is a substitute for copper, it is reasonable to assume the price of aluminum may help us predict the price of copper and vice versa.
 
 \begin{lstlisting}
@@ -453,24 +460,24 @@ import statsmodels.api as sm
 # Load in world copper data
 data = sm.datasets.copper.load_pandas().data
 # Create index compatible with VARMAX model
-data.index = pd.period_range(start='1951', end='1975', freq='Y')
+data.index = pd.period_range(start="1951", end="1975", freq='Y')
 
 # Initialize and fit model
-mod = VARMAX(data[['ALUMPRICE', 'COPPERPRICE']])
+mod = VARMAX(data[["ALUMPRICE", "COPPERPRICE"]])
 mod = mod.fit(maxiter=1000, disp=False)
 # Predict the price of aluminium and copper until 1985
-pred = mod.predict('1951','1985')
+pred = mod.predict("1951", "1985")
 
 # Get confidence intervals
-forecast_obj = mod.get_forecast('1981')
+forecast_obj = mod.get_forecast("1981")
 all_CI = forecast_obj.conf_int(alpha=0.05)
 
 # Plot predictions against true price
 pred.plot(figsize=(10,4))
-plt.plot(data['ALUMPRICE'], label='Actual ALUMPRICE')
-plt.plot(data['COPPERPRICE'], label='Actual COPPERPRICE')
+plt.plot(data["ALUMPRICE"], label="Actual ALUMPRICE")
+plt.plot(data["COPPERPRICE"], label="Actual COPPERPRICE")
 plt.legend()
-plt.title('VARMA Predictions for World Copper Market Dataset')
+plt.title("VARMA Predictions for World Copper Market Dataset")
 \end{lstlisting}
 
 \begin{figure}[H]
@@ -491,12 +498,12 @@ The following code shows how to obtain the data.
 # Load in data
 df = sm.datasets.macrodata.load_pandas().data
 # Create DatetimeIndex
-dates = df[['year', 'quarter']].astype(int).astype(str)
+dates = df[["year", "quarter"]].astype(int).astype(str)
 dates = dates["year"] + "Q" + dates["quarter"]
 dates = dates_from_str(dates)
 df.index = pd.DatetimeIndex(dates)
 # Select columns used in prediction
-df = df[['realgdp','realcons','realinv']]
+df = df[["realgdp", "realcons", "realinv"]]
 \end{lstlisting}
 
 Initialize your VARMAX model with the \li{df} specified above, and include the parameter \li{freq="Q-DEC"}.
@@ -506,11 +513,11 @@ Plot the original data, prediction, and a 95\% confidence interval (2 standard d
 \textbf{Return the AIC} of the chosen model.
 The plot should be similar to Figure \ref{fig:econ}.
 
-\noindent Hint: in the example above, \li{mod.predict('1951','1985')} returns a dataframe of 2 columns that contain the predicted values of \li{'ALUMPRICE'} and \li{'COPPERPRICE'}, respectively, from the years 1951 to 1985.
+\noindent Hint: in the example above, \li{mod.predict("1951", "1985")} returns a dataframe of 2 columns that contain the predicted values of \li{"ALUMPRICE"} and \li{"COPPERPRICE"}, respectively, from the years 1951 to 1985.
 Also, \li{all_CI} is a dataframe where each column indicates the corresponding dataset and whether it is a lower or upper bound of a confidence interval determined by the alpha value.
-Thus, the column \li{'lower ALUMPRICE'} with \li{alpha=0.05} contains the lower bounds of a 95\% confidence interval for the \li{'ALUMPRICE'} dataset.
+Thus, the column \li{"lower ALUMPRICE"} with \li{alpha=0.05} contains the lower bounds of a 95\% confidence interval for the \li{"ALUMPRICE"} dataset.
 
-The dataset \li{'realgdp'} contains the real gross domestic product, \li{'realcons'} contains real personal consumption expenditures, and \li{'realinv'} contains real gross private domestic investment.
+The dataset \li{"realgdp"} contains the real gross domestic product, \li{"realcons"} contains real personal consumption expenditures, and \li{"realinv"} contains real gross private domestic investment.
 Since personal consumption and domestic investment are components of gross domestic product, it is reasonable to assume these time series will be useful in predicting one another.
 
 \end{problem}
@@ -523,7 +530,7 @@ Since personal consumption and domestic investment are components of gross domes
 \end{figure}
 
 \section*{Optional}
-%In the previous problem, we used the statsmodel \li{ARIMA} class. 
+%In the previous problem, we used the statsmodel \li{ARIMA} class.
 %The following code and problem use the soon to be depreciated \li{ARMA} class
 The \li{statsmodels} package can help us perform model identification.
 The method \li{arma_order_select_ic} will find the optimal order of the ARMA model based on certain criteria.
@@ -545,26 +552,26 @@ The method will return a dictionary, where the minimal order of each criteria ca
 
 >>> # Find best order where p < 5 and q < 5
 >>> # Use AICc as basis for minimization
->>> order = order_select(sunspot.values,max_ar=4,max_ma=4,ic=['aic','bic'],fit_kw={'method':'mle'})
->>> print(order['aic_min_order'])
+>>> order = order_select(sunspot.values,max_ar=4,max_ma=4,ic=["aic", "bic"],fit_kw={"method": "mle"})
+>>> print(order["aic_min_order"])
 (4,2)
->>> print(order['bic_min_order'])
+>>> print(order["bic_min_order"])
 (4,2)
 
 >>> # Fit model
 >>> # Note that we need to set the dimensionality to zero in order to have an ARMA model.
->>> model = ARIMA(sunspot,order = (4,0,2)).fit(method='innovations_mle')
+>>> model = ARIMA(sunspot,order = (4,0,2)).fit(method="innovations_mle")
 
 >>> # Predict values from 1950 to 2012.
->>> prediction = model.predict(start='1950',end='2012')
+>>> prediction = model.predict(start="1950", end="2012")
 
 >>> # Plot the prediction along with the sunspot data.
->>> fig, ax = plt.subplots(figsize=(13,7))
+>>> fig, ax = plt.subplots(figsize=(13, 7))
 >>> plt.plot(prediction)
->>> plt.plot(sunspot['1950':'2009'])
->>> ax.set_title('Sunspot Dataset')
->>> ax.set_xlabel('Year')
->>> ax.set_ylabel('Number of Sunspots')
+>>> plt.plot(sunspot["1950": "2009"])
+>>> ax.set_title("Sunspot Dataset")
+>>> ax.set_xlabel("Year")
+>>> ax.set_ylabel("Number of Sunspots")
 >>> plt.show()
 \end{lstlisting}
 
@@ -588,19 +595,19 @@ The parameters \li{start} and \li{end} should be strings corresponding to a Date
 The function should determine the optimal order for the ARMA model based on the AIC and the BIC.
 Then forecast and plot on the range given for both models and compare.
 Return the order of the AIC model and the order of the BIC model, respectively.
-For the range \li{'1983-01-31'} to \li{'1995-01-31'}, your plot should look like Figure \ref{fig:manaus}.
+For the range \li{"1983-01-31"} to \li{"1995-01-31"}, your plot should look like Figure \ref{fig:manaus}.
 
 (Hint: The data passed into \li{arma_order_select_ic} must be a NumPy array. Use the attribute \li{values} of the Pandas DataFrame.)
 
 To get the \li{manaus} dataset and set it with a DateTimeIndex, use the following code:
 \begin{lstlisting}
 # Get dataset
-raw = pydata('manaus')
+raw = pydata("manaus")
 # Convert to DateTimeIndex
-manaus = pd.DataFrame(raw.values,index=pd.date_range('1903-01','1993-01',freq='M'))
-manaus = manaus.drop(0,axis=1)
+manaus = pd.DataFrame(raw.values,index=pd.date_range("1903-01", "1993-01", freq='M'))
+manaus = manaus.drop(0, axis=1)
 # Set new column title
-manaus.columns = ['Water Level']
+manaus.columns = ["Water Level"]
 \end{lstlisting}
 \label{prob:manaus}
 \end{problem}

@@ -1,10 +1,235 @@
 \lab{Binary Search Trees}{Binary Search Trees}
+\labdependencies{LinkedLists}
 
-\objective{A tree is link-based data structure where each node may refer to more than one other node.
-This structure makes trees more useful and efficient than regular linked lists in many applications.
-Many trees are constructed recursively, so we begin with an overview of recursion.
+\objective{Linked data structures chain data together in a useful way for many applications.
+A tree is a linked data structure that can be used for efficient sorting and searching algorithms.
+In this lab, we overview the basics of linked data structures and recursion.
 We then implement a recursively structured doubly linked binary search tree (BST).
 Finally, we compare the standard linked list, our BST, and an AVL tree to illustrate the relative strengths and weaknesses of each data structure.}
+
+\section*{Linked Data Structures} % ========================================================
+A \emph{linked data structure} is a data structure which consists of a set of containers (\emph{nodes}) that are linked together by \emph{references}. 
+Each node in a linked data structure stores a piece of data and at least one reference to another node in the data structure.
+Linked data structures offer flexibility in organizing data and are the basis of many efficient algorithms.
+
+\subsection*{Linked Lists} % ========================================================
+
+A \emph{linked list} is a basic example of linked data structure.
+Every linked list needs a reference to the first item in the chain, called the \li{head}.
+A reference to the last item in the chain, called the \li{tail}, is also often included.
+The nodes of a \emph{singly linked list} have a single reference to the next node in the list (see Figure \ref{fig:singlylinked}), while the nodes of a \emph{doubly linked list} have two references: one for the previous node, and one for the next node (see Figure \ref{fig:doublylinked}).
+This allows for a doubly linked list to be traversed in both directions, whereas a singly linked list can only be traversed in one direction.
+
+\begin{figure}[H] % Singly linked list.
+  \centering
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto, node distance=1.5cm,thick,main node/.style={rectangle,draw}, minimum size=.5cm]
+  \tikzset{rect node/.style={rectangle, draw, minimum height = .5cm, minimum width=.2cm}}
+      \node[main node] (1) {A};
+      \node[main node] (2) [right of=1] {B};
+      \node[main node] (3) [right of=2] {C};
+      \node[main node] (4) [right of=3] {D};
+      \node[draw = none, black, node distance=1.4cm] [above left of=1](H) {\li{head}};
+  \foreach \r in {1, 2, 3, 4}{
+      \node[rect node][right of=\r, node distance = .36cm]{};}
+  \node[draw = none, node distance = 1.5cm] [right of=4]{};
+  \foreach \s/\t  in {1/2, 2/3, 3/4}{\path[draw](\s) edge[shorten <=.1cm](\t);}
+      \draw[blue] (H) edge (1.north);
+  \end{tikzpicture}
+  \caption{A singly linked list with just a reference to the head node.}
+  \label{fig:singlylinked}
+\end{figure}
+  
+  \begin{figure}[H] % Doubly linked list.
+  \centering
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto, node distance=1.5cm, thick,main node/.style={rectangle,draw}, minimum size=.5cm]
+  \tikzset{rect node/.style={rectangle, draw, minimum height = .5cm, minimum width=.9cm}}
+      \node[main node] (1) {A};
+      \node[main node] (2) [right of=1] {B};
+      \node[main node] (3) [right of=2] {C};
+      \node[main node] (4) [right of=3] {D};
+      \node[draw=none, node distance=.07cm] (1up) [above of=1] {};
+      \node[draw=none, node distance=.07cm] (1dn) [below of=1] {};
+      \node[draw=none, node distance=.07cm] (2up) [above of=2] {};
+      \node[draw=none, node distance=.07cm] (2dn) [below of=2] {};
+      \node[draw=none, node distance=.07cm] (3up) [above of=3] {};
+      \node[draw=none, node distance=.07cm] (3dn) [below of=3] {};
+      \node[draw=none, node distance=.07cm] (4up) [above of=4] {};
+      \node[draw=none, node distance=.07cm] (4dn) [below of=4] {};
+      \node[draw = none, black, node distance = 1.4cm] [above right of=4] (T) {\li{tail}};
+      \node[draw = none, black, node distance = 1.4cm] [above left of=1] (H) {\li{head}};
+      \node[rect node](1.5)[]{};
+      \node[rect node](2.5)[right of=1.5]{};
+      \node[rect node](3.5)[right of=2.5]{};
+      \node[rect node](4.5)[right of=3.5]{};
+  \foreach \s/\t  in {1up/2up, 2dn/1dn, 2up/3up, 3dn/2dn, 3up/4up, 4dn/3dn}{
+          \path[draw](\s) edge[shorten <=.1cm, shorten >=.1cm](\t);}
+      \draw[blue] (H) edge (1.north);
+      \draw[blue] (T) edge (4.north);
+  \end{tikzpicture}
+  \caption{A doubly linked list with references to both the head and tail nodes.}
+  \label{fig:doublylinked}
+\end{figure}
+
+\subsection*{Modifying Linked Lists} % ------------------------------------------------
+
+To insert a new node into a doubly linked list, we assign its \li{prev} and \li{<<next>>} attributes to reference the nodes that come before and after it.
+We then adjust the attributes of nodes that come before and after the new node to reference the new node (See Figure \ref{fig:doubly-linked-insert}).
+To remove a node from a doubly linked list, we remove all references to that node. 
+This is done by changing the attributes of the previous and next nodes so that they reference each other (See Figure \ref{fig:doubly-linked-remove}).
+
+\begin{warn} % Garbage collection warning.
+  Python keeps track of the variables in use and automatically deletes a variable (freeing up the memory that stored the object) if there is no access to it.
+  This feature is called \emph{garbage collection}.
+  In many other languages, leaving a reference to an object without explicitly deleting it can lead to a serious memory leak.
+  See \url{https://docs.python.org/3/library/gc.html} for more information on Python's garbage collection system.
+\end{warn}
+
+\begin{figure}[H] % insert().
+  \centering
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto, node distance=1.6cm,thick,main node/.style={rectangle,draw}, minimum size=.5cm]
+  \tikzset{rect node/.style={rectangle, draw, minimum height = .5cm, minimum width=.2cm}}
+      \node[main node] (1) {A};
+      \node[main node] (2) [right of=1] {B};
+      \node[main node] (3) [right of=2] {D};
+      \node[main node] (4) [below right of=2, fill=yellow!15] {C};
+      \node[main node] (5) [right of=3, node distance=3.5cm] {A};
+      \node[main node] (6) [right of=5] {B};
+      \node[main node] (7) [right of=6, node distance=2.2cm] {D};
+      \node[main node] (8) [below right of=6] {C};
+      \node[draw=none, node distance=.07cm] (1up) [above of=1] {};
+      \node[draw=none, node distance=.07cm] (1dn) [below of=1] {};
+      \node[draw=none, node distance=.07cm] (2up) [above of=2] {};
+      \node[draw=none, node distance=.07cm] (2dn) [below of=2] {};
+      \node[draw=none, node distance=.07cm] (3up) [above of=3] {};
+      \node[draw=none, node distance=.07cm] (3dn) [below of=3] {};
+      \node[draw=none, node distance=.07cm] (4up) [above of=4] {};
+      \node[draw=none, node distance=.07cm] (4dn) [below of=4] {};
+      \node[draw=none, node distance=.07cm] (5up) [above of=5] {};
+      \node[draw=none, node distance=.07cm] (5dn) [below of=5] {};
+      \node[draw=none, node distance=.07cm] (6up) [above of=6] {};
+      \node[draw=none, node distance=.07cm] (6dn) [below of=6] {};
+      \node[draw=none, node distance=.07cm] (7up) [above of=7] {};
+      \node[draw=none, node distance=.07cm] (7dn) [below of=7] {};
+      \node[draw=none, node distance=.07cm] (8up) [above of=8] {};
+      \node[draw=none, node distance=.07cm] (8dn) [below of=8] {};
+      \node[draw=none, black, node distance=1.5cm] [above left of=1](H1) {\li{head}};
+      \node[draw = none, black, node distance=1.5cm] [above right of=3](T1) {\li{tail}};
+      \node[draw=none, black, node distance=1.5cm] [above left of=5](H2) {\li{head}};
+      \node[draw = none, black, node distance=1.5cm] [above right of=7](T2) {\li{tail}};
+  \foreach \r in {1, 2, 3, 5, 6, 7, 8}{
+          \node[rect node][right of=\r, node distance = .36cm]{};
+          \node[rect node][left  of=\r, node distance = .36cm]{};}
+      \node[rect node][right of=4, node distance = .36cm, fill=yellow!15]{};
+      \node[rect node][left  of=4, node distance = .36cm, fill=yellow!15]{};
+  \foreach \s/\t in {1up/2up, 2dn/1dn, 2up/3up, 3dn/2dn, 5up/6up, 6dn/5dn}{
+          \path[draw](\s) edge[shorten <=.1cm, shorten >=.1cm](\t);}
+  \foreach \s/\t in {6up/8up, 8dn/6dn, 8up/7up, 7dn/8dn}{
+          \path[draw](\s) edge[green, shorten <=.1cm](\t);}
+      \draw[blue, shorten >=.1cm] (H1) edge (1.north);
+      \draw[blue, shorten >=.1cm] (T1) edge (3.north);
+      \draw[blue, shorten >=.1cm] (H2) edge (5.north);
+      \draw[blue, shorten >=.1cm] (T2) edge (7.north);
+      \node[draw = none, node distance = 1.5cm] [right of=8]{};  % Centralize
+  \end{tikzpicture}
+  \caption{Insertion for doubly linked lists.}
+  \label{fig:doubly-linked-insert}
+\end{figure}
+
+\begin{figure}[H] % remove().
+  \centering
+  \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto, node distance=1.5cm,thick,main node/.style={rectangle,draw}, minimum size=.5cm]
+  \tikzset{rect node/.style={rectangle, draw, minimum height = .5cm, minimum width=.2cm}}
+      \node[main node] (1) {A};
+      \node[main node] (2) [right of=1] {B};
+      \node[main node] (3) [right of=2] {C};
+      \node[main node] (4) [right of=3] {D};
+      \node[main node] (5) [right of=4, node distance=2.6cm] {A};
+      \node[main node] (6) [right of=5] {B};
+      \node[main node] (7) [right of=6, fill=red!10] {C};
+      \node[main node] (8) [right of=7] {D};
+      \node[draw=none, node distance=.07cm] (1up) [above of=1] {};
+      \node[draw=none, node distance=.07cm] (1dn) [below of=1] {};
+      \node[draw=none, node distance=.07cm] (2up) [above of=2] {};
+      \node[draw=none, node distance=.07cm] (2dn) [below of=2] {};
+      \node[draw=none, node distance=.07cm] (3up) [above of=3] {};
+      \node[draw=none, node distance=.07cm] (3dn) [below of=3] {};
+      \node[draw=none, node distance=.07cm] (4up) [above of=4] {};
+      \node[draw=none, node distance=.07cm] (4dn) [below of=4] {};
+      \node[draw=none, node distance=.07cm] (5up) [above of=5] {};
+      \node[draw=none, node distance=.07cm] (5dn) [below of=5] {};
+      \node[draw=none, node distance=.07cm] (6up) [above of=6] {};
+      \node[draw=none, node distance=.07cm] (6dn) [below of=6] {};
+      \node[draw=none, node distance=.07cm] (7up) [above of=7] {};
+      \node[draw=none, node distance=.07cm] (7dn) [below of=7] {};
+      \node[draw=none, node distance=.07cm] (8up) [above of=8] {};
+      \node[draw=none, node distance=.07cm] (8dn) [below of=8] {};
+  \foreach \r in {1, 2, 3, 4, 5, 6, 7, 8}{
+      \node[rect node][right of=\r, node distance = .36cm]{};
+      \node[rect node][left of=\r, node distance = .36cm]{};}
+  \node[rect node][right of=7, node distance = .36cm, fill=red!10]{};
+  \node[rect node][left of=7, node distance = .36cm, fill=red!10]{};
+  \foreach \s/\t in {1up/2up, 2dn/1dn, 2up/3up, 3dn/2dn, 3up/4up, 4dn/3dn, 5up/6up, 6dn/5dn, 7dn/6dn, 7up/8up}{
+          \path[draw](\s) edge[shorten <=.1cm, shorten >=.1cm](\t);}
+      \path[draw, shorten <=.1cm, shorten >=.1cm](6) edge[green, bend left] (8);
+      \path[draw, shorten <=.1cm, shorten >=.1cm](8) edge[green, bend left] (6);
+      \node[draw=none, node distance=1.5cm] [right of=8]{};  % Centralize
+  \end{tikzpicture}
+  \caption{Removal for doubly linked Lists.
+  To avoid gaps in the chain, nodes B and D must be linked together.
+  Python will automatically delete node C since there are no references to it.}
+  \label{fig:doubly-linked-remove}
+\end{figure}
+
+\begin{problem}
+  Consider the following class for doubly linked lists.
+
+  \begin{lstlisting}
+    class DoublyLinkedListNode:
+        """A node with a value and a reference to the previous and next nodes."""
+        def __init__(self, data):
+            self.value = data
+            self.prev, self.<<next>> = None, None
+    
+    class DoublyLinkedList:
+        """A doubly linked list with a head and a tail."""
+        def __init__(self):
+            self.head, self.tail = None, None
+
+        def __len__(self):
+            '''Return the number of nodes in the list.'''
+            count = 0
+            current = self.head
+            while current:
+                count += 1
+                current = current.next
+            return count
+    
+        def __str__(self):
+            '''Format and return the list like a standard Python list.'''
+            result = []
+            current = self.head
+            while current:
+                result.append(str(current.value))
+                current = current.next
+            return '[' + ', '.join(result) + ']'
+  \end{lstlisting}
+
+  Add an \li{insert()} method to the \li{DoublyLinkedList} class that accepts an integer \li{index} and \li{data} to add to the list.
+  Insert a new node containing \li{data} immediately before the node in the list at position \li{index}.
+  After the insertion, the new node should be at position \li{index}.
+  For example, Figure \ref{fig:doubly-linked-insert} places a new node containing C at index 2.
+  If \li{index} is equal to the number of nodes in the list, then add the new node to the end of the list.
+  Carefully account for the special cases of inserting before the first node and after the last node.
+  Make sure to properly reassign the \li{head} or \li{tail} attribute to reflect the new structure of the list.
+  If the list is empty, make the new node both the head and tail.
+  If \li{index} is negative or strictly greater than the number of nodes in the list, raise an \li{IndexError}.
+ 
+ 
+  Hint: The \li{__len__()} and \li{__str__()} methods have been adapted for this class.
+  Use them in addition to the provided unit test for writing/debugging purposes.
+  Also, attributes can be chained together for locating specific nodes (\li{<<self>>.head.<<next>>}, \li{<<self>>.prev.prev.value}, etc.)
+  \label{prob:doubly-linked-list-insert}
+ \end{problem}
 
 \section*{Recursion} % ========================================================
 
@@ -144,49 +369,48 @@ As the recursion unwinds, the values from the base cases are passed up to previo
 
 \begin{problem}
 \label{prob:recursive-linked-list-find}
-Consider the following class for singly linked lists.
+Consider the following method for doubly linked lists.
 \begin{lstlisting}
-class SinglyLinkedListNode:
-    """A node with a value and a reference to the next node."""
-    def __init__(self, data):
-        self.value, self.<<next>> = data, None
-
-class SinglyLinkedList:
-    """A singly linked list with a head and a tail."""
-    def __init__(self):
-        self.head, self.tail = None, None
-
-    def append(self, data):
-        """Add a node containing the data to the end of the list."""
-        n = SinglyLinkedListNode(data)
-        if self.head is None:
-            self.head, self.tail = n, n
-        else:
-            self.tail.<<next>> = n
-            self.tail = n
-
-    def iterative_find(self, data):
-        """Search iteratively for a node containing the data."""
-        current = self.head
-        while current is not None:
-            if current.value == data:
-                return current
-            current = current.<<next>>
-        raise ValueError(str(data) + " is not in the list")
+  def iterative_find(self, data):
+      """Search iteratively for a node containing the data."""
+      current = self.head
+      while current is not None:
+          if current.value == data:
+              return current
+          current = current.<<next>>
+      raise ValueError(str(data) + " is not in the list")
 \end{lstlisting}
 % The method \li{iterative_find()} searches the list iteratively for given data.
-Write a method that does the same task as \li{iterative_find()}, but with the following recursive approach.
+Write a method called \li{recursive_find()} that does the same task as \li{iterative_find()}, but with the following recursive approach.
 Define a function within the method that checks a single node for the data.
 There are two base cases: if the node is \li{None}, meaning the data could not be found, raise a \li{ValueError}; if the node contains the data, return the node.
 Otherwise, call the function on the next node in the list.
-Start the recursion by calling this inner function on the head node.
+Start the recursion by calling this inner function on the \li{head} node.
 \\(Hint: see \li{BST.find()} in the next section for a similar idea.)
 % Check that your method gives the same results as \li{iterative_find()}.
 \end{problem}
 
+\begin{info} % Info about 'is' vs '=='.
+  The \li{is} operator is \textbf{not} the same as the \li{==} operator.
+  While \li{==} checks for numerical equality, \li{is} evaluates whether or not two objects are the same by checking their location in memory.
+  
+  \begin{lstlisting}
+  >>> 7 == 7.0            # True since the numerical values are the same.
+  <<True>>
+  
+  # 7 is an int and 7.0 is a float, so they cannot be stored at the same
+  # location in memory. Therefore 7 "is not" 7.0.
+  >>> 7 is 7.0
+  <<False>>
+  \end{lstlisting}
+  
+  For numerical comparisons, always use \li{==}.
+  When comparing to built-in Python constants such as \li{None}, \li{True}, \li{False}, or \li{NotImplemented}, use \li{is} instead.
+\end{info}
+
 \begin{warn} % Iterative methods > Recursive methods, usually.
 It is usually \textbf{not} better to rewrite an iterative method recursively, partly because recursion results in an increased number of function calls.
-Each call requires a small amount of memory so the program remembers where to return to in the program.
+Each call requires a small amount of memory so the computer remembers where to return to in the program.
 % In Python, a function may only call itself 999 times by default.
 By default, Python raises a \li{RuntimeError} after $1000$ calls to prevent a stack overflow.
 On the other hand, recursion lends itself well to some problems; in this lab, we use a recursive approach to construct a few data structures, but it is possible to implement the same structures with iterative strategies.
@@ -197,7 +421,7 @@ On the other hand, recursion lends itself well to some problems; in this lab, we
 \section*{Binary Search Trees} % ==============================================
 
 Mathematically, a \emph{tree} is a directed graph with no cycles.
-Trees can be implemented with link-based data structures that are similar to a linked list.
+A tree can be implemented as a linked data structure similar to a linked list.
 The first node in a tree is called the \emph{root}, like the \li{head} of a linked list.
 The root node points to other nodes, which are called its children.
 A node with no children is called a \emph{leaf node}.
@@ -210,6 +434,9 @@ This specific structure makes it easy to search a BST: while the computational c
 % That child node also has one child node, which in turn has one child.
 % The last node in the list is the only leaf node.
 % However, other kinds of trees may be more complicated.
+
+Binary search tree nodes have attributes that keep track of their value, their children, and (in doubly linked trees) their parent.
+The actual binary search tree has an attribute to keep track of its root node.
 
 \begin{figure}[H]
 \begin{tikzpicture}[
@@ -271,8 +498,6 @@ Swapping $5$ and $3$ in the graph on the left would result in a BST.}
 \label{fig:trees-binary-and-not}
 \end{figure}
 
-Binary search tree nodes have attributes that keep track of their value, their children, and (in doubly linked trees) their parent.
-The actual binary search tree has an attribute to keep track of its root node.
 % Compare the following classes to the linked list classes given in Problem \ref{prob:recursive-linked-list-find}.
 
 \begin{lstlisting}
@@ -345,7 +570,7 @@ To insert a new value, recursively step through the tree as if searching for the
 The node with the empty child slot becomes the parent of the new node; connect it to the new node by modifying the parent's \li{left} or \li{right} attribute (depending on which side the child should be on) and the child's \li{prev} attribute.
 % See Figure \ref{fig:BST.insertion}.
 
-\begin{figure} % BST.insert()
+\begin{figure}[H] % BST.insert()
 \begin{tikzpicture}[auto,level 1/.style={sibling distance=2cm},
                          level 2/.style={sibling distance=20mm}]
     \node [circle,draw,fill=blue!20!,draw=blue,thick](5a){5}
@@ -757,9 +982,10 @@ Consider using the following control flow to account for all possible cases.)
 \end{problem}
 
 \begin{unittest}
-Write a unit test for Problem 3: creating a remove method for your BST class. The unit test is found in the file \li{test_binary_trees.py} and the function is called \li{test_remove}.
+Write a unit test for Problem \ref{prob:bst-remove}: creating a remove method for your BST class. 
+The unit test is found in the file \li{test_binary_trees.py} and the function is called \li{test_bst_remove}.
 
-\noindent There is an example unit test for Problem 2, your insert method, to help you structure your unit test.
+\noindent There is an example unit test for Problem \ref{prob:bst-insert}, your insert method, to help you structure your unit test.
 \end{unittest}
 
 \section*{AVL Trees} % ========================================================
@@ -863,15 +1089,16 @@ After each insertion, the AVL tree rebalances if necessary.}
 
 \begin{problem} % Compare build and search times.
 \label{prob:binary-trees-compare-times}
-Write a function to compare the build and search times of the \li{SinglyLinkedList} from Problem \ref{prob:recursive-linked-list-find}, the \li{BST} from Problems \ref{prob:bst-insert} and \ref{prob:bst-remove}, and the \li{AVL} provided in the Additional Materials section.
+Write a function to compare the build and search times of the \li{DoublyLinkedList} from Problem \ref{prob:doubly-linked-list-insert}, the \li{BST} from Problems \ref{prob:bst-insert} and \ref{prob:bst-remove}, and the \li{AVL} provided in the Additional Materials section.
 Begin by reading the file \texttt{english.txt}, storing the contents of each line in a list.
 For $n=2^3,2^4,\ldots,2^{10}$, repeat the following experiment.
 \begin{enumerate}
 \item Get a subset of $n$ \textbf{random} items from the data set.
 \\(Hint: use a function from the \li{random} or \li{np.random} modules.)
-\item Time (separately) how long it takes to load a new \li{SinglyLinkedList}, a \li{BST}, and an \li{AVL} with the $n$ items.
+\item Time (separately) how long it takes to load a new \li{DoublyLinkedList}, a \li{BST}, and an \li{AVL} with the $n$ items.
+(Load your \li{DoublyLinkedList} by inserting each new value at the head.)
 \item Choose 5 \textbf{random} items from the subset, and time how long it takes to find all 5 items in each data structure.
-Use the \li{find()} method for the trees, but to avoid exceeding the maximum recursion depth, use the provided \li{iterative_find()} method from Problem \ref{prob:recursive-linked-list-find} to search the \li{SinglyLinkedList}.
+Use the \li{find()} method for the trees, but to avoid exceeding the maximum recursion depth, use the provided \li{iterative_find()} method from Problem \ref{prob:recursive-linked-list-find} to search the \li{DoublyLinkedList}.
 \end{enumerate}
 Report your findings in a single figure with two subplots: one for build times, and one for search times.
 Use log scales where appropriate.

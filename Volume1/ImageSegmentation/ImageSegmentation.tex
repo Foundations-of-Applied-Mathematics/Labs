@@ -1,4 +1,5 @@
 \lab{Image Segmentation}{Image Segmentation}
+\labdependencies{ObjectOriented,LinearSystems}
 
 \objective{Graph theory has a variety of applications.
 A graph (or network) can be represented in many ways on a computer.
@@ -414,7 +415,7 @@ Use \li{np.ravel()} to convert a $m\times n$ array into a 1-D array with $mn$ en
 
 \begin{lstlisting}
 >>> import numpy as np
->>> A = np.random.randint(0, 10, (3,4))
+>>> A = np.random.randint(0, 10, (3, 4))
 >>> print(A)
 [[4 4 7 7]
  [8 1 2 0]
@@ -655,13 +656,13 @@ To see how this works, consider Figure \ref{fig:imgseg-adjacency-tikz} where the
 Write a method for the \li{ImageSegmenter} class that accepts floats $r$ defaulting to $5$, $\sigma_B^2$ defaulting to $.02$, and $\sigma_X^2$ defaulting to $3$.
 Compute the adjacency matrix $A$ and the degree matrix $D$ according to the weights specified in (\ref{eq:imgseg-edge-weight}).
 
-Initialize $A$ as a \li{scipy.sparse.lil_matrix}, which is optimized for incremental construction.
+Initialize $A$ as a \li{scipy.sparse.lil_array}, which is optimized for incremental construction.
 Fill in the nonzero elements of $A$ one row at a time.
 Use \li{get_neighbors()} at each step to help compute the weights.
 \\(Hint: Try to compute and store an entire row of weights at a time.
 What does the command \li{A[5, np.array([1, 4, 5, 6, 9])] = weights} do?)
 
-Finally, convert $A$ to a \li{scipy.sparse.csc_matrix}, which is faster for computations.
+Finally, convert $A$ to a \li{scipy.sparse.csc_array}, which is faster for computations.
 Then return $A$ and $D$.
 
 Use \li{blue_heart.png} to test $A$ and $D$, saved as \texttt{HeartMatrixA.npz} and \texttt{HeartMatrixD.npy} datafiles.
@@ -684,7 +685,7 @@ Use the reshaped eigenvector to create a boolean mask that indexes one of the se
 That is, construct a $m\times n$ array where the entries belonging to one segment are \li{True} and the other entries are \li{False}.
 
 \begin{lstlisting}
->>> x = np.arange(-5,5).reshape((5,2)).T
+>>> x = np.arange(-5, 5).reshape((5, 2)).T
 >>> print(x)
 [[-5 -3 -1  1  3]
  [-4 -2  0  2  4]]
@@ -702,7 +703,7 @@ array([[0, 0, 0, 1, 3],
 \end{lstlisting}
 
 \begin{problem}
-Write a method for the \li{ImageSegmenter} class that accepts an adjacency matrix $A$ as a \li{scipy.sparse.csc_matrix} and a degree matrix $D$ as a 1-D NumPy array.
+Write a method for the \li{ImageSegmenter} class that accepts an adjacency matrix $A$ as a \li{scipy.sparse.csc_array} and a degree matrix $D$ as a 1-D NumPy array.
 Construct an $m\times n$ boolean mask describing the segments of the image.
 \begin{enumerate}
     \item Compute the Laplacian $L$ with \li{scipy.sparse.csgraph.laplacian()} or by converting $D$ to a sparse diagonal matrix and computing $L = D - A$ (do not use your function from Problem \ref{prob:imgseg-laplacian} unless it works correctly and efficiently for sparse matrices).
@@ -724,7 +725,7 @@ Computing the \emph{negative segment} requires inverting the boolean mask, then 
 Finally, if the original image is a $m \times n \times 3$ color image, the mask must be stacked into a $m \times n \times 3$ array to facilitate entry-wise multiplication.
 
 \begin{lstlisting}
->>> mask = np.arange(-5,5).reshape((5,2)).T > 0
+>>> mask = np.arange(-5, 5).reshape((5, 2)).T > 0
 >>> print(mask)
 <<[[False False False  True  True]
  [False False False  True  True]]>>

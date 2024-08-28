@@ -1,6 +1,7 @@
 \lab{Apache Spark}{Apache Spark}
+\labdependencies{}
 \objective{Dealing with massive amounts of data often requires parallelization and cluster computing; Apache Spark is an industry standard for doing just that.
-In this lab we introduce the basics of PySpark, Spark's Python API, including data structures, syntax, and use cases. 
+In this lab we introduce the basics of PySpark, Spark's Python API, including data structures, syntax, and use cases.
 Finally, we conclude with a brief introduction to the Spark Machine Learning Package.}
 
 % TODO: Add part on cacheing
@@ -13,7 +14,7 @@ Spark provides development APIs in Python, Java, Scala, and R.
 On top of the main computing framework, Spark provides machine learning, SQL, graph analysis, and streaming libraries.
 
 Spark's Python API can be accessed through the PySpark package.
-You must install Spark, along with the supporting tools like Java, on your local machine for PySpark to work. 
+You must install Spark, along with the supporting tools like Java, on your local machine for PySpark to work.
 This will include ensuring that both Java and Spark are included in the environment variable \li{PATH}.\footnote{See \href{https://spark.apache.org/docs/latest/}{the Apache Spark configuration instructions} for detailed installation instructions}
 Installation of PySpark for local execution or remote connection to an existing cluster can be accomplished by running
 \begin{lstlisting}
@@ -22,13 +23,13 @@ $ pip install pyspark <= 3.4.1
 
 To install Java on WSL or another Linux system, run the following commands in the terminal:
 \begin{lstlisting}
-$ sudo apt-get install openjdk-8-jdk 
+$ sudo apt-get install openjdk-8-jdk
 \end{lstlisting}
 
 For Mac M1 users, installing Java will be a little trickier.\footnote{Full instructions can be found at \href{https://dev.to/shane/configure-m1-mac-to-use-jdk8-with-maven-4b4g}{https://dev.to/shane/configure-m1-mac-to-use-jdk8-with-maven-4b4g}}
-With Homebrew installed, you'll need to install Maven by running 
+With Homebrew installed, you'll need to install Maven by running
 \begin{lstlisting}
-$ brew install maven 
+$ brew install maven
 \end{lstlisting}
 You will then navigate to \textcolor{red}{\href{https://www.azul.com/downloads/?version=java-8-lts&os=macos&architecture=arm-64-bit&package=jdk}{this link}} to download the JDK 8 .dmg file.
 Enter the following details if the link doesn't automatically populate them for you:
@@ -50,14 +51,14 @@ If this process takes longer than a few minutes, you should stop and finish this
 % When using an IDE, you must call it from the terminal or set the variables inside the editor so that PySpark can be found.
 
 \section*{PySpark} % ==========================================================
-One major benefit of using PySpark is the ability to run it in an interactive environment. 
-One such option is the interactive Spark shell that comes prepackaged with PySpark. 
-To use the shell, simply run \li{pyspark} in the terminal. 
-In the Spark shell you can run code one line at a time without the need to have a fully written program. This is a great way to get a feel for Spark. 
+One major benefit of using PySpark is the ability to run it in an interactive environment.
+One such option is the interactive Spark shell that comes prepackaged with PySpark.
+To use the shell, simply run \li{pyspark} in the terminal.
+In the Spark shell you can run code one line at a time without the need to have a fully written program. This is a great way to get a feel for Spark.
 To get help with a function use \li{help(function)}; to exit the shell simply run \li{quit()}.
 
-In the interactive shell, the \li{SparkSession} object - the main entrypoint to all Spark functionality - is available by default as \li{spark}. 
-When running Spark in a standard Python script (or in IPython) you need to define this object explicitly. The code box below outlines how to do this. 
+In the interactive shell, the \li{SparkSession} object - the main entrypoint to all Spark functionality - is available by default as \li{spark}.
+When running Spark in a standard Python script (or in IPython) you need to define this object explicitly. The code box below outlines how to do this.
 It is standard practice to name your \li{SparkSession} object \li{spark}.
 
 \begin{warn}
@@ -65,8 +66,8 @@ It is important that when you are finished with a \li{SparkSession} you should e
 \end{warn}
 
 \begin{info}
-While the interactive shell is very robust, it may be easier to learn Spark in an environment that you are more familiar with (like IPython). 
-To do so, just use the code given below. Help can be accessed in the usual way for your environment. 
+While the interactive shell is very robust, it may be easier to learn Spark in an environment that you are more familiar with (like IPython).
+To do so, just use the code given below. Help can be accessed in the usual way for your environment.
 Just remember to \li{stop()} the \li{SparkSession}!
 \end{info}
 
@@ -91,8 +92,8 @@ The syntax
 ...			.appName("app_name")\
 ...			.getOrCreate()
 \end{lstlisting}
-is somewhat unusual. 
-While this code can be written on a single line, it is often more readable to break it up when dealing with many chained operations; this is standard styling for Spark. 
+is somewhat unusual.
+While this code can be written on a single line, it is often more readable to break it up when dealing with many chained operations; this is standard styling for Spark.
 Note that you \textit{cannot} write a comment after a line continuation character \li{'\\'}.
 \end{info}
 
@@ -104,9 +105,9 @@ They are \textit{resilient} because performing an operation on one RDD produces 
 They are \textit{distributed} because the data resides in logical partitions across multiple machines.
 While RDDs can be difficult to work with, they offer the most granular control of all the Spark data structures.
 
-There are two main ways of creating RDDs. 
-The first is reading a file directly into Spark and the second is parallelizing an existing collection (list, numpy array, pandas dataframe, etc.). 
-We will use the Titanic dataset\footnote{https://web.stanford.edu/class/archive/cs/cs109/cs109.1166/problem12.html} in most of the examples throughout this lab.  
+There are two main ways of creating RDDs.
+The first is reading a file directly into Spark and the second is parallelizing an existing collection (list, numpy array, pandas dataframe, etc.).
+We will use the Titanic dataset\footnote{https://web.stanford.edu/class/archive/cs/cs109/cs109.1166/problem12.html} in most of the examples throughout this lab.
 The example below shows various ways to load the Titanic dataset as an RDD.
 
 \begin{lstlisting}
@@ -117,7 +118,7 @@ The example below shows various ways to load the Titanic dataset as an RDD.
 ...         .getOrCreate()
 
 # load the data directly into an RDD
->>> titanic = spark.sparkContext.textFile('titanic.csv')
+>>> titanic = spark.sparkContext.textFile("titanic.csv")
 
 # the file is of the format
 # Pclass,Survived,Name,Sex,Age,Sibsp,Parch,Ticket,Fare
@@ -129,7 +130,7 @@ The example below shows various ways to load the Titanic dataset as an RDD.
 
 # note that each element is a single string - not particularly useful
 # one option is to first load the data into a numpy array
->>> np_titanic = np.loadtxt('titanic.csv', delimiter=',', dtype=list)
+>>> np_titanic = np.loadtxt("titanic.csv", delimiter=',', dtype=list)
 
 # use sparkContext to parallelize the data into 4 partitions
 >>> titanic_parallelize = spark.sparkContext.parallelize(np_titanic, 4)
@@ -137,13 +138,13 @@ The example below shows various ways to load the Titanic dataset as an RDD.
 >>> titanic_parallelize.take(2)
 [array(['0', '3', ..., 'male', '22', '1', '0', '7.25'], dtype=object),
  array(['1', '1', ..., 'female', '38', '1', '0', '71.2833'], dtype=object)]
- 
+
  # end SparkSession
  >>> spark.stop()
 \end{lstlisting}
 
 \begin{warn}
-Because Apache Spark partitions and distributes data, calling for the first \li{n} objects using the same code (such as \li{take(n)}) may yield different results on different computers (or even each time you run it on one computer). 
+Because Apache Spark partitions and distributes data, calling for the first \li{n} objects using the same code (such as \li{take(n)}) may yield different results on different computers (or even each time you run it on one computer).
 This is not something you should worry about; it is the result of variation in partitioning and will not affect data analysis.
 \end{warn}
 
@@ -165,7 +166,7 @@ Similarly, \li{flatMap(func)} creates an RDD with the flattened results of \li{m
 ...         .getOrCreate()
 
 # use map() to format the data
->>> titanic = spark.sparkContext.textFile('titanic.csv')
+>>> titanic = spark.sparkContext.textFile("titanic.csv")
 >>> titanic.take(2)
 ['0,3,Mr. Owen Harris Braund,male,22,1,0,7.25',
  '1,1,Mrs. John Bradley (Florence Briggs Thayer) Cumings,female,38,1,0,71.283']
@@ -182,13 +183,13 @@ Similarly, \li{flatMap(func)} creates an RDD with the flattened results of \li{m
 ['0', '3']
 \end{lstlisting}
 
-The \li{filter(func)} transformation returns a new RDD containing only the elements that satisfy \li{func}. In this case, \li{func} should be a callable python function that returns a Boolean. 
+The \li{filter(func)} transformation returns a new RDD containing only the elements that satisfy \li{func}. In this case, \li{func} should be a callable python function that returns a Boolean.
 The elements of the RDD that evaluate to \li{True} are included in the new RDD while those that evaluate to \li{False} are excluded.
 
 \begin{lstlisting}
 # create a new RDD containing only the female passengers
 >>> titanic = titanic.map(lambda row: row.split(','))
->>> titanic_f = titanic.filter(lambda row: row[3] == 'female')
+>>> titanic_f = titanic.filter(lambda row: row[3] == "female")
 >>> titanic_f.take(3)
 [['1', '1', ..., 'female', '38', '1', '0', '71.2833'],
  ['1', '3', ..., 'female', '26', '0', '0', '7.925'],
@@ -263,7 +264,7 @@ Note that you must use \li{.collect()} to extract data from an RDD. Using \li{.c
 \begin{problem}
 Write a function that accepts the name of a text file with default \li{filename=huck\_finn.txt}.\footnote{https://www.gutenberg.org/files/76/76-0.txt}
 Load the file as a PySpark RDD, and count the number of occurrences of each word.
-Sort the words by count, in descending order, and return a list of the \li{(word, count)} pairs for the 20 most used words. 
+Sort the words by count, in descending order, and return a list of the \li{(word, count)} pairs for the 20 most used words.
 The data does not need to be cleaned.
 
 \noindent Hint: to ensure that your function doesn't consider an empty string \li{""} to be a word, make sure to split each line with \li{.split()} instead of on a space with \li{.split(' ')}.
@@ -276,7 +277,7 @@ Two of the most common actions, \li{take(n)} and \li{collect()}, have already be
 The key difference between the two is that \li{take(n)} returns the first \li{n} elements from one (or more) partition(s) while \li{collect()} returns the contents of the entire RDD.
 When working with small datasets this may not be an issue, but for larger datasets running \li{collect()} can be very expensive.
 
-Another important action is \li{reduce(func)}. Generally, \li{reduce()} combines (reduces) the data in each row of the RDD using \li{func} to produce some useful output. 
+Another important action is \li{reduce(func)}. Generally, \li{reduce()} combines (reduces) the data in each row of the RDD using \li{func} to produce some useful output.
 Note that \li{func} \textit{must} be an associative and commutative binary operation; otherwise the results will vary depending on partitioning.
 
 \begin{lstlisting}
@@ -334,13 +335,13 @@ Note that \li{func} \textit{must} be an associative and commutative binary opera
 %\end{problem}
 
 \begin{problem}
-Since the area of a circle of radius $r$ is $A=\pi r^2$, one way to estimate $\pi$ is to estimate the area of the unit circle. 
-A Monte Carlo approach to this problem is to uniformly sample points in the square $[-1,1]\times [-1,1]$ and then count the percentage of points that land within the unit circle. 
+Since the area of a circle of radius $r$ is $A=\pi r^2$, one way to estimate $\pi$ is to estimate the area of the unit circle.
+A Monte Carlo approach to this problem is to uniformly sample points in the square $[-1,1]\times [-1,1]$ and then count the percentage of points that land within the unit circle.
 The percentage of points within the circle approximates the percentage of the area occupied by the circle. Multiplying this percentage by 4 (the area of the square $[-1,1]\times [-1,1]$) gives an estimate for the area of the circle.
 \footnote{See Example 7.1.1 in the Volume 2 textbook}
 
-Write a function that uses Monte Carlo methods to estimate the value of $\pi$. 
-Your function should accept two keyword arguments: \li{n=10**5} and \li{parts=6}. 
+Write a function that uses Monte Carlo methods to estimate the value of $\pi$.
+Your function should accept two keyword arguments: \li{n=10**5} and \li{parts=6}.
 Use \li{n*parts} sample points and partition your RDD with \li{parts} partitions. Return your estimate.
 \label{prob:spark-monte-carlo-simulation}
 \end{problem}
@@ -363,7 +364,7 @@ The DataFrame API also has arguments to deal with file headers or to automatical
 \begin{lstlisting}
 # note that you should initialize your spark object first
 # load the titanic dataset using default settings
->>> titanic = spark.read.csv('titanic.csv')
+>>> titanic = spark.read.csv("titanic.csv")
 >>> titanic.show(2)
 +---+---+--------------------+------+---+---+---+-------+
 |_c0|_c1|                 _c2|   _c3|_c4|_c5|_c6|    _c7|
@@ -373,14 +374,14 @@ The DataFrame API also has arguments to deal with file headers or to automatical
 +---+---+--------------------+------+---+---+---+-------+
 only showing top 2 rows
 
-# spark.read.csv('titanic.csv', inferSchema=True) will try to infer
+# spark.read.csv("titanic.csv", inferSchema=True) will try to infer
 # data types for each column
 
 # load the titanic dataset specifying the schema
->>> schema = ('survived INT, pclass INT, name STRING, sex STRING, '
-...			  'age FLOAT, sibsp INT, parch INT, fare FLOAT'
+>>> schema = ("survived INT, pclass INT, name STRING, sex STRING, "
+...			  "age FLOAT, sibsp INT, parch INT, fare FLOAT"
 ...			  )
->>> titanic = spark.read.csv('titanic.csv', schema=schema)
+>>> titanic = spark.read.csv("titanic.csv", schema=schema)
 >>> titanic.show(2)
 +--------+------+--------------------+------+---+-----+-----+-------+
 |survived|pclass|                name|   sex|age|sibsp|parch|   fare|
@@ -391,7 +392,7 @@ only showing top 2 rows
 only showing top 2 rows
 
 # for files with headers, the following is convenient
-spark.read.csv('my_file.csv', header=True, inferSchema=True)
+>>> spark.read.csv("my_file.csv", header=True, inferSchema=True)
 \end{lstlisting}
 
 \begin{info}
@@ -439,9 +440,9 @@ only showing top 3 rows
 +--------+------+--------------------+------+----+-----+-----+------+
 only showing top 3 rows
 
-# find total fare by pclass (or use .avg('fare') for an average)
->>> titanic.groupBy('pclass')\
-...        .sum('fare')\
+# find total fare by pclass (or use .avg("fare") for an average)
+>>> titanic.groupBy("pclass")\
+...        .sum("fare")\
 ...        .show()
 +------+---------+
 |pclass|sum(fare)|
@@ -474,7 +475,7 @@ only showing top 2 rows
 +--------------------+-------+
 only showing top 3 rows
 
->>> titanic.join(titanic_cabins, on='name').show(3)
+>>> titanic.join(titanic_cabins, on="name").show(3)
 +--------------------+--------+------+------+----+-----+-----+------+-------+
 |                name|survived|pclass|   sex| age|sibsp|parch|  fare|  cabin|
 +--------------------+--------+------+------+----+-----+-----+------+-------+
@@ -541,8 +542,8 @@ only showing top 3 rows
 \end{table}
 
 \begin{problem}
-Write a function with keyword argument \li{filename='titanic.csv'}. 
-Load the file into a PySpark DataFrame and find (1) the number of women on-board, (2) the number of men on-board, (3) the survival rate of women, and (4) the survival rate of men. 
+Write a function with keyword argument \li{filename="titanic.csv"}.
+Load the file into a PySpark DataFrame and find (1) the number of women on-board, (2) the number of men on-board, (3) the survival rate of women, and (4) the survival rate of men.
 Return these four values in the order given as a tuple of floats.
 \label{prob:spark-df-easy}
 \end{problem}
@@ -563,13 +564,13 @@ the first line of the file is a header, containing the following seven columns:\
 \indent\li{month}: month the crime was committed\\
 
 Write a function that accepts three keyword arguments: \\
-\li{crimefile='london\_crime\_by\_lsoa.csv'}, \li{incomefile='london\_income\_by\_borough.csv'}, and \li{major\_cat='Robbery'}. Load the two files as PySpark DataFrames. 
-Use them to create a new DataFrame. The new DataFrame will contain a row for each borough and have columns for borough, total number of crimes for the given major category (\li{major\_cat}), and median income. 
-Order the DataFrame by the total number of crimes for \li{major\_cat}, descending. 
+\li{crimefile="london\_crime\_by\_lsoa.csv"}, \li{incomefile="london\_income\_by\_borough.csv"}, and \li{major\_cat="Robbery"}. Load the two files as PySpark DataFrames.
+Use them to create a new DataFrame. The new DataFrame will contain a row for each borough and have columns for borough, total number of crimes for the given major category (\li{major\_cat}), and median income.
+Order the DataFrame by the total number of crimes for \li{major\_cat}, descending.
 The final DataFrame should have three columns: \li{borough}, \li{major_cat_total_crime}, and \li{median-08-16} (column names may be different).
 
- 
-Convert the DataFrame to a numpy array using \li{np.array(df.collect())}, and create a scatter plot of the number of \li{major\_cat=} crimes by the median income for each borough. 
+
+Convert the DataFrame to a numpy array using \li{np.array(df.collect())}, and create a scatter plot of the number of \li{major\_cat=} crimes by the median income for each borough.
 Return the numpy array.
 
 \label{prob:spark-df-hard}
@@ -583,18 +584,18 @@ PySpark's primary machine learning API, \li{pyspark.ml}, is DataFrame-based.
 Here we give a start to finish example using Spark ML to tackle the classic Titanic classification problem.
 \begin{lstlisting}
 # prepare data
-# convert the 'sex' column to binary categorical variable
+# convert the "sex" column to binary categorical variable
 >>> from pyspark.ml.feature import StringIndexer, OneHotEncoder
->>> sex_binary = StringIndexer(inputCol='sex', outputCol='sex_binary')
+>>> sex_binary = StringIndexer(inputCol="sex", outputCol="sex_binary")
 
 # one-hot-encode pclass (Spark automatically drops a column)
->>> onehot = OneHotEncoder(inputCols=['pclass'],
-...                                 outputCols=['pclass_onehot'])
+>>> onehot = OneHotEncoder(inputCols=["pclass"],
+...                                 outputCols=["pclass_onehot"])
 
 # create single features column
-from pyspark.ml.feature import VectorAssembler
-features = ['sex_binary', 'pclass_onehot', 'age', 'sibsp', 'parch', 'fare']
-features_col = VectorAssembler(inputCols=features, outputCol='features')
+>>> from pyspark.ml.feature import VectorAssembler
+>>> features = ["sex_binary", "pclass_onehot", "age", "sibsp", "parch", "fare"]
+>>> features_col = VectorAssembler(inputCols=features, outputCol="features")
 
 # now we create a transformation pipeline to apply the operations above
 # this is very similar to the pipeline ecosystem in sklearn
@@ -603,7 +604,7 @@ features_col = VectorAssembler(inputCols=features, outputCol='features')
 >>> titanic = pipeline.fit(titanic).transform(titanic)
 
 # drop unnecessary columns for cleaner display (note the new columns)
->>> titanic = titanic.drop('pclass', 'name', 'sex')
+>>> titanic = titanic.drop("pclass", "name", "sex")
 >>> titanic.show(2)
 +--------+----+-----+-----+----+----------+-------------+----------+
 |survived| age|sibsp|parch|fare|sex_binary|pclass_onehot|  features|
@@ -617,7 +618,7 @@ features_col = VectorAssembler(inputCols=features, outputCol='features')
 
 # initialize logistic regression
 >>> from pyspark.ml.classification import LogisticRegression
->>> lr = LogisticRegression(labelCol='survived', featuresCol='features')
+>>> lr = LogisticRegression(labelCol="survived", featuresCol="features")
 
 # run a train-validation-split to fit best elastic net param
 # ParamGridBuilder constructs a grid of parameters to search over.
@@ -629,7 +630,7 @@ features_col = VectorAssembler(inputCols=features, outputCol='features')
 # the evaluator (see also CrossValidator)
 >>> tvs = TrainValidationSplit(estimator=lr,
 ...                            estimatorParamMaps=paramGrid,
-...                            evaluator=MCE(labelCol='survived'),
+...                            evaluator=MCE(labelCol="survived"),
 ...                            trainRatio=0.75,
 ...                            seed=11)
 
@@ -638,7 +639,7 @@ features_col = VectorAssembler(inputCols=features, outputCol='features')
 
 # use the best fit model to evaluate the test data
 >>> results = clf.bestModel.evaluate(test)
->>> results.predictions.select(['survived', 'prediction']).show(5)
+>>> results.predictions.select(["survived", "prediction"]).show(5)
 +--------+----------+
 |survived|prediction|
 +--------+----------+
@@ -665,7 +666,7 @@ features_col = VectorAssembler(inputCols=features, outputCol='features')
 
 # generate predictions - this returns a new DataFrame
 >>> preds = clf.bestModel.transform(test)
->>> preds.select('survived', 'probability', 'prediction').show(5)
+>>> preds.select("survived", "probability", "prediction").show(5)
 +--------+-----------+----------+
 |survived|probability|prediction|
 +--------+-----------+----------+
@@ -676,8 +677,8 @@ features_col = VectorAssembler(inputCols=features, outputCol='features')
 +--------+-----------+----------+
 
 # initialize evaluator object
->>> dt_eval = MCE(labelCol='survived')
->>> dt_eval.evaluate(preds, {dt_eval.metricName: 'accuracy'})
+>>> dt_eval = MCE(labelCol="survived")
+>>> dt_eval.evaluate(preds, {dt_eval.metricName: "accuracy"})
 0.8433179723502304
 \end{lstlisting}
 
@@ -707,10 +708,10 @@ It should help give you a starting point when looking for a specific functionali
 
 
 \begin{problem}
-Write a function with keyword argument \li{filename='titanic.csv'}.
+Write a function with keyword argument \li{filename="titanic.csv"}.
 Load the file into a PySpark DataFrame, and use the \li{pyspark.ml} package to train a classifier that outperforms the logistic regression each of the three metrics from the example above (\li{accuracy}, \li{weightedRecall}, \li{weightedPrecision}).
 
-Some of Spark's available classifiers are listed below. 
+Some of Spark's available classifiers are listed below.
 For complete documentation, visit https://spark.apache.org/docs/latest/api/python/reference/pyspark.ml.html.
 
 \begin{lstlisting}
@@ -722,7 +723,7 @@ For complete documentation, visit https://spark.apache.org/docs/latest/api/pytho
 #                            RandomForestClassifier
 \end{lstlisting}
 
-Use \li{randomSplit([0.75, 0.25], seed=11)} to split your data into train and test sets before fitting the model. 
+Use \li{randomSplit([0.75, 0.25], seed=11)} to split your data into train and test sets before fitting the model.
 Return the \li{accuracy}, \li{weightedRecall}, and \li{weightedPrecision} for your model, in the given order as a tuple.
 
 Hint: to calculate the accuracy of a classifer in PySpark, use \li{results.accuracy} where \li{results = (classifier name).bestModel.evaluate(test)}.
@@ -743,7 +744,7 @@ Additionally, the \li{pyspark.sql.functions} module expands the available functi
 \begin{lstlisting}
 # some immediately accessible functions
 # covariance between pclass and fare
->>> titanic.cov('pclass', 'fare')
+>>> titanic.cov("pclass", "fare")
 -22.86289824115662
 
 # summary of statistics for selected columns
@@ -776,8 +777,8 @@ Additionally, the \li{pyspark.sql.functions} module expands the available functi
 
 # use .agg([dict]) on GroupedData to specify [multiple] aggregate
 # functions, including those from pyspark.sql.functions
->>> titanic.groupBy('pclass')\
-...        .agg({'fare': 'var_samp', 'age': 'stddev'})\
+>>> titanic.groupBy("pclass")\
+...        .agg({"fare": "var_samp", "age": "stddev"})\
 ...        .show(3)
 +------+------------------+------------------+
 |pclass|    var_samp(fare)|       stddev(age)|
@@ -788,8 +789,8 @@ Additionally, the \li{pyspark.sql.functions} module expands the available functi
 +------+------------------+------------------+
 
 # perform multiple aggregate actions on the same column
->>> titanic.groupBy('pclass')\
-...        .agg(sqlf.sum('fare'), sqlf.stddev('fare'))\
+>>> titanic.groupBy("pclass")\
+...        .agg(sqlf.sum("fare"), sqlf.stddev("fare"))\
 ...        .show()
 +------+------------------+------------------+
 |pclass|         sum(fare)| stddev_samp(fare)|

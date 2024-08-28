@@ -1,5 +1,6 @@
 \lab{Sampling}{Sampling}
 \label{lab:Sampling}
+\labdependencies{MarkovChains}
 \objective{Sampling is an important and fundamental tool in statistical modeling. In this lab we will learn to use PyMC for Bayesian modeling and statistical sampling. This lab will focus on material
 from chapters 5 and 6 of Volume 2.}
 
@@ -75,7 +76,7 @@ Instead, we approximate it by finding its value at grid points of $\theta$.
 Similarly, because of the complexity of the denominator, we often don't find it until the end of the process.
 After we calculate $f(\x | \theta)g(\theta)$ for each relevant $\theta$ we can then approximate the integral in the denominator with a finite sum.
 First we find $f(\x | \theta_i)g(\theta_i)$ for a grid of $\theta$ values.
-Then, we can approximate the integral in denominator with the following sum $\sum_i f(\x | \theta_i)g(\theta_i)$ (i.e. using finite sums like Riemann Sums) or using Monte Carlo Methods like MCMC.
+Then, we can approximate the integral in denominator with the following sum $\frac{1}{n}\sum_{i=1}^n f(\x | \theta_i)g(\theta_i)$ (i.e. using finite sums like Riemann Sums) or using Monte Carlo Methods like MCMC.
 
 Here we can see that the likelihood function is similar to Bayes' rule as long as we take $g(\theta)$ to be a constant, i.e. $\theta\sim \mathcal{U}(a,b)$.
 This means that the MAP estimate is the MLE if we assume a uniform prior distribution.
@@ -116,14 +117,14 @@ The normal default values are 1 and 0, respectively.
 from scipy.stats import uniform, gamma
 import matplotlib.pyplot as plt
 import numpy as np
->>> sample=1/np.array([2,3.3,4.5,1.8,3.1,2.7,2.2]) # Sample scale values
->>> fails=np.linspace(0,2,100)[1:] # Scale values, not including 0
->>> prior=uniform.pdf(x=fails, loc=0, scale=2)
+>>> sample = 1/np.array([2, 3.3, 4.5, 1.8, 3.1, 2.7, 2.2]) # Sample scale values
+>>> fails = np.linspace(0, 2, 100)[1:] # Scale values, not including 0
+>>> prior = uniform.pdf(x=fails, loc=0, scale=2)
 # List comprehension to prevent broadcasting error
 # Compute the product f(x_i|scale) for i=1 to 7 for each value of the scale
->>> likelihood=np.array([(gamma.pdf(x=sample,a=1,scale=fail)).prod() for fail in fails])
->>> integral=(likelihood*prior).sum()*(2/100) # Riemann sums on [0,2]
->>> posterior=(likelihood*prior)/integral
+>>> likelihood = np.array([(gamma.pdf(x=sample, a=1, scale=fail)).prod() for fail in fails])
+>>> integral = (likelihood*prior).sum()*(2/100) # Riemann sums on [0, 2]
+>>> posterior = (likelihood*prior)/integral
 >>> 1/fails[posterior.argmax()] # MAP estimate
 2.6052631578947367
 
@@ -142,12 +143,13 @@ import numpy as np
 \end{figure}
 
 \begin{problem}\label{prob:unif}
-  Write a function called \li{bernoulli_sampling()} that takes the following parameters: \li{p} a float that is the "fairness" of a coin and \li{n} the number of the Bernoulli trials.
+  Write a function called \li{bernoulli_sampling()} that takes the following parameters: \li{p} a float that is the ``fairness" of a coin and \li{n} the number of the Bernoulli trials.
   In this function simulate \li{n} tosses of a coin which gives heads with probability \li{p}.
   Then use that sample to calculate the posterior distribution on $p$ given a uniform prior using Equation \ref{eq:map}.
   Remember that $p$ is the probability parameter, so this is the parameter $\theta$ we are trying to estimate.
 
   For \li{p}=.2 and \li{n}=100 plot the posterior distribution and return the MAP estimate of $p$, which is also the MLE in this case.
+  Be sure to give your plot a relevant title and axis labels.
 
   Hint: In this case, $f$ is the Binomial pmf $f(x) = p^{n\bar{x}}(1-p)^{n(1-\bar{x})}$.
   You do not need to calculate the integral in the denominator exactly; since you are using a finite approximation of the distributions, you may use a finite approximation of the integral.
@@ -171,15 +173,15 @@ Using the prior Gamma$(2,6)$, find the posterior pdf for $\lambda$, compute the 
 The code is very similar with the only difference being the prior distribution.
 
 \begin{lstlisting}
->>> prior=gamma.pdf(x=fails, a=2, scale=1/6) # 2 failures in 6 months
->>> likelihood=np.array([(gamma.pdf(x=sample,a=1,scale=fail)).prod() for fail in fails])
->>> integral=(likelihood*prior).sum()*(2/100)
->>> posterior=(likelihood*prior)/integral
+>>> prior = gamma.pdf(x=fails, a=2, scale=1/6) # 2 failures in 6 months
+>>> likelihood = np.array([(gamma.pdf(x=sample, a=1, scale=fail)).prod() for fail in fails])
+>>> integral = (likelihood*prior).sum()*(2/100)
+>>> posterior = (likelihood*prior)/integral
 >>> 1/fails[posterior.argmax()]
 2.9117647058823524
 
->>> plt.plot(fails, prior, color='orange', label='Prior')
->>> plt.plot(fails, posterior, color='blue', label='Posterior')
+>>> plt.plot(fails, prior, color="orange", label="Prior")
+>>> plt.plot(fails, posterior, color="blue", label="Posterior")
 >>> plt.ylabel("Probability Density")
 >>> plt.xlabel("Scale (bulb-failures/bulb-month)")
 >>> plt.legend()
@@ -223,12 +225,14 @@ This allow us to continually improve the confidence in our estimates and distrib
 
   Write a function called \li{non_uniform_prior()} that takes the following parameters: \li{p} a float that is the "fairness" of a coin, \li{n} the size of the sample to be generated, and \li{prior} a SciPy distribution object which will act as the prior on $p$.
 
-  Similar to Problem \ref{prob:unif}, simulate \li{n} flips and calculate and plot the posterior distribution. 
+
+  Similar to Problem \ref{prob:unif}, simulate \li{n} flips and calculate and plot the posterior distribution (with a title and axis labels).
+
   Return the MAP estimate.
 
   Examine the difference in confidence we can have in estimating the bias of the coin if the coin we draw gives heads 90\% of the time as opposed to 40\% of the time.
 
-  Because we think that coins biased in favor of heads are likely, we can choose a prior distribution that matches that assumption. 
+  Because we think that coins biased in favor of heads are likely, we can choose a prior distribution that matches that assumption.
   In this case we will choose $\text{Beta}(5,1.5)$ as the prior distribution because it gives much more weight to parameters larger than $.5$.
   This is most easily achieved with \li{scipy.stats.beta(5,1.5)} and using the \li{pdf()} method to calculate $g(\theta)$
 \end{problem}
@@ -239,10 +243,10 @@ A Markov chain is a way to model sequences of states or events.
 Markov chains make a few assumptions, one of those being that the probability of each state occurring is dependent only on the previous state.
 The relationship between the states are described by what is called a transition matrix.
 
-Markov chains and sampling are like peanut butter and jelly: neither one really lives up to their full potential without the other. 
+Markov chains and sampling are like peanut butter and jelly: neither one really lives up to their full potential without the other.
 Given the transition matrix of a Markov chain, we can use sampling to better understand what that chain looks and acts like or to get a well-informed idea of what the future may hold.
 
-Sampling from a simple (row stochastic) transition matrix like the one below is as simple as picking a starting state $s_0$, and then using the corresponding row to sample randomly using the probabilities in the row. 
+Sampling from a simple (row stochastic) transition matrix like the one below is as simple as picking a starting state $s_0$, and then using the corresponding row to sample randomly using the probabilities in the row.
 \begin{center}
   \begin{tabular}{c c c c}
     & a & b & c\\
@@ -263,10 +267,10 @@ Return a list of strings, not including the 0th day.
     sun & 0.6 & 0.1 & 0.3\\
     rain & 0.2 & 0.6 & 0.2\\
     wind & 0.3 & 0.4 & 0.3
-  \end{tabular} 
+  \end{tabular}
 \end{center}
 Hint: \li{np.random.choice()} may be helpful here.
-\end{problem} 
+\end{problem}
 
 \section*{PyMC}
 Python has many powerful sampling tools including PyMC, an efficient implementation of a method known as Monte Carlo Markov Chain (MCMC) Sampling.
@@ -278,7 +282,7 @@ Consider the following: owners of a restaurant are trying to decide if they shou
 They gather the data for several months about how many people order nachos each day.
 One of the owners happened to take a class in Bayesian statistics in college, so she decides test her knowledge.
 She assumes the data are distributed as Poisson($\lambda$) for some unknown value of $\lambda$, where $\lambda$ has a prior of Gamma(2,2).
-She wishes to solve for $\lambda$ and sets up a PyMC Model for the situation as follows: 
+She wishes to solve for $\lambda$ and sets up a PyMC Model for the situation as follows:
 
 \begin{lstlisting}
 import numpy as np
@@ -290,7 +294,7 @@ with pm.Model() as model:
     lam = pm.Gamma('lambda', alpha=2, beta=2)
 
     # define the likelihood of the data (called nacho_data) to be distributed
-    # as Poisson where the expected value of the outcome (mu) is lam 
+    # as Poisson where the expected value of the outcome (mu) is lam
     y = pm.Poisson('y', mu=lam, observed=nacho_data)
 
     # sample from the posterior
@@ -328,7 +332,7 @@ The rule of thumb is: the closer the trace plot resembles a fuzzy caterpillar, t
 Compare to the plots in Figures 1 and 2.}
 \end{figure}
 
-We will now reconsider the initial problem of the coin flip. 
+We will now reconsider the initial problem of the coin flip.
 
 \begin{problem}
 Write a function that accepts the coin flip data in array form and an integer $n$ for the desired number of samples.
@@ -336,12 +340,12 @@ Given data that flips a coin 100 times, assume the data are distributed as Berno
 Set up a PyMC model for this situation and sample from the posterior $n$ times.
 Plot the trace plot and return the expected value of the posterior as a float, \emph{not an array}.
 
-Run the function with data generated by the following code 
+Run the function with data generated by the following code
 \begin{lstlisting}
-from scipy.stats import bernoulli 
+from scipy.stats import bernoulli
 data = bernoulli.rvs(0.2, size=100)
 \end{lstlisting}
-\end{problem} 
+\end{problem}
 
 \subsection*{Multivariate PyMC}
 Unlike the Poisson and Bernoulli distributions, many other distributions (including the Normal, Beta, Gamma, and Binomial distributions) have two or more parameters.
@@ -355,9 +359,9 @@ Your function should have default values \li{m=180}, \li{s=10}, \li{alpha=2}, an
 Set up a PyMC model for this situation and sample from the posterior $n$ times.
 Plot the trace plots for $\mu$ and $\tau$, and return the expected value of the posterior of $\mu$ as a float, \emph{not as an array}.
 
-Run the function with data generated by the following code 
+Run the function with data generated by the following code
 \begin{lstlisting}
-heights = np.random.normal(180,10,100)
+heights = np.random.normal(180, 10, 100)
 \end{lstlisting}
 \noindent Hint: \li{pm.Normal()} uses parameters \li{mu} and either \li{sigma} or \li{tau}, where the variance of the distribution is given by \li{sigma}$^2$ or $1/$\li{tau} respectively.
 \end{problem}

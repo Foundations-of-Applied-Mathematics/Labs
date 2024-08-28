@@ -45,10 +45,10 @@ We need three code elements in order to use \li{solve_ivp}:
     \item The ODE function: \\
     This function defines the right-hand side of the ODE system, and returns an array containing its values for our first order system of ODEs.
     \item The time domain: \\
-    This is a tuple giving the interval of integration. 
+    This is a tuple giving the interval of integration.
     \item The initial conditions: \\
     This is an array containing the initial conditions of each coordinate of the ODE.
-    In our example, these are the value of the "zeroeth" derivative, followed by the first derivative, and so on if there are higher order derivatives. 
+    In our example, these are the value of the "zeroeth" derivative, followed by the first derivative, and so on if there are higher order derivatives.
 \end{enumerate}
 The following code sets up and solves the IVP in the above example:
 \begin{lstlisting}
@@ -58,16 +58,16 @@ import numpy as np
 # element 1: the ODE function
 def ode(t, y):
     '''defines the ode system'''
-    return np.array([y[1],np.sin(t)-3*y[0]])
-    
+    return np.array([y[1], np.sin(t)-3*y[0]])
+
 # element 2: the time domain
-t_span = (0,5)
+t_span = (0, 5)
 
 # element 3: the initial conditions
 y0 = np.array([-np.pi /2, np.pi])
 
 # solve the system
-# max_step is an optional parameter that controls maximum step size and 
+# max_step is an optional parameter that controls maximum step size and
 # a smaller value will result in a smoother graph
 sol = solve_ivp(ode, t_span, y0, max_step=0.1)
 
@@ -81,7 +81,7 @@ from matplotlib import pyplot as plt
 
 plt.plot(sol.t,sol.y[0])
 plt.xlabel('t')
-plt.ylabel('y(t)')
+plt.ylabel("y(t)")
 plt.show()
 \end{lstlisting}
 
@@ -148,7 +148,7 @@ We need four code elements in order to use \li{solve_bvp}:
     \item The ODE function: \\
     This is essentially the same function we used in \li{solve_ivp}.\footnote{There is a technical difference between how the two methods call the ODE function. Unlike \lif{solve_ivp}, \li{solve_bvp} calls the function on \emph{all} of the time steps all at once, so \lif{t} will be an array and \lif{y} will be a \((n,T)\) array where \(n\) is the dimension of the ODE and \(T\) is the number of timesteps. For most applications, this leads to no difference in how you code the ODE function, as can be seen in the examples; however, for some applications, such as piecewise ODE functions, this fact must be taken into consideration.}
     \item The boundary condition function: \\
-    Instead of just having a tuple containing our initial values, we now must use a function that returns an array of the residuals of the boundary conditions. 
+    Instead of just having a tuple containing our initial values, we now must use a function that returns an array of the residuals of the boundary conditions.
     We pass in 2 arrays: \li{ya}, representing the initial values, and \li{yb}, representing the final values. The \(i\)th entry of those arrays represents the boundary condition at the \(i\)th coordinate of the ODE.
     Returning \li{ya[0]-x} would indicate that we know \(y_1(a)=x\), \li{ya[1]-x} would indicate that we know \(y_2(a)=x\), \li{yb[0]-x} would indicate that we know \(y_1(b)=x\), and \li{yb[1]-x} would indicate that we know \(y_2(b)=x\).
     \item The time domain: \\
@@ -156,7 +156,7 @@ We need four code elements in order to use \li{solve_bvp}:
     As part of its algorithm, \li{solve_bvp} will add additional points to the mesh to attempt to reduce the error of the approximation, so it is not generally necessary to pass in a very fine mesh.
     This also means that the mesh of the returned solution will generally not be the same as the one you pass in here.
     \item The initial guess: \\
-    As we no longer know all of the initial values, we now must make a (hopefully educated) guess. This is an array of shape \li{(n, t_steps)} where \li{n} is the shape of the output of the ODE function and \li{t_steps} is the chosen number of steps in our time domain linspace. 
+    As we no longer know all of the initial values, we now must make a (hopefully educated) guess. This is an array of shape \li{(n, t_steps)} where \li{n} is the shape of the output of the ODE function and \li{t_steps} is the chosen number of steps in our time domain linspace.
 \end{enumerate}
 
 \begin{lstlisting}
@@ -164,11 +164,11 @@ from scipy.integrate import solve_bvp
 import numpy as np
 
 # element 1: the ODE function
-def ode(t,y):
+def ode(t, y):
     ''' define the ode system '''
     return np.array([y[1], np.cos(t) - 9*y[0]])
 # element 2: the boundary condition function
-def bc(ya,yb):
+def bc(ya, yb):
     ''' define the boundary conditions '''
     # ya are the initial values
     # yb are the final values
@@ -177,10 +177,10 @@ def bc(ya,yb):
 
 # element 3: the time domain.
 t_steps = 100
-t = np.linspace(0,np.pi,t_steps)
+t = np.linspace(0, np.pi, t_steps)
 
 # element 4: the initial guess.
-y0 = np.ones((2,t_steps))
+y0 = np.ones((2, t_steps))
 
 # Solve the system.
 sol = solve_bvp(ode, bc, t, y0)
@@ -193,7 +193,7 @@ import matplotlib.pyplot as plt
 # here we plot sol.x instead of sol.t
 plt.plot(sol.x, sol.y[0])
 plt.xlabel('t')
-plt.ylabel('y(t)')
+plt.ylabel("y(t)")
 plt.show()
 \end{lstlisting}
 
@@ -215,12 +215,12 @@ plt.show()
     \caption{The solution to problem \ref{prob:bvpintro:bvp2}.}
 \end{figure}
 
-One other useful functionality of \li{solve_bvp}: \li{sol.sol} is a callable function, which is the estimation of the boundary value problem. 
+One other useful functionality of \li{solve_bvp}: \li{sol.sol} is a callable function, which is the estimation of the boundary value problem.
 You can plug in any value or numpy array (\li{sol.sol(np.linspace)}, \li{sol.sol(float)}, \li{sol.sol(list)}), like a normal lambda function.
 
 \section*{The Pitfalls of \li{solve_bvp}}
 One of the common issues with \li{solve_bvp} is choosing a guess for the initial value.
-Often, small changes in the guess can cause large changes in the final approximation. 
+Often, small changes in the guess can cause large changes in the final approximation.
 The reason for this is that the algorithm used by \li{solve_bvp} is essentially a version of Newton's method set up to approximate the boundary value problem, and thus can be sensitive to the initial guess.
 The next problem demonstrates the huge difference that can be made between a constant initial guess of $10$ and a constant initial guess of $9.99$
 
@@ -250,7 +250,7 @@ This is a system of first order ODEs defined by the following set of equations
 \begin{align}
     \frac{dx}{dt} &= ax + yz \label{eq:IVP_BVP_Intro:lorenz_dxdt} \\
     \frac{dy}{dt} &= bx + cy - xz \label{eq:IVP_BVP_Intro:lorenz_dydt} \\
-    \frac{dz}{dt} &= -z - xy \label{eq:IVP_BVP_Intro:lorenz_dzdt} 
+    \frac{dz}{dt} &= -z - xy \label{eq:IVP_BVP_Intro:lorenz_dzdt}
 \end{align}
 given some constants $a$, $b$, and $c$.
 As we mentioned earlier, \li{solve_ivp} and \li{solve_bvp} can be used to solve and model systems of first order ODEs. We will now use \li{solve_ivp} to model the Four-Wing attractor.
@@ -284,10 +284,10 @@ Hint: Because the attractor lies mostly within the box $[-2,2]^2$, it is best to
 
 \section*{BVPs with Free Parameters}
 
-Often when solving a BVP, there are extra variables that we wish to solve for in addition to the solution. 
-These are called unknown or free parameters. 
-A free parameter refers to any undetermined constant or parameter within the problem that remains free until boundary conditions or additional constraints provide a way to fix its value. 
-We will encounter various scenarios in later labs when a method to solve for such parameters will be useful. 
+Often when solving a BVP, there are extra variables that we wish to solve for in addition to the solution.
+These are called unknown or free parameters.
+A free parameter refers to any undetermined constant or parameter within the problem that remains free until boundary conditions or additional constraints provide a way to fix its value.
+We will encounter various scenarios in later labs when a method to solve for such parameters will be useful.
 
 Fortunately, the function \li{solve_bvp} also supports solving for free parameters in a boundary value problem.
 The syntax is very similar to what we did above, except that our functions will have an additional argument that is a list of all of the free parameters.
@@ -324,7 +324,7 @@ Using \li{solve_bvp} to get the solution is similar to before, except that we mu
 \begin{lstlisting}
 # Guess of the solution values
 t = np.linspace(0, 1, 50)
-y_guess = np.ones((2,50))
+y_guess = np.ones((2, 50))
 p_guess = [1]
 
 # Solve
@@ -332,11 +332,11 @@ sol = solve_bvp(ode, bcs, t, y_guess, p=p_guess)
 \end{lstlisting}
 The solution can be plotted as before, and the value of the free parameters for the solution can be found with \li{sol.p}:
 \begin{lstlisting}
-plt.plot(sol.x, sol.y[0], label='$x(t)$')
-plt.plot(sol.x, sol.y[1], label='$y(t)$')
+plt.plot(sol.x, sol.y[0], label="$x(t)$")
+plt.plot(sol.x, sol.y[1], label="$y(t)$")
 plt.legend()
 plt.xlabel('t')
-plt.ylabel('y(t)')
+plt.ylabel("y(t)")
 plt.title(f'$d = {sol.p[0]:.4f}$')
 plt.show()
 \end{lstlisting}
@@ -379,7 +379,7 @@ In one dimension, this equation is
 \label{eq:IVP_BVP_Intro:schroedinger}
 -\frac{\hbar^2}{2m}\psi''(x)+U(x)\psi(x)=E\psi(x)
 \end{equation}
-where \(U\) is a known function describing the potential energy. 
+where \(U\) is a known function describing the potential energy.
 Note that this is in fact a Sturm-Liouville problem.
 If a function \(\psi\) and scalar \(E\) satisfy this equation, they describe an allowed steady state of a particle in the system.
 The value of \(E\) is the energy of the particle in that state, and the values of \(\psi\) are related to the probability of the particle being in any given location.
@@ -387,7 +387,7 @@ For simplicity, we will let \(\frac{\hbar^2}{2m}=1\).\footnote{Making constants 
 
 %Rewrite the ODE as a first order system.
 Write a function that uses \li{solve_bvp} to find \(\psi\) and \(E\) that are solutions to \eqref{eq:IVP_BVP_Intro:schroedinger} for the potential \(U(x)=x^2\) and with boundary conditions \(\psi(-1)=\psi(1)=0, \psi'(-1)=1\).
-By varying your initial guess for \(E\), use your function to find solutions for several different values of \(E\), and plot them together. Label the solutions with the values of \(E\) that you found. 
+By varying your initial guess for \(E\), use your function to find solutions for several different values of \(E\), and plot them together. Label the solutions with the values of \(E\) that you found.
 \end{problem}
 
 \begin{figure}[H]

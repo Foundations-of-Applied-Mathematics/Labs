@@ -1,6 +1,5 @@
-
-
 \lab{Naive Bayes}{Naive Bayes}
+\labdependencies{LSISkLearn}
 \objective{In this lab, we will create a Naïve Bayes Classifier and use it to make an SMS spam filter.}
 
 \section*{Naïve Bayes Classifiers}
@@ -33,7 +32,7 @@ By applying the assumption that each feature is independent we can drastically s
 \begin{align*}
     P(x_1 \mid x_2,\dots,x_n,C=k)\cdots P(x_n \mid C=k) &= \prod_{i=1}^{n}P(x_i \mid C=k).
 \end{align*}
-Therefore we have that 
+Therefore we have that
 \begin{align*}
     P(C=k \mid \x) = \frac{P(C=k)}{P(\x)} \prod_{i=1}^{n}P(x_i \mid C=k),
 \end{align*}
@@ -48,14 +47,14 @@ Something to note here is that we are actually maximizing $P(C=k \mid \x)$ by co
 This means that naïve Bayes is a generative classifier, and not a discriminative classifier.
 
 \section*{Spam Filters}
-A spam filter is just a special case of a classifier with two classes: spam and not spam (often called ham). 
+A spam filter is just a special case of a classifier with two classes: spam and not spam (often called ham).
 Spam filtering is a situation where naive Bayes classifiers perform relatively well.
 Throughout the lab, we will use the SMS spam dataset contained in \li{sms_spam_collection.csv}.
 The messages in this dataset have already been cleaned by converting to lowercase and removing all punctuation.
 To load the dataset, use the following code:
 \begin{lstlisting}
 import pandas as pd
-df = pd.read_csv('sms_spam_collection.csv')
+df = pd.read_csv("sms_spam_collection.csv")
 
 # separate the data into the messages and labels
 X = df.Message
@@ -106,20 +105,20 @@ Also compute the probabilities $P(x_i \mid C=k)$ for each word in both the spam 
 Store these computed probabilities in dictionaries called \li{self.spam_probs} and \li{self.ham_probs}, where the key is the word and the value is the associated probability.
  Make sure to include an entry in each dictionary for every word that shows up in either class, even if there are no occurrences.
 
-For example, \li{self.ham_probs['out']} will give the computed value for $P(x_i=\text{``out''} \mid C=\text{ham})$ value:
+For example, \li{self.ham_probs["out"]} will give the computed value for $P(x_i=\text{``out''} \mid C=\text{ham})$ value:
 \begin{lstlisting}
 # Example model trained on the first 300 data points
 >>> nb = NaiveBayesFilter()
 >>> nb.fit(X[:300], y[:300])
 
-# Check spam and ham probabilities of 'out'
->>> nb.ham_probs['out']
+# Check spam and ham probabilities of "out"
+>>> nb.ham_probs["out"]
 0.003147128245476003
->>> nb.spam_probs['out']
+>>> nb.spam_probs["out"]
 0.004166666666666667
 \end{lstlisting}
 
-Hint: be sure you count the number of occurrences of a word, and not simply of a string. For example, when searching the string \li{'find it in there'} for the word \li{'in'}, make sure you get $1$ and not $2$ (because of the \li{'in'} in \li{'find'}).
+Hint: be sure you count the number of occurrences of a word, and not simply of a string. For example, when searching the string \li{"find it in there"} for the word \li{"in"}, make sure you get $1$ and not $2$ (because of the \li{"in"} in \li{"find"}).
 The methods \li{pd.Series.str.split()} and \li{count()} may be helpful.
 When using \li{split()}, call it without any arguments, as otherwise you may accidentally add empty strings to your data.
 \end{problem}
@@ -144,7 +143,7 @@ To avoid this issue, we will work with the logarithm of the probability:
 This has the same maximizer as before, so our predictions are unaffected, while also avoiding any issues with underflow.
 
 \begin{problem}\label{NB:prob_predict_proba}
-Implement the \li{predict_proba()} method in your naïve Bayes classifier. 
+Implement the \li{predict_proba()} method in your naïve Bayes classifier.
 It should take as an argument \li{X}, the data that needs to be classified, and it will compute the log probabilities as given in Equation \ref{eq:log_problem} for each message in \li{X}.
 In the case we have some word $x_u$ that is not found in the training set, use the value $P(x_u \mid C=k)=\frac{1}{2}$ for both classes.
 
@@ -167,9 +166,9 @@ Hint: The dataframe \li{X}'s index might not be in order or consecutive integers
 \begin{problem}\label{NB:prob_log}
 Implement the method \li{predict()}.
 Accept as an argument \li{X}, the data to be classified, and return an array with the same shape holding the predicted class for each sample in \li{X}.
-The entries of this array should be strings \li{'spam'} and \li{'ham'}.
+The entries of this array should be strings \li{"spam"} and \li{"ham"}.
 Use your method \li{predict_proba()} to compute the log probabilites of each class.
-In case of a tie, predict \li{'ham'}.
+In case of a tie, predict \li{"ham"}.
 
 Your code should produce the following output with the example from Problem \ref{prob:naivebayes:categorical-train}:
 \begin{lstlisting}
@@ -220,7 +219,7 @@ r_{i,k} = N_\text{occurences of word $i$ in class $k$}
 \]
 However, observe that in Equation \eqref{eq:poisson}, if we have $r=0$ then $P(n_i=x)=0$ whenever $x>0$.
 This leads to the exact same issue we saw with the categorical approach, and will lead to predicted probabilities being 0.
-To resolve this issue, we will again use Laplace add-one smoothing and instead use the values 
+To resolve this issue, we will again use Laplace add-one smoothing and instead use the values
 \begin{equation}\label{eq:normalized_r}
     r_{i,k} = \frac{N_\text{occurences of word $i$ in class $k$}+1}
 {N_\text{total words in class $k$}+2}.
@@ -230,7 +229,7 @@ As before, this can be interpreted as the maximum likelihood estimator if we sta
 Making predictions with this model is exactly the same as we did earlier, albeit with slightly different equations.
 Specifically, if we write Equation \ref{eq:log_problem} with the Poisson probability, our prediction is given by
 \begin{equation}\label{eq:poisson_prob}
-\argmax_{k\in K}\ln\left(P(C=k)\right) + 
+\argmax_{k\in K}\ln\left(P(C=k)\right) +
 \sum_{i\in\text{Vocab}}
 \ln\left(\frac{(r_{i,k}n)^{n_i}e^{-r_{i,k}n}}{n_i!}\right),
 \end{equation}
@@ -240,25 +239,25 @@ with $n_i$ the number of times the $i^{\text{th}}$ word occurs in the message, $
 Create a new class called \li{PoissonBayesFilter}, with three methods called \li{fit()}, \li{predict_proba()}, and \li{predict()}, analogous to those in the \li{NaiveBayesFilter} class.
 
 Implement \li{fit()} by finding the MLE found in Equation \ref{eq:normalized_r} to predict $r$ for each word in both the spam and ham classes, thereby training the model.
-Store these computed rates in dictionaries called \li{self.spam_rates} and \li{self.ham_rates}, where the key is the word and the value is the associated $r$. 
+Store these computed rates in dictionaries called \li{self.spam_rates} and \li{self.ham_rates}, where the key is the word and the value is the associated $r$.
 
-For example, \li{self.ham_rates['in']} will give the computed $r$ value for the word "in" found in ham messages.
+For example, \li{self.ham_rates["in"]} will give the computed $r$ value for the word "in" found in ham messages.
 \begin{lstlisting}
 # Example model trained on the first 300 data points
 >>> pb = PoissonBayesFilter()
 >>> pb.fit(X[:300], y[:300])
 
 # Check spam and ham rate of 'in'
->>> pb.ham_rates['in']
+>>> pb.ham_rates["in"]
 0.012588512981904013
->>> pb.spam_rates['in']
+>>> pb.spam_rates["in"]
 0.004166666666666667
 \end{lstlisting}
 
-Implement the \li{predict_proba()} and \li{predict()} methods using equation \ref{eq:poisson_prob}. 
+Implement the \li{predict_proba()} and \li{predict()} methods using equation \ref{eq:poisson_prob}.
 These methods will take the same arguments and return the same object types as the methods of the same name in the \li{NaiveBayesFilter} class.
 If a word $u$ not in the training set is in one of the messages, use the value $r_{u,k}=1/(N_{k}+2)$.
-In case of a tie in the probabilities of two classes, predict \li{'ham'}.
+In case of a tie in the probabilities of two classes, predict \li{"ham"}.
 Your code should produce the following output with the example above:
 \begin{lstlisting}
 >>> pb.predict_proba(X[800:805])
@@ -267,12 +266,12 @@ array([[ -37.14113097,  -38.2193235 ],
        [ -55.70966168,  -63.83602125],
        [-130.02471282,  -90.15687624],
        [-102.36539804,  -69.55261684]])
-       
+
 >>> pb.predict(X[800:805])
 array(['ham', 'spam', 'ham', 'spam', 'spam'], dtype=object)
 \end{lstlisting}
 
-Hint: Most of your code will be very similar to your \li{NaiveBayesFilter} class. The function \li{np.unique} with the argument \li{return_counts=True} and the function \li{scipy.stats.poisson.logpmf} will be useful for \li{predict_proba()}. 
+Hint: Most of your code will be very similar to your \li{NaiveBayesFilter} class. The function \li{np.unique} with the argument \li{return_counts=True} and the function \li{scipy.stats.poisson.logpmf} will be useful for \li{predict_proba()}.
 \end{problem}
 
 \begin{problem}
@@ -317,8 +316,8 @@ This naïve Bayes model uses the multinomial distribution where we have used the
 Multinomial is very similar to the categorical implementation, as the multinomial distribution models the outcome of $n$ categorical trials (in the same way that the binomial distribution models $n$ Bernoulli trials).
 
 \begin{problem}\label{prob:naivebayes:sklearn}
-Write a function that will classify messages using the SkLearn naive Bayes implementation. 
-It will take as arguments training data \li{X_train} and \li{y_train}, and test data \li{X_test}. 
+Write a function that will classify messages using the SkLearn naive Bayes implementation.
+It will take as arguments training data \li{X_train} and \li{y_train}, and test data \li{X_test}.
 In this function use the \li{CountVectorizer} and \li{MultinomialNB} from SkLearn and return the predicted classification of the model.
 \end{problem}
 %To calculate the accuracy of the predictions, we can use the \li{accuracy_score} method of \li{sklearn.metrics}.

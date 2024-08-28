@@ -1,8 +1,9 @@
 \lab{Information Theory and Wordle}{Information Theory}
+\labdependencies{}
 \objective{Use the information theory concept of entropy to create an algorithm for playing the popular word game Wordle.}
 
 \section*{Wordle}
-Wordle is a word game\footnote{It was particularly popular on the internet in 2022.} where you have 6 guesses to guess a five-letter word. 
+Wordle is a word game\footnote{It was particularly popular on the internet in 2022.} where you have 6 guesses to guess a five-letter word.
 Every time a guess is made, you receive some information about how close your guess is to the correct answer.
 Letters in the guess that are in the correct location are colored green; letters that are present in the secret word but not in the correct location are colored yellow; and letters that aren't present in the secret word are colored gray.
 An example game is given in Figure \ref{fig:wordle-example}.
@@ -11,7 +12,7 @@ An example game is given in Figure \ref{fig:wordle-example}.
 	\includegraphics{figures/wordle-example.png}
 	\caption{
 	\label{fig:wordle-example}
-	An example game of Wordle. 
+	An example game of Wordle.
 	Here, the secret word is ``train.''
 	Green tiles mean the letter is in the correct location; yellow tiles mean the letter is in the secret word but not at that location; and grey tiles mean the letter is not in the secret word.
 	}
@@ -30,12 +31,12 @@ In order to get these cases correct, have your function follow the following rul
 \begin{enumerate}
 \item All letters in the guess that are correct in the correct location are marked green.
 \item Any other letters in the guess that are in the secret word but not in the right location are marked yellow.
-\item However, there will not be more copies of a letter marked yellow or green than there are copies of that letter in the secret word. 
+\item However, there will not be more copies of a letter marked yellow or green than there are copies of that letter in the secret word.
 For instance, if the secret word has one letter \li{e} and the guess has three, only one of them will be marked yellow or green.
 The letters are marked yellow from left to right.
 \item All other letters are marked gray.
 \end{enumerate}
-	
+
 	Here are some examples you can use to test your code:
 \begin{lstlisting}
 >>> get_guess_result("excel", "boxed")
@@ -49,7 +50,7 @@ The letters are marked yellow from left to right.
 >>>  get_guess_result("robot", "older")
 [1, 1, 0, 0, 0]
 \end{lstlisting}
-	
+
 	Hint: Find some way to keep track of which letters in the secret word have been matched to.
 	Since strings are immutable, it may also be helpful to turn the guess and secret word into lists if you need to modify them.
 \end{problem}
@@ -79,7 +80,7 @@ array([  1, 109,  28, ...,  28, 108,   6])
 >>> all_guess_results[:,j]
 array([ 54,   9,   0, ...,   0, 135,   0])
 # The result of guessing "boxes" for the secret word "steel"
->>> all_guess_results[i,j]
+>>> all_guess_results[i, j]
 135
 # 135 is equivalent to [0, 0, 0, 2, 1]
 \end{lstlisting}
@@ -98,7 +99,7 @@ The base-2 logarithm is often used because it represents the number of bits need
 The entropy of a random variable \(X\), which we denote \(H(X)\), is then defined as
 \[
 H(X)= \mathbb{E}\left[-\log_2 P(X=x)\right]=-\sum_x P(X=x)\log_2 P(X=x).
-\] 
+\]
 %where the sum version comes from the Law of the Unconscious Statistician.
 A loose interpretation is that if a random variable has lower entropy, then we know more about what its value will be even if we haven't observed it yet, and observing it usually will give little information.
 At one extreme, if a discrete random variable has zero entropy, then it is necessarily constant.%almost surely, to be technical
@@ -202,20 +203,20 @@ Finding the optimal next guess to make is then equivalent to repeating the same 
 
 \begin{problem}\label{infotheory:prob:filter}
 	Create a function that filters the list of possible secret words after making a guess.
-	
+
 	Accept the array of all guess results (as in \li{all_guess_results.npy}), the list of allowed guesses, the list of possible secret words, the guess that was made, and the guess's result (as a list of integers).
 	Return a filtered list of possible words that are still possible after knowing the result of a guess.
 	Also return a filtered version of the array of all guess results that only contains the results for the secret words still possible after making the guess.
 	This smaller array will be used in later steps of the game.
-	
+
 	If our guess is ``boxes'' and the guess result is \li{[0,0,0,2,1]}, then the list of remaining words should have length 47 and the array of guess results should have shape \li{(12953, 47)}.
-	
+
 	Hint: to find the index of a word in either of the wordlists, use the \li{.index()} function.
-	
+
 	Hint part 2: The most efficient way to do this problem is with \emph{boolean masking}.
 	If \li{A} is any numpy array and \li{mask} is a 1-D array of True/False values, then \li{A[mask]} will return the portion of \li{A} where \li{mask} is true.
 	This can be used even if \li{A} is multidimensional, and on dimensions other than the first; for instance, \li{A[:,mask]} will use the mask for the second dimension of the array.
-	
+
 \end{problem}
 \begin{info}
 Note that although we filter down the list of possible secret words, we do not do anything similar for the list of allowed guesses.
@@ -240,7 +241,7 @@ A simple strategy to compare to is to select an allowed guess at random until we
 	\end{itemize}
 	Use \li{game.is_finished()} to check if the game has been finished.
 	Return the number of guesses needed to guess the secret word (including guessing the word, not just determining it).
-	
+
 	To visualize this algorithm, pass the argument \li{display=True}, and the \li{WordleGame} will print out each word as it is guessed.
 \end{problem}
 
@@ -279,7 +280,7 @@ Basically, we want to maximize the amount of information we get from the two gue
 
 This is more complicated to implement.
 The computational complexity is also exponential in the number of guesses one looks ahead, and quickly becomes unmanageable.
-Handling the edge cases optimally when the number of possible secret words becomes small also becomes more complicated. 
+Handling the edge cases optimally when the number of possible secret words becomes small also becomes more complicated.
 For instance, if we are looking two guesses ahead and there are three possible secret words left, there are likely to be many pairs of guesses that eliminate two secret words, but there may be a way to do so with a single guess; this setup does not distinguish the two.
 Really, this mostly just means we need to formulate what we mean by ``optimal'' more carefully; that is, we need to create a cost function for the whole problem, rather than simply maximizing the entropy.
 

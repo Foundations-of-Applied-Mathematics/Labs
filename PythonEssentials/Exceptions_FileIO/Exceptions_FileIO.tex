@@ -1,4 +1,5 @@
 \lab{Exceptions and File Input/Output}{Exceptions and File Input/Output}
+\labdependencies{}
 \objective{
 In Python, an \emph{exception} is an error detected during execution.
 Exceptions are important for regulating program usage and for correctly reporting problems to the programmer and end user.
@@ -275,6 +276,87 @@ Exception: not caught!>>            # The exception wasn't caught!
 See \url{https://docs.python.org/3/library/exceptions.html} for the complete list of built-in exceptions and the exception class hierarchy.
 \end{info}
 
+\subsection*{Debugging Exceptions} %-------------------------------------------
+
+Exceptions are an essential and informative tool for debugging your code.
+As such, it's important to understand what an exception is saying and how to properly debug (or fix) the issue causing it.
+
+\subsubsection*{The Stack Trace} %--------------------------------------------
+
+The stack trace is the printed-out statement given to the user or programmer whenever an exception is raised.
+It contains important information about the type of exception and the location where the exception occured.
+
+\begin{lstlisting}
+>>> x = 1/0       # Stack trace below
+<<Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ZeroDivisionError: division by zero>>
+\end{lstlisting}
+
+Exceptions can have more complicated stack traces if the error occurs inside of a function call, among other scenarios.
+As stated at the top of the stack trace, the most recent function call before the exception occurred is output last.
+This means that the stack trace could contain several lines indicating where the error occured.
+
+\begin{lstlisting}
+>>> def make_error():     # Function to raise an error
+...     return 1/0
+...
+>>> x = make_error()     # Calling the function
+<<Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 2, in make_error
+ZeroDivisionError: division by zero>>   # The exception occurred in the function!
+\end{lstlisting}
+
+Additionally, most modern IDE's display the line of code that caused the error (and may even point to the specific part of the line that is believed to be at fault).
+If the last function called was a function you did not write, this can mean that unfamiliar code is displayed to you which might not be helpful in debugging your code.
+As such, it's important to first look at the type of exception raised (listed at the bottom of the stack trace) and then move up the stack trace to identify code that may have caused the issue.
+
+\begin{lstlisting}
+# Stack trace as displayed by the terminal
+<<Traceback (most recent call last):
+  File "<filepath>", line 4, in <module>
+    x = make_error()
+  File "<filepath>", line 2, in make_error
+    return 1/0
+ZeroDivisionError: division by zero>>
+\end{lstlisting}
+
+\subsubsection*{Print Debugging} %---------------------------------------------
+One of the most basic (yet effective) methods for debugging is using print statements.
+This involves printing out information in the lines leading up to where the exception was raised (which you can find using the stack trace).
+For example, if a variable being passed into a function is causing an exception, it can be helpful to print out the value of that variable on the line before the function is executed.
+
+\begin{lstlisting}
+>>> def divide(a,b):           # Normal function to divide variables
+...     return a/b
+...
+>>> x = 1
+>>> y = 0
+>>> print(f"{x=} and {y=}")    # Print out the variables that we'll be using
+<<x=1 and y=0>>
+>>> z = divide(x,y)            # Our input values cause an error
+<<Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 2, in divide
+ZeroDivisionError: division by zero>>
+\end{lstlisting}
+
+This method is simple to implement and can help identify problems in the code that occured before an exception was raised.
+It can even help identify problems with function outputs that don't result in an exception (such as unexpected results or values).
+
+\subsubsection*{Debuggers} %---------------------------------------------------
+While print statements can be a quick solution to small bugs, most IDE's (including VS Code) include a helpful tool called a debugger to aid in finding and fixing errors in code.
+This is a separate runtime environment to running the code normally and is generally referred to as runing in debug mode.
+Debuggers have many useful features, including the ability to add special markers called \emph{break points} to your code.
+
+These markers (when running in debug mode) temporarily pause execution just before the line specified and display the values of all variables, as well as other useful information.
+After execution is paused, it will not resume until the programmer indicates.
+Additionally, code can be executed line-by-line in this paused state, and variables will display their new values as they update.
+
+There are many more tools available in the debugger, so it's highly encouraged to test out the version specific to your IDE to learn best how it can help you debug your code.
+
+
 \section*{File Input and Output} % ============================================
 
 A file object acts as an interface to a file stream, meaning, it allows a program to read from or write to external files.
@@ -457,9 +539,9 @@ We define an f-string with an `f' preceding the string declaration (i.e f`your w
 
 \begin{lstlisting}
 # defining function
->>> def abomination(userOpinion='Bread and Butter Pickles'):
+>>> def abomination(userOpinion="Bread and Butter Pickles"):
 ...        # notice the use of the f-string
-...        return f'I think that {userOpinion} are an abomination'
+...        return f"I think that {userOpinion} are an abomination"
 
 # calling the function
 >>> abomination()
@@ -557,7 +639,7 @@ C f
 
 \begin{warn} % trailing whitespaces warning.
     When parsing though the datafiles be sure to account for trailing whitespaces at the end of lines.
-    Each file may or may not contain them, which can lead to unexpected behavior. 
+    Each file may or may not contain them, which can lead to unexpected behavior.
     Consider using \li{strip()} to avoid bugs in your code.
 \end{warn}
 
@@ -642,7 +724,7 @@ Consider the following code for printing out a simple progress bar from within a
 ...
 \end{lstlisting}
 
-Here the string \li{"\\r[\{:<20\}]"} used in conjunction with the \li{<<format()>>} method tells the cursor to go back to the beginning of the line, print an opening bracket, then print the first argument of \li{<<format()>>} left-aligned with at least $20$ total spaces before printing the closing bracket. The \li{<<end>>}  parameter can change the default newline added to the output to another ending. Setting to an empty string, \li{<<end=''>>}, the output ends without any whitespace. The \li{<<flush>>} parameter defaults to  \li{<<False>>} and does not need to be changed if the \li{<<end>>}  parameter is not changed. As shown in the example above, setting the parameter equal to \li{<<True>>} forces the output to be printed on the terminal before it is complete. If it is \li{<<False>>} with the \li{<<end=''>>}  the \li{<<print()>>} function will first build the output with the set ending before printing each iteration rather than printing incrementally. 
+Here the string \li{"\\r[\{:<20\}]"} used in conjunction with the \li{<<format()>>} method tells the cursor to go back to the beginning of the line, print an opening bracket, then print the first argument of \li{<<format()>>} left-aligned with at least $20$ total spaces before printing the closing bracket. The \li{<<end>>}  parameter can change the default newline added to the output to another ending. Setting to an empty string, \li{<<end=''>>}, the output ends without any whitespace. The \li{<<flush>>} parameter defaults to  \li{<<False>>} and does not need to be changed if the \li{<<end>>}  parameter is not changed. As shown in the example above, setting the parameter equal to \li{<<True>>} forces the output to be printed on the terminal before it is complete. If it is \li{<<False>>} with the \li{<<end=''>>}  the \li{<<print()>>} function will first build the output with the set ending before printing each iteration rather than printing incrementally.
 % The comma after the print command suppresses the automatic newline character, keeping the output of each individual print statement on the same line.
 
 Printing at each iteration dramatically slows down the progression through the loop.

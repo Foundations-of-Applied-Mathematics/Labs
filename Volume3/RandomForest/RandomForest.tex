@@ -1,4 +1,5 @@
 \lab{Random Forests}{Random Forests}
+\labdependencies{LSISkLearn}
 \objective{Understand how to build and use a classification tree and a random forest.}
 
 \section*{Classification Trees} %-----------------------------
@@ -77,12 +78,12 @@ You may use this file to test your functions.
 \begin{lstlisting}
 >>> import numpy as np
 # Load in the data
->>> animals = np.loadtxt('animals.csv', delimiter=',')
+>>> animals = np.loadtxt("animals.csv", delimiter=',')
 # Load in feature names
->>> features = np.loadtxt('animal_features.csv', delimiter=',', dtype=str, 
+>>> features = np.loadtxt("animal_features.csv", delimiter=',', dtype=str,
 ...					comments=None)
 # Load in sample names
->>> names = np.loadtxt('animal_names.csv', delimiter=',', dtype=str)
+>>> names = np.loadtxt('animal_names.csv", delimiter=',', dtype=str)
 
 # initialize question and test partition function
 >>> question = Question(column=1, value=3, feature_names=features)
@@ -101,7 +102,7 @@ You may use this file to test your functions.
 
 
 \subsection*{Optimal Split}
-To use the \li{partition()} function from Problem \ref{prob:1}, we need to know which question to ask at each node. 
+To use the \li{partition()} function from Problem \ref{prob:1}, we need to know which question to ask at each node.
 Usually, the question is determined by the split that maximizes either the Gini impurity or the information gain (which itself uses the Gini impurity).
 For this lab, we will use the information gain.
 
@@ -111,7 +112,7 @@ It is a measure of homogeneity of labels, so it is $0$ when all samples at a nod
 \begin{definition}
 Let $D$ be a dataset with $K$ different class labels and $N$ different samples.
 Let $N_{k}$ be the number of samples labeled class $k$ for each $1 \leq k \leq K$.
-We define the \emph{Gini impurity} to be 
+We define the \emph{Gini impurity} to be
 \begin{equation*}
 G(D) = 1 - \sum_{k=1}^{K} \left(\frac{N_k}{N}\right)^2.
 \end{equation*}
@@ -124,7 +125,7 @@ We will use a modified version of information gain for simplicity:
 
 \begin{definition}
 Let $s_{D}(p,x) = D_{1},D_{2}$ be a partition of data $D$.
-We define the \emph{information gain} of this partition to be 
+We define the \emph{information gain} of this partition to be
 \begin{equation*}
 I(s_{D}(p,x)) = G(D) - \sum_{i=1}^{2} \frac{\abs{D_{i}}}{\abs{D}} \cdot G(D_{i})
 \end{equation*}
@@ -136,7 +137,7 @@ where $\abs{D}$ represents the number of samples (or rows) in $D$.
 Write a function \li{gini()} that computes the Gini impurity of a given dataset with the class labels in the last column.
 Write another function \li{info_gain()} that computes the information gain for a given split of data.
 
-\noindent Hint: the functions \li{num_rows()} and \li{class_counts()} are provided, which return the number of rows in a given array and a dictionary with the number of samples for each class label, respectively. 
+\noindent Hint: the functions \li{num_rows()} and \li{class_counts()} are provided, which return the number of rows in a given array and a dictionary with the number of samples for each class label, respectively.
 
 \begin{lstlisting}
 # Test your functions
@@ -182,13 +183,13 @@ If no partitions are possible due to \li{2*min_samples_leaf}, return \li{None} f
 \end{problem}
 
 \subsection*{Building the Tree}
-Once the optimal split for a node is determined, the node needs to be defined as either a Leaf node or a Decision node. 
+Once the optimal split for a node is determined, the node needs to be defined as either a Leaf node or a Decision node.
 As described earlier, leaf nodes have no children, and the classification of samples are determined in leaf nodes.
 If the optimal split returns a left and right tree, then the node is a decision node and has a question associated with it to determine which path a sample should follow.
 The next two problems will walk through building a classification tree using the functions and classes from the previous problems.
 
 \begin{problem}
-The class \li{Leaf} is instantiated with data containing samples in that leaf. 
+The class \li{Leaf} is instantiated with data containing samples in that leaf.
 In the constructor, save an attribute \li{prediction} as a dictionary of how many samples in the leaf belong to each unique class label.
 
 \noindent Hint: remember the provided function \li{class_counts()}.
@@ -201,7 +202,7 @@ Name these three attributes \li{question}, \li{left}, and \li{right}.
 
 In addition to having a minimum leaf size, it's also important to have a maximum depth for trees.
 Without restricting the depth, the tree can become very large; if there is no minimum leaf size, it can be one less than the number of training samples.
-Limiting the depth can stop the tree from having too many splits, preventing it from becoming too complex and overfitting the training data. 
+Limiting the depth can stop the tree from having too many splits, preventing it from becoming too complex and overfitting the training data.
 On the other hand, it's also important to not have too shallow of a tree because then the tree will underfit the data.
 
 \begin{problem}
@@ -281,7 +282,7 @@ A common method which we will use here is to split on $\sqrt{n}$ features (round
 When predicting the label of a new sample, each trained tree in the forest casts a vote, determined as above, and the sample is labeled according to the majority vote of the trees.
 
 \begin{problem}
-Add an argument \li{random_subset} to \li{find_best_split()} and \li{build_tree()}, defaulting to \texttt{False}, that indicates whether or not the tree should be trained randomly.
+Add an argument \li{random_subset} to \li{find_best_split()} and \li{build_tree()}, defaulting to \li{False}, that indicates whether or not the tree should be trained randomly.
 When \texttt{True}, each node should be restricted to a random combination of $\sqrt{n}$ (rounded down) features to use in its split, where $n$ is the total number of features (note that class labels are not features).
 This will require the function \li{find_best_split()} to be altered so that it only iterates through a random combination of $\sqrt{n}$ features (columns).
 
@@ -315,16 +316,16 @@ Rather than accepting all the data as a single array, as in our implementation, 
 >>> test = shuffled[80:]
 
 # Fit the model to your data, passing the labels in as the second argument
->>> forest.fit(train[:,:-1], train[:,-1])
+>>> forest.fit(train[:, :-1], train[:, -1])
 
 # Test the accuracy with the testing set
->>> forest.score(test[:,:-1], test[:,-1])
+>>> forest.score(test[:, :-1], test[:, -1])
 0.85
 \end{lstlisting}
 
 \begin{problem}
 The file \li{parkinsons.csv} contains annotated speech data from people with and without Parkinson's Disease.
-The first column is the subject ID, columns 2-27 are various features, and the last column is the label indicating whether or not the subject has Parkinson's. 
+The first column is the subject ID, columns 2-27 are various features, and the last column is the label indicating whether or not the subject has Parkinson's.
 You will need to remove the first column so your forest doesn't use participant ID to predict class labels.
 Feature names are contained in the file \li{parkinsons_features.csv}.
 

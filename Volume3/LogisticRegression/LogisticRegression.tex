@@ -6,14 +6,15 @@
 \newcommand{\logistic}{\text{sigm}}
 
 \lab{Logistic Regression}{Logistic Regression}
+\labdependencies{LinearRegression,LSISkLearn}
 \objective{Understand the basic principles of Logistic Regression and binary classifiers. Apply this to a dataset.}
 
 Linear regression is unsuitable for predicting probabilities, because the resulting model may take values in any fixed interval in $\mathbb{R}$, but a probability-predicting model can only take values in the interval $[0,1]$.
 \emph{Logistic regression} is a form of regression that always takes its values in the interval $[0,1]$ and as such, is a popular method for predicting probabilities and for constructing \emph{classifiers}.
-As in linear regression, in a classification problem we have a random variable $Y$, conditioned on an input $X \in \mathbb{R}^d$. 
-However, in \emph{binary classification} problems the random variable $Y$ is binary, that is, $Y\in\{0,1\}$.   
-A \emph{binary classifier} is any function $f$ taking values in $\{0,1\}$. 
-For example, $\x\in \mathbb{R}^d$ could be the pixel intensities of an image, and the classifier $f$ gives $1$ if the image is a picuture of a duck and $0$ otherwise.  
+As in linear regression, in a classification problem we have a random variable $Y$, conditioned on an input $X \in \mathbb{R}^d$.
+However, in \emph{binary classification} problems the random variable $Y$ is binary, that is, $Y\in\{0,1\}$.
+A \emph{binary classifier} is any function $f$ taking values in $\{0,1\}$.
+For example, $\x\in \mathbb{R}^d$ could be the pixel intensities of an image, and the classifier $f$ gives $1$ if the image is a picuture of a duck and $0$ otherwise.
 The goal of a classification problem is to choose a classifier $\widehat{f}$ so that $(X,\widehat{f}(X))$ is a good approximation for $(X,Y)$.
 
 \section*{Logistic Regression}
@@ -28,30 +29,30 @@ Logistic regression relies heavily on the \emph{logistic function}, also known a
 \end{figure}
 
 This function works well for classifying objects based on probabilities, because it has some key properties that translate well into probability theory.
-Of particular note, the graph can translated by adding a constant, giving the form $\text{sigm}( \beta_1 t + \beta_0)$.  
-A larger value of $\beta_1$ makes the ramp up from $0$ to $1$ steeper, while a smaller value of $\beta_1$ makes it less steep. 
+Of particular note, the graph can translated by adding a constant, giving the form $\text{sigm}( \beta_1 t + \beta_0)$.
+A larger value of $\beta_1$ makes the ramp up from $0$ to $1$ steeper, while a smaller value of $\beta_1$ makes it less steep.
 The trick behind logistic regression is to find the values of $\beta_i$ such that the resulting sigmoid function best classifies the data.
 
 In logistic regression models we have a random variable $Y$ with support $\{0,1\}$, where $Y$ is conditioned on another random variable $X$, with support in $\mathbb{R}^d$.
 The distribution of $Y$, given $X$, is assumed to be Bernoulli
 
 \[
-Y \mid X \sim \text{Bernoulli}(\text{sigm}(X\trp\boldsymbol\beta)),  
+Y \mid X \sim \text{Bernoulli}(\text{sigm}(X\trp\boldsymbol\beta)),
 \]
 
 so that
 
 \[
-    P(Y \mid X) = \text{sigm}(X\trp\bbeta) = \frac{1}{1 + \text{exp}(-X\trp\bbeta)}.  
+    P(Y \mid X) = \text{sigm}(X\trp\bbeta) = \frac{1}{1 + \text{exp}(-X\trp\bbeta)}.
 \]
 
 As in the case of linear regression, we usually add a constant feature $X_0=\boldsymbol{1}$ to $X$ and a corresponding coefficient $\beta_0$ to $\bbeta$, so that $X\trp \bbeta = \beta_0 + \beta_1 X_1 + \cdots + \beta_d X_d$.
-Given a draw of length $n$ of the form $D = \{(\x_1,y_1),\dots, (\x_n,y_n)\}$ we wish to estimate $\bbeta$.  
-The maximum likelihood estimator is a good choice.   
-To find this estimator, first observe that the likelihood of $\bbeta$, given the data, is 
+Given a draw of length $n$ of the form $D = \{(\x_1,y_1),\dots, (\x_n,y_n)\}$ we wish to estimate $\bbeta$.
+The maximum likelihood estimator is a good choice.
+To find this estimator, first observe that the likelihood of $\bbeta$, given the data, is
 
 \begin{align*}
-    L(\bbeta \mid D) 
+    L(\bbeta \mid D)
     &= \prod_{i=1}^n P(Y=y_i, X = \x_i \mid \bbeta)\\
     &= \prod_{i=1}^n P(Y=y_i \mid X = \x_i,  \bbeta) P( X_i).       %! LaTeX Error: Command \ttfamily invalid in math mode.
 \end{align*}
@@ -59,7 +60,7 @@ To find this estimator, first observe that the likelihood of $\bbeta$, given the
 which is equivalent to maximizing
 
 \[
-    \prod_{i=1}^n P(Y=y_i \mid X=x_i, \bbeta) = \prod_{i=1}^n p_i^{y_i}(1-p_i)^{1-y_i}.  
+    \prod_{i=1}^n P(Y=y_i \mid X=x_i, \bbeta) = \prod_{i=1}^n p_i^{y_i}(1-p_i)^{1-y_i}.
 \]
 
 where
@@ -78,8 +79,8 @@ p_i = P(Y=1 \mid \x_i, \bbeta) = \text{sigm}(\x_i\trans \bbeta) =  \frac{1}{1 + 
 
 \begin{problem}
     Write a \li{fit()} method in the Python \li{LogiReg} classifier that accepts an $(n\times 1)$ array \li{y} of binary labels ($0$'s and $1$'s) as well as an $(n\times d)$ array \li{X} of data points that uses equation \ref{eq:cross-entropy-loss2} to find and save the optimal $\widehat\bbeta$.
-    Save \li{X}, \li{y}, and $\widehat\bbeta$ as attributes. 
-    Remember to add a column of ones to \li{X} before implementing the \li{fit} algorithm. 
+    Save \li{X}, \li{y}, and $\widehat\bbeta$ as attributes.
+    Remember to add a column of ones to \li{X} before implementing the \li{fit} algorithm.
 \label{logireg:prob:fit}
 \end{problem}
 
@@ -103,7 +104,7 @@ To test your classifier, create training arrays \li{X} and \li{y} as well as a t
 The code to generate \li{X}, \li{y} and \li{X\_test} is provided below.
 Both \li{X} and \li{X\_test} have $100$ random draws from a 2-dimensional multivariate normal distribution centered at $(1,2)$, and another $100$ draws from one centered at $(4,3)$.
 
-Train your classifier on \li{X} and \li{y}. 
+Train your classifier on \li{X} and \li{y}.
 Then generate a list of predicted labels using your trained classifier and \li{X\_test}, and use it to plot \li{X\_test} with a different color for each predicted label.
 Your plot should look similar to Figure \ref{fig:prob3}.
 If you didn't add a constant column in Problem \ref{logireg:prob:fit}, go back and do that.
@@ -112,23 +113,23 @@ This will allow the decision boundary between the two classes to not intersect t
 \begin{lstlisting}
 >>> import numpy as np
 
->>> data = np.column_stack(( 
+>>> data = np.column_stack((
         # draw from 2 2-dim. multivariate normal dists.
-        np.concatenate(( 
-        np.random.multivariate_normal(np.array([1,2]), np.eye(2), 100),
-        np.random.multivariate_normal(np.array([4,3]), np.eye(2), 100) 
-        )), 
+        np.concatenate((
+        np.random.multivariate_normal(np.array([1, 2]), np.eye(2), 100),
+        np.random.multivariate_normal(np.array([4, 3]), np.eye(2), 100)
+        )),
         # labels corresonding to each distribution
         np.concatenate(( np.zeros(100), np.ones(100) )) ))
 >>> np.random.shuffle(data)
 >>> # extract X and y from the shuffled data
->>> X = data[:,:2]
->>> y = data[:,2].astype(int)
+>>> X = data[:, :2]
+>>> y = data[:, 2].astype(int)
 
->>> X_test = np.concatenate(( 
+>>> X_test = np.concatenate((
         # draw from 2 identical 2-dim. multivariate normal dists.
-        np.random.multivariate_normal(np.array([1,2]), np.eye(2), 100),
-        np.random.multivariate_normal(np.array([4,3]), np.eye(2), 100) 
+        np.random.multivariate_normal(np.array([1, 2]), np.eye(2), 100),
+        np.random.multivariate_normal(np.array([4, 3]), np.eye(2), 100)
         ))
 >>> np.random.shuffle(X_test)
 \end{lstlisting}
@@ -180,7 +181,7 @@ Alternatively, you can use \li{sklearn.metrics.accuracy_score} to find the perce
 
 \section*{Support Vector Machines}
 
-Support Vector Machines (SVM) are another type of classifier. It uses what is called the 'kernel trick' to handle nonlinear input spaces. It classifies data by finding an optimal hyperplane to split the data. 
+Support Vector Machines (SVM) are another type of classifier. It uses what is called the 'kernel trick' to handle nonlinear input spaces. It classifies data by finding an optimal hyperplane to split the data.
 \begin{lstlisting}
 >>> from sklearn import svm
 
@@ -192,7 +193,7 @@ Support Vector Machines (SVM) are another type of classifier. It uses what is ca
 \begin{problem}
     The code to generate arrays \li{X}, \li{y}, \li{X\_test}, and \li{y\_test} is provided below.
     \li{X} and \li{X\_test} are each composed of $200$ draws from two $20$-dimensional multivariate normal distributions, one centered at $\boldsymbol{0}$, and the other centered at $\boldsymbol{2}$.
-    
+
     Using each of \li{LogiReg}, \li{statsmodels}, \li{sklearn.LogisticRegression}, and \li{sklearn.svm}, train a logistic regression classifier on \li{X} and \li{y} to generate a list of predicted labels for \li{X\_test}.
     Then, using \li{y\_test}, print the accuracy scores for each trained model.
     Compare the accuracies and training/testing time for all four classifiers.
@@ -201,26 +202,26 @@ Support Vector Machines (SVM) are another type of classifier. It uses what is ca
     \begin{lstlisting}
     >>> # predefine the true beta
     >>> beta = np.random.normal(0, 7, 20)
-        
+
     >>> # X is generated from 2 20-dim. multivariate normal dists.
-    >>> X = np.concatenate(( 
-            np.random.multivariate_normal(np.zeros(20), np.eye(20), 100), 
-            np.random.multivariate_normal(np.ones(20)*2, np.eye(20), 100) 
+    >>> X = np.concatenate((
+            np.random.multivariate_normal(np.zeros(20), np.eye(20), 100),
+            np.random.multivariate_normal(np.ones(20)*2, np.eye(20), 100)
             ))
     >>> np.random.shuffle(X)
     >>> # create y based on the true beta
-    >>> pred = 1. / (1. + np.exp(-X @ beta))  
-    >>> y = np.array( [1 if pred[i] >= 1/2 else 0 
+    >>> pred = 1. / (1. + np.exp(-X @ beta))
+    >>> y = np.array( [1 if pred[i] >= 1/2 else 0
                 for i in range(pred.shape[0])] )
-        
+
     >>> # X_test and y_test are generated similar to X and y
-    >>> X_test = np.concatenate(( 
-            np.random.multivariate_normal(np.zeros(20), np.eye(20), 100), 
-            np.random.multivariate_normal(np.ones(20), np.eye(20), 100) 
+    >>> X_test = np.concatenate((
+            np.random.multivariate_normal(np.zeros(20), np.eye(20), 100),
+            np.random.multivariate_normal(np.ones(20), np.eye(20), 100)
             ))
     >>> np.random.shuffle(X_test)
     >>> pred = 1. / (1. + np.exp(-X_test @ beta))
-    >>> y_test = np.array( [1 if pred[i] >= 1/2 else 0 
+    >>> y_test = np.array( [1 if pred[i] >= 1/2 else 0
                 for i in range(pred.shape[0])] )
     \end{lstlisting}
     Hint: Consider using the command \li{fit_regularized(disp = 0)} for the \li{statsmodels} case.
@@ -247,7 +248,7 @@ While standard logistic regression was based on the sigmoid function, multinomia
 \]
 for some choice of vectors $\bbeta_1,\dots, \bbeta_k$, which we will estimate from the data.  Here
 \[
-p_i(X) = P(Y = i \mid X) = \frac{e^{X\trans \bbeta_i}}{\sum_{j=1}^k e^{X\trans \bbeta_j}} 
+p_i(X) = P(Y = i \mid X) = \frac{e^{X\trans \bbeta_i}}{\sum_{j=1}^k e^{X\trans \bbeta_j}}
  = \frac{\logistic(X\trans \bbeta_i)}{\sum_{j=1}^k \logistic(X\trans \bbeta_j)}.
 \]
 
@@ -256,15 +257,15 @@ The maximum likelihood estimate of $\boldsymbol{\theta}$ is computed in a manner
 A bit of math shows that
 
 \begin{align*}
-    \ell(\boldsymbol{\theta}\mid D) 
+    \ell(\boldsymbol{\theta}\mid D)
     & = - \sum_{i=1}^n \sum_{j = 1}^k \delta_{c_j} (y_i) \log (p_j(\x_i)) \\
     & = - \sum_{i=1}^n \sum_{j = 1}^k \delta_{c_j} (y_i) \log \left(  \frac{e^{\x_i\trans\bbeta_j}}{\sum_{m=1}^k e^{\x_i\trans\bbeta_m}} \right)
 \end{align*}
-where 
+where
 \[
     \delta_{c_j} (y_i) = \begin{cases}
     1 & \text{if $y_i = c_j$, the jth class}\\
-    0 & \text{otherwise}. 
+    0 & \text{otherwise}.
     \end{cases}
 \]
 This is a convex minimization problem with unique minimizer $\widehat{\boldsymbol{\theta}}$.
@@ -272,7 +273,7 @@ Once $\widehat{\boldsymbol{\theta}} = (\widehat{\bbeta_1},\dots, \widehat{\bbeta
 \[
     P(Y=y \mid \x) \approx \frac{e^{\x\trans \widehat{\bbeta}_y}}{\sum_{j=1}^k e^{\x\trans \widehat{\bbeta}_j}}.
 \]
-From this, we can construct a classifier $\widehat{f}$ by setting $\widehat{f}(\x) = \text{argmax}_j P(Y=c_j \mid \x) $.  
+From this, we can construct a classifier $\widehat{f}$ by setting $\widehat{f}(\x) = \text{argmax}_j P(Y=c_j \mid \x) $.
 
 Conveniently, \li{sklearn} has a very simple implementation of multinomial logistic regression that simply requires the argument \li{multi_class='multinomial'} when initiating a \li{LogisticRegression} model.
 \begin{lstlisting}

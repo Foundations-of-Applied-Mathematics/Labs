@@ -1,4 +1,5 @@
 \lab{Introduction to Parallel Computing}{Intro to Parallel Computing}
+\labdependencies{}
 \objective{Many modern problems involve so many computations that running them on a single processor is impractical or even impossible.
 % Faster processors are constantly being developed to improve computer capacity, but this means making transistors smaller, and it is difficult to dissipate the heat of a small processor.
 There has been a consistent push in the past few decades to solve such problems with parallel computing, meaning computations are distributed to multiple processors.
@@ -237,7 +238,7 @@ Each method also has a shortcut via indexing.
 
 \begin{lstlisting}
 # Initialize the variables 'a' and 'b' on each engine.
->>> dview.push({'a':10, 'b':5})         # OR dview['a'] = 10; dview['b'] = 5
+>>> dview.push({'a': 10, 'b': 5})         # OR dview['a'] = 10; dview['b'] = 5
 <<[None, None, None, None]>>                # Output from each engine
 
 # Check the value of 'a' on each engine.
@@ -245,7 +246,7 @@ Each method also has a shortcut via indexing.
 [10, 10, 10, 10]
 
 # Put a new variable 'c' only on engines 0 and 2.
->>> dview.push({'c':12}, targets=[0, 2])
+>>> dview.push({'c': 12}, targets=[0, 2])
 <<[None, None]>>
 \end{lstlisting}
 
@@ -302,7 +303,7 @@ Though simple, this method works well for small tasks.
 % The \li{htop} command should be used to compare against serial methods.
 
 \begin{lstlisting}
-# 'nums' is the scattered version of np.arange(1, 9).
+# "nums" is the scattered version of np.arange(1, 9).
 >>> dview.execute("c = np.sum(nums)")   # Sum each scattered component.
 <<<AsyncResult: execute:finished>>>
 >>> dview['c']
@@ -321,7 +322,7 @@ Though simple, this method works well for small tasks.
 % ... result = adding(p1[0],p2[0])
 % ... ''')
 % << <AsyncResult: execute:finished> >>
-% >>> dview['result']
+% >>> dview["result"]
 % << [10, 12, 14, 16] >>
 % \end{lstlisting}
 
@@ -335,7 +336,7 @@ Unlike \li{execute()}, \li{<<apply>>()} returns the output from the engines dire
 \begin{lstlisting}
 >>> dview.<<apply>>(lambda x: x**2, 3)
 [9, 9, 9, 9]
->>> dview.<<apply>>(lambda x,y: 2*x + 3*y, 5, 2)
+>>> dview.<<apply>>(lambda x, y: 2*x + 3*y, 5, 2)
 [16, 16, 16, 16]
 \end{lstlisting}
 
@@ -622,7 +623,7 @@ It is, however, possible in an MPI framework and will be covered in the MPI lab.
 %It is common to remove \emph{stopwords} or the most common words in the language. We can get a list of stopwords by running:
 %\begin{lstlisting}
 %>>> from nltk.corpus import stopwords
-%>>> set_stopwords = set(stopwords.words('english'))
+%>>> set_stopwords = set(stopwords.words("english"))
 %\end{lstlisting}
 %
 %After removing the stopwords, the resulting occurrence matrix would be:
@@ -716,7 +717,7 @@ In [7]: %autopx
 %autopx enabled
 In [8]: max_draw = numpy.max(a)
 
-In [9]: print('Max_Draw: {}'.format(max_draw))
+In [9]: print("Max_Draw: {}".format(max_draw))
 [stdout:0] Max_Draw: 0.30390161663280246
 [stdout:1] Max_Draw: 0.957976784975849
 [stdout:2] Max_Draw: 0.5791984571339429
@@ -749,15 +750,15 @@ Examples of these decorators are as follows.
 >>> import numpy as np
 
 >>> @dview.parallel(block=True)
->>> def combine(A,B):
+>>> def combine(A, B):
 ...     return A+B
->>> ex1 = np.random.random((3,3))
->>> ex2 = np.random.random((3,3))
+>>> ex1 = np.random.random((3, 3))
+>>> ex2 = np.random.random((3, 3))
 >>> print(ex1+ex2)
 << [[ 0.87361929  1.41110357  0.77616724]
  [ 1.32206426  1.48864976  1.07324298]
  [ 0.6510846   0.45323311  0.71139272]] >>
->>> print(combine(ex1,ex2))
+>>> print(combine(ex1, ex2))
 << [[ 0.87361929  1.41110357  0.77616724]
  [ 1.32206426  1.48864976  1.07324298]
  [ 0.6510846   0.45323311  0.71139272]] >>

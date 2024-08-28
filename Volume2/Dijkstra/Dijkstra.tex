@@ -1,0 +1,568 @@
+\lab{Dijkstra's Algorithm}{Dijkstra's Algorithm}
+
+\objective{We've previously seen the power of shortest path algorithms for solving network problems (e.g. Breadth-First Search).
+However, many real-world problems incorporate more than just connections between nodes.
+Networks will often incorporate weights between nodes, which can encode data such as distance, cost, or time.
+When this is the case, BFS algorithms are often insufficient to find the most effective (least weighted) path between nodes.
+In this lab, we introduce weighted graphs, building on the Graph class from the BFS lab, discuss how Dijkstra's algorithm can find the shortest path on weighted graphs, and apply Dijkstra's algorithm to a real-world dataset of bathymetry (ocean depth) data.}
+
+\section*{Weighted Graphs} % ===================================================
+
+Many networks are stored as \emph{weighted graphs}, which not only encode edges between nodes, but weights on those edges.
+These weights can be thought of as the ``cost of travel'' between node X and node Y.
+Weighted graphs work very similarly to unweighted graphs, and can be stored in much the same way by using an \emph{adjacency matrix} or \emph{adjacency dictionary}.
+
+The key differences between unweighted graphs and weighted graphs are that the adjacency matrices of weighted graphs can contain values other than 1 or 0, and adjacency dictionaries encode edges using a pair of values.
+This pair contains the destination node and the weight of the edge, as shown in~\ref{fig:simple-graph}.
+
+\begin{figure}[H] % simple weighted graph, its adjacency matrix, and its adjacency dict.
+\captionsetup[subfigure]{justification=centering}
+\centering
+\begin{subfigure}{.32\textwidth}
+\centering
+\begin{tikzpicture}[normalcircle/.style={draw,circle,minimum size=.75cm,fill=none,thick,node distance=1.5cm}]
+    % Nodes
+    \node[normalcircle] (A) [] {A};
+    \node[normalcircle] (B) [above of=A] {B};
+    \node[normalcircle] (C) [right of=B] {C};
+    \node[normalcircle] (D) [below of=C] {D};
+    % Edges
+    \draw[thick,-,>=stealth'] (A) edge node[left] {1} (B);
+    \draw[thick,-,>=stealth'] (A) edge node[below] {2} (D);
+    \draw[thick,-,>=stealth'] (B) edge node[above] {3} (D);
+    \draw[thick,-,>=stealth'] (C) edge node[right] {4} (D);
+\end{tikzpicture}
+\end{subfigure}
+%
+\begin{subfigure}{.32\textwidth}
+\centering
+\begin{align*}
+    \begin{blockarray}{ccccccc}
+    & & \small\text{\textcolor{gray}{A}} & \small\text{\textcolor{gray}{B}} & \small\text{\textcolor{gray}{C}} & \small\text{\textcolor{gray}{D}} & \\
+    \begin{block}{c[cccccc]}
+    \small\text{\textcolor{gray}{A}} & & 0 & 1 & 0 & 2 & \topstrut\\
+    \small\text{\textcolor{gray}{B}} & & 1 & 0 & 0 & 3 & \\
+    \small\text{\textcolor{gray}{C}} & & 0 & 0 & 0 & 4 & \\
+    \small\text{\textcolor{gray}{D}} & & 2 & 3 & 4 & 0 & \botstrut\\
+    \end{block}\end{blockarray}
+\end{align*}
+\end{subfigure}
+%
+\begin{subfigure}{.32\textwidth}
+\centering
+\begin{align*}
+    \{\text{A}&:\ \{(\text{B}, 1),\ (\text{D}, 2)\},\\
+    \text{B}&:\ \{(\text{A}, 1),\ (\text{D}, 3)\},\\
+    \text{C}&:\ \{(\text{D}, 4)\},\\
+    \text{D}&:\ \{(\text{A}, 2),\ (\text{B}, 3),\ (\text{C}, 4)\}\}
+\end{align*}
+\end{subfigure}
+\caption{A simple weighted graph (left), its adjacency matrix (middle), and its adjacency dictionary (right).
+The graph is undirected, so the adjacency matrix is symmetric.
+Note that the adjacency dictionary contains node labels as keys and a set of tuples as values, which encode both edge location and weight.}
+\label{fig:simple-graph}
+\end{figure}
+
+\begin{info}
+    In this lab, all edge weights will be strictly positive. However, it is very
+    possible to have edges with negative or zero weight. In these cases, Dijkstra's algorithm
+    cannot generally find the cheapest path between nodes, but other algorithms exist which can
+    (see the Additional Material section for more).
+\end{info}
+
+\subsection*{Directed Graphs} % ----------------------------------------------
+
+In addition to weighted graphs, some graphs are also \emph{directed graphs}.
+These graphs can be weighted or unweighted, and edges represent a one-way connection between nodes.
+As a result, the graph's adjacency matrix may not be symmetric. In these graphs, edges heading away from a node are called \emph{outgoing edges}, and edges coming
+into a node are called \emph{incoming edges}.
+
+\begin{figure}[H] % weighted, directed graph, its adjacency matrix, and its adjacency dict.
+\captionsetup[subfigure]{justification=centering}
+\centering
+\begin{subfigure}{.32\textwidth}
+\centering
+\begin{tikzpicture}[normalcircle/.style={draw,circle,minimum size=.75cm,fill=none,thick,node distance=1.5cm}]
+    % Nodes
+    \node[normalcircle] (A) [] {A};
+    \node[normalcircle] (B) [above of=A] {B};
+    \node[normalcircle] (C) [right of=B] {C};
+    \node[normalcircle] (D) [below of=C] {D};
+    % Edges
+    \draw[thick,->,>=stealth'] (A) edge node[left] {1} (B);
+    \draw[thick,->,>=stealth'] (A) edge node[below] {2} (D);
+    \draw[thick,->,>=stealth'] (D) edge node[above] {3} (B);
+    \draw[thick,->,>=stealth'] (C) edge node[right] {4} (D);
+\end{tikzpicture}
+\end{subfigure}
+%
+\begin{subfigure}{.32\textwidth}
+\centering
+\begin{align*}
+    \begin{blockarray}{ccccccc}
+    & & \small\text{\textcolor{gray}{A}} & \small\text{\textcolor{gray}{B}} & \small\text{\textcolor{gray}{C}} & \small\text{\textcolor{gray}{D}} & \\
+    \begin{block}{c[cccccc]}
+    \small\text{\textcolor{gray}{A}} & & 0 & 1 & 0 & 2 & \topstrut\\
+    \small\text{\textcolor{gray}{B}} & & 0 & 0 & 0 & 0 & \\
+    \small\text{\textcolor{gray}{C}} & & 0 & 0 & 0 & 4 & \\
+    \small\text{\textcolor{gray}{D}} & & 0 & 3 & 0 & 0 & \botstrut\\
+    \end{block}\end{blockarray}
+\end{align*}
+\end{subfigure}
+%
+\begin{subfigure}{.32\textwidth}
+\centering
+\begin{align*}
+    \{\text{A}&:\ \{(\text{B}, 1),\ (\text{D}, 2)\},\\
+    \text{B}&:\ \{\},\\
+    \text{C}&:\ \{(\text{D}, 4)\},\\
+    \text{D}&:\ \{(\text{B}, 3)\}\}
+\end{align*}
+\end{subfigure}
+\caption{A weighted, directed graph (left), its adjacency matrix (middle), and its adjacency dictionary (right).
+Note that the adjacency matrix is not symmetric.}
+\end{figure}
+
+
+\begin{problem} % Make Graph Class weighted and directed
+Consider the following \li{Edge} class which wraps node and weight attributes into a single object
+\begin{lstlisting}
+
+class Edge:
+    """An edge object, which wraps the node and weight attributes into one
+    object, allowing for insertion/deletion from a set using just
+    the node attribute
+
+    Attributes:
+        node (str): the value for the node the edge is pointing to
+        weight (int): the weight of the edge
+    """
+    def __init__(self, node, weight):
+        self.node = node
+        self.weight = weight
+
+    def __hash__(self):
+        """Use only node attribute for hashing"""
+        return hash(self.node)
+
+    def __eq__(self, other):
+        """Use only node attribute for equality"""
+        if isinstance(other, Edge):
+            return self.node == other.node
+        return self.node == other
+
+    def __str__(self):
+        """String representation: a tuple-like view of the node and weight"""
+        return f"({str(self.node)}, {str(self.weight)})"
+
+    def __repr__(self):
+        """Repr is used when edges are displayed in a set"""
+        return f"Edge({repr(self.node)}, {repr(self.weight)})"
+
+
+
+\end{lstlisting}
+This allows edges to be accessed in a set with only their node attribute while still encoding each edge's weight.
+
+\begin{lstlisting}
+# Create a set with an Edge object inside
+>>> my_set = {Edge('A', 1)}
+
+# Check if the edge is in the set
+>>> 'A' in my_set
+True
+
+# Remove edge and check again
+>>> my_set.remove('A')
+>>> 'A' in my_set:
+False
+\end{lstlisting}
+In the file \li{dijkstra.py}, you will be filling out the \li{Graph} class to represent weighted/directed graphs.
+To do this, you will implement the following methods.
+\begin{enumerate}
+    \item The constructor \li{__init__()} will take arguments \li{adjacency} and \li{directed} and store these as attributes (\li{self.d} and \li{self.directed}, respectively). \li{self.d} is a dictionary with node labels pointing to a set of edges originating from that node.
+    \item The \li{add_node()} method will take a node label \li{n} and add a node with that label (and no initial edges) to the graph if it is not already present.
+    \item The \li{add_edge()} method will add a weighted edge between two nodes. If an edge is already present, simply update the weight of that edge. Additionally, the method should add both nodes to the graph if they are not already present.
+    \item The \li{remove_node()} method will remove a node along with all adjacent edges from the graph. The method should raise a \li{KeyError} if the node is not in the graph.
+    \item The \li{remove_edge} method should remove the edge between two nodes. This method should raise a \li{KeyError} if either node is not in the graph or if there is no edge between the nodes.
+\end{enumerate}
+Hint: Make sure you add/remove edges only in the direction specified (from the first node to the second) if the graph is directed.
+\end{problem}
+
+\begin{unittest}
+    In \li{dijkstra_test.py}, you will find a unit test \li{test_graph()} where you will write unit tests for your Graph class.
+    Be sure to add and remove nodes and edges and test both directed and undirected graphs.
+
+    One good way to test these methods is to simply check for the presence of a node or edge in the \li{self.d} attribute of the \li{Graph} class rather than checking for a specific ordering of items (as dictionaries and sets are unordered).
+\end{unittest}
+
+\section*{Dijkstra's Algorithm} % ============================================
+
+When working with weighted graphs, it is common to look for the path of least weight (or cost) between nodes.
+This corresponds to finding the minimum sum of weights on a path between the two nodes.
+For example, when driving you often want to reach your destination as soon as possible, but certain roads may take longer to traverse than others.
+Therefore, the minimum traversal may not necessarily include the fewest number edges.
+
+\emph{Dijkstra's algorithm} is a modification of the breadth-first search (BFS) algorithm which allows us to find paths of minimum cost on weighted graphs.
+While the BFS assumes all edges are the same weight, Dijkstra's algorithm accounts for different edge weights.
+
+Dijkstra's algorithm is structured almost identically to BFS, but it keeps track of total edge weight on the current path, updating the shortest path to any visited nodes as it progresses.
+Additionally, instead of a normal \li{queue} (or \li{deque}), Dijkstra's implements a \li{PriorityQueue} to determine node traversal order.
+\subsection*{Priority Queue} % -----------------------------------------------
+
+A \li{Priority Queue}, which is the subclass of the \li{Queue} class, is a special type of data structure that prioritizes the value of each entry when determining the next item to remove.
+By default, a \li{Priority Queue} will return the smallest value next when the \li{.get()} method is called.
+Items are sorted using a special data structure called a \emph{min heap} which allows for item insertion in logarithmic time, and retrieval of the smallest item in constant time.
+
+\begin{table}[H]
+\begin{tabular}{r|l}
+    Method & Description\\
+    \hline
+    \li{PriorityQueue()} & Constructs an empty \li{PriorityQueue} object.\\
+    \li{empty()} & Returns \li{True} if there are no items in the \li{PriorityQueue}.\\
+    \li{put(item)} & Places \li{item} into the \li{PriorityQueue}.\\
+    \li{get_nowait()} & Returns the next item immediately (smallest by default).\\
+\end{tabular}
+\caption{Essential methods of the \li{PriorityQueue} class.}
+\end{table}
+
+\begin{lstlisting}
+# Import PriorityQueue
+>>> from queue import PriorityQueue
+
+# Create a new PriorityQueue object
+>>> Q = PriorityQueue()
+
+# Add some items to the PriorityQueue
+>>> for item in [5, 4, 2, 1, 3]:
+...     Q.put(item)
+...
+
+# Remove and print each item
+>>> while not Q.empty():
+...     print(Q.get_nowait(), end=' ')
+...
+1 2 3 4 5
+\end{lstlisting}
+
+For more information on \li{PriorityQueue}, see \url{https://docs.python.org/3/library/queue.html}.
+
+\subsection*{Dijkstra's Algorithm Flow} % -------------------------------------------
+We'll now go over the flow of Dijkstra's Algorithm.
+To traverse a graph with Dijkstra's, choose a node to start at, called the \emph{source} node.
+Djikstra's keeps track of the shortest discovered path from the source node to each node, so each node starts with a path length of infinity, except the source node which has a path length of 0.
+\begin{itemize}
+    \item First, update the path length of each node neighboring the source node to the weight of the edge going to that neighbor plus the weight of the source node (which is 0).
+    \item Add these visited nodes to the priority queue along with the length of the current shortest path to these nodes.
+    \item Next, select the node in the queue with the shortest path length and visit all of its neighboring nodes, updating their shortest path lengths as necessary.
+    \item Add these visited nodes to the priority queue.
+    \item Repeat this process until the destination node is selected from the queue.
+\end{itemize}
+The shortest path stored for the destination node is now the shortest path from the source node to the destination node.
+
+The implementation of Dijkstra's requires the following data structures to keep track of which nodes have already been visited, path lengths, and the order in which to visit nodes in future steps.
+\begin{itemize}
+    \item A \textbf{PriorityQueue} $Q$: The nodes to be visited, in order of which has the shortest path length.
+        This is accomplished by storing in $Q$ tuples containing first the distance to that node, then the node label.
+    \item A set $V$: The nodes that have been finished (they are finished when they are popped off the queue).
+        This structure is not necessary for Dijkstra's algorithm to function, but we will be using it to keep track of which nodes we have finished processing.
+    \item A dictionary $d$: The shortest distance to each node
+    \item A dictionary $pred$: Maps each node to its predecessor when traveling the shortest path to that node.
+\end{itemize}
+To begin the search, add the source node to $Q$ and initialize $d$ such that each node has value infinity except for the source node, which has value 0.
+Also, initialize $pred$ so that the source node has a predecessor of $None$.
+Then, until the destination is found, repeat the following:
+\begin{enumerate}
+    \item Pop a node off of $Q$; call it the \emph{current} node.
+    \item If the current node is the destination, finish the loop.
+    \item ``Visit'' the current node by appending it to $V$.
+    \item Loop through all the neighbors of current.
+    \item For each neighbor, if the current path to that neighbors is the new shortest path for that neighbor, perform the following:
+    \begin{itemize}
+        \item Update the neighbor's shortest distance value in $d$.
+        \item Add the neighbor and the distance to that neighbor to $Q$.
+        \item Include the current node as its predecessor by updating its value in $pred$.
+    \end{itemize}
+\end{enumerate}
+Once finished, reconstruct the optimal path by starting at the destination and looking at predecessor nodes in $pred$ until the source node is reached (the node with predecessor $None$).
+Return the shortest path and that path length, which is stored in $d$.
+
+\begin{info}
+Dijkstra's is known as a \emph{greedy algorithm}, because the node with the shortest current path is always chosen next.
+The Bellman Optimality Principle guarantees that any part of the shortest path is itself the shortest path from the source node to that particular point.
+Because of this, every time a node is removed from the queue for the first time, we know that it's corresponding path value in $d$ is the shortest path from the source to that node.
+\end{info}
+
+
+\begin{figure}[H] % Example of Dijkstra's.
+\captionsetup[subfigure]{justification=centering}
+\centering
+\begin{subfigure}{.6\textwidth}
+    \centering
+    \begin{tikzpicture}[normalcircle/.style={draw,circle,minimum size=.75cm,fill=none,thick,node distance=1.5cm}]
+    % Nodes
+    \node[normalcircle] (A) [fill=red!20] {A, 0};
+    \node[normalcircle] (B) [above of=A] {B, $\infty$};
+    \node[normalcircle] (C) [right of=B] {C, $\infty$};
+    \node[normalcircle] (D) [below of=C] {D, $\infty$};
+    % Edges
+    \draw[thick,-,>=stealth'] (A) edge node[left] {1} (B);
+    \draw[thick,-,>=stealth'] (A) edge node[below] {2} (D);
+    \draw[thick,-,>=stealth'] (B) edge node[above] {3} (D);
+    \draw[thick,-,>=stealth'] (C) edge node[right] {4} (D);
+    \end{tikzpicture}
+\end{subfigure}
+%
+\begin{subfigure}{.39\textwidth}
+    \Large\begin{tabular}{r|l}
+    $V$ & \textcolor{white}{A B C D} \\ \hline
+        $Q$ & \textcolor{red}{(0,A)} \\ \hline
+    $pred$ & \textcolor{white}{A} \\
+    \end{tabular}
+\end{subfigure}
+\\\vspace{20px}
+\begin{subfigure}{.6\textwidth}
+    \centering
+    \begin{tikzpicture}[normalcircle/.style={draw,circle,minimum size=.75cm,fill=none,thick,node distance=1.5cm}]
+    % Nodes
+    \node[normalcircle] (A) [fill=blue!20] {A, 0};
+    \node[normalcircle] (B) [fill=red!20, above of=A] {B, 1};
+    \node[normalcircle] (C) [right of=B] {C, $\infty$};
+    \node[normalcircle] (D) [fill=red!20, below of=C] {D, 2};
+    % Edges
+    \draw[red!80,thick,->,>=stealth',line width=1.5pt] (A) edge node[left] {1} (B);
+    \draw[red!80,thick,->,>=stealth',line width=1.5pt] (A) edge node[below] {2} (D);
+    \draw[thick,-,>=stealth'] (B) edge node[above] {3} (D);
+    \draw[thick,-,>=stealth'] (C) edge node[right] {4} (D);
+    \end{tikzpicture}
+\end{subfigure}
+%
+\begin{subfigure}{.39\textwidth}
+    \Large\begin{tabular}{r|l}
+    $V$ & \textcolor{blue}{A} \textcolor{white}{B C D} \\ \hline
+        $Q$ & \textcolor{red}{(1,B) (2,D)} \\ \hline
+    $pred$ & B:A D:A \\
+    \end{tabular}
+\end{subfigure}
+\\\vspace{20px}
+\begin{subfigure}{.6\textwidth}
+    \centering
+    \begin{tikzpicture}[normalcircle/.style={draw,circle,minimum size=.75cm,fill=none,thick,node distance=1.5cm}]
+    % Nodes
+    \node[normalcircle] (A) [fill=blue!20] {A, 0};
+    \node[normalcircle] (B) [fill=blue!20, above of=A] {B, 1};
+    \node[normalcircle] (C) [right of=B] {C, $\infty$};
+    \node[normalcircle] (D) [fill=red!20, below of=C] {D, 2};
+    % Edges
+    \draw[thick,-,>=stealth'] (A) edge node[left] {1} (B);
+    \draw[thick,-,>=stealth'] (A) edge node[below] {2} (D);
+    \draw[red!80,thick,->,>=stealth',line width=1.5pt] (B) edge node[above] {3} (D);
+    \draw[thick,-,>=stealth'] (C) edge node[right] {4} (D);
+    \end{tikzpicture}
+\end{subfigure}
+%
+\begin{subfigure}{.39\textwidth}
+    \Large\begin{tabular}{r|l}
+    $V$ & \textcolor{blue}{A B} \textcolor{white}{C D}\\ \hline
+        $Q$ & \textcolor{red}{(2,D)} \\ \hline
+    $pred$ & B:A D:A \\
+    \end{tabular}
+\end{subfigure}
+\\\vspace{20px}
+\begin{subfigure}{.6\textwidth}
+    \centering
+    \begin{tikzpicture}[normalcircle/.style={draw,circle,minimum size=.75cm,fill=none,thick,node distance=1.5cm}]
+    % Nodes
+    \node[normalcircle] (A) [fill=blue!20] {A, 0};
+    \node[normalcircle] (B) [fill=blue!20, above of=A] {B, 1};
+    \node[normalcircle] (C) [fill=red!20, right of=B] {C, 6};
+    \node[normalcircle] (D) [fill=blue!20, below of=C] {D, 2};
+    % Edges
+    \draw[thick,-,>=stealth'] (A) edge node[left] {1} (B);
+    \draw[thick,-,>=stealth'] (A) edge node[below] {2} (D);
+    \draw[thick,-,>=stealth'] (B) edge node[above] {3} (D);
+    \draw[red!80,thick,->,>=stealth',line width=1.5pt] (D) edge node[right] {4} (C);
+    \end{tikzpicture}
+\end{subfigure}
+%
+\begin{subfigure}{.39\textwidth}
+    \Large\begin{tabular}{r|l}
+    $V$ & \textcolor{blue}{A B D} \\ \hline
+        $Q$ & \textcolor{red}{(6,C)} \\ \hline
+    $pred$ & B:A C:D D:A \\
+    \end{tabular}
+\end{subfigure}
+\caption{To start Dijkstra's from node A to node C, put A in the priority queue $Q$.
+Pop A off the queue and ``visit'' it by adding A to the visited list $V$ and the neighboring nodes B and D to $Q$.
+Then visit B (since it has the shortest path).
+Do not update $Q$ because the path from A to B to D is longer than the path from A to D, which is already in $Q$.
+Finally, visit D, at which point the target node C is located because it is adjacent to D.
+The values of $pred$ give the predecessors, which can be used to reconstruct the shortest path (which, in this case, is A,D,C).
+}
+\end{figure}
+
+\begin{problem}
+\label{prob:dijkstra}
+Write the \li{shortest_path()} method in the \li{Graph} class to implement Dijkstra's Algorithm, which will find the shortest path between the source and target nodes.
+The method should return the sum of weights along the shortest path, along with the shortest path itself, including endpoints.
+The method should raise a \li{KeyError} if the input nodes are not in the graph.
+Be sure that your method works on both directed and undirected graphs.
+
+Hint: In order for the \li{PriorityQueue} to store both the node and the current path length, consider passing in a tuple where the first value is the current path length and the second value is the node label.
+\end{problem}
+
+\begin{unittest}
+Test your code with the pre-written unit test found in \li{dijkstra_test.py}.
+\end{unittest}
+
+\section*{Bathymetry Dataset} % ==============================================
+
+\subsection*{Bathymetric Data and Tsunami Prediction}
+Bathymetry is the measurement of water depth to the sea floor.
+Bathymetric data provides ocean depth measurements in meters at specific latitude and longitude points.
+Bathymetric data is crucial in predicting the travel paths and speeds of tsunamis.
+In particular, the speed of a tsunami is directly impacted by the depth of the ocean floor below it.
+As such, bathymetric data provides a way to predict the speeds and arrival times of tsunamis at particular locations, allowing for sufficient warning to be given to those in the tsunami path.
+We will be using Dijkstra's Algorithm to predict the travel time of a tsunami between starting and ending locations.
+
+
+\subsection*{The TsunamiModel Class}
+
+The file \li{dijkstra.py} contains a class for tsunami travel prediction using bathymetric data called \li{TsunamiModel}.\footnote{Thanks to Dr.~Jared Whitehead and Ashley Spencer, a professor and student at BYU, for the bathymetry data and \li{TsunamiModel} class.}
+This class inherits from the \li{Graph} class, and constructs a graph where each depth measurement in the rectangular grid is represented as a node.
+In this graph, the travel time of the tsunami, which is a function of average depth between two points, serves as the weight between nodes.
+Once the graph is constructed, we can run Dijkstra's algorithm to determine the shortest time path of a tsunami from its origin to a given location.
+
+The file \li{bathymetry.tt3} contains bathymetric data which covers a rectangular section of the ocean in the Banda Region.
+Each data point indicates the ocean depth at a particular location.
+For example, the value in the lower left corner of the dataset (82 meters) corresponds to a latitude of -9.50833 and a longitude of 124.99167.
+In this context: zero depths represent sea level, positive values indicate elevations above sea level, and negative values denote depths below sea level.
+The distance between each data point in this particular file represents $1/60$ degrees (or one arcminute) in both latitude and longitude.
+
+The file, \li{bathymetry.tt3} is structured as follows:
+\begin{itemize}
+\item The first and second lines contain the number of columns and rows of bathymetry data.
+\item The third and fourth lines contain the longitude and latitude coordinates of the lower-left corner of the bathymetry data.
+\item The fifth line contains the geographic distance between any two values in the grid of bathymetry data (given in arc-degrees).
+\item The remaining lines contain the grid of bathymetric data collected at each location.
+\end{itemize}
+
+\begin{problem}
+In the \li{TsunamiModel} class, complete the following methods:
+
+\begin{enumerate}
+\item \li{_read_file()}: reads in the bathymetric data given in filename.
+This method should store the attributes \li{ncols}, \li{nrows}, \li{long_llcorner}, \li{lat_llcorner}, \li{cellsize}, and \li{depths_grid}(these attributes are described in greater detail in the docstring of the \li{TsunamiModel} class).
+\item \li{_generate_long_lat_grid()}: generates a grid of longitude and latitude coordinates corresponding to the locations where each bathymetric measurement in \li{depths_grid} was taken.
+\end{enumerate}
+Call the \li{Graph} class constructor (using \li{super()}) as well as the \li{_read_file()} method in the \li{TimeModel} constructor.
+We will finish the constructor in the next problem.
+You are welcome to make the graph directed or undirected.
+\end{problem}
+Test your code by comparing the read in attributes to the values found in \li{bathymetry.tt3}.
+When using the provided constants in \li{dijsktra.py}, the value of \li{long_lat_grid[0][0]} should be about $(124.991667,-2.508333).$
+
+\begin{info}
+Several methods of the \li{TsunamiModel} class begin with an underscore character.
+These methods are meant to be used internally for use by the class itself and should not be called outside the class declaration.
+\end{info}
+
+\begin{warn}
+The attribute variables of the \li{TsunamiModel} class are provided for you and set to a default value of \li{None}.
+Do \emph{not} change these variable names, as they will cause the autograder for this lab to mark your code as incorrect.
+The original names for each attribute are provided in the docstring of the \li{TsunamiModel} class in case they've been modified.
+\end{warn}
+
+In order to accurately model the time and path of a tsunami, we need to know the longitude and latitude coordinates of the tsunami's origin and our target location.
+Additionally, since tsunamis form over undersea earthquakes which occur over a fault plane with a certain radius, the exact position of the tsunami wave may not be at the epicenter of the earthquake which formed it.
+To account for this, we shift the starting point to the edge of the fault plane in the direction of our destination point.
+These values are passed in to the constructor of \li{TimeModel}, and some example values are given as constants in \li{dijkstra.py}.
+
+Given the longitude and latitude coordinates of the starting and target points for a tsunami as well as the radius of the fault plane, we must shift the starting point in the direction of the target location by that radius.
+This will ensure that the calculated time is when the front of the tsunami reaches the target rather than the back which can vary the time calculation by several minutes.
+Additionally, since bathymetric data is given in only discrete intervals, we must find the closest grid points to our starting and ending coordinates in order to run Dijkstra's algorithm.
+The \li{_get_nearest_point()} method of the \li{TimeModel} class will perform this calculation for us.
+
+\begin{problem}
+In the constructor of the \li{TsunamiModel} class, store the value given by \\ \li{fault_plane_radius} as an attribute.
+Next, complete the following methods:
+
+\begin{enumerate}
+    \item \li{_shifted_start()}: Shifts the starting point for the tsunami path away from the epicenter and toward the end point according to \li{fault_plane_radius} and returns this point as a tuple of longitude, latitude coordinates.
+    \item \li{_long_and_lat()}: Generates instance attributes associated with longitude and latitude coordinates.
+    Specifically, it should call \li{_generate_lat_long_grid()} from Problem 3 and store the resulting grid as an attribute as well as find the starting and ending points for the tsunami path prediction using the provides \li{_get_nearest_point()} method (remember to shift the starting point).
+    \end{enumerate}
+    Call \li{_long_and_lat()} in the \li{TsunamiModel} constructor. The constructor should now be finished as well.
+\end{problem}
+Test your code using the provided constants in \li{dijkstra.py}.
+The value of \li{start_point} should be $(166, 382),$ and the value of \li{end_point} should be $(65, 220).$
+
+\subsection*{Modeling Graphs With a Grid}
+
+Many graphs, including this one, are modeled using a 2D grid, where neighboring nodes are adjacent locations in the grid.
+In the case of our bathymetry data, neighboring nodes are those which are orthogonally adjacent (don't include diagonals).
+In order to utilize the functionality of the \li{Graph} class, we store the values of each node as a tuple of their coordinates in the grid (row and column values, zero indexed).
+Additionally, we do not form edges with nodes which have a non-negative elevation as we assume that tsunamis cannot cross these locations.
+Because we are modeling the shortest time for a Tsunami to reach out target location, we model weights as the time taken for a tsunami to travel between grid points.
+
+The speed of a tsunami given a depth $d$ is given by
+\[s = \sqrt{d*g}\]
+where $g$ is the gravitational constant (in the desired units).
+From this formula we can then derive the travel time between locations of depths $d_1$ and $d_2$ of distance $dist$ apart.
+To do this, we average out the speed of the tsunami between both locations by taking the speed at the average depth of the two points,
+\[s_{avg} = \sqrt{g*(d_1+d_2)/2}.\]
+The travel time of the tsunami between these points is then closely estimated by the distance between these points divided by the average speed,
+\[t = \frac{dist}{s_{avg}}.\]
+This equation is how we determine the tsunami travel time between grid points and thus the weights of our graph.
+
+\begin{problem}
+Implement the following methods of the \li{TimeModel} class which help generate the graph for Dijkstra's algorithm.
+\begin{enumerate}
+\item \li{_get_neighbors()}: returns a list of valid neighbors to the given node. Each neighbor should be represented by a tuple of indices which represent its location in \li{depths_grid}.
+\item \li{_get_time()}: returns the estimated travel time (in seconds) of a tsunami between two adjacent grid points at the given depths.
+Use $9.8$ as the gravitational constant, and be sure to get the distance between the two points in meters (a helpful constant is provided above the \li{TimeModel} class).
+\item \li{_convert_path_to_long_lat()}: given a list of indices representing grid coordinates, returns a list of corresponding longitude and latitude coordinates.
+\\(Hint: use the \li{long_lat_grid} attribute.)
+\end{enumerate}
+\end{problem}
+
+\begin{problem}
+Implement the following methods of the \li{TimeModel} class:
+\begin{enumerate}
+\item \li{_generate_graph()}: adds nodes and edges to the graph between grid point neighbors with weights corresponding to tsunami travel time along each edge.
+Edges should only be created between points that are both below sea level.
+Node labels should be tuples of the indices corresponding to each point in grid (you may ignore points that are at or above sea level).
+\item \li{calculate_tsunami_path()}: calls \li{_generate_graph()} and uses the \li{shortest_path()} method of the \li{Graph} class to find the time (in minutes) and path for a tsunami between \li{start_point} and \li{end_point}.
+The returned path should be a list of longitude and latitude coordinates.
+\end{enumerate}
+\end{problem}
+
+\begin{warn}
+    To ensure that your code is graded correctly, be sure that every attribute described in the constructor of the \li{TimeModel} class is present with the name spelled exactly as given.
+\end{warn}
+Test you algorithm with the constants given above the \li{TimeModel} class.
+Your algorithm should return a time of around $48.2310$ minutes.
+Also ensure that the returned path starts and ends at the expected coordinate points (remember the point wills be shifted and approximated to points on the grid of bathymetric readings).
+
+\newpage
+
+\section*{Additional Material} % ==============================================
+
+\subsection*{Run Time Complexity of Dijkstra's Algorithm} % -----------------
+
+The main component of the temporal complexity of Dijkstra's Algorithm is priority queue operations.
+If a graph has $E$ edges and $V$ nodes (or vertices), then there must be at most $E+1$ inserts into the priority queue.
+Each insert has complexity $O(\log(E)),$ so the runtime complexity of the entire algorithm is $O(E\log(E)).$
+Because the number of edges and vertices are often comparable, especially in connected graphs, this complexity is sometimes written as $O(E\log(V)).$
+Additionally, priority queues can be implemented with a specialized heap called a \emph{Fibonacci heap} which alters the overall complexity to $O(E + V\log(V)).$
+
+\subsection*{Shortest Path With Negative Weights} % -----------------------------------
+
+Sometimes, graphs can be represented with negative weights. This can represent recouped costs or saved time, among other things.
+However, Dijkstra's Algorithm often fails when working with negative weights, as the Bellman Optimality Principle no longer applies.
+This is because negative weights allow for a visit other than the first to a node to obtain an overall lower path sum to that node.
+
+The \emph{Bellman-Ford Algorithm}\footnote{See: \url{https://cp-algorithms.com/graph/bellman_ford.html}} addresses this issue by scanning through and relaxing each of the edges in the graph.
+This relaxation is effectively the act of doubling back to previously visited nodes to check for improved paths to that node.
+If a negative cycle (a cycle in which the sum of weights is negative) exists, then the algorithm will either return negative infinity, or throw an error.
+Because of the relaxation step, this algorithm has a runtime of $O(VE)$ where $V$ is the number of nodes (vertices) and $E$ is the number of edges in the graph.

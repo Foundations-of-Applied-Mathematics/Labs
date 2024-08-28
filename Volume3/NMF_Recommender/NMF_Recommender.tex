@@ -1,4 +1,5 @@
 \lab{Non-negative Matrix Factorization Recommender}{Non-negative Matrix Factorization Recommender}
+\labdependencies{LSISkLearn}
 
 \objective{Understand and implement the non-negative matrix factorization for recommendation systems.}
 
@@ -8,13 +9,13 @@ More specifically, it refers to making prediction about a user's interests based
 These predictions can be used to recommend items and are why collaborative filtering is one of the common methods of creating a recommendation system.
 
 Recommendation systems look at the similarity between users to predict what item a user is most likely to enjoy.
-Common recommendation systems include Netflix's Movies you Might Enjoy list, Spotify's Discover Weekly playlist, and Amazon's Products You Might Like.  
+Common recommendation systems include Netflix's Movies you Might Enjoy list, Spotify's Discover Weekly playlist, and Amazon's Products You Might Like.
 
 
 \section*{Non-negative Matrix Factorization}
 Non-negative matrix factorization is one algorithm used in collaborative filtering.
 It can be applied to many other cases, including image processing, text mining, clustering, and community detection.
-The purpose of non-negative matrix factorization is to take a non-negative matrix $V$ and factor it into the product of two non-negative matrices. 
+The purpose of non-negative matrix factorization is to take a non-negative matrix $V$ and factor it into the product of two non-negative matrices.
 
 For $V\in\mathbb{R}^{m\times n}, 0\preceq W$,
 
@@ -28,7 +29,7 @@ For $V\in\mathbb{R}^{m\times n}, 0\preceq W$,
 
 $k$ is the rank of the decomposition and can either be specified or found using the Root Mean Squared Error (the square root of the MSE), SVD, Non-negative Least Squares, or cross-validation techniques.
 
-For this lab, we will use the Frobenius norm, given by 
+For this lab, we will use the Frobenius norm, given by
 \[
 ||A||_{F} = \sqrt{\sum_{i=1}^{m}\sum_{j=1}^{n} |a|_{ij}^{2}}.
 \]
@@ -39,7 +40,7 @@ It is equivalent to the square root of the sum of the diagonal of $A\hrm A$.
 
 \begin{problem}
 Create the \texttt{NMFRecommender} class, which will be used to implement the NMF algorithm.
-Initialize the class with the following parameters: 
+Initialize the class with the following parameters:
 \texttt{random\_state} defaulting to $15$,
 \texttt{tol} defaulting to $1\mathrm{e}{-3}$, \texttt{maxiter} defaulting to $200$, and \texttt{rank} defaulting to $2$.
 
@@ -47,7 +48,7 @@ Initialize the class with the following parameters:
 Add a method called \texttt{\_initialize\_matrices} that takes in $m$ and $n$, the dimensions of $V$.
 Set the random seed so that initializing the matrices can be replicated.
 \begin{lstlisting}
->>> np.random.seed(self.random_state) 
+>>> np.random.seed(self.random_state)
 \end{lstlisting}
 Then, using \li{np.random.random}, initialize $W$ and $H$ with randomly generated numbers between 0 and 1, where $W\in\mathbb{R}^{m\times k}$ and $H\in\mathbb{R}^{k\times n}$.
 Return $W$ and $H$.
@@ -64,7 +65,7 @@ Finally, add a method called \texttt{\_compute\_loss()} that takes as parameters
 %See the following matrix for an example,
 %
 %\[
-%V = 
+%V =
 %\begin{blockarray}{ccccccc}
 %  John & Alice & Mary & Greg & Peter & Jennifer \\
 %  \begin{block}{(cccccc)c}
@@ -84,12 +85,12 @@ Finally, add a method called \texttt{\_compute\_loss()} that takes as parameters
 
 
 \subsection*{Multiplicative Update}
-After initializing $W$ and $H$, we iteratively update them using the multiplicative update step. 
+After initializing $W$ and $H$, we iteratively update them using the multiplicative update step.
 There are other methods for optimization and updating, but because of the simplicity and ease of this solution, it is widely used.
 As with any other iterative algorithm, we perform the step until the \texttt{tol} or \texttt{maxiter} is met.
 
 \begin{equation}
-H^{s+1}_{ij} = H^{s}_{ij} \frac{((W^s)\trp  V)_{ij}}{((W^{s})\trp W^sH^s)_{ij}} 
+H^{s+1}_{ij} = H^{s}_{ij} \frac{((W^s)\trp  V)_{ij}}{((W^{s})\trp W^sH^s)_{ij}}
 \label{eq:H}
 \end{equation}
 and
@@ -105,19 +106,19 @@ Add a method to the \texttt{NMF} class called \texttt{\_update\_matrices} that t
 \end{problem}
 
 \begin{problem}
-Finish the \texttt{NMF} class by adding a method \texttt{fit} that finds an optimal $W$ and $H$. 
+Finish the \texttt{NMF} class by adding a method \texttt{fit} that finds an optimal $W$ and $H$.
 
-It should accept \texttt{V} as a numpy array, perform the multiplicative update algorithm until the loss is less than \li{tol} or \li{maxiter} is reached, and return $W$ and $H$. 
+It should accept \texttt{V} as a numpy array, perform the multiplicative update algorithm until the loss is less than \li{tol} or \li{maxiter} is reached, and return $W$ and $H$.
 
 Call the function \texttt{\_initialize\_matrices()} in order to run \texttt{\_update\_matrices()} and \texttt{\_compute\_loss()}.
 
-Finally add a method called \texttt{reconstruct} that reconstructs and returns \texttt{V} by multiplying \texttt{W} and \texttt{H}. You may assume that \texttt{fit} has already been run (so \li{self.V} and \li{self.W} will already be initialized, in particular).  
+Finally add a method called \texttt{reconstruct} that reconstructs and returns \texttt{V} by multiplying \texttt{W} and \texttt{H}. You may assume that \texttt{fit} has already been run (so \li{self.V} and \li{self.W} will already be initialized, in particular).
 \end{problem}
 
 \subsection*{Using NMF for Recommendations}
 
 Consider the following marketing problem where we have a list of five grocery store customers and their purchases.
-We want to create personalized food recommendations for their next visit. 
+We want to create personalized food recommendations for their next visit.
 We start by creating a matrix representing each person and the number of items they purchased in different grocery categories.
 So from the matrix, we can see that John bought two fruits and one sweet.
 %
@@ -129,7 +130,7 @@ So from the matrix, we can see that John bought two fruits and one sweet.
 %See the following matrix for an example,
 
 \[
-V = 
+V =
 \begin{blockarray}{ccccccc}
   John & Alice & Mary & Greg & Peter & Jennifer \\
   \begin{block}{(cccccc)c}
@@ -144,10 +145,10 @@ V =
 
 After performing NMF on $V$, we'll get the following $W$ and $H$.
 \[
-W = 
+W =
 \begin{blockarray}{cccc}
    Component 1 & Component 2 & Component 3\\
-  \begin{block}{(ccc)c} 	
+  \begin{block}{(ccc)c}
 	2.1 & 0.03 & 0. & Vegetables\\
 	1.17 & 0.19 & 1.76 & Fruits\\
     0.43 & 0.03 & 0.89 & Sweets\\
@@ -158,10 +159,10 @@ W =
 \]
 
 \[
-H = 
+H =
 \begin{blockarray}{ccccccc}
   John & Alice & Mary & Greg & Peter & Jennifer\\
-  \begin{block}{(cccccc)c} 	
+  \begin{block}{(cccccc)c}
    0.00  & 0.45 & 0.00 & 0.43 &  1.0   &   0.9 & Component 1\\
    0.00  & 0.91 & 1.45 & 1.9 &  0.35   &   0.37 & Component 2\\
    1.14  & 1.22 & 0.55 & 0.0 &  0.47   &   0.53 & Component 3\\
@@ -178,10 +179,10 @@ We can see the John belongs in component $3$, while Jennifer mostly belongs in c
 To get our recommendations, we reconstruct $V$ by multiplying $W$ and $H$.
 
 \[
-WH = 
+WH =
 \begin{blockarray}{ccccccc}
   John&  Alice  &Mary & Greg & Peter & Jennifer\\
-  \begin{block}{(cccccc)c} 	
+  \begin{block}{(cccccc)c}
   0.0000&  0.9723 & 0.0435 & 0.96 & 2.1105 &   1.9011 &Vegetables\\
       2.0064 & 2.8466 & 1.2435 & 0.8641&  2.0637  &  2.0561 &Fruits\\
       1.0146 & 1.3066 &  0.533&  0.2419&  0.8588  &  0.8698 &Sweets\\
@@ -215,7 +216,7 @@ We'll use SkLearn, which is similar to the NMFRecommender class, for the last pr
 \begin{lstlisting}
 from sklearn.decomposition import NMF
 
->>> model = NMF(n_components=2, init='random', random_state=0)
+>>> model = NMF(n_components=2, init="random", random_state=0)
 >>> W = model.fit_transform(X)
 >>> H = model.components_
 \end{lstlisting}
@@ -259,17 +260,17 @@ Write a function \texttt{discover\_weekly} that takes in a user id and the recon
 This list of strings should be sorted so that the first artist is the recommendation with the highest weight and the last artist is the least, and it should not contain any artists that the user has already listed to.
 Use the file \texttt{artists.csv} with \texttt{index\_col}\li{=0}, to match the artist ID to their name.
 
-\noindent As a check, the Discover Weekly for user $2$ should return 
+\noindent As a check, the Discover Weekly for user $2$ should return
 
-['Britney Spears', 'Avril Lavigne', 'Rihanna', 'Paramore', 'Christina Aguilera', 
+['Britney Spears', 'Avril Lavigne', 'Rihanna', 'Paramore', 'Christina Aguilera',
 
-'U2', 'The Devil Wears Prada', 'Muse', 'Hadouken!', 'Ke\$ha', 'Good Charlotte', 
+'U2', 'The Devil Wears Prada', 'Muse', 'Hadouken!', 'Ke\$ha', 'Good Charlotte',
 
-'Linkin Park', 'Enter Shikari', 'Katy Perry', 'Miley Cyrus', 'Taylor Swift', 
+'Linkin Park', 'Enter Shikari', 'Katy Perry', 'Miley Cyrus', 'Taylor Swift',
 
-'Beyoncé', 'Asking Alexandria', 'The Veronicas', 'Mariah Carey', 'Martin L. Gore', 
+'Beyoncé', 'Asking Alexandria', 'The Veronicas', 'Mariah Carey', 'Martin L. Gore',
 
-'Dance Gavin Dance', 'Erasure', 'In Flames', '3OH!3', 'Blur', 'Kelly Clarkson', 
+'Dance Gavin Dance', 'Erasure', 'In Flames', '3OH!3', 'Blur', 'Kelly Clarkson',
 
 'Justin Bieber', 'Alesana', 'Ashley Tisdale']
 
@@ -278,17 +279,17 @@ Use the file \texttt{artists.csv} with \texttt{index\_col}\li{=0}, to match the 
 % ['Paramore'],['Christina Aguilera'],['U2'],
 
 % ['The Devil Wears Prada'],['Muse'],['Hadouken!'],
-       
+
 % ['Ke\$ha'],['Good Charlotte'],['Linkin Park'],
 
 % ['Enter Shikari'],['Katy Perry'],['Miley Cyrus'],
-      
+
 % ['Taylor Swift'],['Beyoncé'],['Asking Alexandria'],
-       
+
 % ['The Veronicas'],['Mariah Carey'],['Martin L. Gore'],
-       
+
 % ['Dance Gavin Dance'],['Erasure'], ['In Flames'],
-      
+
 % ['3OH!3'],['Blur'],['Kelly Clarkson'],
 
 % ['Justin Bieber'],['Alesana'],['Ashley Tisdale']]

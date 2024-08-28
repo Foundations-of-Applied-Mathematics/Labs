@@ -1,4 +1,5 @@
 \lab{Pandas 2: Plotting}{Pandas 2: Plotting}
+\labdependencies{Pandas1}
 \objective{Clear, insightful visualizations are a crucial part of data analysis.
 To facilitate quick data visualization, pandas includes several tools that wrap around matplotlib.
 These tools make it easy to compare different parts of a data set, explore the data as a whole, and spot patterns and correlations in the data.}
@@ -8,26 +9,6 @@ These tools make it easy to compare different parts of a data set, explore the d
     You will be asked to make visualizations customized to your liking.
     As long as your plots clearly visualize the data, are properly labeled, etc., you will be graded generously.
 \end{info}
-
-% \begin{info}
-% This lab will be done using Colab Notebooks.
-% These notebooks are similar to Jupyter Notebooks but run remotely on Google's servers.
-% Open a Google Colab notebook by going to your Google Drive account and creating a new Colaboratory file.
-% If making a Colaboratory file is not an option, download the application Colaboratory onto your Google Drive.
-% Once opening a new Colab Notebook, upload the file \li{pandas2.ipynb}.
-% To make the data files accessible, run the following at the top of the lab:
-% \begin{lstlisting}
-% >>> from google.colab import files
-
-% >>> uploaded = files.upload()
-% \end{lstlisting}
-% This will prompt you upload files for this notebook.
-% For this lab, upload \li{crime_data.csv} and \li{college.csv}.
-
-% Once the lab is complete, delete BOTH lines of code used for uploading files (the import statement and the upload statement) and download as a \li{.py} file to your git repository.
-% Push the newly made \li{pandas2.py} file.
-% \end{info}
-
 
 \section*{Overview of Plotting Tools} % =======================================
 
@@ -42,7 +23,6 @@ Line plot & \li{"line"} & Show trends ordered in data; easy to compare multiple 
 Scatter plot & \li{"scatter"} & Compare exactly two data sets, independent of ordering \\
 Bar plot & \li{"bar"}, \li{"barh"} & Compare categorical or sequential data \\
 Histogram & \li{"hist"} & Show frequencies of one set of values, independent of ordering \\
-% Kernel Density Estimation & \li{"kde"} & Estimate a smooth distribution \\
 Box plot & \li{"box"} & Display min, median, max, and quartiles; compare data distributions \\
 Hexbin plot & \li{"hexbin"} & 2D histogram; reveal density of cluttered scatter plots \\
 \end{tabular}
@@ -56,12 +36,6 @@ The default \li{kind} is \li{"line"}.}
 The \li{plot()} method calls \li{plt.plot()}, \li{plt.hist()}, \li{plt.scatter()}, and other matplotlib plotting functions, but it also assigns axis labels, tick marks, legends, and a few other things based on the index and the data.
 Most calls to \li{plot()} specify the \li{kind} of plot and which \li{Series} to use as the \li{x} and \li{y} axes.
 By default, the \li{index} of the \li{Series} or \li{DataFrame} is used for the \li{x} axis.
-
-% In Pandas, a \li{DataFrame} is an ordered collection of \li{Series}.
-% A Series is similar to a dictionary, with values assigned to various labels, or indices.
-% Each Series becomes a column in the data frame, with each row corresponding to an index.
-% When several Series are combined into a single data frame, it becomes very easy to compare and visualize data.
-% Each entry has an associated index and column.
 
 \begin{lstlisting}
 >>> import pandas as pd
@@ -79,10 +53,10 @@ By default, the \li{index} of the \li{Series} or \li{DataFrame} is used for the 
 In this case, the call to the \li{plot()} method is essentially equivalent to the following code.
 
 \begin{lstlisting}
->>> plt.plot(budget.index, budget['Rent'], label='Rent')
+>>> plt.plot(budget.index, budget["Rent"], label="Rent")
 >>> plt.xlabel(budget.index.name)
 >>> plt.xlim(min(budget.index), max(budget.index))
->>> plt.legend(loc='best')
+>>> plt.legend(loc="best")
 \end{lstlisting}
 
 The \li{plot()} method also takes in many keyword arguments for matplotlib plotting and annotation functions.
@@ -98,8 +72,8 @@ This is especially useful with sequential data, like the budget data set.
 
 \begin{lstlisting}
 # Plot all columns together against the index.
->>> budget.plot(title="All Budgets",linewidth=1)
->>> budget.drop(["Rent", "Living Expenses"], axis=1).plot(linewidth=1,title="All Budgets Except Rent & Living Expenses")
+>>> budget.plot(title="All Budgets", linewidth=1)
+>>> budget.drop(["Rent", "Living Expenses"], axis=1).plot(linewidth=1, title="All Budgets Except Rent & Living Expenses")
 \end{lstlisting}
 
 \begin{figure}[H] % Plot everything together.
@@ -123,7 +97,7 @@ While plotting every \li{Series} at once can give an overview of all the data, t
 For example, the budget data set has 9 columns, so the resulting figure, Figure \ref{fig:budget-all}, is fairly cluttered.
 
 One way to declutter a visualization is to examine less data.
-For example, the columns \li{'Living Expenses'} and \li{'Rent'} have values that are much larger than the other columns.
+For example, the columns \li{"Living Expenses"} and \li{"Rent"} have values that are much larger than the other columns.
 Dropping these columns gives a better overview of the remaining data, as shown in Figure \ref{fig:budget-all-v2}.
 
 \begin{warn}
@@ -137,9 +111,9 @@ Subplots automatically share the same $x$-axis.
 Set \li{sharey=True} to force them to share the same $y$-axis as well.
 
 \begin{lstlisting}
->>> budget.plot(y=['Dining Out','Gas','Out With Friends', 'Netflix'],
-... 	subplots=True, layout=(2,2), sharey=True,
-... 	style=['-','--','-.',':'],title="Plots of Dollars Spent for Different Budgets")
+>>> budget.plot(y=["Dining Out", "Gas", "Out With Friends", "Netflix"],
+... 	subplots=True, layout=(2, 2), sharey=True,
+... 	style=['-', "--", "-.", ':'], title="Plots of Dollars Spent for Different Budgets")
 \end{lstlisting}
 
 \begin{figure}[H]
@@ -152,12 +126,12 @@ Since plots made by the \li{plot()} method share an $x$-axis by default, histogr
 
 \begin{lstlisting}
 # Plot three histograms together.
->>> budget.plot(kind='hist',y=['Gas','Dining Out','Out With Friends'],
-... 	alpha=.7,bins=10,title="Frequency of Amount (in dollars) Spent")
+>>> budget.plot(kind="hist", y=["Gas", "Dining Out", "Out With Friends"],
+... 	alpha=0.7, bins=10, title="Frequency of Amount (in dollars) Spent")
 
 # Plot three histograms, stacking one on top of the other.
->>> budget.plot(kind='hist',y=['Gas','Dining Out','Out With Friends'],
-...		bins=10,stacked=True,title="Frequency of Amount (in dollars) Spent")
+>>> budget.plot(kind="hist", y=["Gas", "Dining Out", "Out With Friends"],
+...		bins=10, stacked=True, title="Frequency of Amount (in dollars) Spent")
 \end{lstlisting}
 
 \begin{figure}[H] % Try to compare histograms.
@@ -179,7 +153,7 @@ Choose a number of bins that accurately represents the data; the wrong number of
 
 
 \begin{lstlisting}
->>> budget[["Dining Out","Gas"]].hist(grid=False,bins=10)
+>>> budget[["Dining Out", "Gas"]].hist(grid=False, bins=10)
 \end{lstlisting}
 
 \begin{figure}[H]
@@ -206,17 +180,17 @@ Unlike other types of plots, using \li{kind="scatter"} requires both \li{x} and 
 
 \begin{lstlisting}
 
-# Plot 'Dining Out' and 'Out With Friends' as lines against the index.
->>> budget.plot(y=["Dining Out", "Out With Friends"],title="Amount Spent on Dining Out and Out with Friends per Day")
+# Plot "Dining Out" and "Out With Friends" as lines against the index.
+>>> budget.plot(y=["Dining Out", "Out With Friends"], title="Amount Spent on Dining Out and Out with Friends per Day")
 
-# Make a scatter plot of 'Dining Out' against 'Out With Friends'
+# Make a scatter plot of "Dining Out" against "Out With Friends"
 >>> budget.plot(kind="scatter", x="Dining Out", y="Out With Friends",
-... 	alpha=.8,xlim=(0,max(budget['Dining Out'])+1),
-...		ylim=(0,max(budget['Out With Friends'])+1)
-...       title="Correlation between Dining Out and Out with Friends")
+... 	alpha=0.8, xlim=(0, max(budget["Dining Out"]) + 1),
+...		ylim=(0, max(budget["Out With Friends"]) + 1),
+...     title="Correlation between Dining Out and Out with Friends")
 \end{lstlisting}
 
-\begin{figure}[H] 
+\begin{figure}[H]
 \captionsetup[subfigure]{justification=centering}
 \centering
 \begin{subfigure}{.49\textwidth}
@@ -249,7 +223,7 @@ The plots on the diagonal, instead of plotting a column against itself, displays
 This provides a very quick method for an initial analysis of the correlation between different columns.
 
 \begin{lstlisting}
->>> pd.plotting.scatter_matrix(budget[['Living Expenses','Other']])
+>>> pd.plotting.scatter_matrix(budget[["Living Expenses", "Other"]])
 \end{lstlisting}
 
 \begin{figure}[H]
@@ -270,11 +244,11 @@ If the labels are too long to fit on a normal figure, use \li{plt.tight_layout()
 
 \begin{lstlisting}
 # Plot all data for the last month in the budget
->>> budget.iloc[-1,:].plot(kind='barh')
+>>> budget.iloc[-1, :].plot(kind="barh")
 >>> plt.tight_layout()
 
-# Plot all data for the last month without 'Rent' and 'Living Expenses'
->>> budget.drop(['Rent','Living Expenses'],axis=1).iloc[-1,:].plot(kind='barh')
+# Plot all data for the last month without "Rent" and "Living Expenses"
+>>> budget.drop(["Rent", "Living Expenses"], axis=1).iloc[-1, :].plot(kind="barh")
 >>> plt.tight_layout()
 \end{lstlisting}
 
@@ -314,9 +288,9 @@ However, box plots are a basic summary, meaning that they are susceptible to  mi
 \begin{lstlisting}
 
 # Compare the distributions of four columns.
->>> budget.plot(kind="box", y=["Gas","Dining Out","Out With Friends","Other"])
+>>> budget.plot(kind="box", y=["Gas", "Dining Out", "Out With Friends", "Other"])
 
-# Compare the distributions of all columns but 'Rent' and 'Living Expenses'.
+# Compare the distributions of all columns but "Rent" and "Living Expenses".
 >>> budget.drop(["Rent", "Living Expenses"], axis=1).plot(kind="box",
 ...		vert=False)
 \end{lstlisting}
@@ -335,49 +309,6 @@ However, box plots are a basic summary, meaning that they are susceptible to  mi
 \end{figure}
 
 % TODO: KDE plot?
-
-% TODO: hexbin plots
-
-% Bar plots, on the other hand, are particularly useful for comparing several categories of data over time, or whenever there is a sense of progression in the index.
-% Line plots are better suited to show a more continuous index (such as each year in a century), whereas bar plots are better for a discrete index (a few distinct years).
-% Line and bar plots work well when there is a logical progression in the index, such as time.
-% However, when frequency of occurrence is more important than the location of the data, histograms and box plots can be more informative.
-% Use \li{plot(kind="hist")} to produce a histogram.
-% Standard histogram options, such as the number of bins, are also accepted as keyword arguments.
-% The \li{alpha} keyword argument makes each bin slightly transparent.
-
-% Sometimes it is helpful to visualize a distribution of values using the box-and-whisker plot which displays the median, first and third quartiles, and outliers.
-
-% Scatter plots are commonly used in a myriad of areas and have a simple implementation in pandas.
-% Unlike other plotting commands, \li{scatter} needs both an \li{x} and a \li{y} column as arguments. % TODO: incorporate above!
-
-% The scatter plot option includes many features which can be used to make the plots easier to understand.
-% For example, we can change the size of the point based on another column.
-
-\begin{comment} % This should be a pivot table example.
-Consider the pydataset \li{HairEyeColor}, which contains the hair and eye color of various individuals.
-A scatter plot of hair color vs eye color is relatively useless unless we can see the frequencies with which each combination occurs.
-Including the keyword argument \li{s} allows us to control the size of each point.
-This can be set to a fixed value or the value in another column.
-In the example below, the size of each point is set to the frequency with which each observation occurs.
-
-\begin{lstlisting}
->>> hec = data("HairEyeColor")
->>> X = np.unique(hec["Hair"], return_inverse=True)
->>> Y = np.unique(hec["Eye"], return_inverse=True)
->>> hec["Hair"] = X[1]
->>> hec["Eye"] = Y[1]
->>> hec.plot(kind="scatter", x="Hair", y="Eye", s=hec["Freq"]*10)
->>> plt.xticks([0,1,2,3], X[0])
->>> plt.yticks([0,1,2,3], Y[0])
-\end{lstlisting}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=.7\textwidth]{figures/hair_eye_scatter.pdf}
-    \caption{Frequency of Hair-Eye Color Combinations}
-\end{figure}
-\end{comment}
 
 \subsection*{Hexbin Plots} % --------------------------------------------------
 
@@ -551,39 +482,3 @@ James, G., Witten, D., Hastie, T., and Tibshirani, R. (2013) An Introduction to 
 This problem is intended to give you flexibility to create your own visualizations that answer your own questions.
 As long as your plots are clear and include all the information listed above, you will be graded generously!
 \end{problem}
-
-
-
-\begin{comment}
-\begin{problem}
-The \li{pydataset} module contains numerous data sets, each stored as a pandas \li{DataFrame}.
-Read data on road accident deaths in the United States using the data set \li{road} in the \li{pydataset} module.
-Using this data, answer the following questions:
-
-\begin{enumerate}
-\item Does higher population density indicate higher fuel consumption?
-\item Does a correlation exist between number of drivers and number of deaths in a state?
-\item Does the temperature of a state in January affect its population density?
-\end{enumerate}
-
-Support each claim with a visualization and make sure the visualizations are clearly labeled and easy to understand.
-Include any citations provided by the data set.
-
-(Hint: Consider how outliers may be skewing the data.)
-\end{problem}
-
-% Problem 5
-\begin{problem}
-The file \li{new_york_crime_clean.csv} contains data on New York City crimes and felonies from 2000-2017 taken from \url{https://www1.nyc.gov/site/nypd/stats/crime-statistics/historical.page}.
-Use this data to answer the following questions and give visualizations supporting each claim:
-\begin{enumerate}
-\item What are the most common and least common crimes?
-\item Does a trend exist between robbery and drug felonies? If so, what is the trend?
-\item Which crimes have had the largest distributions?
-\end{enumerate}
-Use a different style of visualization for each question.
-Make sure that each plot is well labeled and contains citations.
-
-(Hint: Use plt.axis('scaled') or plt.axis('square') to make sure x- and y-axis are the same.)
-\end{problem}
-\end{comment}

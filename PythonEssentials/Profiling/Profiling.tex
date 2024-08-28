@@ -1,4 +1,5 @@
 \lab{Profiling}{Profiling}
+\labdependencies{ExceptionsFileIO}
 \objective{Efficiency is essential to algorithmic programming.
 Profiling is the process of measuring the complexity and efficiency of a program, allowing the programmer to see what parts of the code need to be optimized.
 In this lab we present common techniques for speeding up Python code, including the built-in profiler and the Numba module.
@@ -248,7 +249,7 @@ The following function identifies all such triples where each term is less than 
 ...         for b in range(1, N):           # Try values of b from 1 to N-1.
 ...             for c in range(1, N):       # Try values of c from 1 to N-1.
 ...                 if a**2 + b**2 == c**2 and a < b < c:
-...                     triples.append((a,b,c))
+...                     triples.append((a, b, c))
 ...     return triples
 ...
 \end{lstlisting}
@@ -267,7 +268,7 @@ The following function changes the loop conditions to avoid these cases and take
 ...             _sum = a**2 + b**2
 ...             for c in range(b+1, min(int(sqrt(_sum))+1, N)):
 ...                 if _sum == c**2:
-...                     triples.append((a,b,c))
+...                     triples.append((a, b, c))
 ...     return triples
 ...
 \end{lstlisting}
@@ -328,18 +329,18 @@ Consider the simple problem of summing the rows of a matrix, implemented in thre
 \begin{lstlisting}
 >>> def row_sum_awful(A):
 ...     """Sum the rows of A by iterating through rows and columns."""
-...     m,n = A.shape
+...     m, n = A.shape
 ...     row_totals = np.empty(m)        # Allocate space for the output.
 ...     for i in range(m):              # For each row...
 ...         total = 0
 ...         for j in range(n):          # ...iterate through the columns.
-...             total += A[i,j]
+...             total += A[i, j]
 ...         row_totals[i] = total       # Record the total.
 ...     return row_totals
 ...
 >>> def row_sum_bad(A):
 ...     """Sum the rows of A by iterating through rows."""
-...     return np.array([sum(A[i,:]) for i in range(A.shape[0])])
+...     return np.array([sum(A[i, :]) for i in range(A.shape[0])])
 ...
 >>> def row_sum_fast(A):
 ...     """Sum the rows of A with NumPy."""
@@ -381,7 +382,7 @@ def nearest_column(A, x):
     """Find the index of the column of A that is closest to x."""
     distances = []
     for j in range(A.shape[1]):
-        distances.append(np.linalg.norm(A[:,j] - x))
+        distances.append(np.linalg.norm(A[:, j] - x))
     return np.argmin(distances)
 \end{lstlisting}
 
@@ -433,7 +434,7 @@ This is slightly faster than building the collection in a loop, and the code is 
 <<CPU times: user 432 ms, sys: 54.4 ms, total: 486 ms
 Wall time: 491 ms>>
 
-<g<In [18]:>g> <p<%time>p> a_dict = {i:i**2 for i in range(1000000)}
+<g<In [18]:>g> <p<%time>p> a_dict = {i: i**2 for i in range(1000000)}
 <<CPU times: user 377 ms, sys: 58.9 ms, total: 436 ms
 Wall time: 440 ms>>
 \end{lstlisting}
@@ -666,12 +667,12 @@ bridges the gap by using \emph{just-in-time} (JIT) compilation to optimize code,
 ...     """Sum the rows of A by iterating through rows and columns,
 ...     optimized by Numba.
 ...     """
-...     m,n = A.shape
+...     m, n = A.shape
 ...     row_totals = np.empty(m)
 ...     for i in range(m):
 ...         total = 0
 ...         for j in range(n):
-...             total += A[i,j]
+...             total += A[i, j]
 ...         row_totals[i] = total
 ...     return row_totals
 \end{lstlisting}
@@ -709,7 +710,7 @@ The \li{inspect_types()} method can also be used to check if Numba is using the 
 
 \begin{lstlisting}
 # Run the function once first so that it compiles.
->>> rows = row_sum_numba(np.random.random((10,10)))
+>>> rows = row_sum_numba(np.random.random((10, 10)))
 >>> row_sum_numba.inspect_types()
 # The output is very long and detailed.
 \end{lstlisting}
@@ -720,15 +721,15 @@ Each of the desired datatypes must also be imported from Numba.
 \begin{lstlisting}
 >>> from numba import int64, double
 
->>> @jit(nopython=True, <<locals>>=dict(A=double[:,:], m=int64, n=int64,
+>>> @jit(nopython=True, <<locals>>=dict(A=double[:, :], m=int64, n=int64,
 ...                                 row_totals=double[:], total=double))
 ... def row_sum_numba(A):           # 'A' is a 2-D array of doubles.
-...     m,n = A.shape               # 'm' and 'n' are both integers.
+...     m, n = A.shape               # 'm' and 'n' are both integers.
 ...     row_totals = np.empty(m)    # 'row_totals' is a 1-D array of doubles.
 ...     for i in range(m):
 ...         total = 0               # 'total' is a double.
 ...         for j in range(n):
-...             total += A[i,j]
+...             total += A[i, j]
 ...         row_totals[i] = total
 ...     return row_totals
 ...
@@ -752,7 +753,7 @@ def matrix_power(A, n):
             for j in range(m):
                 total = 0
                 for k in range(m):
-                    total += product[i,k] * A[k,j]
+                    total += product[i, k] * A[k, j]
                 temporary_array[j] = total
             product[i] = temporary_array
     return product

@@ -1,33 +1,20 @@
+\newcommand{\lieq}[1]{{\text{\li{#1}}}}
+
 \lab{Deep Learning}{Intro to Deep Learning and PyTorch}
+\labdependencies{}
 \objective{Deep Learning is a popular method for machine learning tasks that have large amounts of data, including image recognition, voice recognition, and natural language processing.
 In this lab, we use PyTorch to write a convolution neural net to classify images.
 We also look at one of the challenges of deep learning by performing an adversarial attack on our model.}
 
-
-\newcommand{\lieq}[1]{{\text{\li{#1}}}}
-
 \section*{Intro to Neural Networks}
-
-%This paragraph doesn't really have any very important information
-%\begin{comment}
-%The brain is a biological neural network that is composed of neurons that are connected chemically and electrically.
-%Signal are transferred from one neuron to another until they reach a target cell that acts on the signal.
-%For instance, when you see a ball coming towards you, the signals travel along a certain path through the brain and trigger your arm to catch it. 
-%Every movement of your body, both conscious and unconscious, is the result of signals traveling along these connections.
-%These connections also play an important role in developing and losing memory, and are therefore instrumental in how a human learns.
-%\end{comment}
 
 An \emph{artificial neural network} is a machine learning tool inspired by the idea of neurons passing information between each other to learn.
 The network is composed of layers of neurons, usually called \emph{nodes}, that are connected in various ways.
 Each connection has a \emph{weight} based on its importance, which is used as information is passed through the network from one layer to the next.
 For example, in Figure \ref{fig:neuralnet}, the yellow input is passed to the first layer, blue, then the green layer, and then to the final output layer.
-%For example, if you were trying to catch a ball, the only thing that you're aware of is the input of the incoming ball, and the output of your hand being raised.
-%Everything else happens unconsciously and is hidden from your perception.
-%Similarly, the middle layers for a neural network are considered ``hidden'' because they're not directly viewable to the outside world.
 
-The middle layers for a neural network are considered ``hidden'' because they're not directly viewable to the outside world. 
+The middle layers for a neural network are considered ``hidden'' because they're not directly viewable to the outside world.
 You can view them but they will be a mess of seemingly random numbers, not the helpful classification labels you would get from an end layer.
-
 
 \begin{figure}[h]
 \includegraphics[width=10cm]{figures/neural_net.png}
@@ -36,8 +23,6 @@ You can view them but they will be a mess of seemingly random numbers, not the h
 \end{figure}
 
 In a neural network, the input is often images, text, or sounds represented as a vector of real numbers.
-%The input vector is first sent to the initial hidden layer and multiplied by the weights of their respective edges.%, to get a measure of importance.
-%A vector called the \emph{bias} of the layer is added to offset these values in certain ways.
 In order to evaluate a network, these values are then multiplied by the weight of each pertinent edge, and all respective values are added up to create the node value.
 A vector called the \emph{bias} of the layer is added to each respective node, finalizing the linear combination step.
 An \emph{activation function} takes these node values and applies a nonlinear transformation to them, which allows the model to learn complex nonlinear transformations between the input and output.
@@ -49,18 +34,12 @@ f_N(\mathbf{x}) = \mathbf{a}(W_k\mathbf{a}(\ldots\mathbf{a}(W_2\mathbf{a}(W_1\ma
 where \(\mathbf{a}\) is the activation function, and \(W_i\) and \(\mathbf{b}_i\) are the weights and biases of each layer of the neural network.
 The model is trained by adjusting the weights and biases, typically using a variant of gradient descent, until the model output accurately matches the training labels.
 
-
 \section*{Intro to PyTorch}
 
 PyTorch is an open source machine learning library developed by Facebook AI Research.
-%It has two main capabilities: deep neural networks and GPU tensor computing.
-%Deep neural networks are neural networks with many hidden layers.
 It's mainly used for fast GPU processing of deep neural networks (neural networks with many hidden layers).
-%Their training is possible through automatic differentiation, an algorithm that allows the calculation of derivatives automatically, accurately, and quickly.
-%With the amount of data used in neural networks, GPUs significantly speed up the entire process.
 GPUs (graphics processing units) are designed to compute thousands of operations at once and are vital for parallelizing the operations used by neural networks, which is why they are used here.
 For more information and documentation on PyTorch, visit \url{https://pytorch.org/}
-
 
 We will be working in Google's Colaboratory, \url{https://colab.research.google.com/notebooks/intro.ipynb}.
 Colab notebooks use Google's cloud servers, which have a built-in GPU.
@@ -71,20 +50,21 @@ Under \textit{Hardware Settings}, select GPU.
 We can verify that GPU is enabled by calling \li{torch.cuda.is_available()}.
 If this function returns \li{False}, a GPU is not available, and the code will be run on the CPU.
 
-\begin{comment}
 \begin{warn}
-Colab has a limit on the amount of GPUs available and the longer one runs a notebook, the less priority one has.
+Colab has a limit on the amount of GPU time available, and the longer one uses their GPUs on the same Google account, the less priority one has.
 As we will use this feature for both this lab and the Recurrent Neural Networks lab, it is advisable to not leave the GPU active while you are not using it.
-Note that enabling or disabling the GPU resets the notebook environment, so be sure that you save the results of any important computations before doing so.
-%TODO test if it also removes files uploaded to the colab session. If it does might not be worth including this
-%TODO I'm pretty sure it does, but it's really not that bad. Way less time consuming than a GPU timeout - Bryce
+Instead, switch to CPU while you are developing your code, then only switch to GPU once you're ready to fully train your model (we'll explain what that means later).
+
+Note that enabling or disabling the GPU resets the notebook environment, so be sure that you save the results of any important computations before doing so, and you may need to re-upload data to your session too.
+Also be aware that along with the limit on GPU time, Colab sessions also time out and reset after a period of user inactivity, even if cells are running and independent of whether CPU or GPU is being used.
+
+If you still run out of GPU time, Kaggle---a platform for data science and data science competitions---also offers free GPU time in a notebook environment very similar to Colab's.
 \end{warn}
-\end{comment}
 
 CUDA is a parallel computing platform %developed by Nvidia
  for GPU computing.
  The PyTorch package \li{torch.cuda} interfaces with this package and allows code to be run on the GPU.
- 
+
 PyTorch represents vectors and arrays using \emph{tensors}.
 A tensor is a data structure similar to a numpy array that is designed to be compatible with GPUs.
 Like a numpy array, it has a shape, data type, and can be multi-dimensional.
@@ -92,7 +72,6 @@ Like a numpy array, it has a shape, data type, and can be multi-dimensional.
 In order for a tensor to be used by the GPU, it must be stored on the GPU.
 A tensor can be sent directly to the GPU using \li{variable.cuda()}; however, if the GPU is not available, this will cause an error.
 A more flexible approach is store which deivce we are doing computations on as a variable \li{device}.
-We will prefer to use a GPU if available, but will use the CPU if a GPU is not available.
 Then, we can send our variables to the correct location in both cases by using \li{variable.to(device)}:
 
 \begin{lstlisting}
@@ -108,7 +87,7 @@ Then, we can send our variables to the correct location in both cases by using \
 You can check which device a variable is on by displaying it.
 If it is on a GPU, it will list which number it is.
 \li{cuda:0} means that the device running is the default GPU.
-If you are using a machine that has multiple GPUs, you can set the device to be a specific GPU by changing the number. 
+If you are using a machine that has multiple GPUs, you can set the device to be a specific GPU by changing the number.
 In Colab, only \li{cuda:0} is available.
 \begin{lstlisting}
 >>> x
@@ -116,7 +95,7 @@ tensor([3., 4.])								# Check location of x (CPU)
 
 >>> x = x.to(device)							# Move x to GPU
 >>> x											# Check location of x (GPU 0)
-tensor([3., 4.], device='cuda:0')							
+tensor([3., 4.], device="cuda:0")
 \end{lstlisting}
 
 \begin{warn}
@@ -144,7 +123,6 @@ We train each model on the train set, use the validation set to compare the mode
 
 The CIFAR10 dataset is split into a train set of 50,000 images and a test set of 10,000 images. We will split the original train set into a new train set of 40,000 images and a validation set of 10,000 images.
 To use the data, we must transform it into PyTorch tensors.
-%When using PyTorch, all of the data must be in tensor form so that it can be moved to a GPU.
 We also will normalize the data, as this generally improves the results.
 We will normalize the values to have mean 0 and standard deviation 1 for each component.
 Finally, we will split the dataset and place it inside a \li{torch.utils.data.DataLoader} class for easier manipulation.
@@ -184,13 +162,13 @@ We can then load the data:
 >>> from torchvision import datasets
 
 # Download the CIFAR10 training data to ../data
->>> train_data = datasets.CIFAR10('../data', train=True, download=True, transform=transform)
+>>> train_data = datasets.CIFAR10("../data", train=True, download=True, transform=transform)
 \end{lstlisting}
-The data can then be accessed using indexing. 
+The data can then be accessed using indexing.
 Each data point is a tuple consisting of the $3\times32\times32$ image and its class.
 You can also see the specs of the dataset by calling it without an index.
 
-\begin{lstlisting}           
+\begin{lstlisting}
 # Get the first training data point
 >>> train_data[0]
 (tensor([[[ 0.2314, ..., 0.5804],
@@ -198,13 +176,13 @@ You can also see the specs of the dataset by calling it without an index.
           ...,
           [ 0.7059, ..., 0.3255],
           [ 0.6941, ..., 0.4824]],
- 
+
          [[ 0.2431, ..., 0.4863],
           [ 0.0784, ..., 0.3412],
           ...,
           [ 0.5451, ..., 0.2078],
           [ 0.5647, ..., 0.3608]],
- 
+
          [[ 0.2471, ..., 0.4039],
           [ 0.0784, ..., 0.2235],
           ...,
@@ -274,13 +252,13 @@ Once we have the data in the \li{DataLoader} class, we can iterate through it to
 We can turn it into an iterator using the \li{iter} method, and then get batches one-at-a-time using the \li{next} method:
 \begin{lstlisting}
 # Get the 36 images of size 3x32x32 and labels in the first batch
->>> dataiter = iter(train_loader)   
+>>> dataiter = iter(train_loader)
 >>> images, labels = next(dataiter)
 >>> images.size()
 torch.Size([36, 3, 32, 32])
 
 >>> images[0].size()
-torch.Size([3, 32, 32]) 
+torch.Size([3, 32, 32])
 
 >>> labels[0]
 tensor(8)
@@ -296,8 +274,8 @@ We can also directly iterate through all of the images using a \li{for} loop:
 This will be a more convenient method for training.
 
 \begin{problem}
-Split the data into train, validate, and test sets, and create DataLoaders for each one. 
-The train set should have 40,000 data points and the test and validate sets should each have 10,000 data points. 
+Split the data into train, validate, and test sets, and create DataLoaders for each one.
+The train set should have 40,000 data points and the test and validate sets should each have 10,000 data points.
 Use a batch size of 32 for the training set and 1 for the validation and test sets.
 Specify \li{shuffle=True} for the training set, and \li{shuffle=False} for the validation and test sets (this is common practice in deep learning).
 \end{problem}
@@ -337,9 +315,9 @@ This also enables the use of cross-entropy as a very natural loss function, whic
 These two activation functions are available as \li{nn.ReLU} and \li{nn.Softmax}.
 
 \begin{warn}
-    The cross-entropy loss function from PyTorch, \li{nn.CrossEntropyLoss}, combines logarithmic softmax \li{log_softmax} and the negative log likelihood loss \li{NLLLoss}, 
+    The cross-entropy loss function from PyTorch, \li{nn.CrossEntropyLoss}, combines logarithmic softmax \li{log_softmax} and the negative log likelihood loss \li{NLLLoss},
     which means you should NOT apply softmax as the last layer of your model.
-    
+
     Performing softmax twice can cause numerical instabiility in the model's accuracy.
 \end{warn}
 
@@ -357,7 +335,7 @@ Since our inputs are \(3\times32\times32\) tensors and linear layers only work w
     def __init__(self):
         # Initialize nn.Module
         super().__init__()
-        
+
         # Create our layers
         self.flatten = nn.Flatten()
         self.linear1 = nn.Linear(in_features=3*32*32, out_features=100)
@@ -432,7 +410,7 @@ Consider the following $5\times 5$ input image and $3\times 3$ kernel:
 
 \noindent
 To get each value in the output, the kernel is multiplied element-wise by $3x3$ squares inside the input and summed.
-For the top left square in this example, the output is 
+For the top left square in this example, the output is
 \[
 2\cdot 1 + 4\cdot 0 + 7\cdot (-1) + 9\cdot 1 + 7\cdot 0 + 1\cdot (-1) + 8\cdot 1 + 3\cdot 0 + 4\cdot (-1) = 7.
 \]
@@ -472,7 +450,7 @@ $8\cdot 1$ & $3\cdot0$ & $4\cdot (-1)$ & 5 & 8\\
 }
 \end{table}
 \noindent
-The $7$ represents a feature of the $3\times 3$ block in the top left corner. 
+The $7$ represents a feature of the $3\times 3$ block in the top left corner.
 With a trained network applied to the image, these features can represent things such lines, curves, and colors, or even more complicated objects like a nose.
 
 The \emph{stride} of a convolution is how much the kernel slides at a time as it passes over the input.
@@ -534,7 +512,7 @@ In our example with stride 1, kernel size 3, and no padding, the output size is 
 It is good to ensure that the stride always divides the numerator, as otherwise the kernel will be applied asymetrically to the image.
 Calculating the output dimension of a layer is necessary since the following layer will have its \emph{input} dimension size equal to the previous \emph{output} dimension size.
 
-% this one is probably a confusing explanation, but at least it explains it now
+% TODO: this one is probably a confusing explanation, but at least it explains it now
 One last feature that we need to discuss is \emph{channels}.
 Image data (including ours) typically has three channels, representing the red, green, and blue contents of pixels.
 Channels act like different ``layers'' of the image or of the convolutional output.
@@ -551,7 +529,6 @@ The following creates a convolutional layer that accepts an image with 3 channel
 \begin{lstlisting}
 layer = nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3)
 \end{lstlisting}
-
 
 \subsection*{Pooling layers}
 
@@ -626,7 +603,7 @@ Table \ref{table:param_cts} lists how to calculate this number for the layer typ
 For example, the example neural network above would have
 \begin{align*}
 \text{(first linear layer)}\quad\quad&
-(3\cdot32\cdot 32+1)\cdot100 
+(3\cdot32\cdot 32+1)\cdot100
 \\
 \text{(second linear layer)}\quad&
 +(100+1)\cdot10 = 308310 \text{ parameters,}
@@ -647,7 +624,6 @@ Include at least the following:
 Choose the size of the layers so that your model has at least 50,000 parameters (use Table \ref{table:param_cts}), and print out this calculation in the Jupyter notebook file.
 In practice, specifications of model architecture (i.e. number of layers, layer sizes, etc.) are chosen quite arbitrarily until something works.
 As such, you may customize your model architecture to your liking, provided your model meets the requirements specified above.
-%(Avoid having too many more parameters, however, as it may negatively impact training speed and quality)
 
 Hint: It can be very helpful to keep track of the size of the image after each step, so you know what the input size should be for the next step.
 The max pooling layer should occur immediately after a convolutional layer is passed through an activation function.
@@ -679,7 +655,7 @@ Once the loss is calculated by the objective, we can use it to optimize the mode
 This can be done through \emph{backpropagation}, which calculates the partial derivatives of the loss function with respect to each weight, and then uses gradient descent to update every weight.
 PyTorch has several predefined methods for optimization, but we'll use the popular \li{Adam} algorithm.
 PyTorch accumulates gradients when backpropagating, which is sometimes desireable, but in our case it would cause the loss to increase.
-To prevent this, we need to zero out the gradients before we perform each backpropagation. 
+To prevent this, we need to zero out the gradients before we perform each backpropagation.
 PyTorch streamlines this entire training sequence in a very clean way, as shown in the following:
 
 \begin{lstlisting}
@@ -688,7 +664,6 @@ PyTorch streamlines this entire training sequence in a very clean way, as shown 
 # Define the objective and optimizer
 >>> objective = nn.CrossEntropyLoss()
 >>> optimizer = optim.Adam(model.parameters(), lr=1e-4)
-
 
 # For each iteration of the DataLoader, do the following
 >>> optimizer.zero_grad()             # Zero out the gradients
@@ -700,7 +675,7 @@ PyTorch streamlines this entire training sequence in a very clean way, as shown 
 
 An \emph{epoch} is a complete training sequence that trains over the entire DataLoader.
 To improve the model's accuracy, we can train over many epochs.
-A good guideline is to train the model for the number of epochs it takes for the loss to stop decreasing. 
+A good guideline is to train the model for the number of epochs it takes for the loss to stop decreasing.
 
 The loss is calculated using the training data, but at the end of each epoch we also want to know how well the model performs with the validation data.
 Before we determine the validation accuracy, we need to switch our model to evaluation mode so it doesn't continue training.
@@ -729,7 +704,7 @@ TQDM is initialized outside the loop, then updated inside the loop, as follows:
 >>> loop = tqdm(total=len(train_loader), position=0)
 
 >>> for epoch in range(num_epochs):
->>>     loop.set_description('epoch:{}, loss:{:.4f}'.format(epoch,loss.item()))
+>>>     loop.set_description(f"epoch:{epoch}, loss:{loss.item():.4f}")
 >>>		loop.update()
 
 >>> loop.close()
@@ -737,9 +712,21 @@ TQDM is initialized outside the loop, then updated inside the loop, as follows:
 epoch:1 loss:1.8585: : 1402it [00:17, 79.69it/s]
 \end{lstlisting}
 
+\begin{warn}
+Near the beginning of this lab we suggested developing your code while on CPU and only switching to GPU once ready to fully train your model.
+A good practice is to train your model for two epochs while on CPU before switching to GPU to run the full training procedure from start to finish (and then switching back to CPU if continuing to develop solutions to other problems).
+This ensures that your model and training loop are functioning correctly, rather than wasting GPU time debugging.
+
+You may still run into bugs when you switch to GPU that didn't surface when on the CPU.
+These often result from forgetting to specify the correct device for all components, including the model and data (using \li{variable.to(device)}).
+
+Another strategy to speed up debugging is to test your model on a small subset of the data to ensure things are running and processing correctly, then scaling to larger data for more robust tests.
+This ensures that simple issues are caught early before extensive time is spent processing large datasets.
+\end{warn}
+
 \begin{problem}
 Send your model to the device and instantiate the objective and optimizer.
-Train your model with a TQDM display, and calculate the Validation Accuracy after each epoch. 
+Train your model with a TQDM display, and calculate the Validation Accuracy after each epoch.
 Begin by initializing your TQDM loop, then for each epoch, do the following:
 
 \begin{enumerate}
@@ -748,12 +735,12 @@ Begin by initializing your TQDM loop, then for each epoch, do the following:
 \item For each batch in \li{train_loader}:
 \begin{enumerate}
     \item Send \li{x} and \li{y_truth} to device
-    \item Zero out the gradients 
+    \item Zero out the gradients
     \item Use model to predict labels of \li{x}
     \item Calculate loss between predicted labels and \li{y_truth}
     \item Append loss (\li{loss.item()}) to \li{loss_list} (the \li{.item()} feature extracts the element from a tensor with only one element)
-    \item Update TQDM loop 
-    \item Backpropagate to compute gradients 
+    \item Update TQDM loop
+    \item Backpropagate to compute gradients
     \item Optimize and update the weights
 \end{enumerate}
 \item Save the loss mean as the mean of the losses in \li{loss_list}
@@ -778,9 +765,8 @@ Lastly, print the final test score using the testing data, as described above.
     \label{fig:results}
 \end{figure}
 
-
 \section*{Adversarial Attacks}
- 
+
 Just like any algorithm or software, deep learning is susceptible to attacks.
 For deep learning models, this vulnerability most often manifests in the model being extremely sensitive to certain types of changes in the input that really should not matter.
 This results in the model giving nonsensical results, which, while amusing, can cause major problems.
@@ -790,11 +776,11 @@ When designing machine learning models, it is important to be aware of these iss
 \begin{figure}[H] % Three graphs.
 \centering
 
- 	\includegraphics[width=\textwidth]{figures/panda.png}   
+ 	\includegraphics[width=\textwidth]{figures/panda.png}
     \caption{A slight modification to a correctly-classified image of a panda results in the model confidently classifying it as a gibbon, despite the image not having changed in any substantial way.}
 \end{figure}
 
-The example of modifying the image of a panda is an attack called the \emph{Fast Gradient Sign Method (FGSM)}. 
+The example of modifying the image of a panda is an attack called the \emph{Fast Gradient Sign Method (FGSM)}.
 FGSM is a \emph{white-box attack}, meaning that the attacker has access to the model; this is in contrast with a \emph{black-box attack} where the attacker only has access to the model's inputs and outputs.
 
 During model training, gradients are used to adjust the model weights so that loss is minimized.
@@ -804,9 +790,9 @@ x_\text{perturbed} = x + \epsilon\, \mathrm{Sign}(\nabla_x \mathrm{Loss}(\theta,
 \end{equation*}
 where $x$ is the input, $y$ is the label, and $\theta$ is the model parameters.
 
-
 We can calculate this perturbation in PyTorch as follows.
-To calculate the gradient of the model with respect to a piece of data \li{x}, we first need to set \li{x.requires_grad = True} and call \li{x.retain_grad()}. %the second part might not actually be necessary; further testing needed
+To calculate the gradient of the model with respect to a piece of data \li{x}, we first need to set \li{x.requires_grad = True} and call \li{x.retain_grad()}.
+% TODO: the second part might not actually be necessary; further testing needed
 Then, we zero out the optimizer's gradient, run \li{x} through the model, and compute the loss, similar to training.
 After this, the gradient of the output with respect to \li{x} can be obtained using the attribute \li{x.grad.data}.
 
@@ -828,44 +814,11 @@ def fgsm_attack(model, optimizer, objective, x, y, eps):
     data_grad = x.grad.data
     # Perturb the images
     x_perturbed = x + eps * data_grad.sign()
-    
+
     return x_perturbed
 \end{lstlisting}
 We will use this function to explore this type of adversarial attack on our neural network.
-\begin{comment}
-\begin{algorithm}
-\begin{algorithmic}[1]
-\Procedure{Advesarial Attack}{model, data loader, $\epsilon$}
-	\For{\pseudoli{x,y in test_loader}}		\Comment{Loop through test data}
-		\State \pseudoli{x.requires_grad} $\gets$ \pseudoli{True}
-		\State \pseudoli{output} $\gets$ \pseudoli{model(x)}
-		\If{\pseudoli{output} $!= y$}		\Comment{Only modify correct images}
-			\State \pseudoli{continue} 
-		\EndIf
-		\State \pseudoli{Update loss}
-		\State \pseudoli{Zero out gradients}
-		\State \pseudoli{Backwards step}
-		\State \pseudoli{data_grad} $\gets$ \pseudoli{x.grad.data}
-		\State \pseudoli{perturbed_data} $\gets$ \pseudoli{fgsm_attack(data,} $\epsilon,$ \pseudoli{data_grad)}
-		\State \pseudoli{output} $\gets$ \pseudoli{model(perturbed_data)}
-	\EndFor
-	\State \pseudoli{calculate accuracy}
-\EndProcedure
-\end{algorithmic}
-\caption{Advesarial Attack.
-This algorithm accepts a trained neural network model, data, and perturbation value $\epsilon$.
-It iterates through each data point and if the model is correct, modifies the data based on $\epsilon$.
-The algorithm returns the accuracy of the model after the attack.}
-\label{alg:adv_attack}
-\end{algorithm}
 
-The algorithm is similar to the training loop done in Problem \ref{prob:train}.
-However, before calling the model on the input, we need to set \li{data.requires_grad} attribute to \li{True} so that we can calculate \li{data.grad.data.sign()} in \li{fgsm_attack}.
-If the model is incorrect, we skip the rest of the steps.
-If the model is correct, we perform the attack to modify the image slightly, with the goal of tricking the model into predicting an incorrect label.
-The accuracy of the model is the percentage of modified images that still match their labels over the total number of images.
-Notice that since we are evaluating the test set, the model should be set to \li{eval()}, and we do not need to optimize.
-\end{comment}
 \begin{problem}
 Write a function that loops through the test data using the function \li{fgsm_attack} to perturb the images and using your trained model from Problem \ref{prob:train}.
 
@@ -892,20 +845,19 @@ Your figure should look similar to Figure \ref{fig:perturbed}.
 \label{fig:perturbed}
 \end{figure}
 
-
-
-
 \newpage
+
 \section*{Additional Materials}
 \subsection*{TensorBoard}
 
-TensorBoard is a visualization toolkit for neural networks. 
+TensorBoard is a visualization toolkit for neural networks.
 It was originally built for Tensorflow, but also can be used with PyTorch.
 The main features of TensorBoard include model visualization, dimenionality reduction, tracking and visualizing metrics, and displaying data.
 
 To create a tensorboard, run the following code:
-% imports???
 \begin{lstlisting}
+>>> import os
+>>> from torch.utils.tensorboard import SummaryWriter
 >>> %load_ext tensorboard
 >>> logs_base_dir = "runs"
 >>> os.makedirs(logs_base_dir, exist_ok=True)
@@ -958,53 +910,15 @@ The following items can be added to TensorBoard, with more information at \url{h
 \item \li{add_text}
 \item \li{add_graph}
 \item \li{add_hparams}
-
 \end{itemize}
 
 To save the training loss, write a function that returns a matplotlib figure of the training loss plot.
 Then use \li{tb.add_figure(figure_name, plot_loss())}.
 
 \begin{lstlisting}
-writer.add_figure('Training Loss',plot_loss())
+writer.add_figure("Training Loss",plot_loss())
 \end{lstlisting}
 
 \begin{problem}
-
 Create a TensorBoard for this project that includes the network, a plot of iterations versus training loss and a plot of iterations versus test accuracy from the training done in Problem \ref{prob:train}.
-
 \end{problem}
-
-
-
-\begin{comment}
-\begin{problem}
-Optional Tensorboard Problem
-
-
-Write a function that randomly chooses four images from the training set, (this can be done through the DataLoader), predicts the labels, and returns a matplotlib figure with the images, the labels with the model's top prediction, its probability, and the actual label.
-Remember to unnormalize the images using 
-
-\begin{lstlisting}
->>> img = images[idx]/ 2 + 0.5  }
-\end{lstlisting}
-Save the figure to tensorboard using \li{add_figure}.
-
-
-Display a screenshot inline of the image in tensorboard using 
-\begin{lstlisting}
->>> from IPython.display import Image
->>> Image('tensorflow.png')
-\end{lstlisting}
-
-The Tensorboard Image tab should look like Figure \ref{fig:images}
-\end{problem}
-
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{figures/images.png}
-
-\caption{Example of TensorBoard Image Tab displaying four random images with their predicted labels and actual labels.}
-\label{fig:images}
-\end{figure}
-\end{comment}

@@ -1,6 +1,19 @@
 \lab{Introduction to GitHub}{Introduction to GitHub}
+\labdependencies{}
 \label{lab:GitHubIntro}
 \objective{Git is a version control system that helps you manage changes to your code over time. It allows you to keep track of different versions of your code, collaborate with others, and revert changes if necessary. In ACME, Git will allow the Lab Assistants to see and grade your code. In this mini-lab you will learn how to successfully save your code to a GitHub repository.}
+
+\begin{info}
+Before we begin, it's important to note that you don't need to complete before you start ACME. 
+The beginning of this program can be overwhelming and this lab is written to be a helpful resource, not your first deadline.
+
+You'll be using Git starting on day 1 so having some intuition about it is helpful, but you DO NOT need a complete understanding of it in order to be successful. 
+This is especially true for the `Merge Conflict' section of this explanation. 
+You will undoubtedly encounter merge conflicts during your time in ACME and later in your future career, but you can always come back and reference this lab when that happens.
+
+That being said, completing the lab will be helpful, but in the management of your stress during the start of this intensive program, 
+this lab can certainly be something that you put on the backburner and come back to later. 
+\end{info}
 
 % Make tildes look nicer in the code boxes
 \lstset{
@@ -16,31 +29,107 @@ Specifically:
 \item Python should be installed on your computer
 \end{itemize}
 
-If you have missed any of these steps, stop here and refer back to the Getting Started pdf and the accompanying tutorial videos.
+If you have missed any of these steps, stop here and refer back to the Getting Started pdf and the accompanying tutorial videos. 
 
-Each week there will be an assigned lab in both Volume 1 and Volume 2 that will supplement the material presented in class.
-These labs will involve editing, running, and saving code frequently.
-To assist in this process, GitHub will be used to save your code and allow the instructors to grade each week.
-The following example problem will help outline this process.
+Next, we need to introduce you to a version control framework called Git. We use Git in order to easily have access to your 
+completed labs so the TA's can grade them. Apart from making grading easier, Git is also a tool used almost anywhere you go in industry. Thus, rather than think of this 
+as a tutorial, think of it as the beginning of your education as an ACME major.
 
-\begin{problem}
-In the lab folder titled \li{GitHubIntro}, you will find the file \li{github_intro.py}.
-Open \li{github_intro.py} with VSCode (or your favorite code editor).
-In the function labeled \li{prob1()}, remove the line that says \li{raise NotImplementedError()} and replace it with \li{return "Student Name"} putting your actual name in the quotation marks.
-Make sure to not change the indentation, otherwise your code will not run correctly.
-Be sure to save the file after you've finished editing.
+\section{Git}
 
-Now, run the file using python.
-This can be done either in your code editor, or via the terminal (instructions are given later in this tutorial).
-If everything worked correctly, you should see your name appear in the console.
-\end{problem}
+Git is used in industry to facilitate the development of large projects that have many contributers. To illustrate the usefulness of Git, we'll employ
+a science fiction analogy.
 
-We will now demonstrate how to run your file in python and upload your changed file to GitHub.
+Imagine two people are building a car in the future. One is named Tokyo, the other Brazil, and both live in the countries they're named after (So they 
+live very far away from each other). 
+In this analogy futuristic technology exists so that neither Tokyo nor Brazil need to travel to where the car is to work on it. 
+Instead, each has a partially finished car in their back yard. If Tokyo finishes constructing the radiator, she can submit 
+that work to their sentient AI named Gitty. 
+Upon receiving the work, Gitty stores the new state of the car based on the changes made. Then, before Brazil goes to start working on his copy of the car, 
+he asks Gitty to update his car based on Gitty's data. That way the radiator Tokyo finished shows up on Brazil's car before he starts working. 
 
-To start, open a terminal window.
-The following coding examples will teach you how to navigate to the \li{GitHubIntro/} directory via the terminal.
-Instead of clicking icons to open folders, you will need to use typed commands within your terminal to move from folder to folder.
-To see your current location, type the command \li{pwd} which stands for "print working directory."
+\begin{figure}[h]
+    \centering
+    \centering
+    \begin{tikzpicture}
+        % Define nodes with images and labels
+        \node[inner sep=0] (car1) at (0,0) {
+            \begin{tabular}{c}
+                \includegraphics[width=4cm]{figures/car1.pdf} \\
+                \small Brazil
+            \end{tabular}
+        };
+        \node[inner sep=0] (car2) at (10,0) {
+            \begin{tabular}{c}
+                \includegraphics[width=4cm]{figures/car2.pdf} \\
+                \small Tokyo
+            \end{tabular}
+        };
+        \node (robot) at (5,6) {
+            \begin{tabular}{c}
+                \includegraphics[width=4cm]{figures/robot.pdf} \\
+                \small Gitty
+            \end{tabular}
+        };
+        
+        % Draw arrows with labels
+        \draw[->,thick] (car1) -- (robot) node[midway, sloped, above, font=\small] {push changes};
+        \draw[->,thick] (robot) -- (car1) node[midway, sloped, below, font=\small] {pull update};
+        
+        \draw[->,thick] (car2) -- (robot) node[midway, sloped, above, font=\small] {push changes};
+        \draw[->,thick] (robot) -- (car2) node[midway, sloped, below, font=\small] {pull update};
+    \end{tikzpicture}
+    \caption{Data flow between cars via Gitty}
+    \label{fig:tikz-diagram}
+\end{figure}
+
+
+That way, both Brazil and Tokyo can build the car locally without duplicating any of the work done by their counterpart. GitHub is the sentient AI Gitty in this example.
+Many coding projects are large and complicated with hundreds of contributers so its important to have something that can allow them to work efficiently with each other.
+
+In our analogy, Tokyo or Brazil would submit their changes to Gitty. In Git, we call this `pushing'. Coders push their code to Git which records the
+changes. If another worker wants to update their code they then `pull' from Git to get those changes. Projects are divided into `Repositories' that exist online on 
+a site called GitHub. Repositories house all the code a company is using for a specific purpose. 
+
+Git has a lot of complexities that you will no doubt encounter in your education and future work, 
+but for now we will focus on learning how to push and pull and resolve any conflicts that might
+arise from that. 
+
+\section{Navigation}
+
+We will be using the terminal to interact with GitHub so there are several commands you will need to be familiar with. The table below includes those we will use in this
+tutorial.
+
+\begin{table}[h!]
+    \centering
+    \caption{Useful terminal and git commands}
+    \begin{tabular}{| m{4cm} | m{10cm} |}
+    \hline
+    \textbf{Command} & \textbf{Description} \\ 
+    \hline
+    \texttt{cd <directory>} & Change directory to <directory> \\ & (type `..' to go back one directory) \\ 
+    \hline
+    \texttt{ls} & List all files/folders in the current directory \\ 
+    \hline
+    \texttt{pwd} & Print the current working directory \\ 
+    \hline
+    \texttt{git pull origin main} & updates your repository with what GitHub contains \\ 
+    \hline
+    \texttt{git add <file>} & stages a changed/created file so that's it's ready to be pushed \\ 
+    \hline
+    \texttt{git commit -m "<message>"} & places a label on all staged changes \\ 
+    \hline
+    \texttt{git push origin main} & pushing staged and commited files to GitHub \\ 
+    \hline
+    \texttt{git status} & see details on what changes you've made that you haven't pushed \\
+    \hline
+\end{tabular}
+\label{table:1}
+\end{table}
+    
+To start, we need to navigate to our \li{GitHubIntro/} repository on our computer.
+Once you've opened a terminal, if it isn't obvious what directory you are in you can use the \li{pwd} command
+to print your current directory.
 
 \begin{lstlisting}
 ~$ pwd
@@ -55,7 +144,7 @@ Desktop		Downloads		Public 		Videos
 Documents 	Pictures
 \end{lstlisting}
 
-Use the command \li{cd} to change directory. For example, if I wanted to navigate into the \li{Documents} folder, I would use the following command:
+Use the command \li{cd} to change your current directory. For example, if I wanted to navigate into the \li{Documents} folder, I would use the following command:
 
 \begin{lstlisting}
 ~$ cd Documents				# Change to the Documents folder
@@ -71,52 +160,290 @@ If you wish to go back a directory, use \li{cd} followed by a space and two peri
 /home/username
 \end{lstlisting}
 
-Using these commands, navigate to the \li{GitHubIntro} directory.
+Using these commands, navigate to the \li{GitHubIntro} folder inside your Volume 1 directory.
 Once you're there, use \li{pwd} to check that you're in the right folder.
-It should look like the following example.
+It should look like the following example only the `...' will be replaced with your computer's 
+specific file path.
 
 \begin{lstlisting}
 ~$ pwd
 /home/username/.../GitHubIntro
 \end{lstlisting}
 
-Now that you are in the correct directory, you can run the following command to see that your code compiles correctly:
+Now that we are inside the \li{GitHubIntro} folder (which is inside your Volume 1 repository) we can learn how to push and 
+pull changes.
+    
+\section{Push and Pull}
+    
+Before starting to work on any repository based project, it's good practice to pull from GitHub to make sure that the code that you have 
+is up to date. This will avoid any conflicts in the updating process, which we will address later in the lab. 
+In order to pull from the GitHub repository, use the command \li{git pull}
 
 \begin{lstlisting}
-~$ python github_intro.py
-Student Name
-\end{lstlisting}
-
-Now, load your changed file to GitHub using the following commands:
-
-\begin{lstlisting}[language=bash]
 # Pull changes from your online repository to your local machine
 ~$ git pull origin main
-
-# Tell git to track changes made to github_intro.py
-~$ git add github_intro.py
-
-# Commit saves the changes you made to your file, acting like a time stamp
-~$ git commit -m "Finished GitHub lab"
-
-# Send your commits to the repository
-~$ git push origin main
 \end{lstlisting}
 
-Now, open a browser and log in to your GitHub account.
-Open your Volume 1 repository and open your \li{github_intro.py} file.
-If everything worked correctly, you should be able to see the edits you made to your file.
-Additionally, you can click on \li{Commits} in the menu on the left and see your most recent commit statements.
-Congratulations, you have completed your GitHub introduction!
+After some terminal nonsense the changes should've been pulled onto your local machine. 
 
-In the future, you will submit your labs in a similar way.
-The process is to first navigate to the correct directory within your terminal, then input the following commands:
+Now let's suppose we've changed an existing file or added files to our local copy. We need to update the remote (online) repository so it reflects these changes.
+In order to accomplish this we will use a series of commands: \li{git status}, \li{git add}, \li{git commit}, and \li{git push}.
 
-\begin{lstlisting}[language=bash]
-~$ git pull origin main
-~$ git add <changed files>
-~$ git commit -m "<descriptive message>"
-~$ git push origin main
+\li{git status} shows us the current state of our repository. It should look something like what is shown in Figure \ref{fig:status_figure}: 
+
+
+\begin{figure}[h]
+    \centering
+    \caption{Terminal output after calling git status}
+    {\includegraphics[width=15cm]{figures/status_image.pdf}};
+    \label{fig:status_figure}
+\end{figure}
+
+Here, there are two sections: `Untracked files' and `Changes not staged for commit'. 
+
+Untracked files are new files that do not yet exist on the remote repository.
+Files under the heading `Changes not staged for commit' are files that already exist on the remote 
+repository but are different than those on your local machine.
+
+In the example above we see that three .png files have been added and one .tex file has been modified.
+We could stage all of these files (get them ready to be pushed) by using the command \li{git add --all}, however, sometimes we don't want files to be pushed to GitHub
+(like if one is a data file that is too large to upload as you will experience in some of your ACME labs). Thus we will use \li{git add} followed by which files we 
+specifically want to stage in order to have more control.
+
+We can add each file with a separate \li{git add <the_file>} command or all at once with different files separated by spaces (i.e \li{git add <file1> <file2> ...}). Therefore
+the command to add the four files shown previously will be
+
+\begin{lstlisting}
+    git add car1.png car2.png robot.png GitHubIntro.tex
 \end{lstlisting}
 
-Note: following this ordering will help you to avoid merge conflicts with GitHub!
+After that command we can use \li{git status} again to check what has been staged (see Figure \ref{fig:staged})
+
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}
+        \node (status_image) at (0,0) {\includegraphics[width=15cm]{figures/staged_image.pdf}};
+    \end{tikzpicture}
+    \label{fig:staged}
+\end{figure}
+
+Now all staged changes are shown in green under `Changes to be commited'. If there were files that we didn't \li{git add} they would 
+still be highlighted in red.
+
+Now that we have added the changes we need to actual commit them. We can think of the difference betwen adding and commiting in terms packing up a box. 
+Using \li{git add} is like putting something in the box but using \li{git commit} is like taping the box shut and putting a label on it. Then, when we push, we are 
+sending that box to the online github repository where the label of the box will  be recorded in case the contents of that particular box is needed in the future.
+
+Coding can be a fickle thing so it is often useful to look at or go back to previous versions of a code base. For this reason 
+it is important that the label on our box be descriptive so that we can easily identify what is in the box if we want come back
+to it later. The commit command to use is as follows:
+
+\begin{lstlisting}
+    git commit -m "my very descriptive commit message"
+\end{lstlisting}
+
+Here the `-m' means messsage and allows us to specify the label of our box 
+in the quotations that follow it. 
+
+One thing to notee is that once changes have been comitted, they will no longer
+appear in the \li{git status} output. 
+
+Now all there is left to do is send the box on its way by using \li{git push}. The syntax of this command is as follows:
+
+\begin{lstlisting}
+    git push origin <branch name>
+\end{lstlisting}
+
+A branch is just another copy of the repository. They are usually used on large projects to avoid merge conflicts and make development more organized. The default
+branch created in a repository is called `main'. We will not need branches in the ACME coursework so the push command will always be
+
+\begin{lstlisting}
+    git push origin main
+\end{lstlisting}
+
+\begin{problem}
+    In \li{github_intro.py} make \li{problem1} return a string with your first and last name. Then use the information above to add, commit, and push the change to GitHub.
+    Go to GitHub, find the file you pushed to, and make sure the changes are reflected there. 
+    
+    \textbf{Hint:} Take note of how you found \li{github_intro.py} on GitHub since that'll be important in problem 2.
+\end{problem}
+
+This completes the walkthrough of pulling and pushing changes. Now we approach the topic of what happens when your local copy and the online copy conflict.
+
+\section{Merge Conflicts}
+
+We mentioned in the previous section that it's good practice to pull changes from GitHub before making any of your own changes. This ensures that your code is
+completely up to date before doing any work. However, no one remembers to pull first every time. Making changes before pulling can create discrepancies between what 
+exists on your local machine and what exists online. When this happens it is called a merge conflict.
+
+Since git tracks changed files, it will not let you push changes you've made if there are changes on the remote that you haven't pulled yet. If you attempt to push
+without realizing that you haven't pulled, you may get a terminal message that looks like this:
+
+
+\begin{figure}[h]
+    \centering
+    \caption{Message indicating a need to pull before pushing.}
+    \begin{tikzpicture}
+        \node (status_image) at (0,0) {\includegraphics[width=15cm]{figures/cannot_push.pdf}};
+    \end{tikzpicture}
+    \label{fig:cannot push}
+\end{figure}
+
+Git does not want to override any changes made on either end so when a merge conflict occurs it notifies you. 
+There are two kinds of merge conflicts, those that can be auto-resolved
+by Git, and those that need to be manually resolved
+
+\subsection{Auto-resolvable conflicts}
+
+This kind of conflict occurs when remote and local changes to a single file occur on \textbf{different lines}. In this case, Git can auto-resolve the
+conflict by accepting the local changes online and depositing the online changes locally. 
+
+For example, let's say your friend Peter changed the name of a function on line 12 and you added a return statement on line 37 of the same file. 
+Git would still notify you of a merge conflict but can auto-resolve the conflict by putting the new name of the function on line 12 in your local machine
+and recording your return statement on the online version.
+
+Even though Git can auto-resolve the conflict, it still gives you the option to provide the auto-resolve commit with a label (message) since Git is effectively
+creating a new commit. When this happens, your terminal window will look something like Figure \ref{fig:auto_resolve}.
+
+
+\begin{figure}[h]
+    \centering
+    \caption{Terminal window indicating an auto-resolvable merge conflict}
+    \begin{tikzpicture}
+        \node (status_image) at (0,0) {\includegraphics[width=15cm]{figures/auto_resolve_conflict.pdf}};
+    \end{tikzpicture}
+    \label{fig:auto_resolve}
+\end{figure}
+
+\begin{warn}
+    This window is actually a file that's opened in your terminal with the vim text editor. Vim is notorious for being difficult to use because of its
+    gamut of ecclectic commands. Rather than include a crash course on vim here, we will simply show you how to exit this window. 
+    Git will finish the auto-merge using a default commit message when the file is closed.
+\end{warn}
+
+To exit a file opened in vim simply type \li{:q}. the `:' tells vim to execute the next typed command and the `q' directs the text editor to quit. Once the 
+vim window has closed git should auto-merge the changes. You may need to add and commit again to finish pushing.
+
+\begin{info}
+    Git has several ways it can try to automatically merge a file. When you first get a merge conflict, you may see a window similar to the one shown below 
+    prompting you to tell Git which way to use when auto-merging.
+
+
+    \begin{center}
+        \includegraphics[width=12cm]{figures/config_auto_merge_settings.pdf}
+    \end{center}
+
+    In this case, choosing any of the three listed commands is valid. However, \li{git config pull.rebase false} will retain the most commit information and is therefore 
+    recommended. 
+
+    Simply type that command in the terminal and then try pulling again to resolve this issue.
+\end{info}
+
+\subsection{Manually-resolvable conflict}
+
+If a local and remote change occur on the same line of a modified file, git cannot automatically resolve it and will give a message in the terminal that looks 
+like Figure \ref{fig:failed_auto_merge}
+
+
+\begin{figure}[h]
+    \centering
+    \caption{Terminal information to explain the failure of an auto-merge.}
+    \begin{tikzpicture}
+        \node (status_image) at (0,0) {\includegraphics[width=15cm]{figures/failed_auto_merge.pdf}};
+    \end{tikzpicture}
+    \label{fig:failed_auto_merge}
+\end{figure}
+
+On the line that begins with `CONFLICT' git will show you which files have a merge conflict. In most IDEs (such as VS Code) opening a file that has a merge conflict 
+will allow you to click a button to decide which change you want to keep. The code in conflict will be surrounded by some `<' and `>' characters and will have
+which change is local and which is incoming labeled. It should look like Figure \ref{fig:conflict_resolution}.
+
+
+\begin{figure}[h]
+    \centering
+    \caption{What manual merge conflict resolution looks like in an IDE.}
+    \begin{tikzpicture}
+        \node (status_image) at (0,0) {\includegraphics[width=15cm]{figures/VS_code_resolution.pdf}};
+    \end{tikzpicture}
+    \label{fig:conflict_resolution}
+\end{figure}
+
+Once you've decided which change you want to keep you can simply click `Accept current change' or  `Accept incoming change' and your IDE will place only that code
+in the document. If there are multiple conflicts, repeat this for each one. Once that has been completed, you may need to add, and commit the merged file again, then
+you can finish pushing your changes to github.
+
+\begin{info}
+    You can also resolve manual merge conflicts in the terminal by using the \li{git checkout --ours} or the \li{git checkout --theirs} commands (\textbf{ours} to keep 
+    the local change, \textbf{theirs} to keep the incoming change), or by simply deleting everything you don't want. You'll still need to add, commit, 
+    and push after the resolution.
+\end{info}
+
+Now that we've learned about merge conflicts, we will manually create one to see how they work. 
+Normal merge conflicts are caused by two separate people
+pushing from two separate local machines. In order to create one by ourselves we'll need to make
+and commit a local change AND edit the file directly on GitHub, which will simulate a pushed change
+from a different source.
+
+\begin{problem}
+    Make two sets of changes in problem 2.
+    \begin{enumerate}
+        \item The first should be auto-resolvable, so the local and remote changes to problem2 should be on two different lines. 
+        (\textbf{Hint:} Making a comment on one line on your local machine and a comment on a different line on github is an easy 
+        way to accomplish  this.) Once both changes are committed, try pulling the changes onto your local
+        machine and practice exiting from the vim window. Finish by pushing the merge resolution.
+        \item The second set of changes should cause a legitimate merge conflict that you'll have to manually resolve. To accomplish this, 
+        locally replace the `raise' statement in problem 2 with a return statement that returns any string of your choice. 
+        Then replace the `raise' statement on GitHub with a different string so they'll conflict. 
+        Commit both changes and pull, then use VS code or terminal commands to resolve the conflict. Finish by pushing the merge resolution
+    \end{enumerate}
+\end{problem}
+
+\section{Pushing and Pulling directly from VS Code}
+
+Using terminal commands is not the only way to use Git. Many IDE's have pushing and pulling user interfaces built into them. While terminal commands lend a 
+measure of control and are more useful for more complicated Git functionality, using an IDE's Git tools can streamline and simplify the process. Since we've
+recommended the installation and usage of VS Code as a general IDE, we'll show how to use the git functionality on VS Code specifically. Other IDE's 
+Git tools should be fairly similar.
+
+\subsection{Where to look}
+
+To access VS Code's Git tools you must first open your repository in VS Code. This is done by selecting the `Source' tab on the left side, 
+selecting `Open Repository', and then searching for the repository you're working with on your computer. Figure \ref{fig:open_repo} shows 
+how this might look in a VS Code window.
+
+\begin{figure}[h]
+    \centering
+    \caption{Where to go to open your Repo in VS Code.}
+    \includegraphics[width=15cm]{figures/VS_Code_open_repo.pdf}
+    \label{fig:open_repo}
+\end{figure}
+
+After that, the Git tools should be visible. In Figure \ref{fig:push_pull_buttons}, the locations of where to find the 
+commands discussed previously are shown. The descriptions of those locations follow:
+
+\begin{figure}[h]
+    \centering
+    \caption{Main buttons to us VS Code's Git tools}
+    \includegraphics[width=15cm]{figures/push_pull_buttons.pdf}
+    \label{fig:push_pull_buttons}
+\end{figure}
+
+
+
+\begin{enumerate}
+    \item Files under `Changes' are files that need to be committed. The `U' means its a new file and the `M' means its an old 
+    file that's been modified. Clicking the `+' button is equivalent to \li{git add <that file>}. Clicking it will also move 
+    the file from the  `Changes' section to the `Staged Changes' section
+    \item This will commit any files that have been added with the plus sign from item 1.
+    \item This is where you will write the commit message that would normally go in the quotations after \li{git commit -m}.
+    \item Here is where you will find the options to push and pull as well as many other Git actions
+\end{enumerate}
+
+In VS Code. Merge conflicts will be handled similarly to when we were working in the terminal, except messages will appear in popups rather 
+than in terminal output. Conflicts that need to be manually resolved can still be resolved by using the buttons in the open file in VS Code. Additionally, 
+completing your push after the conflict resolution will still be necessary. 
+
+\section{Conclusion}
+
+This completes our preliminary tutorial of Git. Git has many more useful functions but for the purpose of completing your ACME labs, pushing, pulling, and resolving
+conflicts is enough to get started. However, Git skills are incredibly useful in industry and developing them further on your own can only benefit you.

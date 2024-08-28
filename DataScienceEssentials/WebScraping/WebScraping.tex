@@ -1,7 +1,8 @@
 \lab{Web Scraping}{Web Scraping}
+\labdependencies{Pandas1,Pandas2}
 \objective{Web Scraping is the process of gathering data from websites on the internet.
 Since almost everything rendered by an internet browser as a web page uses HTML, the first step in web scraping is being able to extract information from HTML.
-In this lab, we introduce the requests library for scraping web pages, BeautifulSoup: Python's canonical tool for efficiently and cleanly navigating and parsing HTML, 
+In this lab, we introduce the requests library for scraping web pages, BeautifulSoup: Python's canonical tool for efficiently and cleanly navigating and parsing HTML,
 and how to use Pandas to extract data from HTML tables.}
 
 \section*{HTTP and Requests} % =============================================================
@@ -27,7 +28,7 @@ If the response code is good, typically \li{200}\footnote{See \url{https://en.wi
 
 
 
-# The HTML of the website is stored in the 'text' attribute.
+# The HTML of the website is stored in the "text" attribute.
 >>> print(response.text)
 <<<!DOCTYPE html>
 <html lang="en" dir="ltr" prefix="content: http://purl.org/rss/1.0/modules/content/  dc: http://purl.org/dc/terms/  foaf: http://xmlns.com/foaf/0.1/  og: http://ogp.me/ns#  rdfs: http://www.w3.org/2000/01/rdf-schema#  schema: http://schema.org/  sioc: http://rdfs.org/sioc/ns#  sioct: http://rdfs.org/sioc/types#  skos: http://www.w3.org/2004/02/skos/core#  xsd: http://www.w3.org/2001/XMLSchema# " class=" ">
@@ -60,11 +61,11 @@ We won't spend much time on that in this lab, but it's especially important in l
 
 \begin{problem}
 Use the \li{requests} library to get the HTML source for the website \url{http://www.example.com}.
-Save the source as a file called \li{"example.html"}. 
+Save the source as a file called \li{"example.html"}.
 If the file already exists, make sure not to scrape the website or overwrite the file.
 You will use this file later in the lab.
 
-Hint: When writing responses to file you need to use the use the \li{open()} function with the appropriate file write mode ((either \li{mode="w"} for plain write mode, or \li{mode="wb"} for binary write mode). Python interpreters will write the example file the same way whether you use \li{response.text} or \li{response.content}.
+Hint: When writing responses to file you need to use the use the \li{open()} function with the appropriate file write mode ((either \li{mode='w'} for plain write mode, or \li{mode="wb"} for binary write mode). Python interpreters will write the example file the same way whether you use \li{response.text} or \li{response.content}.
 
 \label{prob:get-example.com}
 \end{problem}
@@ -131,7 +132,7 @@ Using the output from Problem \ref{prob:get-example.com}, examine the HTML sourc
 What tags are used?
 What is the value of the \li{<<type>>} attribute associated with the \li{style} tag?
 
-Write a function that returns a set of the names of all tags the website uses and the value of the \li{<<type>>} attribute of the \li{style} tag (as a string). 
+Write a function that returns a set of the names of all tags the website uses and the value of the \li{<<type>>} attribute of the \li{style} tag (as a string).
 \\(Hint: there are ten unique tag names.)
 \label{prob:look-at-example.com}
 \end{problem}
@@ -175,7 +176,7 @@ The \li{prettify()} method returns a string that can be printed to represent the
 </p></body></html>
 """
 
->>> small_soup = BeautifulSoup(small_example_html, 'html.parser')
+>>> small_soup = BeautifulSoup(small_example_html, "html.parser")
 >>> print(small_soup.prettify())
 <<<html>
   <body>
@@ -297,7 +298,7 @@ Attribute & Description \\ \hline
 <<<a class="pig" href="http://example.com/larry" id="link1">Larry,</a>>>
 
 # Get the names of all of <a>'s parent tags, traveling up to the top.
-# The name '[document]' means it is the top of the HTML code.
+# The name "[document]" means it is the top of the HTML code.
 >>> [par.name for par in a_tag.parents]     # <a>'s parent is <p>, whose
 <<['p', 'body', 'html', '[document]']>>         # parent is <body>, and so on.
 
@@ -343,7 +344,7 @@ http://example.com/curly>>
 \end{lstlisting}
 
 Note that the \li{"class"} attribute of the \li{<p>} tag is a list.
-This is because the \li{"class"} attribute can take on several values at once; for example, the tag \li{<p class="story book">} is of class \li{'story'} and of class \li{'book'}.
+This is because the \li{"class"} attribute can take on several values at once; for example, the tag \li{<p class="story book">} is of class \li{"story"} and of class \li{"book"}.
 
 The behavior of the \li{string} attribute of a \li{bs4.element.Tag} object depends on the structure of the corresponding HTML tag.
 \begin{enumerate}
@@ -412,8 +413,8 @@ Tags can be matched by name, attributes, and/or text.
 >>> pig_soup.find(name='b')
 <<<b>The Three Little Pigs</b>>>
 
-# Find all tags with a class attribute of 'pig'.
-# Since 'class' is a Python keyword, use 'class_' as the argument.
+# Find all tags with a class attribute of "pig".
+# Since "class" is a Python keyword, use "class_" as the argument.
 >>> pig_soup.find_all(class_="pig")
 <<[<a class="pig" href="http://example.com/larry" id="link1">Larry,</a>,
  <a class="pig" href="http://example.com/mo" id="link2">Mo</a>,
@@ -423,10 +424,10 @@ Tags can be matched by name, attributes, and/or text.
 >>> pig_soup.find(attrs={"class": "pig", "href": "http://example.com/mo"})
 <<<a class="pig" href="http://example.com/mo" id="link2">Mo</a>>>
 
-# Find the first tag whose text is 'Mo'.
->>> pig_soup.find(string='Mo')
+# Find the first tag whose text is "Mo".
+>>> pig_soup.find(string="Mo")
 <<'Mo'>>                                    # The result is the actual string,
->>> pig_soup.find(string='Mo').parent   # so go up one level to get the tag.
+>>> pig_soup.find(string="Mo").parent   # so go up one level to get the tag.
 <<<a class="pig" href="http://example.com/mo" id="link2">Mo</a>>>
 \end{lstlisting}
 
@@ -437,7 +438,7 @@ Write a function that reads the file and loads it into BeautifulSoup.
 Return a list of the following tags:
 \begin{enumerate}
 \item The tag containing the date ``Thursday, January 1, 2015''.
-\item The tags which contain the \textbf{links} ``Previous Day'' and ``Next Day''. 
+\item The tags which contain the \textbf{links} ``Previous Day'' and ``Next Day''.
 
 Hint: the tags that contain the links do not explicitly have ``Previous Day" or ``Next Day," so you cannot find the tags based on a string. Instead, open the HTML file manually and look at the attributes of the tags that contain the links. Then inspect them to see if there is a better attribute with which to conduct a search.
 \item The tag which contains the number associated with the Max Actual Temperature.
@@ -462,15 +463,15 @@ This way, the methods locate tags whose name, attributes, and/or string matches 
 \begin{lstlisting}
 >>> import re
 
-# Find the first tag with an href attribute containing 'curly'.
+# Find the first tag with an href attribute containing "curly".
 >>> pig_soup.find(href=re.<<compile>>(r"curly"))
 <<<a class="pig" href="http://example.com/curly" id="link3">Curly.</a>>
 
-# Find the first tag with a string that starts with 'Cu'.
+# Find the first tag with a string that starts with "Cu".
 >>> pig_soup.find(string=re.<<compile>>(r"^Cu")).parent
 <<<a class="pig" href="http://example.com/curly" id="link3">Curly.</a>>>
 
-# Find all tags with text containing 'Three'.
+# Find all tags with text containing "Three".
 >>> [tag.parent for tag in pig_soup.find_all(string=re.<<compile>>(r"Three"))]
 <<[<title>Three Little Pigs</title>, <b>The Three Little Pigs</b>]>>
 \end{lstlisting}
@@ -478,17 +479,17 @@ This way, the methods locate tags whose name, attributes, and/or string matches 
 Finally, to find a tag that has a particular attribute, regardless of the actual value of the attribute, use \li{True} in place of search values.
 
 \begin{lstlisting}
-# Find all tags with an 'id' attribute.
+# Find all tags with an "id" attribute.
 >>> pig_soup.find_all(<<id>>=True)
 <<[<a class="pig" href="http://example.com/larry" id="link1">Larry,</a>,
  <a class="pig" href="http://example.com/mo" id="link2">Mo</a>,
  <a class="pig" href="http://example.com/curly" id="link3">Curly.</a>]>>
 
-# Find the names all tags WITHOUT an 'id' attribute.
+# Find the names all tags WITHOUT an "id" attribute.
 >>> [tag.name for tag in pig_soup.find_all(<<id>>=False)]
 <<['html', 'head', 'title', 'body', 'p', 'b', 'p', 'p', 'p']>>
 \end{lstlisting}
-It is important to note that using Regular Expressions to locate tags  will only find tags whose name, attributes, and/or string match exactly. If searching through an HTML file with a Regular expression to find all the tags with an  \li{ 'id'} attribute with labels that you specify, it will only return the tags found with those labels, not all instances of the labels. Sometimes that is very useful in simplifying Regular Expression searches.
+It is important to note that using Regular Expressions to locate tags  will only find tags whose name, attributes, and/or string match exactly. If searching through an HTML file with a Regular expression to find all the tags with an  \li{"id"} attribute with labels that you specify, it will only return the tags found with those labels, not all instances of the labels. Sometimes that is very useful in simplifying Regular Expression searches.
 
 \subsection*{Advanced Search Techniques: CSS Selectors} % ------------------------------------
 
@@ -496,7 +497,7 @@ It is important to note that using Regular Expressions to locate tags  will only
 CSS (Cascading Style Sheet) describes the style and layout of a webpage, and CSS selectors provide a useful way to navigate HTML code.
 Use the method \li{soup.select()} to find all elements matching an argument.
 The general format for an argument is \li{<<tag-name[attribute-name = 'attribute value']>>}.
-The table below lists symbols you can use to more precisely locate various elements. 
+The table below lists symbols you can use to more precisely locate various elements.
 
 \begin{table}[H]
 \centering
@@ -522,7 +523,7 @@ The code below gives an example using arguments described above.
 >>> pig_soup.select("[id='link1']")
 [<a class="pig" href="http://example.com/larry" id="link1">Larry,</a>]
 
-# Find all tags with an href attribute containing 'curly'.
+# Find all tags with an href attribute containing "curly".
 >>> pig_soup.select("[href*='curly']")
 [<a class="pig" href="http://example.com/curly" id="link3">Curly.</a>]
 
@@ -531,11 +532,11 @@ The code below gives an example using arguments described above.
 [<a class="pig" href="http://example.com/larry" id="link1">Larry,</a>,
  <a class="pig" href="http://example.com/mo" id="link2">Mo</a>,
  <a class="pig" href="http://example.com/curly" id="link3">Curly.</a>]
- 
- # Find all <b> tags within a <p> tag with class='title'
+
+ # Find all <b> tags within a <p> tag with class="title"
  >>> pig_soup.select("p[class='title'] b")
  [<b>The Three Little Pigs</b>]
- 
+
  # Use a comma to find elements matching one of two arguments
  >>> pig_soup.select("a[href$='mo'],[id='link3']")
 [<a class="pig" href="http://example.com/mo" id="link2">Mo</a>,
@@ -545,7 +546,7 @@ The code below gives an example using arguments described above.
 \begin{problem} % Bank Data Index.
 The file \texttt{large\_banks\_index.html} is an index of data about large banks, as recorded by the Federal Reserve.\footnote{See \url{https://www.federalreserve.gov/releases/lbr/}.}
 Write a function that reads the file and loads the source into BeautifulSoup.
-Return a list of the tags containing the links to bank data from September 30, 2003 to December 31, 2014, where the dates are in reverse chronological order. 
+Return a list of the \li{<a>} tags containing the links to bank data from September 30, 2003 to December 31, 2014, where the dates are in reverse chronological order.
 \label{prob:bs-bank-index}
 \end{problem}
 \subsection*{Incorporating Pandas with HTML Tables} % ------------------------------------
@@ -553,17 +554,17 @@ The Pandas \texttt{pd.read\_html} method is a neat way to automatically read tab
 \begin{lstlisting}
 >>> import pandas as pd
 #Read in "file.html"
->>> tables = pd.read_html('file.html')
+>>> tables = pd.read_html("file.html")
 # Choose the correct table that pd.read_html found as a DataFrame
->>> df = tables[0]  
+>>> df = tables[0]
 # The DataFrame is now like any other Pandas DataFrame that needs a bit of data cleaning
->>> df["column_1"] 
+>>> df["column_1"]
 0       0
 1       2
 2       .
 3       6
 4       8
-       .. 
+       ..
 15     30
 16     32
 17     .
@@ -571,7 +572,7 @@ The Pandas \texttt{pd.read\_html} method is a neat way to automatically read tab
 19     38
 
 \end{lstlisting}
-Like any other DataFrame table, if there are non-numerical values in a column, the column type will default to strings, so make sure when sorting values by number, set the column data type to numeric with \texttt{pd.to\_numeric}. 
+Like any other DataFrame table, if there are non-numerical values in a column, the column type will default to strings, so make sure when sorting values by number, set the column data type to numeric with \texttt{pd.to\_numeric}.
 
 For more help with \texttt{pd.read\_html} see \url{https://pandas.pydata.org/docs/reference/api/pandas.read_html.html}.
 

@@ -1,4 +1,5 @@
 \lab{SQL 1: Introduction}{SQL 1: Introduction}
+\labdependencies{}
 \objective{Being able to store and manipulate large data sets quickly is a fundamental part of data science.
 The SQL language is the classic database management system for working with tabular data.
 In this lab we introduce the basics of SQL, including creating, reading, updating, and deleting SQL tables, all via Python's standard SQL interaction modules.}
@@ -20,7 +21,7 @@ The collection of column headings is called the \emph{schema} of the table, whic
 For example, suppose a database contains demographic information for $M$ individuals.
 If a table had the schema \li{(Name, Gender, Age)}, then each row of the table would be a $3$-tuple corresponding to a single individual, such as \li{(Jane Doe, F, 20)} or \li{(Samuel Clemens, M, 74.4)}.
 The table would therefore be $M\times 3$ in shape.
-Note that including a person's age in a database means that the data would quickly be outdated since people get older every year. 
+Note that including a person's age in a database means that the data would quickly be outdated since people get older every year.
 A better choice would be to use birth year.
 Another table with the schema \li{(Name, Income)} would be $M \times 2$ if it included all $M$ individuals.
 
@@ -40,9 +41,19 @@ For example, the \li{Name} attribute in the previous example could be considered
 
 \subsection*{SQLite} % --------------------------------------------------------
 
-The most common database management systems (DBMS) for relational databases are based on \emph{Structured Query Language}, commonly called \emph{SQL} (pronounced\footnote{See \url{https://english.stackexchange.com/questions/7231/how-is-sql-pronounced} for a brief history of the somewhat controversial pronunciation of SQL.} ``sequel'').
+The most common database management systems (DBMS) for relational databases are based on \emph{Structured Query Language}, commonly called SQL (pronounced\footnote{See \url{https://english.stackexchange.com/questions/7231/how-is-sql-pronounced} for a brief history of the somewhat controversial pronunciation of SQL.} ``sequel'').
 Though SQL is a language in and of itself, most programming languages have tools for executing SQL routines.
-In Python, the most common variant of SQL is \emph{SQLite}, implemented as the \li{sqlite3} module in the standard library.
+In Python, the most common variant of SQL is \emph{SQLite}, implemented as the \li{sqlite3} module in the standard library, which we use in this lab.
+
+\begin{warn}
+The goal of this lab is to introduce the language SQL, not to teach a specific implementation of SQL. In this lab, we will use the \li{sqlite3} library, which allows us to interact with a \textit{SQLite} database file.
+\textit{SQLite} is lightweight, and does not require additional setup, making it great for small projects like this lab and databases which will only be used by a single program at once.
+For example, Android applications frequently use \textit{SQLite} databases for local storage.
+However, it is not suitable for many data science applications, since it is difficult to scale across computers and programs.
+There are a variety of databases that use SQL-like languages designed for different purposes, including \textit{MySQL}, which scales much better and manages concurrent connections efficiently but requires a server and a significant amount of overhead to run.
+
+Although these databases have minor differences in SQL syntax, the concepts taught in this lab are extremely transferrable across all SQL-like derivatives. Remember that you will need to change the Python library you use based on which database type you are connecting to.
+\end{warn}
 
 A SQL database is stored in an external file, usually marked with the file extension \texttt{db} or \texttt{mdf}.
 These files should \textbf{not} be opened in Python with \li{open()} like text files; instead, any interactions with the database---creating, reading, updating, or deleting data---should occur as follows.
@@ -189,7 +200,7 @@ Tuples are added to SQLite database tables with the \lsql{INSERT INTO} command.
 >>> with sql.connect("my_database.db") as conn:
 ...     cur = conn.cursor()
 ...     cur.execute("INSERT INTO MyTable "
-...                 "VALUES('Samuel Clemens', 1910421, 74.4);")
+...                 "VALUES("Samuel Clemens", 1910421, 74.4);")
 \end{lstlisting}
 
 With this syntax, SQLite assumes that values match sequentially with the schema of the table.
@@ -199,7 +210,7 @@ The schema of the table can also be written explicitly for clarity.
 >>> with sql.connect("my_database.db") as conn:
 ...     cur = conn.cursor()
 ...     cur.execute("INSERT INTO MyTable(Name, ID, Age) "
-...                 "VALUES('Samuel Clemens', 1910421, 74.4);")
+...                 "VALUES("Samuel Clemens", 1910421, 74.4);")
 \end{lstlisting}
 
 \begin{warn} % SQL injection attack.
@@ -210,7 +221,7 @@ Instead, use parameter substitution to construct dynamic commands: use a \li{?} 
 \begin{lstlisting}
 >>> with sql.connect("my_database.db") as conn:
 ...     cur = conn.cursor()
-...     values = ('Samuel Clemens', 1910421, 74.4)
+...     values = ("Samuel Clemens", 1910421, 74.4)
 ...     # Don't piece the command together with string operations!
 ...     # cur.execute("INSERT INTO MyTable VALUES " + str(values)) # BAD!
 ...     # Instead, use parameter substitution.
@@ -225,7 +236,7 @@ This is typically much faster than using \li{execute()} repeatedly.
 # Insert (Samuel Clemens, 1910421, 74.4) and (Jane Doe, 123, 20) to MyTable.
 >>> with sql.connect("my_database.db") as conn:
 ...     cur = conn.cursor()
-...     rows = [('John Smith', 456, 40.5), ('Jane Doe', 123, 20)]
+...     rows = [("John Smith", 456, 40.5), ("Jane Doe", 123, 20)]
 ...     cur.executemany("INSERT INTO MyTable VALUES(?,?,?);", rows)
 \end{lstlisting}
 
@@ -366,7 +377,7 @@ The operators \lsql{==}, \lsql{\!=}, \lsql{<}, \lsql{>}, \lsql{<=}, \lsql{>=}, \
 ...     # Delete any rows where the Age column has a value less than 30.
 ...     cur.execute("DELETE FROM MyTable WHERE Age < 30;")
 ...     # Change the Name of "Samuel Clemens" to "Mark Twain".
-...     cur.execute("UPDATE MyTable SET Name='Mark Twain' WHERE ID==1910421;")
+...     cur.execute("UPDATE MyTable SET Name="Mark Twain" WHERE ID==1910421;")
 \end{lstlisting}
 
 If the \lsql{WHERE} clause were omitted from either of the previous commands, every record in \li{MyTable} would be affected.
@@ -385,9 +396,9 @@ If the \lsql{WHERE} clause were omitted from either of the previous commands, ev
 \end{table}
 
 \begin{info} % Single and double equals signs
-SQLite treats \lsql{=} and \lsql{==} as equivalent operators. 
-For clarity, in this lab we will always use \lsql{==} when comparing two values, such as in a \lsql{WHERE} clause. 
-The only time we use \lsql{=} is in \lsql{SET} statements. 
+SQLite treats \lsql{=} and \lsql{==} as equivalent operators.
+For clarity, in this lab we will always use \lsql{==} when comparing two values, such as in a \lsql{WHERE} clause.
+The only time we use \lsql{=} is in \lsql{SET} statements.
 Be aware that some flavors of SQL (such as MySQL) have no concept of \lsql{==}, and typing it in a query will return an error.
 \end{info}
 

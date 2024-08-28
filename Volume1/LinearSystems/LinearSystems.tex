@@ -1,4 +1,5 @@
 \lab{Linear Systems}{Linear Systems}
+\labdependencies{}
 \objective{The fundamental problem of linear algebra is solving the linear system $A\x = \b$, given that a solution exists.
 There are many approaches to solving this problem, each with different pros and cons.
 In this lab we implement the LU decomposition and use it to solve square linear systems.
@@ -83,11 +84,11 @@ Instead, modify the matrix in place (without making a copy), changing only those
 ...               [4, 7, 8, 9]], dtype=np.<<float>>)
 
 # Reduce the 0th column to zeros below the diagonal.
->>> A[1,0:] -= (A[1,0] / A[0,0]) * A[0]
->>> A[2,0:] -= (A[2,0] / A[0,0]) * A[0]
+>>> A[1, 0:] -= (A[1, 0] / A[0, 0]) * A[0]
+>>> A[2, 0:] -= (A[2, 0] / A[0, 0]) * A[0]
 
 # Reduce the 1st column to zeros below the diagonal.
->>> A[2,1:] -= (A[2,1] / A[1,1]) * A[1,1:]
+>>> A[2, 1:] -= (A[2, 1] / A[1, 1]) * A[1, 1:]
 >>> print(A)
 [[ 1.  1.  1.  1.]
  [ 0.  3.  1.  2.]
@@ -257,7 +258,7 @@ You may again assume that no row swaps are required ($P = I$ in this case).
 \end{problem}
 
 \begin{unittest}% Write a unit test for the solve function
-Write a unit test for Problem 3, your solve function. It can be found in the \li{test_linear_systems.py} file and the unit test is named \li{test_solve}. 
+Write a unit test for Problem 3, your solve function. It can be found in the \li{test_linear_systems.py} file and the unit test is named \li{test_solve}.
 
 \noindent There are example unit tests for Problems 1 and 2 to help you structure your unit test.
 \end{unittest}
@@ -267,18 +268,18 @@ Write a unit test for Problem 3, your solve function. It can be found in the \li
 SciPy \cite{scipy} is a powerful scientific computing library built upon NumPy.
 It includes high-level tools for linear algebra, statistics, signal processing, integration, optimization, machine learning, and more.
 
-SciPy is typically imported with the convention \li{import scipy as sp}.
-However, SciPy is set up in a way that requires its submodules to be imported individually.%
-\footnote{SciPy modules like \lif{linalg} are really \emph{packages}, which are not initialized when SciPy is imported alone.}
+
+SciPy can be imported with an alias (such as \li{sp} or \li{sc}) or without an alias, although typically in practice, specific modules are imported individually.\footnote{SciPy modules like \lif{linalg} are really \emph{packages}, which are not initialized when SciPy is imported alone.}
 
 \begin{lstlisting}
->>> import scipy as sp
->>> hasattr(sp, "stats")            # The stats module isn't loaded yet.
-<<False>>
+>>> import scipy as sp              # Import SciPy and give it an alias
+>>> sp.stats.uniform()              # Calling functions will only import necessary modules
 
->>> from scipy import stats         # Import stats explicitly. Access it
->>> hasattr(sp, "stats")            # with 'stats' or 'sp.stats'.
-<<True>>
+>>> import scipy                    # No alias is required for SciPy
+>>> scipy.stats.uniform()           # Calling functions will only import necessary modules
+
+>>> from scipy import stats         # You can also import modules individually
+>>> stats.uniform()
 \end{lstlisting}
 
 \subsection*{Linear Algebra} % ------------------------------------------------
@@ -305,14 +306,14 @@ This library also includes routines for computing matrix decompositions.
 >>> from scipy import linalg as la
 
 # Make a random matrix and a random vector.
->>> A = np.random.random((1000,1000))
+>>> A = np.random.random((1000, 1000))
 >>> b = np.random.random(1000)
 
 # Compute the LU decomposition of A, including pivots.
 >>> L, P = la.lu_factor(A)
 
 # Use the LU decomposition to solve Ax = b.
->>> x = la.lu_solve((L,P), b)
+>>> x = la.lu_solve((L, P), b)
 
 # Check that the solution is legitimate.
 >>> np.allclose(A @ x, b)
@@ -372,13 +373,13 @@ Each type is optimized either for storing sparse matrices whose nonzero entries 
 \begin{tabular}{c|c|l}
     Name & Description & \multicolumn{1}{c}{Advantages}
     \\ \hline
-    \li{bsr_matrix} & Block Sparse Row & Specialized structure. \\
-    \li{coo_matrix} & Coordinate Format & Conversion among sparse formats. \\
-    \li{csc_matrix} & Compressed Sparse Column & Column-based operations and slicing.\\
-    \li{csr_matrix} & Compressed Sparse Row & Row-based operations and slicing. \\
-    \li{dia_matrix} & Diagonal Storage & Specialized structure. \\
-    \li{dok_matrix} & Dictionary of Keys & Element access, incremental construction. \\
-    \li{lil_matrix} & Row-based Linked List & Incremental construction.
+    \li{bsr_array} & Block Sparse Row & Specialized structure. \\
+    \li{coo_array} & Coordinate Format & Conversion among sparse formats. \\
+    \li{csc_array} & Compressed Sparse Column & Column-based operations and slicing.\\
+    \li{csr_array} & Compressed Sparse Row & Row-based operations and slicing. \\
+    \li{dia_array} & Diagonal Storage & Specialized structure. \\
+    \li{dok_array} & Dictionary of Keys & Element access, incremental construction. \\
+    \li{lil_array} & Row-based Linked List & Incremental construction.
 \end{tabular}
 \end{table}
 
@@ -392,7 +393,7 @@ There are three main approaches for creating sparse matrices from scratch.
 \begin{itemize} % Sparse Construction Formats
 
 \item \textbf{Coordinate Format}:
-When all of the nonzero values and their positions are known, create the entire sparse matrix at once as a \li{coo_matrix}.
+When all of the nonzero values and their positions are known, create the entire sparse matrix at once as a \li{coo_array}.
 All nonzero values are stored as a coordinate and a value.
 This format also converts quickly to other sparse matrix types.
 
@@ -403,7 +404,7 @@ This format also converts quickly to other sparse matrix types.
 >>> rows = np.array([0, 1, 0])
 >>> cols = np.array([0, 1, 1])
 >>> vals = np.array([3, 5, 2])
->>> A = sparse.coo_matrix((vals, (rows,cols)), shape=(3,3))
+>>> A = sparse.coo_array((vals, (rows, cols)), shape=(3, 3))
 >>> print(A)
   (0, 0)    3
   (1, 1)    5
@@ -417,52 +418,52 @@ This format also converts quickly to other sparse matrix types.
 \end{lstlisting}
 
 \item \textbf{DOK and LIL Formats}:
-If the matrix values and their locations are not known beforehand, construct the matrix incrementally with a \li{dok_matrix} or a \li{lil_matrix}.
+If the matrix values and their locations are not known beforehand, construct the matrix incrementally with a \li{dok_array} or a \li{lil_array}.
 Indicate the size of the matrix, then change individual values with regular slicing syntax.
 
 \begin{lstlisting}
->>> B = sparse.lil_matrix((2,6))
->>> B[0,2] = 4
->>> B[1,3:] = 9
+>>> B = sparse.lil_array((2, 6))
+>>> B[0, 2] = 4
+>>> B[1, 3:] = 9
 
 >>> print(B.toarray())
 [[ 0.  0.  4.  0.  0.  0.]
  [ 0.  0.  0.  9.  9.  9.]]
 \end{lstlisting}
 
-\item \textbf{DIA Format}: Use a \li{dia_matrix} to store matrices that have nonzero entries on only certain diagonals.
-The function \li{sparse.diags()} is one convenient way to create a \li{dia_matrix} from scratch.
+\item \textbf{DIA Format}: Use a \li{dia_array} to store matrices that have nonzero entries on only certain diagonals.
+The function \li{sparse.diags()} is one convenient way to create a \li{dia_array} from scratch.
 Additionally, every sparse matrix has a \li{setdiags()} method for modifying specified diagonals.
 \begin{lstlisting}
 # Use sparse.diags() to create a matrix with diagonal entries.
->>> diagonals = [[1,2],[3,4,5],[6]]     # List the diagonal entries.
->>> offsets = [-1,0,3]                  # Specify the diagonal they go on.
->>> print(sparse.diags(diagonals, offsets, shape=(3,4)).toarray())
+>>> diagonals = [[1, 2], [3, 4, 5], [6]]     # List the diagonal entries.
+>>> offsets = [-1, 0, 3]                  # Specify the diagonal they go on.
+>>> print(sparse.diags(diagonals, offsets, shape=(3, 4)).toarray())
 [[ 3.  0.  0.  6.]
  [ 1.  4.  0.  0.]
  [ 0.  2.  5.  0.]]
 
 # If all of the diagonals have the same entry, specify the entry alone.
->>> A = sparse.diags([1,3,6], offsets, shape=(3,4))
+>>> A = sparse.diags([1, 3, 6], offsets, shape=(3, 4))
 >>> print(A.toarray())
 [[ 3.  0.  0.  6.]
  [ 1.  3.  0.  0.]
  [ 0.  1.  3.  0.]]
 
 # Modify a diagonal with the setdiag() method.
->>> A.setdiag([4,4,4], 0)
+>>> A.setdiag([4, 4, 4], 0)
 >>> print(A.toarray())
 [[ 4.  0.  0.  6.]
  [ 1.  4.  0.  0.]
  [ 0.  1.  4.  0.]]
 \end{lstlisting}
 
-\item \textbf{BSR Format}: Many sparse matrices can be formulated as block matrices, and a block matrix can be stored efficiently as a \li{bsr_matrix}.
+\item \textbf{BSR Format}: Many sparse matrices can be formulated as block matrices, and a block matrix can be stored efficiently as a \li{bsr_array}.
 Use \li{sparse.bmat()} or \li{sparse.block_diag()} to create a block matrix quickly.
 \begin{lstlisting}
 # Use sparse.bmat() to create a block matrix. Use 'None' for zero blocks.
->>> A = sparse.coo_matrix(np.ones((2,2)))
->>> B = sparse.coo_matrix(np.full((2,2), 2.))
+>>> A = sparse.coo_array(np.ones((2, 2)))
+>>> B = sparse.coo_array(np.full((2, 2), 2.))
 >>> print(sparse.bmat([[  A , None,  A  ],
                        [None,  B  , None]], <<format>>='bsr').toarray())
 [[ 1.  1.  0.  0.  1.  1.]
@@ -471,7 +472,7 @@ Use \li{sparse.bmat()} or \li{sparse.block_diag()} to create a block matrix quic
  [ 0.  0.  2.  2.  0.  0.]]
 
  # Use sparse.block_diag() to construct a block diagonal matrix.
- >>> print(sparse.block_diag((A,B)).toarray())
+ >>> print(sparse.block_diag((A, B)).toarray())
 [[ 1.  1.  0.  0.]
  [ 1.  1.  0.  0.]
  [ 0.  0.  2.  2.]
@@ -486,7 +487,7 @@ If a sparse matrix is too large to fit in memory as an array, it can still be vi
 >>> from matplotlib import pyplot as plt
 
 # Construct and show a matrix with 50 2x3 diagonal blocks.
->>> B = sparse.coo_matrix([[1,3,5],[7,9,11]])
+>>> B = sparse.coo_array([[1, 3, 5], [7, 9, 11]])
 >>> A = sparse.block_diag([B]*50)
 >>> plt.spy(A, markersize=1)
 >>> plt.show()
@@ -537,18 +538,18 @@ Banded matrices arise naturally in many applications, including numerical method
 
 \subsubsection*{Sparse Matrix Operations} % -----------------------------------
 
-Once a sparse matrix has been constructed, it should be converted to a \li{csr_matrix} or a \li{csc_matrix} with the matrix's \li{tocsr()} or \li{tocsc()} method.
+Once a sparse matrix has been constructed, it should be converted to a \li{csr_array} or a \li{csc_array} with the matrix's \li{tocsr()} or \li{tocsc()} method.
 The CSR and CSC formats are optimized for row or column operations, respectively.
 To choose the correct format to use, determine what direction the matrix will be traversed.% (row-wise or column-wise).
 
 For example, in the matrix-matrix multiplication $AB$, $A$ is traversed row-wise, but $B$ is traversed column-wise.
-Thus $A$ should be converted to a \li{csr_matrix} and $B$ should be converted to a \li{csc_matrix}.
+Thus $A$ should be converted to a \li{csr_array} and $B$ should be converted to a \li{csc_array}.
 
 \begin{lstlisting}
-# Initialize a sparse matrix incrementally as a lil_matrix.
->>> A = sparse.lil_matrix((10000,10000))
+# Initialize a sparse matrix incrementally as a lil_array.
+>>> A = sparse.lil_array((10000, 10000))
 >>> for k in range(10000):
-...     A[np.random.randint(0,9999), np.random.randint(0,9999)] = k
+...     A[np.random.randint(0, 9999), np.random.randint(0, 9999)] = k
 ...
 >>> A
 <<<10000x10000 sparse matrix of type '<type 'numpy.float64'>'
@@ -562,7 +563,7 @@ Thus $A$ should be converted to a \li{csr_matrix} and $B$ should be converted to
     with 10142 stored elements in Compressed Sparse Row format>>>
 \end{lstlisting}
 
-Beware that row-based operations on a \li{csc_matrix} are very slow, and similarly, column-based operations on a \li{csr_matrix} are very slow.
+Beware that row-based operations on a \li{csc_array} are very slow, and similarly, column-based operations on a \li{csr_array} are very slow.
 
 % SciPy's \li{sparse} methods work on NumPy arrays and dense matrices, but they take longer than using the usual methods for handling full matrices.
 
@@ -589,7 +590,6 @@ The syntax \li{A.dot(B)} is safest in most cases.
 \end{warn}
 
 SciPy's sparse module has its own linear algebra library, \li{scipy.sparse.linalg}, designed for operating on sparse matrices.
-Like other SciPy modules, it must be imported explicitly.
 
 \begin{lstlisting}
 >>> from scipy.sparse import linalg as spla
@@ -742,7 +742,7 @@ The following tips may be helpful for implementing this algorithm:
 \begin{enumerate}
     \item Since NumPy arrays are mutable, use \li{np.copy()} to reassign the rows of an array simultaneously.
     \item Instead of storing $P$ as an $n \times n$ array, fancy indexing allows us to encode row swaps in a 1-D array of length $n$.
-    Initialize $P$ as the array $[0, 1, \ldots, n]$.
+    Initialize $P$ as the array $[0, 1, \ldots, n-1]$.
     After performing a row swap on $A$, perform the same operations on $P$.
     Then the matrix product $PA$ will be the same as \li{A[P]}.
     \label{tip:lu-decomposition-with-pivoting-P}

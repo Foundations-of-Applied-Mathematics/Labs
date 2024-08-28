@@ -1,6 +1,11 @@
 \lab{Recurrent Neural Networks}{Recurrent Neural Networks}
+\labdependencies{DeepLearningIntro}
 \objective{Recurrent Neural Networks are powerful machine learning algorithms that accept sequences as inputs and can process temporal data. In this lab, we generate a Mozart-like piano sonata using the Long Short-term Memory RNN.}
 
+\begin{warn}
+    As is common when working with Neural Networks, this lab requires a large amount of data processing which can be quite time consuming to debug.
+    One of the best ways to mitigate this is to debug your code using small subsets of the data rather than the entire dataset; that way, you can quickly catch simple errors before running your code on the entire dataset.
+\end{warn}
 
 \section*{Recurrent Neural Networks}
 
@@ -17,23 +22,23 @@ Even if the input is not sequential, it is possible to process it sequentially u
 \section*{Data}
 
 For this lab, we will use Google Colab and its GPU capability.
-To enable the GPU in a Colab notebook, select the \emph{Runtime} tab and then \emph{Change runtime type}. 
+To enable the GPU in a Colab notebook, select the \emph{Runtime} tab and then \emph{Change runtime type}.
 This will open a pop-up called \emph{Notebook Settings}. Under \emph{Hardware Settings}, select \emph{GPU}.
 We recommend mounting a Google Drive to the notebook to make loading and saving data easier.
 This will save the data if the notebook is disconnected; if the data is saved to the Colab directory, the entire project must be rerun.
-To mount a Google Drive, run 
+To mount a Google Drive, run
 
 
 \begin{lstlisting}
 >>> from google.colab import drive
->>> drive.mount('/content/drive')
+>>> drive.mount("/content/drive")
 \end{lstlisting}
 
 Follow the instructions in the cell to authorize the account.
 
 If you need to refresh your drive connection, you can run
 \begin{lstlisting}
->>> drive.mount('/content/drive', force_remount = True).
+>>> drive.mount("/content/drive", force_remount = True).
 \end{lstlisting}
 
 
@@ -44,20 +49,20 @@ For easy download, run the following function to save the files to \li{filepath}
 
 \begin{lstlisting}
 def download_data(filepath):
-    if not os.path.exists(os.path.join(filepath, 'mozart_sonatas.tar.gz')):
-      datasets.utils.download_url('https://github.com/Foundations-of-Applied-Mathematics/Data/raw/master/Volume3/mozart_sonatas.tar.gz', filepath, 'mozart_sonatas.tar.gz', None)
+    if not os.path.exists(os.path.join(filepath, "mozart_sonatas.tar.gz")):
+      datasets.utils.download_url("https://github.com/Foundations-of-Applied-Mathematics/Data/raw/master/Volume3/mozart_sonatas.tar.gz", filepath, "mozart_sonatas.tar.gz", None)
 
-      print('Extracting {}'.format('mozart_sonatas.tar.gz'))
-      gzip_path = os.path.join(filepath, 'mozart_sonatas.tar.gz')
-      with open(gzip_path.replace('.gz', ''), 'wb') as out_f, gzip.GzipFile(gzip_path) as zip_f:
+      print("Extracting 'mozart_sonatas.tar.gz'")
+      gzip_path = os.path.join(filepath, "mozart_sonatas.tar.gz")
+      with open(gzip_path.replace(".gz", ""), "wb") as out_f, gzip.GzipFile(gzip_path) as zip_f:
         out_f.write(zip_f.read())
 
-      print('Untarring {}'.format('mozart_sonatas.tar'))
-      tar_path = os.path.join(filepath,'mozart_sonatas.tar')
+      print(f"Untarring 'mozart_sonatas.tar'")
+      tar_path = os.path.join(filepath,"mozart_sonatas.tar")
       z = tarfile.TarFile(tar_path)
-      z.extractall(tar_path.replace('.tar', ''))
+      z.extractall(tar_path.replace(".tar", "")"
 
->>> download_data('drive/MyDrive/Colab')
+>>> download_data("drive/MyDrive/Colab")
 Downloading https://raw.githubusercontent.com/Foundations-of-Applied-Mathematics/Data/master/RNN/mozart_sonatas.tar.gz to drive/MyDrive/Colab/mozart_sonatas.tar.gz
 
 Extracting mozart_sonatas.tar.gz
@@ -85,14 +90,14 @@ Chord objects contain multiple Note objects that are played at the same time.
 
 \begin{lstlisting}
 from music21 import converter, instrument, note, chord,  stream
- 
+
 # Read the file piano_sonota_279.mid
-midi = converter.parse('piano_sonata_279.mid')
+midi = converter.parse("piano_sonata_279.mid")
 notes_to_parse = instrument.partitionByInstrument(midi).parts.stream().recurse()
 
 # Display the Note and Chord objects, their pitches and offsets
 for element in notes_to_parse:
-	if isinstance(element, note.Note): 
+	if isinstance(element, note.Note):
 		print(element, element.pitch, element.offset)
 	elif isinstance(element, chord.Chord):
 		print(element, element.pitches, element.offset)
@@ -120,15 +125,15 @@ def order_pitches(pitches):
 
 \begin{problem}
 Download the data.
-Write a function that accepts the path to the .mid files, parses the files, and returns a list of the 114215 Notes and Chords as strings. 
+Write a function that accepts the path to the .mid files, parses the files, and returns a list of the 114215 Notes and Chords as strings.
 There are many element types in MIDI files, so be sure to only look for Notes and Chords.
-For the Chords, join the pitches of the Notes in the Chords with a \li{.} as in (\li{'D3.D2'}).
+For the Chords, join the pitches of the Notes in the Chords with a \li{.} as in (\li{"D3.D2"}).
 
 Print the length of your list and the number of unique Notes and Chords.
 
 \begin{lstlisting}
 # Example of a part of the list
-['A5', 'C6', 'G3.C4', 'A5', 'B-5', 'A5', 'G5', 'D3.D2']
+["A5", "C6", "G3.C4", "A5", "B-5", "A5", "G5", "D3.D2"]
 \end{lstlisting}
 Hint: An easy way to get the list of mozart sonata file names is with the following code.
 \begin{lstlisting}
@@ -149,13 +154,13 @@ The label for each sequence, or the correct pitch we want the RNN to predict, is
 So for a sequence length of 10, given elements 1 through 10 as a sequence, element 11 would be the label.
 
 Since RNNs only accept numbers, we need to convert the pitches to integers.
-Using the sample list in Problem \ref{prob:notes} as an example, we would map \li{'A5'} to 0, \li{'C6'} to 1, \li{'G3.C4'} to 2, \li{'A5'} to 0 again, and so on.
+Using the sample list in Problem \ref{prob:notes} as an example, we would map \li{"A5"} to 0, \li{"C6"} to 1, \li{"G3.C4"} to 2, \li{"A5"} to 0 again, and so on.
 The PyTorch DataLoader accepts a list of lists, where each element is of the form \li{[sequence, label]}, where the sequence is a PyTorch Long tensor, and the label is an integer.
 So in our case, the sequence will be a tensor of integers representing pitches while the label will be the integer representing the first pitch that follows the sequence.
 
 \begin{lstlisting}
 # Example Data
-example_data = [169, 269, 165, 187,  24, 366, 353, 269, 260, 233, 223, 169, 
+example_data = [169, 269, 165, 187,  24, 366, 353, 269, 260, 233, 223, 169,
         162, 366, 353, 269, 260, 233, 223, 169, 162,  24,   8, 269, 260,  91]
 
 # Create sequences as Long Tensors
@@ -166,16 +171,16 @@ second_label = example_data[11]
 
 # Example of data points formatted for the DataLoader, [sequence, label]
 >>> [first_sequence, first_label]
-[tensor([169, 269, 165, 187,  24, 366, 353, 269, 260, 233]), 223] 
+[tensor([169, 269, 165, 187,  24, 366, 353, 269, 260, 233]), 223]
 
 >>> [second_sequence, second_label]
 [tensor([269, 165, 187,  24, 366, 353, 269, 260, 233, 223]), 169]
 \end{lstlisting}
-% 79, 269, 260, 366, 353, 233, 223,  24,   8, 269, 260, 169, 162,  79,  
-% 72, 233, 223, 114, 110,   8,   2,   8,   2,   8,   2, 187, 269,   8, 
-% 187, 269,   2, 187, 269,   8, 187, 269,   2, 122, 233,   8, 122, 233,   
-%  2,   8,   2, 278, 187,   8, 278, 187,   2, 278, 187,   8, 278, 187,   
-%  2, 246, 122,   8, 246, 122,   2,   8,   2,  39, 278,   8,  39, 278,   
+% 79, 269, 260, 366, 353, 233, 223,  24,   8, 269, 260, 169, 162,  79,
+% 72, 233, 223, 114, 110,   8,   2,   8,   2,   8,   2, 187, 269,   8,
+% 187, 269,   2, 187, 269,   8, 187, 269,   2, 122, 233,   8, 122, 233,
+%  2,   8,   2, 278, 187,   8, 278, 187,   2, 278, 187,   8, 278, 187,
+%  2, 246, 122,   8, 246, 122,   2,   8,   2,  39, 278,   8,  39, 278,
 %  2,  39, 278,   8, 382,  79]
 
         %   223, 169, 162, 366,
@@ -197,7 +202,7 @@ Make sure to do all the following steps:
 \item Create the labels.
 \item Randomly split the data into training, validation, and test sets using a $70/15/15$ split (use \li{torch.utils.data.random_split(data,lengths)} where \li{lengths=[0.7, 0.15, 0.15]}).
 \item Create the DataLoaders for these sets of data, using \li{batch_size=128} for the training data and \li{batch_size=32} for the validation and test data; also, set \li{shuffle=True} for the training data and \li{False} for the validation and test data (this is common practice in Deep Learning).
-\end{itemize} 
+\end{itemize}
 
 \noindent Print the length of each DataLoader (they should be 624, 536, and 536, respectively).
 
@@ -214,7 +219,7 @@ Consider the following two sentences separated by some other text: "I grew up in
 It's clear that the last word will be a language, but we need the previous information of France to correctly identify which language.
 RNNs can't remember this information due to exploding and vanishing gradients.
 
-\emph{Long Short-Term Memory} (LSTM) networks are a popular RNN variation capable of long-term memory that solve this problem. 
+\emph{Long Short-Term Memory} (LSTM) networks are a popular RNN variation capable of long-term memory that solve this problem.
 They are used extensively in speech recognition, machine translation, and text-to-speech programs.
 Every step in the LSTM has three inputs: the current input, the short-term memory (hidden state) from the previous input, and the long-term memory (cell state).
 There are three gates that regulate these three types of memory.
@@ -230,45 +235,45 @@ This can be any size, but for this lab we will use 256.
 \begin{figure}[H]
   \centering
   \begin{tikzpicture}[>=stealth', thin, draw=black,
-      squarednode/.style={rectangle, draw=black, fill=blue!5, thick, 
+      squarednode/.style={rectangle, draw=black, fill=blue!5, thick,
                   minimum width=2.5cm, minimum height=1.5cm},
       ]
       \tikzstyle{arrow} = [thick, ->, >=stealth]
       \coordinate (layer1) at (0,0);
       \coordinate (layer2) at (4,0);
       \coordinate (layern) at (10,0);
-  
+
       % keep arrows 1 cm long and .25 cm away from nodes
       \draw[arrow] ($ (layer1) + (-2.5,.5) $) -- node[anchor=south] {\large $c_0$} ($ (layer1) - (1.5,-.5) $);
       \draw[arrow] ($ (layer1) + (-2.5,-.5) $) -- node[anchor=south] {\large $h_0$} ($ (layer1) - (1.5,.5) $);
       \draw[arrow] ($ (layer1) +(-2.5,-1.5) $) -| ($ (layer1) - (0,1) $);
       \draw ($(layer1) +(-2.5,-1.5) $) -- node[anchor=south] {\large $x_i$} ($ (layer1) - (1.6,1.5) $);
-      
+
       \node[squarednode] at (layer1) {\Large Layer 1};
       \draw[arrow] ($ (layer1) + (1.5,.5) $) -- node[anchor=south] {\large $c_1$} ($ (layer2) - (1.5,-.5) $);
       \draw[arrow] ($ (layer1) + (1.5,-.5) $) -- node[anchor=south] {\large $h_1$} ($ (layer2) - (1.5,.5) $);
       \draw ($(layer1) + (2,-.5) $) -- ($ (layer1) + (2,-1.5) $);
       \draw[arrow] ($ (layer1) +(2,-1.5) $) -| ($ (layer2) - (0,1) $);
-      
+
       \node[squarednode] at (layer2) {\Large Layer 2};
       \draw[arrow] ($ (layer2) + (1.5,.5) $) -- node[anchor=south] {\large $c_2$} ($ (layer2) + (2.5,.5) $);
       \draw[arrow] ($ (layer2) + (1.5,-.5) $) -- node[anchor=south] {\large $h_2$} ($ (layer2) + (2.5,-.5) $);
       \draw ($(layer2) + (2,-.5) $) -- ($ (layer2) + (2,-1.5) $);
       \draw[arrow] ($ (layer2) +(2,-1.5) $) -- ($ (layer2) + (2.5,-1.5) $);
-      
+
       \path ($ (layer2) + (3,0) $) -- node[auto=false]{\LARGE \textbf{\ldots}} ($ (layern) - (3,0) $);
-      
+
       \draw[arrow] ($ (layern) - (2.5,-.5) $) -- node[anchor=south] {\large $c_{n-1}$} ($ (layern) - (1.5,-.5) $);
       \draw[arrow] ($ (layern) - (2.5,.5) $) -- node[anchor=south] {\large $h_{n-1}$} ($ (layern) - (1.5,.5) $);
       \draw ($(layern) - (2,.5) $) -- ($ (layern) - (2,1.5) $);
       \draw[arrow] ($ (layern) - (2,1.5) $) -| ($ (layern) - (0,1) $);
-      
+
       \node[squarednode] at (layern) {\Large Layer $n$};
       \draw[arrow] ($ (layern) + (1.5,.5) $) -- node[anchor=south] {\large $c_n$} ($ (layern) + (2.5,.5) $);
       \draw[arrow] ($ (layern) + (1.5,-.5) $) -- node[anchor=south] {\large $h_n$} ($ (layern) + (2.5,-.5) $);
       \draw[arrow] ($ (layern) +(0,1) $) |- ($ (layern) + (2.5,1.5) $);
       \draw[arrow] ($ (layern) + (1.5,1.5) $) -- node[anchor=south] {\large $\hat{y_i}$} ($ (layern) + (2.5,1.5) $);
-  
+
   \end{tikzpicture}
 
   \caption{PyTorch implementation of an LSTM.
@@ -284,8 +289,8 @@ class RNN(nn.Module):
     """ Recurrent Neural Network Class """
 
     def __init__(self):
-        super(RNN, self).__init__() 
-      
+        super(RNN, self).__init__()
+
     # Define function to initialize hidden states
 	  def init_hidden(self, batch_size):
         weight = next(self.parameters()).data
@@ -308,15 +313,17 @@ The parameter \li{batch_first} is a boolean that indicates if the batch size is 
 Since we are using the DataLoader, the batch size will be the first dimension and \li{batch_first=True}.
 If the last parameter, \li{dropout}, is defined, a Dropout layer is added after each LSTM layer, except the last.
 During a Dropout layer, elements of the input tensor are randomly zeroed out with probability $p$, and the output is scaled.
-This is sometimes used for regularization to improve the network. 
+This is sometimes used for regularization to improve the network.
 However, we will \emph{NOT} add a Dropout layer to our model, because we will instead use a BatchNorm1d layer.
 BatchNorm1d layers normalize the input and have as parameters the number of features of the input.
 Thus, if we were to use both Dropout to BatchNorm1d layers, the input would be normalized over fewer nodes than the input actually contains, which would throw off the scaling of the model.
 
-The last layer should be a softmax activation function.
+Ordinarily, the last layer would be a softmax activation function.
 Softmax rescales a tensor to $[0,1]$ with the sum of all elements equal to 1.
 Thus the output of Softmax can be thought of as a probability vector.
-Notice that all of the layers: Embedding, LSTM, Linear, BatchNorm1d, and LogSoftmax are initialized in the \li{\_\_init\_\_()} function. 
+However, the Cross Entropy Loss function which we use for this model already performs a Softmax for us. 
+Doing the softmax twice is unneccessary and can be detrimental as it can distort learning.
+Notice that all of the layers: Embedding, LSTM, Linear, BatchNorm1d, and LogSoftmax are initialized in the \li{\_\_init\_\_()} function.
 
 \begin{lstlisting}
   class RNN(nn.Module):
@@ -324,24 +331,23 @@ Notice that all of the layers: Embedding, LSTM, Linear, BatchNorm1d, and LogSoft
 
       def __init__(self, n_notes, embedding_dim):
           super(RNN, self).__init__()
-    
+
           self.hidden_size = 256
           self.num_layers = 3      # number of layers in the LSTM
           self.n_notes = n_notes   # number of unique pitches
-          self.embedding = nn.Embedding(n_notes, embedding_dim)		
-          self.lstm = nn.LSTM(embedding_dim, self.hidden_size, 
+          self.embedding = nn.Embedding(n_notes, embedding_dim)
+          self.lstm = nn.LSTM(embedding_dim, self.hidden_size,
                               self.num_layers, batch_first=True)
           self.batch1 = nn.BatchNorm1d(self.hidden_size)
           self.linear = nn.Linear(self.hidden_size, self.n_notes)
-          self.softmax = nn.LogSoftmax(dim=1)
-    
+
       def forward(self, x, hidden):
-          embeds = self.embedding(x)  
-          lstm_out, hidden = self.lstm(embeds, hidden) 
-          out = self.batch1(lstm_out[:,-1])
+          embeds = self.embedding(x)
+          lstm_out, hidden = self.lstm(embeds, hidden)
+          out = self.batch1(lstm_out[:, -1])
           # Output from final step is passed forward
-          return self.softmax(self.linear(out)), hidden
-      
+          return self.linear(out), hidden
+
   \end{lstlisting}
 
 During training, when the model is called, the input is embedded and then passed to the LSTM layer with the hidden states.
@@ -351,8 +357,8 @@ This disables automatic differentiation on the hidden states during training.
 Because we don't do a backwards step during testing, we don't need to worry about detaching the hidden states during testing.
 
 \begin{lstlisting}
-# Initialize the model  
-model = RNN()   
+# Initialize the model
+model = RNN()
 
 # Hidden state training demonstration
 for epoch in range(30):
@@ -394,22 +400,40 @@ mean_validation_accuracy = validation.item() / len(validation_loader)
 
 \end{lstlisting}
 
+\begin{warn}
+If you train your model using a GPU and see an error that begins like this:
+
+\begin{lstlisting}
+<<RuntimeError: CUDA error: device-side assert triggered>>
+\end{lstlisting}
+
+it means that an error occurred while your code was being run on the GPU. Hardware complications make it more difficult to pass information about exceptions that occur on the GPU to the CPU. You can often get more debugging information about your specific error by using 
+
+\begin{lstlisting}
+import os
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+\end{lstlisting}
+
+although this will involve restarting your kernel.
+
+You can also switch from the GPU to the CPU and likely get more descriptive error messages from the CPU.
+\end{warn}
+
 \begin{problem}
 Create an LSTM network class.
 Have a hidden layer size of 256, and include at least 3 LSTM layers.
 Also have at least 2 Linear layers.
-The last LSTM layer and each of the Linear layers should be followed by a BatchNorm1d layer, for at least 3 total BatchNorm layers.
-The final layer should be a Softmax activation.
+The last LSTM layer and each of the Linear layers except for the last Linear layer should be followed by a BatchNorm1d layer, for at least 2 total BatchNorm layers.
 
 Initialize the model.
 Define the loss as CrossEntropyLoss, and define the optimizer as RMSprop.
 \begin{lstlisting}
-optimizer = torch.optim.RMSprop(model.parameters(),lr=.001)
+optimizer = torch.optim.RMSprop(model.parameters(), lr=.001)
 \end{lstlisting}
 
 Train the model for 30 epochs.
 Make sure to reinitialize the hidden states \li{(h0, h1)} for each training batch.
-After taking a backwards step during training, scale the gradients using 
+After taking a backwards step during training, scale the gradients using
 \begin{lstlisting}
 nn.utils.clip_grad_norm_(model.parameters(), 5)
 \end{lstlisting}
@@ -428,16 +452,16 @@ After 2 epochs, your model should have a validation accuracy of $10-20\%$.
 
 \begin{warn}
 Colab has a 12 hour limit on the amount of GPU available, and the longer one runs, the less priority it has.
-If you follow the instructions given in this lab correctly, training should take less than 5 minutes. 
+If you follow the instructions given in this lab correctly, training should take less than 5 minutes.
 Nevertheless, you may still wish to save the training progress of your model's weights after each epoch.
 If you wish to do so, you may include this block of code in your for loop.
 
 \begin{lstlisting}
   torch.save({
-    'epoch': epoch_number,
-    'model_state_dict': model.state_dict(),
-    'optimizer_state_dict': optimizer.state_dict(),
-    'loss': loss,},filename)
+    "epoch": epoch_number,
+    "model_state_dict": model.state_dict(),
+    "optimizer_state_dict": optimizer.state_dict(),
+    "loss": loss}, filename)
 \end{lstlisting}
 
 Then, if at any point the notebook has disconnected, all you need to do is reinitialize the model, loss, and optimizer, and then run this function to load the saved model.
@@ -445,20 +469,20 @@ Then, if at any point the notebook has disconnected, all you need to do is reini
   def load_model(filename):
       """ Load a saved model to continue training or evaluate """
       device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-  
+
       # n_notes is the number of unique pitches
-      model = RNN(n_notes, embedding_dim) 
+      model = RNN(n_notes, embedding_dim)
       model = model.to(device)
       criterion = nn.CrossEntropyLoss()
       optimizer = torch.optim.RMSprop(model.parameters(),lr=.001)
-  
-      checkpoint = torch.load(filename,map_location=torch.device('cpu'))
-      model.load_state_dict(checkpoint['model_state_dict'])
-      optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-      last_epoch = checkpoint['epoch']
-      loss = checkpoint['loss']
+
+      checkpoint = torch.load(filename,map_location=torch.device("cpu"))
+      model.load_state_dict(checkpoint["model_state_dict"])
+      optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+      last_epoch = checkpoint["epoch"]
+      loss = checkpoint["loss"]
       model.eval() # Toggle evaluation mode
-      
+
       return model, criterion, optimizer
   \end{lstlisting}
 \end{warn}
@@ -479,7 +503,7 @@ The list of predictions (which is a list of integers) can then be converted into
 \begin{problem}
 Write a function that randomly chooses a sequence in the test data (which has length 10) and predicts the next $n$ elements, defaulting to 500.
 Convert the predicted elements to pitches, and return them as a list of length $n$.
-It should look similar to 
+It should look similar to
 
 \begin{lstlisting}
 ['D4', 'C#4', 'F#5', 'G5', 'A5', 'C6', 'G3.C4', 'B-5', 'A5', 'G5', 'A5']
@@ -499,7 +523,7 @@ The offset indicates at what timestep each object is to be played.
 The first object will have an offset of 0, and the offset will increment for each following object.
 The simplest way to choose each offset is look at the distribution of offsets in the original dataset and choose a set amount to increment the offset each time.
 Since the most common offset (0.0) results in notes being played at the same time, we'll ignore it and choose to increment the offset by either 0.25 or 0.5.
-For a more advanced option, you could randomly generate which offset to use based on a probability distribution that reflects the following: 
+For a more advanced option, you could randomly generate which offset to use based on a probability distribution that reflects the following:
 
 \begin{table}[H]
 \centering
@@ -520,22 +544,20 @@ notes = [ ]
 for pitch in chord_pitches:
     new_note = note.Note(pitch)
     # Specify Piano as the instrument type
-    new_note.storedInstrument = instrument.Piano() 
+    new_note.storedInstrument = instrument.Piano()
     notes.append(new_note)
-	
+
 # Create a Chord object using list of Note objects
 new_chord = chord.Chord(notes)
 
-# Specify offset for this object
-new_chord.offset = offset
-	
+# Specify offset for this o
 \end{lstlisting}
 
 \noindent Finally, we write the list of Music21 objects to a midi file and save it.
 
 \begin{lstlisting}
 midi_stream = stream.Stream(output_notes)
-midi_stream.write('midi', fp=file_location)
+midi_stream.write("midi", fp=file_location)
 \end{lstlisting}
 
 \noindent You can embed and play the file in your notebook using the following code, which first converts the \li{.midi} file into a \li{.wav} file.
@@ -551,6 +573,6 @@ Audio("new_file_location.wav")
 \end{lstlisting}
 
 \begin{problem}
-Convert the predictions from Problem \ref{prob:prediction} into Music21 Note and Chord objects and save it as \li{'mozart.mid'}.
+Convert the predictions from Problem \ref{prob:prediction} into Music21 Note and Chord objects and save it as \li{"mozart.mid"}.
 Embed your music file into the notebook.
 \end{problem}
