@@ -3,209 +3,270 @@
 \objective{Most mathematical optimization problems involve estimating the minimizer(s) of a scalar-valued function.
 Many algorithms for optimizing functions with a high-dimensional domain depend on routines for optimizing functions of a single variable.
 There are many techniques for optimization in one dimension, each with varying degrees of precision and speed.
-In this lab, we implement the golden section search method, Newton's method, and the secant method, then apply them to the backtracking problem.
-% Some of these techniques also generalize to optimization in higher dimensions.
+In this lab, we explore Newton's method and basins of attraction, and then we implement the secant method and apply it to the backtracking problem.
 }
 
-\section*{Golden Section Search} % --------------------------------------------
+\section*{Iterative Methods} % ================================================
 
-A function $f:[a,b]\rightarrow\mathbb{R}$ satisfies the \emph{unimodal property} if it has exactly one local minimum and is monotonic on either side of the minimizer.
-In other words, $f$ decreases from $a$ to its minimizer $x^*$, then increases up to $b$ (see Figure \ref{fig:1dopt-golden-unimodal}).
-% Unimodal functions are the ``easiest'' kinds of functions to optimize, but there are several strategies for doing so.
-The \emph{golden section search} method optimizes a unimodal function $f$ by iteratively defining smaller and smaller intervals containing the unique minimizer $x^*$.
-This approach is especially useful if the function's derivative does not exist, is unknown, or is very costly to compute.
+An \emph{iterative method} is an algorithm that must be applied repeatedly to obtain a result.
+The general idea behind any iterative method is to make an initial guess at the solution to a problem, apply a few easy computations to better approximate the solution, use that approximation as the new initial guess, and repeat until done.
+More precisely, let $F$ be some function used to approximate the solution to a problem.
+Starting with an initial guess of $x_0$, compute
+\begin{equation}x_{k+1} = F(x_k)\label{eq:iter-summary}\end{equation}
+for successive values of $k$ to generate a sequence $(x_k)_{k=0}^\infty$ that hopefully converges to the true solution.
+If the terms of the sequence are vectors, they are denoted by $\x_k$.
 
-By definition, the minimizer $x^*$ of $f$ must lie in the interval $[a,b]$.
-To shrink the interval around $x^*$, we test the following strategically chosen points.
-\begin{equation*}
-\tilde{a} = b - \frac{b - a}{\varphi}\qquad\qquad
-\tilde{b} = a + \frac{b - a}{\varphi}
-% \label{eq:1dopt-golden-testpts}
-\end{equation*}
-Here $\varphi = \frac{1 + \sqrt{5}}{2}$ is the \emph{golden ratio}.
-At each step of the search, $[a,b]$ is refined to either $[a,\tilde{b}]$ or $[\tilde{a}, b]$, called the \emph{golden sections}, depending on the following criteria.
- % \footnote{Note that this is the same as $\tilde{a} = a + \rho(b-a)$ and $\tilde{b} = a + (1-\rho)(b-a)$ where $\rho = \frac{3-\sqrt{5}}{2}$.}
-% These points define evenly sized intervals $[\tilde{a}, b]$ and $[a, \tilde{b}]$, called \emph{golden sections} since the ratio of the lengths of $[a,\tilde{a}]$ to $[\tilde{a},b]$ is the same as the ratio of the lengths of $[\tilde{a}, b]$ and $[a, b]$.
-% Additionally, the property of the golden ratio that  $\frac{1}{\varphi^2} = 1 - \frac{1}{\varphi}$ leads to a smaller amount of computations needed.
+In the best case, the iteration converges to the true solution $x$, written $\lim_{k\rightarrow\infty} x_k = x$ or $x_k\rightarrow x$.
+In the worst case, the iteration continues forever without approaching the solution.
+In practice, iterative methods require carefully chosen \emph{stopping criteria} to guarantee that the algorithm terminates at some point.
+The general approach is to continue iterating until the difference between two consecutive approximations is sufficiently small, and to iterate no more than a specific number of times.
+That is, choose a very small $\epsilon > 0$ and an integer $N\in\mathbb{N}$, and update the approximation using (\ref{eq:iter-summary}) until either
+\begin{equation} % Stopping Criteria.
+    |x_k - x_{k-1}| < \epsilon
+    \qquad \text{or} \qquad
+    k > N.
+\end{equation}
 
-If $f(\tilde{a}) < f(\tilde{b})$, then since $f$ is unimodal, it must be increasing in a neighborhood of $\tilde{b}$.
-The unimodal property also guarantees that $f$ must be increasing on $[\tilde{b}, b]$ as well, so $x^* \in [a, \tilde{b}]$ and we set $b = \tilde{b}$.
-By similar reasoning, if $f(\tilde{a}) > f(\tilde{b})$, then $x^* \in [\tilde{a}, b]$ and we set $a = \tilde{a}$.
-If, however, $f(\tilde{a}) = f(\tilde{b})$, then the unimodality of $f$ does not guarantee anything about where the minimizer lies.
-Assuming either $x^*\in [a, \tilde{b}]$ or $x^* \in [\tilde{a}, b]$ allows the iteration to continue, but the method is no longer guaranteed to converge to the local minimum.
+The choices for $\epsilon$ and $N$ are significant: a ``large'' $\epsilon$ (such as $10^{-6}$) produces a less accurate result than a ``small'' $\epsilon$ (such $10^{-16}$), but demands less computations; a small $N$ (10) also potentially lowers accuracy, but detects and halts nonconvergent iterations sooner than a large $N$ (10,000).
+In code, $\epsilon$ and $N$ are often named \li{tol} and \li{maxiter}, respectively (or similar).
 
-At each iteration, the length of the search interval is divided by $\varphi$.
-The method therefore converges linearly, which is somewhat slow.
-However, the idea is simple and each step is computationally inexpensive.
-
-\begin{figure}[H] % Golden section search for unimodal optimization.
-    \centering
-    \includegraphics[width=.7\textwidth]{figures/golden_section.pdf}
-    \caption{The unimodal $f:[a,b]\rightarrow\mathbb{R}$ can be minimized with a golden section search.
-    For the first iteration, $f(\tilde{a}) < f(\tilde{b})$, so $x^* \in [a, \tilde{b}]$.
-    New values of $\tilde{a}$ and $\tilde{b}$ are then calculated from this new, smaller interval.}
-    \label{fig:1dopt-golden-unimodal}
-\end{figure}
-
-\begin{algorithm}[H]
-\begin{algorithmic}[1]
-\Procedure{golden\_section}{$f$,\ $a$,\ $b$,\ \li{tol},\ \li{maxiter}}
-   \State $x_0 \gets (a + b)/2$
-        \Comment{Set the initial minimizer approximation as the interval midpoint.}
-   \State $\varphi = (1+\sqrt{5})/2$
-        % \Comment{Set $\varphi$.}
-   \For{$i=1,2,\dots,$\ \li{maxiter}}
-        \Comment Iterate only \li{maxiter} times at most.
-        \State $c \gets (b - a)/\varphi$
-        \State $\tilde{a} \gets b - c$
-            % \Comment{Set $\tilde{a}$.}
-        \State $\tilde{b} \gets a + c$
-            % \Comment{Set $\tilde{b}$. }
-        \If{$f(\tilde{a}) \leq f(\tilde{b})$}
-            \Comment{Get new boundaries for the search interval.}
-            \State $b \gets \tilde{b}$
-         \Else{}
-            \State $a \gets \tilde{a}$
-                \EndIf
-        \State $x_1 \gets (a + b)/2$
-            \Comment{Set the minimizer approximation as the interval midpoint.}
-        \If{$|x_0-x_1| <$ \li{tol}}
-              \State \texttt{break}
-                \Comment{Stop iterating if the approximation stops changing enough.}
-       \EndIf
-        \State $x_0 \gets x_1$
-   \EndFor
-   \State \pseudoli{return} $x_1$
-\EndProcedure
-\end{algorithmic}
-\caption{The Golden Section Search}
-\label{Alg:Golden-Section-Search}
-\end{algorithm}
-
-\begin{problem} % Implement golden search.
-Write a function that accepts a function $f:\mathbb{R}\rightarrow\mathbb{R}$, interval limits $a$ and $b$, a stopping tolerance \li{tol}, and a maximum number of iterations \li{maxiter}.
-Use Algorithm \ref{Alg:Golden-Section-Search} to implement the golden section search.
-Return the approximate minimizer $x^*$, whether or not the algorithm converged (\li{true} or \li{false}), and the number of iterations computed.
-
-Test your function by minimizing $f(x) = e^x - 4x$ on the interval $[0, 3]$, then plotting the function and the computed minimizer together.
-Also compare your results to SciPy's golden section search, \li{scipy.optimize.golden()}.
+While there are many ways to structure the code for an iterative method, probably the cleanest way is to combine a \li{for} loop with a \li{break} statement.
+As a very simple example, let $F(x) = \frac{x}{2}$.
+This method converges to $x = 0$ independent of starting point.
 
 \begin{lstlisting}
->>> from scipy import optimize as opt
->>> import numpy as np
-
->>> f = lambda x : np.exp(x) - 4*x
->>> opt.golden(f, brack=(0, 3), tol=.001)
-1.3862578679031485              # ln(4) is the minimizer.
+>>> F = lambda x: x / 2
+>>> x0, tol, maxiter = 10, 1e-9, 8
+>>> for k in range(maxiter):           # Iterate at most N times.
+...     print(x0, end='  ')
+...     x1 = F(x0)                      # Compute the next iteration.
+...     if abs(x1 - x0) < tol:          # Check for convergence.
+...         break                       # Upon convergence, stop iterating.
+...     x0 = x1                         # Otherwise, continue iterating.
+...
+<<10  5.0  2.5  1.25  0.625  0.3125  0.15625  0.078125>>
 \end{lstlisting}
-\label{prob:golden-section-search}
-\end{problem}
+
+In this example, the algorithm terminates after $N=8$ iterations (the maximum number of allowed iterations) because the tolerance condition $|x_k - x_{k-1}| < 10^{-9}$ is not met fast enough.
+If $N$ had been larger (say $40$), the iteration would have quit early due to the tolerance condition.
+
 
 \section*{Newton's Method} % ==================================================
 
 \emph{Newton's method} is an important root-finding algorithm that can also be used for optimization.
 Given $f:\mathbb{R}\rightarrow\mathbb{R}$ and a good initial guess $x_0$, the sequence $(x_k)_{k=1}^\infty$ generated by the recursive rule
-\[
-x_{k+1} = x_k - \frac{f(x_k)}{f'(x_k)}
-\]
-converges to a point $\bar{x}$ satisfying $f(\bar{x}) = 0$.
+\begin{equation}
+    x_{k+1} = x_k - \frac{f(x_k)}{f'(x_k)}
+    \label{eq:newton-1d-def}
+\end{equation}
+converges to a point $\bar{x}$ satisfying $f(\bar{x}) = 0$ as long as three conditions hold:
+\begin{enumerate}
+    \item $f$ and $f'$ exist and are continuous,
+    \item $f'(\bar{x})\neq0$, and
+    \item $x_0$ is ``sufficiently close'' to $\bar{x}$.
+\end{enumerate}
+In applications, the first two conditions usually hold.
+If $\bar{x}$ and $x_0$ are not ``sufficiently close,'' Newton's method may converge very slowly, or it may not converge at all.
+However, when all three conditions hold, Newton's method converges quadratically, meaning that the maximum error is squared at every iteration.
+This is very quick convergence, making Newton's method as powerful as it is simple.
+
+
+\begin{figure}[h] % Iterations of Newton's method.
+    \centering
+    \includegraphics[width=.7\textwidth]{figures/newton_iters.pdf}
+    \caption{
+    Newton's method approximates the zero of a function (blue) by choosing as the next approximation the $x$-intercept of the tangent line (red) that goes through the point $(x_k, f(x_k))$.
+    In this example, $f(x) = e^x - 2$, which has a zero at $\bar{x} = \log(2)$.
+    Setting $x_0 = 2$ and using \eqref{eq:newton-1d-def} to iterate, we have $x_1 = x_0 - \frac{f(x_0)}{f'(x_0)} = 2 - \frac{e^2 - 2}{e^2} \approx 1.2707$.
+    Similarly, $x_2 \approx 0.8320$, $x_3 \approx .7024$, and $x_4 \approx 0.6932$.
+    After only a few iterations, the zero $\log(2)\approx 0.6931$ is already computed to several digits of accuracy.}
+    \label{fig:newton}
+\end{figure}
+    
+\begin{problem}
+\label{prob:newton-basic}
+Write a function that accepts a function $f$, an initial guess \li{x0}, the derivative $Df$, a stopping tolerance \li{tol} defaulting to $10^{-5}$, and a maximum number of iterations \li{maxiter} defaulting to 15.
+Use Newton's method as described in \eqref{eq:newton-1d-def} to compute a zero $\bar{x}$ of $f$.
+Terminate the algorithm when $|x_k - x_{k-1}|$ is less than \li{tol} or after iterating \li{maxiter} times.
+Return the last computed approximation to $\bar{x}$, a boolean value indicating whether or not the algorithm converged, and the number of iterations completed.
+
+Test your function against functions like $f(x) = e^x - 2$ (see Figure \ref{fig:newton}) or $f(x) = x^4 - 3$.
+Check that the computed zero $\bar{x}$ satisfies $f(\bar{x}) \approx 0$.
+Also consider comparing your function to \li{scipy.optimize.newton()}, which accepts similar arguments.
+\end{problem}
+
+\begin{info}
+Newton's method can be used to find zeros of functions that are hard to solve for analytically.
+For example, the function $f(x) = \frac{\sin(x)}{x}-x$ is not continuous on any interval containing 0, but it can be made continuous by defining $f(0)=1$.
+Newton's method can then be used to compute the zeros of this function.
+\end{info}
+    
+
+\subsection*{Basins of Attraction} % ------------------------------------------
+
+When a function $f$ has many zeros, the zero that Newton's method converges to depends on the initial guess $x_0$.
+For example, the function $f(x)=x^2-1$ has zeros at $-1$ and $1$.
+If $x_0<0$, then Newton's method converges to $-1$; if $x_0 > 0$ then it converges to $1$ (see Figure \ref{fig:basins-quadratic}).
+The regions $(-\infty, 0)$ and $(0, \infty)$ are called the \emph{basins of attraction} of $f$.
+Starting in one basin of attraction leads to finding one zero, while starting in another basin yields a different zero.
+
+When $f$ is a polynomial of degree greater than 2, the basins of attraction are much more interesting.
+For example, the basis of attraction for $f(x) = x^3-x$ are shown in Figure \ref{fig:basins-cubic}.
+The basin for the zero at the origin is connected, but the other two basins are disconnected and share a kind of symmetry.
+
+\begin{figure}[H] % 1-D basins of attraction.
+\centering
+\begin{subfigure}{.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/basins_quadratic.pdf}
+    \caption{Basins of attraction for $f(x) = x^2 -1$.}
+    % With $\alpha=1$, blue values for $x_0$ converge to -1 and orange values converge to 1.}
+    \label{fig:basins-quadratic}
+\end{subfigure}
+\quad
+\begin{subfigure}{.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/basins_cubic.pdf}
+    \caption{Basins of attraction for $f(x) = x^3 -x$.}
+        % With $\alpha=1$, blue values converge to $-1$, orange converge to 0, and green converge to 1.}
+    \label{fig:basins-cubic}
+\end{subfigure}
+\caption{Basins of attraction with $\alpha=1$.
+Since choosing a different value for $\alpha$ can change which zero Newton's method converges to, the basins of attraction may change for other values of $\alpha$.}
+\end{figure}
+
+It can be shown that Newton's method converges in any Banach space with only slightly stronger hypotheses than those discussed previously. % \footnote{See Chapter 7 of Volume 1 for details.}
+In particular, Newton's method can be performed over the complex plane $\mathbb{C}$ to find imaginary zeros of functions.
+Plotting the basins of attraction over $\mathbb{C}$ yields some interesting results.
+
+The zeros of $f(x) = x^3 - 1$ are $1$, and $-\frac{1}{2} \pm \frac{\sqrt{3}}{2}i$.
+To plot the basins of attraction for $f(x) = x^3-1$ on the square complex domain $X = \{a+bi \mid a \in [-\frac{3}{2},\frac{3}{2}], b \in [-\frac{3}{2},\frac{3}{2}]\}$,
+create an initial grid of complex points in this domain using \li{np.meshgrid()}.
+% Create the real and imaginary parts of the points separately, and then use \li{np.meshgrid()} to turn them into a single grid of complex numbers.
+
+\begin{lstlisting}
+>>> x_real = np.linspace(-1.5, 1.5, 500)    # Real parts.
+>>> x_imag = np.linspace(-1.5, 1.5, 500)    # Imaginary parts.
+>>> X_real, X_imag = np.meshgrid(x_real, x_imag)
+>>> X_0 = X_real + 1j*X_imag                # Combine real and imaginary parts.
+\end{lstlisting}
+
+The grid $X_0$ is a $500\times500$ array of complex values to use as initial points for Newton's method.
+Array broadcasting makes it easy to compute an iteration of Newton's method at every grid point.
+
+\begin{lstlisting}
+>>> f = lambda x: x**3 - 1
+>>> Df = lambda x: 3*x**2
+>>> X_1 = X_0 - f(X_0)/Df(X_0)
+\end{lstlisting}
+
+After enough iterations, the $(i,j)$th element of the grid $X_k$ corresponds to the zero of $f$ that results from using the $(i,j)$th element of $X_0$ as the initial point.
+For example, with $f(x) = x^3 - 1$, each entry of $X_k$ should be close to $1$, $-\frac{1}{2} + \frac{\sqrt{3}}{2}i$, or $-\frac{1}{2} - \frac{\sqrt{3}}{2}i$.
+Each entry of $X_k$ can then be assigned a value indicating which zero it corresponds to.
+Some results of this process are displayed below.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{.49\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/fractal_hw.png}
+    \caption{Basins of attraction for $f(x) = x^3-1$.}
+    \label{fig:fractal_hw}
+\end{subfigure}
+\begin{subfigure}{.49\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/fractal_ex.png}
+    \caption{Basins of attraction for $f(x) = x^3-x$.}
+    \label{fig:fractal_ex}
+\end{subfigure}
+\caption{}
+\label{fig:newton-basins}
+\end{figure}
+
+\begin{info} % Newton fractals
+Notice that in some portions of Figure \ref{fig:fractal_hw}, whenever red and blue try to come together, a patch of green appears in between.
+This behavior repeats on an infinitely small scale, producing a fractal.
+Because it arises from Newton's method, this kind of fractal is called a \emph{Newton fractal}.
+
+Newton fractals show that the long-term behavior of Newton's method is \textbf{extremely} sensitive to the initial guess $x_0$.
+Changing $x_0$ by a small amount can change the output of Newton's method in a seemingly random way.
+This phenomenon is called \emph{chaos} in mathematics.
+\end{info}
+
+\begin{problem} % Plot the basins of attraction.
+Write a function that accepts a function $f:\mathbb{C}\rightarrow\mathbb{C}$, its derivative $Df:\mathbb{C}\rightarrow\mathbb{C}$, an array \li{zeros} of the zeros of $f$, a list \li{domain} containing the bounds $[r_{\text{min}},r_{\text{max}},i_{\text{min}},i_{\text{max}}]$ for the domain of the plot, an integer \li{res} that determines the resolution of the plot, and number of iterations \li{iters} to run the iteration.
+Compute and plot the basins of attraction of $f$ in the complex plane over the specified domain in the following steps.
+\begin{enumerate}
+\item Construct a \li{res}$\times$\li{res} grid $X_0$ over the domain $\{a+bi \mid a \in [r_{\text{min}},r_{\text{max}}], b \in [i_{\text{min}},i_{\text{max}}]\}$.
+
+\item Run Newton's method on $X_0$ \li{iters} times, obtaining the \li{res}$\times$\li{res} array $x_{k}$.
+Do not check for convergence at each step.
+% To avoid the additional computation of checking for convergence at each step, do not use your function from Problem \ref{prob:newton-nd-implementation}.
+
+\item $X_k$ cannot be directly visualized directly because its values are complex.
+Solve this issue by creating another \li{res}$\times$\li{res} array $Y$.
+To compute the $(i,j)$th entry $Y_{i,j}$, determine which zero of $f$ is closest to the $(i,j)$th entry of $X_k$.
+Set $Y_{i,j}$ to the index of this zero in the array \li{zeros}.
+If there are $R$ distinct zeros, each $Y_{i,j}$ should be one of $0,1,\ldots,R-1$.
+\\(Hint: \li{np.argmin()} may be useful.)
+
+\item Use \li{plt.pcolormesh()} to visualize the basins.
+Recall that this function accepts three array arguments: the $x$-coordinates (in this case, the real components of the initial grid), the $y$-coordinates (the imaginary components of the grid), and an array indicating color values ($Y$).
+Set \li{cmap="brg"} to get the same color scheme as in Figure \ref{fig:newton-basins}.
+\end{enumerate}
+
+Test your function using $f(x) = x^3-1$ and $f(x)=x^3-x$.
+The resulting plots should resemble Figures \ref{fig:fractal_hw} and \ref{fig:fractal_ex}, respectively (perhaps with the colors permuted).
+\end{problem}
+
+\subsection*{The Secant Method} % ---------------------------------------------
+
 The first-order necessary conditions from elementary calculus state that if $f$ is differentiable, then its derivative evaluates to zero at each of its local minima and maxima.
 Therefore using Newton's method to find the zeros of $f'$ is a way to identify potential minima or maxima of $f$.
 Specifically, starting with an initial guess $x_0$, set
 \begin{equation}
-x_{k+1} = x_k - \frac{f'(x_k)}{f''(x_k)}
-\label{eq:1dopt-newton}
+    x_{k+1} = x_k - \frac{f'(x_k)}{f''(x_k)}
+    \label{eq:1dopt-newton}
 \end{equation}
 and iterate until $|x_k - x_{k-1}|$ is satisfactorily small.
 Note that this procedure does not use the actual function $f$ at all, but it requires many evaluations of its first and second derivatives.
 As a result, Newton's method converges in few iterations, but it can be computationally expensive.
 
-Each step of \eqref{eq:1dopt-newton} can be thought of approximating the objective function $f$ by a quadratic function $q$ and finding its unique extrema.
-That is, we first approximate $f$ with its second-degree Taylor polynomial centered at $x_k$.
-\[
-q(x) = f(x_k) + f'(x_k) (x - x_k) + \frac{1}{2} f''(x_k) (x - x_k)^2
-\]
-This quadratic function satisfies $q(x_k) = f(x_k)$ and matches $f$ fairly well close to $x_k$.
-Thus the optimizer of $q$ is a reasonable guess for an optimizer of $f$.
-To compute that optimizer, solve $q'(x) = 0$.
-\[
-0 = q'(x) = f'(x_k) + f''(x_k)(x - x_k)
-\qquad\Longrightarrow\qquad
-x = x_k - \frac{f'(x_k)}{f''(x_k)}
-\]
-This agrees with \eqref{eq:1dopt-newton} using $x_{k+1}$ for $x$.
-See Figure \ref{fig:1dopt-quadratic-newton}.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width = .7 \textwidth]{figures/quad_approx.pdf}
-\caption{A quadratic approximation of $f$ at $x_k$.
-The minimizer $x_{k+1}$ of $q$ is close to the minimizer of $f$.
-}
-\label{fig:1dopt-quadratic-newton}
-\end{figure}
-
-Newton's method for optimization works well to locate minima when $f''(x) > 0$ on the entire domain.
-However, it may fail to converge to a minimizer if $f''(x) \le 0$ for some portion of the domain.
-If $f$ is not unimodal, the initial guess $x_0$ must be sufficiently close to a local minimizer $x^*$ in order to converge.
-
-\begin{problem} % Newton's method for optimization
-Let $f:\mathbb{R}\rightarrow\mathbb{R}$.
-Write a function that accepts $f'$, $f''$, a starting point $x_0$, a stopping tolerance \li{tol}, and a maximum number of iterations \li{maxiter}.
-Implement Newton's method using \eqref{eq:1dopt-newton} to locate a local optimizer.
-Return the approximate optimizer, whether or not the algorithm converged, and the number of iterations computed.
-
-Test your function by minimizing $f(x) = x^2 + \sin(5x)$ with an initial guess of $x_0 = 0$.
-Compare your results to \li{scipy.optimize.newton()}, which implements the root-finding version of Newton's method.
-\begin{lstlisting}
->>> df = lambda x : 2*x + 5*np.cos(5*x)
->>> d2f = lambda x : 2 - 25*np.sin(5*x)
->>> opt.newton(df, x0=0, fprime=d2f, tol=1e-10, maxiter=500)
--1.4473142236328096
-\end{lstlisting}
-Note that other initial guesses can yield different minima for this function.
-\end{problem}
-
-\subsection*{The Secant Method} % ---------------------------------------------
-
 The second derivative of an objective function is not always known or may be prohibitively expensive to evaluate.
 The \emph{secant method} solves this problem by numerically approximating the second derivative with a difference quotient.
-\[
-f''(x) \approx \frac{f'(x + h) - f'(x)}{h}
-\]
+\begin{equation*}
+    f''(x) \approx \frac{f'(x + h) - f'(x)}{h}
+\end{equation*}
 Selecting $x = x_k$ and $h = x_{k-1} - x_k$ gives the following approximation.
 \begin{equation}
-f''(x_k) \approx \frac{f'(x_k + x_{k-1} - x_k) - f'(x_k)}{x_{k-1} - x_k}
-= \frac{f(x_k) - f'(x_{k-1})}{x_k - x_{k-1}}
-\label{eq:1dopt-secant-approx}
+    f''(x_k) \approx \frac{f'(x_k + x_{k-1} - x_k) - f'(x_k)}{x_{k-1} - x_k} = \frac{f(x_k) - f'(x_{k-1})}{x_k - x_{k-1}}
+    \label{eq:1dopt-secant-approx}
 \end{equation}
-% The \emph{Secant method} approximates it using secant lines, or in other words, the rate of change between points.
 Inserting \eqref{eq:1dopt-secant-approx} into \eqref{eq:1dopt-newton} results in the complete secant method formula.
 \begin{equation}
-x_{k+1}
-= x_k - \frac{x_k - x_{k-1}}{f'(x_k) - f'(x_{k-1})}f'(x_k)
-= \frac{x_{k-1}f'(x_k) - x_{k}f'(x_{k-1})}{f'(x_k) - f'(x_{k-1})}
-\label{eq:1dopt-secant-method}
+    x_{k+1}
+    = x_k - \frac{x_k - x_{k-1}}{f'(x_k) - f'(x_{k-1})}f'(x_k)
+    = \frac{x_{k-1}f'(x_k) - x_{k}f'(x_{k-1})}{f'(x_k) - f'(x_{k-1})}
+    \label{eq:1dopt-secant-method}
 \end{equation}
 Notice that this recurrence relation requires two previous points (both $x_{k}$ and $x_{k-1}$) to calculate the next estimate.
-This method converges superlinearly---slower than Newton's method, but faster than the golden section search---with convergence criteria similar to Newton's method.
+This method converges superlinearly --- slower than Newton's method --- with convergence criteria similar to Newton's method.
 
 \begin{problem} % Implement secant method.
-Write a function that accepts a first derivative $f'$, starting points $x_0$ and $x_1$, a stopping tolerance \li{tol}, and a maximum of iterations \li{maxiter}.
+Write a function that accepts a first derivative \li{df}, starting points \li{x0} and \li{x1}, a stopping tolerance \li{tol}, and a maximum of iterations \li{maxiter}.
 Use \eqref{eq:1dopt-secant-method} to implement the Secant method.
-Try to make as few computations as possible by only computing $f'(x_k)$ once for each $k$.
+Try to make as few computations as possible by only computing \li{df} at $(x_k)$ once for each $k$.
 Return the minimizer approximation, whether or not the algorithm converged, and the number of iterations computed.
 
 Test your code with the function $f(x) = x^2 + \sin(x) + \sin(10x)$ and with initial guesses of $x_0 = 0$ and $x_1 = -1$.
 Plot your answer with the graph of the function.
 Also compare your results to \li{scipy.optimize.newton()}; without providing the \li{fprime} argument, this function uses the secant method.
-% Note that this function is highly sensitive to the starting point, which is why it is not as helpful to compare your function with SciPy's method.
 However, it still only takes in one initial condition, so it may converge to a different local minimum than your function.
 
 \begin{lstlisting}
 >>> df = lambda x: 2*x + np.cos(x) + 10*np.cos(10*x)
->>> opt.newton(df, x0=0, tol=1e-10, maxiter=500)
-0.45308663951300454
+>>> optimize.newton(df, x0=0, tol=1e-10, maxiter=500)
+2.3155516573790806
 \end{lstlisting}
 \end{problem}
 
@@ -250,21 +311,21 @@ where $0 < c1 < c2 < 1$ (for the  best results, choose $c1 << c2$).
 The condition \eqref{eq:1dopt-wolfe-armijo} is also called the \emph{Armijo rule} and ensures that the step decreases $f$.
 However, this condition is not enough on its own.
 By Taylor's theorem,
-\[
-f(\textbf{x}_k + \alpha_k \textbf{p}_k) = f(\textbf{x}_k) + \alpha_k Df(\textbf{x}_k)\trp \textbf{p}_k + \mathcal{O}(\alpha_k^2).
-\]
+\begin{equation*}
+    f(\textbf{x}_k + \alpha_k \textbf{p}_k) = f(\textbf{x}_k) + \alpha_k Df(\textbf{x}_k)\trp \textbf{p}_k + \mathcal{O}(\alpha_k^2).
+\end{equation*}
 Thus, a very small $\alpha_k$ will always satisfy \eqref{eq:1dopt-wolfe-armijo} since $Df(\textbf{x}_k)\trp\textbf{p}_k < 0$ (as $\textbf{p}_k$ is a descent direction).
 The condition \eqref{eq:1dopt-wolfe-curvature}, called the \emph{curvature condition}, ensures that the $\alpha_k$ is large enough for the algorithm to make significant progress.
 
 It is possible to find an $\alpha_k$ that satisfies the Wolfe conditions, but that is far from the minimizer of $\phi_k(\alpha)$.
 The \emph{strong Wolfe conditions} modify \eqref{eq:1dopt-wolfe-curvature} to ensure that $\alpha_k$ is near the minimizer.
-\[
-| Df(\textbf{x}_k + \alpha_k \textbf{p}_k)\trp \textbf{p}_k| \leq c_2| Df(\textbf{x}_k)\trp \textbf{p}_k|
-\]
+\begin{equation*}
+    | Df(\textbf{x}_k + \alpha_k \textbf{p}_k)\trp \textbf{p}_k| \leq c_2| Df(\textbf{x}_k)\trp \textbf{p}_k|
+\end{equation*}
 The \emph{Armijo--Goldstein conditions} provide another alternative to \eqref{eq:1dopt-wolfe-curvature}:
-\[
-f(\textbf{x}_k) + (1 - c)\alpha_k Df(\textbf{x}_k)\trp \textbf{p}_k \leq f(\textbf{x}_k + \alpha_k\textbf{p}_k) \leq f(\textbf{x}_k) + c\alpha_k Df(\textbf{x}_k)\trp\textbf{p}_k,
-\]
+\begin{equation*}
+    f(\textbf{x}_k) + (1 - c)\alpha_k Df(\textbf{x}_k)\trp \textbf{p}_k \leq f(\textbf{x}_k + \alpha_k\textbf{p}_k) \leq f(\textbf{x}_k) + c\alpha_k Df(\textbf{x}_k)\trp\textbf{p}_k,
+\end{equation*}
 where $0 < c < 1$.
 These conditions are very similar to the Wolfe conditions (the right inequality is \eqref{eq:1dopt-wolfe-armijo}), but they do not require the calculation of the directional derivative $ Df(\textbf{x}_k + \alpha_k \textbf{p}_k)\trp\textbf{p}_k$.
 % They perform as well as the Wolfe conditions in most situations, but are not well-matched for quasi-Newton methods with positive definite Hessians. % ?

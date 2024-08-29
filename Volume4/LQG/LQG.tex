@@ -1,0 +1,414 @@
+\newcommand{\mbf}{\mathbf}
+\newcommand{\s}{\mathbf s}
+
+% To use latex commands inside lstlisting environments, use `\begin{lstlisting}[escapechar=\%] ... \end{lstlisting}` then delimit latex commands with `%`.
+% To ensure colors match, use the following color names (defined in command.tex):
+% `codekeyword` (blue)
+% `codecomment` (green)
+% `codestring` (red)
+% For example, `# Refer to equation %\color{codecomment}\eqref{some_equation}%`
+
+\lab{Linear Quadratic Gaussian Control}{LQG}
+\label{lab:LQG}
+
+\objective{We explore the Linear Quadratic Gaussian (LQG) controller, a combination of the Kalman filter and the Linear Quadratic Regulator (LQR).}
+
+The Linear Quadratic Regulator (LQR) finds the optimal control given certain restrictions on the state evolution and cost functional.
+In a continuous-time system, the optimal control satisfies
+\begin{align*}
+\min_\u J[\u] &= \min_\u \int_0^{t_f} \left[\x\trp Q \x + \u\trp R \u\right] dt + \x(t_f)\trp M \x(t_f)\\
+\x'(t) &= A(t)  \x(t) + B(t) \u(t), \hspace{1cm} t \in (0, t_f)\\
+\x(0) &= \x_0
+\end{align*}
+where $\x$ is the state vector, $\u$ is the control vector, and the cost matrices $Q$ and $M$ are positive semi-definite and $R$ is positive definite.
+
+% The Wikipedia article for LQG seems to suggest that LQG specifically consists of LQR and the Kalman filter.
+We'd like to handle noisy state evolution and noisy, incomplete observations of the state.
+LQR alone isn't able to handle this, but fortunately the Kalman filter comes to our rescue.
+In fact, the combination of LQR with a Kalman filter is known as a Linear Quadratic Gaussian (LQG) controller.
+The Kalman filter computes optimal state estimates given state observations, and the LQR component computes optimal controls given these state estimates.
+
+LQG is able to handle Gaussian noise processes in both the state evolution and measurements, accounting for measurement errors, noise in the state evolution, and model error.
+In this lab we'll build a discrete LQG controller.
+We'll start by building the LQR component.
+
+% The following set-up for discretized LQR is from Volume 4 Example 23.2.4.
+We begin by discretizing the continuous-time LQR system above as follows:
+\begin{align}
+% Using Volume 4 equation (23.22) (the sum starts at k=0)
+\min_\u J[\u] &= \min_\u \sum_{k=0}^{N-1} \left[\x_k\trp Q \x_k + \u_k\trp R \u_k\right] + \x_N\trp M \x_N\\
+\label{eq:discrete-lqr-evolution}
+\x_k &= A \x_{k-1} + B \u_{k-1}, \hspace{1cm} k = 1, \ldots, N
+\end{align}
+with $\x_0$ fixed.
+Note that $\u$ is the concatenation of the $\u_k$, i.e., $\u = (\u_0, \ldots, \u_{N-1})$.
+
+% TODO: Maybe want to consider providing the derivation of these equations if it isn't too long or hideous.
+% This goes through the derivation. I suppose we could include it. We could just mention the least-squares approach and show the value function approach. Or we could stick it in the Additional Material section.
+% https://stanford.edu/class/ee363/lectures/dlqr.pdf
+
+Using Pontryagin's Maximum Principle, one can show that the optimal control is given by
+\begin{align}
+\label{eq:lqr-gain}
+K_{k-1} &= - \left(R + B\trp P_k B \right)^{-1} B\trp P_k A, &&\hspace{-1cm}k = N, \ldots, 1\\
+\label{eq:discrete-time-are}
+P_{k-1} &= Q + A\trp P_k A - A\trp P_k B (R + B\trp P_k B)^{-1} B\trp P_k A\\
+\nonumber
+&= Q + A\trp P_k A - A\trp P_k B (-K_{k-1}), &&\hspace{-1cm}k = N, \ldots, 1\\
+P_N &= M\\
+\label{eq:lqr-control}
+\u_k &= K_k \x_k, &&\hspace{-1cm}k = 0, \ldots, N-1.
+\end{align}
+Note that equation \eqref{eq:discrete-time-are} is the \emph{discrete-time algebraic Riccati equation}.
+See the Volume 4 textbook for a derivation of these equations.
+
+\begin{problem}
+Build an \li{LQR} class.
+Define \li{__init__} to accept and save as attributes the cost matrices $Q$, $M$, and $R$, the transition matrices $A$ and $B$, and the number of time steps $N$.
+Define a \li{fit} method that computes and saves the gain matrices $K_k$.
+Finally, define a \li{compute_control} method that accepts an index $k$ and a state $\x_k$ and returns the optimal control $\u_k$.
+\label{prob:lqr-class}
+\end{problem}
+
+\section*{A Specific Example}
+
+Suppose we have a shuttle in outer space at position $(s_{x0}, s_{y0}, s_{z0}) = (-10, 20, 30)$ km with initial velocity $(v_{x0}, v_{y0}, v_{z0}) = (0, 0, 0)$ km/s.
+We want to get the shuttle to the origin at some final time step $T$ and also end with zero velocity.
+Letting the state $\x = (s_x, s_y, s_z, v_x, v_y, v_z)$ be the concatenation of the position and velocity and the control $\u = (u_x, u_y, u_z)$ be the thrust, the continuous evolution of this system is given by
+
+\begin{equation}
+\x' = \f(\x, \u) =
+\begin{bmatrix}
+s_x' \\
+s_y' \\
+s_z' \\
+v_x' \\
+v_y' \\
+v_z'
+\end{bmatrix}
+=
+\begin{bmatrix}
+v_x \\
+v_y \\
+v_z \\
+u_x \\
+u_y \\
+u_z
+\end{bmatrix}
+\label{eqn:dxdt}
+\end{equation}
+We then discretize with forward Euler,
+\begin{align*}
+\mathbf x'&= \frac {\mathbf x_{k+1} - \mathbf x_k} {\Delta t}\\
+\mathbf x_{k+1} &= \mathbf x_k + \Delta t \, \mathbf x',
+\end{align*}
+yielding the discrete evolution of the system
+\begin{align*}
+s_{x, k+1} &= s_{x, k} + \Delta t \, v_{x, k}\\
+s_{y, k+1} &= s_{y, k} + \Delta t \, v_{y, k}\\
+s_{z, k+1} &= s_{z, k} + \Delta t \, v_{z, k}\\
+v_{x, k+1} &= v_{x, k} + \Delta t \, u_{x, k}\\
+v_{y, k+1} &= v_{y, k} + \Delta t \, u_{y, k}\\
+v_{z, k+1} &= v_{z, k} + \Delta t \, u_{z, k}.
+\end{align*}
+% where the control $\u_k = (u_{x, k}, u_{y, k}, u_{z, k})$ is the thrust.
+
+\begin{problem}
+Assuming the position and velocity vectors have been concatenated into one state vector $\x_k$, create the evolution matrices $A$ and $B$ from the evolution equations given above and Equation \ref{eq:discrete-lqr-evolution}.
+Use $\Delta t = 1/10$.
+\label{prob:transition-matrices}
+\end{problem}
+
+% TODO: (If Joseph gets tripped up on this in addition to Paul) It seems common to have the shuttle not get all the way to the origin and think the code is wrong, but it's just that they didn't choose a large enough M matrix. Maybe we should emphasize that sentence in the problem statement.
+\begin{problem}
+Use your \li{LQR} class from Problem \ref{prob:lqr-class} to get the shuttle to the origin.
+Use the initial condition specified above, your transition matrices $A$ and $B$ from Problem \ref{prob:transition-matrices}, $Q = 0$ (the zero matrix), choose $R$ and $M$ diagonal, and let $N = 100$.
+Make sure to choose a large enough $M$ relative to $R$ so that your shuttle reaches the origin with velocity close to zero.
+
+We've provided a \li{Simulator} class to handle the state evolution, that is, computing and storing the state using the control you provide.
+The code below will help you use it.
+You may also view the docstrings of the class and methods either with your code editor or by using Python's \li{help()} function (e.g., \li{help(Simulator)} and \li{help(Simulator.<some_method>)}).
+
+\begin{lstlisting}[escapechar=\%]
+import numpy as np
+from utils import Simulator
+
+x0 = ...
+
+dt = 1/10
+n = 6 # The dimension of the state vector
+
+def f(x, u):
+    """Return dx/dt using equation %\color{codestring}\eqref{eqn:dxdt}%."""
+    return np.concatenate([x[3:], u])
+sim = Simulator(f, dt, n)
+
+# Set the initial state of the simulation.
+sim.set_initial_state(x0)
+
+# 1. Compute the control `u0` with your LQR class.
+# ...
+
+# 2. Evolve the system.
+sim.evolve(u0)
+
+# 3. Get the next true state.
+# (`Simulator` assumes the observation matrix H is the identity.)
+x1 = sim.observe()
+
+# Repeat 1-3
+\end{lstlisting}
+
+To verify your solution, plot the position, velocity, and sequence of controls.
+You should see each position and velocity coordinate approach zero by the final time step.
+Compare with Figure \ref{fig:prob-discrete-lqr}.
+\label{prob:discrete-lqr}
+\end{problem}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=.7\textwidth]{figures/LQG_prob3.pdf}
+    \caption{Solution to Problem \ref{prob:discrete-lqr}.}
+    \label{fig:prob-discrete-lqr}
+\end{figure}
+
+\section*{Incorporating Noise and Observations}
+
+We've now handled a deterministic discrete LQR problem, in which we assume that we can see the whole state and that the state evolution has no noise.
+This of course isn't realistic.
+In a real scenario, we likely can't observe the whole state---in the situation described above, it's possible we only measure the position but we don't have access to the velocity.
+Moreover, there is probably noise in the observations (no measurement is perfect) as well as noise in the evolution itself (such as air currents once the shuttle enters an atmosphere, or our model of the physics isn't quite right).
+LQR alone simply isn't equipped to handle this scenario, so we'll build a Kalman filter class to complete our LQG controller.
+
+We now model the state evolution and state observations with the following equations:
+\begin{align}
+\x_0 &= \boldsymbol \mu_0 + \w_0\\
+\label{eq:lqg-evolution}
+\x_k &= A \x_{k-1} + B \u_{k-1} + \w_k\\
+\label{eq:lqg-observation}
+\z_k &= H \x_k + \mbf d_k.
+\end{align}
+
+We now have Gaussian noise vectors $\w_k \sim \mathcal N(\0, W_k)$ and $\mbf d_k \sim \mathcal N(\0, D_k)$.
+We let $\boldsymbol \mu_0$ be the expected value of the initial condition $\x_0$, i.e., $\x_0 \sim \mathcal N(\boldsymbol \mu_0, W_0)$.
+We also have noisy observations $\z_k$ obtained from the true state multiplied by some observation matrix $H$.
+It's important to understand that these equations represent theoretical assumptions---a model---used by the Kalman filter.
+When solving a real world problem, we don't know the real states $\x_k$, we have to design and choose the matrices ourselves, and we choose $\boldsymbol \mu_0$ using our best guess.
+Compare equation \eqref{eq:lqg-evolution} with \eqref{eq:discrete-lqr-evolution}.
+
+(Note that $H$ is unrelated to the Hamiltonian which we frequently denote by the same symbol.
+In this lab we don't use the Hamiltonian, so $H$ will have only one meaning.)
+
+Because we now have noise, we must wrap our cost functional in an expectation:
+\begin{equation}
+\min_\u J[\u] = \min_\u \; \mathbb E\left[\sum_{k=0}^{N-1} \left[\x_k\trp Q \x_k + \u_k\trp R \u_k\right] + \x_N\trp M \x_N \right].
+\end{equation}
+
+We can fit a Kalman filter ahead of time using the following equations:
+\begin{align}
+\nonumber
+S_{0|-1} &= W_0\\
+S_{k|k-1} &= A S_{k-1|k-1} A\trp + W_k, &&\hspace{-1cm}k = 1, \ldots, N\\
+L_k &= S_{k|k-1} H\trp (H S_{k|k-1} H\trp + D_k)^{-1}, &&\hspace{-1cm}k = 0, \ldots, N\\
+S_{k|k} &= (I - L_k H) S_{k|k-1}, &&\hspace{-1cm}k = 0, \ldots, N.
+\end{align}
+where $S_{k|k}$ are the state covariance matrices and $L_k$ are the Kalman gain matrices.
+(In Volume 3, we use $P_k$ to denote the covariance matrices and $K_k$ to denote the gain matrices, but this coincides with our LQR co-state and gain matrices.)
+
+At run-time, we use the following equations to compute the optimal state estimates $\hat \x_{k|k}$ using our observations:
+\begin{align}
+\nonumber
+\hat {\x}_{0|-1} &= \boldsymbol \mu_0,\\
+\label{eq:kalman-predict}
+\hat {\x}_{k|k-1} &= A \hat {\x}_{k-1|k-1} + B \u_{k-1}, &&\hspace{-1cm}k = 1, \ldots, N\\
+\label{eq:kalman-update}
+\hat {\x}_{k|k} &= \hat {\x}_{k|k-1} + L_k (\z_k - H \hat {\x}_{k|k-1}), &&\hspace{-1cm}k = 0, \ldots, N.
+\end{align}
+Equation \eqref{eq:kalman-predict} is known as the ``predict'' step and \eqref{eq:kalman-update} is the ``update'' step.
+We use our LQR class to compute each optimal control $\u_k$ using equation \eqref{eq:lqr-control}.
+However, since we don't know the true state $\x_k$, we must substitute the state estimate $\hat \x_{k|k}$ instead.
+
+\begin{problem}
+\label{prob:kalman-filter}
+Build a \li{KalmanFilter} class.
+Define \li{__init__} to accept and save as attributes the transition matrices $A$ and $B$ and the observation matrix $H$.
+We will assume that the noise covariance matrices are the same for all $k$, so also save as attributes the noise covariance matrix $W$ and $D$, and the number of time steps $N$.
+Define a \li{fit} method that computes and saves the gain matrices $L_k$.
+Define a \li{predict_state} method that accepts the last estimated state $\hat \x_{k-1|k-1}$ and a control $\u_{k-1}$ and returns the predicted state $\hat \x_{k|k-1}$.
+Finally, define an \li{update_state} method that accepts an index $k$, a predicted state $\hat \x_{k|k-1}$, and an observation $\z_k$ and returns the updated state estimate $\hat \x_{k|k}$.
+\end{problem}
+
+\begin{problem}
+Use LQG---your \li{LQR} and \li{KalmanFilter} classes---to solve the same scenario as in Problem \ref{prob:discrete-lqr}.
+However, define $H$ to allow observation of position $\s$ but \emph{not} velocity $\v$.
+Use the same initial condition $\boldsymbol \mu_0 = (s_{x0}, s_{y0}, s_{z0}, v_{x0}, v_{y0}, v_{z0})$, and set $W_k = 0.05 I$ and $D_k = 0.5 I$ for all $k$.
+
+Again, use the provided \li{Simulator} class.
+This time, in addition to letting it handle the state evolution (as it did in Problem \ref{prob:discrete-lqr}), it will also provide the state observations.
+To do so, initialize it with the observation matrix and the noise covariances, and use its \li{observe} method in addition to its \li{evolve} method, as in the code below.
+Part of the purpose of the \li{Simulator} class is to make the problem more realistic by hiding the true states.
+Although true states are artificially generated in this lab (and in most example code demonstrating the Kalman filter), in real problems the true states are never known.
+The \li{Simulator} class handles the true states behind-the-scenes so that the only information dealt with here are the observations and the estimated states.
+
+\begin{lstlisting}[escapechar=\%]
+mu0 = ...
+W = ...
+D = ...
+H = ...
+
+dt = 1/10
+def f(x, u):
+    """Return dx/dt using equation %\color{codestring}\eqref{eqn:dxdt}%."""
+    return np.concatenate([x[3:], u])
+sim = Simulator(f, dt, W=W, D=D, H=H)
+
+# Set the initial state of the simulation.
+sim.set_initial_state(mu0)
+
+# 1. Compute the control `u0` with your LQR class and the first
+# estimated state (in this case mu0).
+# ...
+
+# 2. Evolve the system.
+sim.evolve(u0)
+
+# 3. Get the observation.
+z1 = sim.observe()
+
+# 4. Estimate x1 using the observation and the last estimated state.
+# ...
+
+# Repeat 1-4
+\end{lstlisting}
+
+Again, plot the true position and velocity (accessible through \li{sim.true_states}) along with the sequence of controls.
+You should see each position and velocity coordinate approach zero, though it's likely none will reach zero due to noise.
+Your plots should look similar to Figure \ref{fig:prob-lqg}.
+
+\label{prob:lqg}
+\end{problem}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=.7\textwidth]{figures/LQG_prob5.pdf}
+    \caption{Solution to Problem \ref{prob:lqg}.}
+    \label{fig:prob-lqg}
+\end{figure}
+
+\section*{Nonlinear Problems}
+
+In the real world, we don't always have the luxury of working on linear problems.
+We often want to compute optimal controls and state estimates on nonlinear systems.
+Various algorithms have been devised, each with strengths and weaknesses, but this is still an active area of research.
+For the final part of this lab, we'll use one algorithm known as \textit{iterative LQG} (iLQG).\footnote{E. Todorov and W. Li, ``A generalized iterative LQG method for locally-optimal feedback control of constrained nonlinear stochastic systems,'' in Proceedings of the 2005 American Control Conference, 2005, pp. 300-306, doi: 10.1109/ACC.2005.1469949.}
+
+% TODO: Maybe explain how it connects to regular LQG?
+
+\subsection*{Rescuing Neil Armstrong}
+
+Michael Collins, the command module pilot of Apollo 11, has been forced to leave Neil Armstrong and Buzz Aldrin in lunar orbit, and now he must return in a new shuttle to pick them up!
+Collins will need to carefully manage the fuel of the Apollo 11.5 to make sure he has enough to pick up Armstrong and Aldrin and make it back to Earth safely.
+
+Collins will have to navigate the Apollo past the earth and the moon.
+We'll need to model the gravitational pull of both of these celestial bodies.
+Suppose the Apollo is at position $\s$ and a celestial body is at position $\s_P$ with mass $m_P$.
+Then the acceleration of the Apollo due to the body's gravity is given by
+\begin{equation*}
+\a_P = \frac {\s_P - \s} {\lVert \s_P - \s \rVert} \cdot
+\frac {G \, m_P} {\lVert \s_P - \s \rVert^2}
+\end{equation*}
+where $G$ is the gravitational constant and $\lVert \cdot \rVert$ is the 2-norm.
+The first term gives the direction of the acceleration as a unit vector and the second gives the magnitude.
+
+As we did earlier in this lab, we'll define $\x' = \f(\x, \u)$, but this time we'll pass this evolution function directly to iLQG and let it handle the linearization and discretization.
+Letting $\x = (\s, \v)$ be the concatenation of the position of the shuttle $\s = (s_x, s_y, s_z)$ and its velocity $\v = (v_x, v_y, v_z)$, we'll use
+\begin{equation}
+\x' = \f(\x, \u) =
+\begin{bmatrix}
+\v \\ \a_E + \a_M + \u
+\end{bmatrix}
+\label{eq:evolution-gravity}
+\end{equation}
+where $\a_E$ and $\a_M$ are the accelerations of the shuttle due to the earth's gravity and the moon's gravity, respectively.
+
+\begin{problem}
+Use the provided \li{Simulator}, \li{Estimator}, and iLQG \li{Controller} classes to plan Collins' rescue of Armstrong and Aldrin.
+You may find it \textbf{very helpful} to reference the code outline below and the \textbf{documentation} of the provided classes.
+The \li{Controller} class is analogous to the \li{LQR} class created in Problem \ref{prob:lqr-class} and the \li{Estimator} class is analogous to the \li{KalmanFilter} class created in Problem \ref{prob:kalman-filter}.
+
+The \li{Controller} class requires a physical time horizon $T$ and a number of time steps $N$.
+We'll use \li{T = 48} hours and \li{N = 1000}, so that the time step size $\Delta t$ is \li{dt = T / N}.
+Use the cost matrices $M = 10 I$, $Q = 0$, and $R = I$.
+For \li{Simulator} and \li{Estimator}, use the state and observation covariance matrices $W = (0.05 \, \Delta t)^2 I$ and $D = (0.05 \, \Delta t)^2 I$.
+Use the same observation matrix $H$ you defined in Problem \ref{prob:lqg}.
+Also, use the constants defined in the code block below to calculate accelerations.
+Assume that the expected initial position and velocity are as given by \li{mu0} in the code block below.
+Note that our target, the location of Armstrong and Aldrin, is placed at the origin.
+
+Using the file \li{animate.py}, animate your results using the provided \li{animate2d} function.
+Make sure use \li{simulator.true_states} and the controls you compute, \emph{not} \li{controller.xs} or \li{controller.us} which are the sequences of states and controls in the absence of noise.
+See the docstrings for documentation on how to use the provided code.
+
+As a sanity check to debug your animation, you may wish to plot the true position and velocity and the sequence of controls, as in Problem \ref{prob:lqg}, and compare with Figure \ref{fig:prob-ilqg}.
+Note that this is NOT the solution to problem, only a check to help you create your animation.
+
+\textbf{Important}: Since the provided classes use \li{jax}, when defining the state evolution \eqref{eq:evolution-gravity}, use \li{jax.numpy} instead of \li{numpy} or \li{scipy} functions.
+For example, use \li{jnp.linalg.norm} and \li{jnp.concatenate}.
+However, you can still define individual arrays (such as the earth's position) using \li{numpy}.
+
+Hint: Remember you can use either your code editor or Python's \li{help()} function to view the docstrings of the provided classes and methods.
+
+\begin{lstlisting}[escapechar=\%]
+import numpy as np
+from jax import numpy as jnp
+from utils import Simulator, Estimator, Controller
+
+from animate import animate2d
+
+# The following quantities are in metric tons, kilometers, and hours.
+# We've placed the Armstrong and Aldrin at the origin.
+mass_earth = 5.9722e21
+mass_moon = 7.3e19
+position_earth = np.array([-96100, -480500, 0], dtype=float)
+position_moon = np.array([-96100, -96100, 0], dtype=float)
+mu0 = np.array([-48050, -576600, 100, 0, 0, 0], dtype=float)
+G = 8.6499e-10
+
+def f(x, u):
+    # Remember to use `jnp` functions instead of `np`.
+    ...
+
+# Other guesses are possible for `Controller`, but not all converge
+# to good solutions.
+us_guess = np.full((N, 3), np.array([-100, 100, -1]), dtype=float)
+controller = Controller(...)
+controller.fit(mu0, ...)
+
+simulator = Simulator(...)
+sim.set_initial_state(mu0)
+
+estimator = Estimator(...)
+# Fit the Estimator using the linearized dynamics found by `Controller`.
+estimator.fit(controller.As)
+
+# Now repeat the process you used in %\color{codecomment}Problem \ref{prob:lqg}%.
+\end{lstlisting}
+
+If you like, you may use the function \li{animate3d} in the \li{animate.py} file to animate Collins' rescue mission in 3D.
+\label{prob:ilqg}
+\end{problem}
+
+\begin{warn}
+Make sure to push your animation with your solutions! Remember that you can embed your animation in your notebook using the code:
+\begin{lstlisting}
+    <video src="filename.mp4" controls>
+\end{lstlisting}
+\end{warn}
+
+\begin{figure}{!h}
+    \centering
+    \includegraphics[width=.7\textwidth]{figures/LQG_prob6.pdf}
+    \caption{Sanity check for Problem \ref{prob:ilqg}.
+    This is NOT the solution.}
+    \label{fig:prob-ilqg}
+\end{figure}
